@@ -63,7 +63,7 @@
 
 🔄 **F-CLAUDE — Claude CLI integration + 5 prompt modes** (0/4)
    Estimated: approx. 5-6 hours (S: 2, M: 2)
-   [ ] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
+   [x] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
    [ ] FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY
    [ ] FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update
    [ ] FCL-004 · CODEBASE.md update
@@ -109,8 +109,8 @@
 ---
 
 ## What just happened
-✅ D004-002 done — index.html: 72px left padding on IDLE + RECORDING panels; 30-bar waveform added (idle-waveform static grey sine pattern, recording-waveform animated red); buildWaveforms/startWaveform/stopWaveform functions added; setState() wired to start/stop on RECORDING transitions.
+✅ FCL-001 done — generate-prompt IPC: MODE_SYSTEM_PROMPTS constant (5 exact strings), spawn(claudePath, ['--print', '--system-prompt', systemPrompt, '--no-session-persistence']) with transcript via stdin, 30s timeout with resolved guard, eslint.config.js updated with setTimeout/clearTimeout globals.
 
 ## What's next
-⬜ FCL-001 · generate-prompt IPC — replace stub in main.js with real spawn call, MODE_SYSTEM_PROMPTS, 30s timeout, all error cases. Verify claude --help first.
+⬜ FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY.
 Say "next" to begin.

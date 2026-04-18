@@ -8,7 +8,7 @@
 ---
 
 ### FCL-001 · `generate-prompt` IPC — replace stub with real spawn call
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#7, SPEC.md#F4
 - **Dependencies**: None
