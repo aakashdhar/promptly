@@ -41,7 +41,7 @@
 🔄 **F-FIRST-RUN — First-run setup checklist** (0/4)
    Estimated: approx. 3-4 hours (S: 3, M: 1)
    [x] FRN-001 · Boot gate + DOM ID fix — gate boot on firstRunComplete, add id to mic status span
-   [ ] FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
+   [x] FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
    [ ] FRN-003 · Mic grant button handler — getUserMedia, success/error status update
    [ ] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-first-run/FEATURE_TASKS.md (agent use)
@@ -99,10 +99,10 @@
 ---
 
 ## What just happened
-✅ FRN-001 done — boot gate wired, DOM IDs added (firstrun-cli-status/label, firstrun-mic-status/label),
-   cliOk/micOk vars declared, .status-ok/.status-error CSS classes added, initFirstRun() stub in place.
+✅ FRN-002 done — initFirstRun() fully implemented: setState('FIRST_RUN'), CLI check via
+   checkClaudePath() IPC, mic pre-check via navigator.permissions.query, checkFirstRunCompletion() stub added.
 
 ## What's next
-⬜ FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
-   Replace stub with full async implementation: checkClaudePath() → update CLI row, navigator.permissions.query → update mic row, call checkFirstRunCompletion() stub.
+⬜ FRN-003 · Mic grant button handler
+   Add click listener on #firstrun-mic-btn: getUserMedia → micOk=true + ✓ on success, ✗ + label update on error, call checkFirstRunCompletion() on success.
 Say "next" to begin.

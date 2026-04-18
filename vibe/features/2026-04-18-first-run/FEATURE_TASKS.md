@@ -73,7 +73,7 @@
 ---
 
 ### FRN-002 · `initFirstRun()` — CLI check + mic pre-check
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (criteria 2-8), FEATURE_SPEC.md#8 (edge cases)
 - **Dependencies**: FRN-001
