@@ -419,6 +419,26 @@
           setState('IDLE', { conflictNotice: true });
         });
 
+        // Mic grant button handler
+        document.getElementById('firstrun-mic-btn').addEventListener('click', async () => {
+          const micStatus = document.getElementById('firstrun-mic-status');
+          const micLabel = document.getElementById('firstrun-mic-label');
+          const micBtn = document.getElementById('firstrun-mic-btn');
+          try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            micOk = true;
+            micStatus.textContent = '✓';
+            micStatus.className = 'firstrun-status status-ok';
+            micBtn.hidden = true;
+            checkFirstRunCompletion();
+          } catch {
+            micStatus.textContent = '✗';
+            micStatus.className = 'firstrun-status status-error';
+            micLabel.textContent = 'Enable in System Settings → Privacy';
+            micBtn.hidden = true;
+          }
+        });
+
         // Error dismiss on click
         document.getElementById('state-error').addEventListener('click', () => {
           setState('IDLE');
