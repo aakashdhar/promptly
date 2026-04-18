@@ -167,6 +167,9 @@
 ---
 
 ## What just happened
+💰 Cost tracked — Session #12: ~$0.76 est. | Project total: ~$7.06 | Trend: ↑ +35% (continuation overhead)
+   vibe/cost/report-2026-04-19-session12.md
+
 ⚡ vibe-parallel — Phase 4 complete (session 2026-04-19):
    F-HISTORY ✅ — FHI-001/002/003/004 — HISTORY state, saveToHistory/loadHistory, history pill in IDLE + btn in PROMPT_READY
    F-TRAY ✅ — FTR-001/002/003 — system tray icon, app stays alive when window closed, dock hidden

@@ -512,5 +512,62 @@
         "output_tokens": 700
       }
     }
+  },
+  {
+    "session_id": "2026-04-19-012",
+    "date": "2026-04-19",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 5,
+    "phase": "Phase 4 \u2014 v2 features + cleanup",
+    "input_tokens": 185000,
+    "output_tokens": 14000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.76,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-02"
+    ],
+    "task_breakdown": {
+      "wave7-nativeTheme-fix": {
+        "size": "S",
+        "cost_usd": 0.1,
+        "input_tokens": 15000,
+        "output_tokens": 1000
+      },
+      "wave8-FLG003-docs": {
+        "size": "S",
+        "cost_usd": 0.12,
+        "input_tokens": 20000,
+        "output_tokens": 3000
+      },
+      "tasks-phase4-update": {
+        "size": "S",
+        "cost_usd": 0.07,
+        "input_tokens": 10000,
+        "output_tokens": 1500
+      },
+      "F-HISTORY-removal": {
+        "size": "M",
+        "cost_usd": 0.19,
+        "input_tokens": 35000,
+        "output_tokens": 3000
+      },
+      "F-LANGUAGE-removal": {
+        "size": "M",
+        "cost_usd": 0.17,
+        "input_tokens": 30000,
+        "output_tokens": 2500
+      },
+      "vibe-cost": {
+        "size": "S",
+        "cost_usd": 0.11,
+        "input_tokens": 20000,
+        "output_tokens": 3000
+      }
+    }
   }
 ]

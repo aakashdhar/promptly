@@ -1,11 +1,11 @@
 {
   "project_name": "Promptly",
-  "generated": "2026-04-18",
-  "total_cost_usd": 6.295,
-  "total_sessions": 11,
+  "generated": "2026-04-19",
+  "total_cost_usd": 7.055,
+  "total_sessions": 12,
   "build_progress_pct": 100,
   "tasks_remaining": 0,
-  "at_a_glance": "Promptly shipped for $6.30 across 11 sessions in a single day. The heaviest spend was Phase 1 foundation and setup at $1.90 \u2014 normal for the first session establishing architecture and tooling. Costs were healthy throughout: no session exceeded $1.30, and the final session (review + ship) came in at a light $0.38.",
+  "at_a_glance": "Promptly has cost $7.06 across 12 sessions over two days. The app shipped at $6.30 after session 11, with session 12 adding Phase 4 v2 features and then pruning two of them (F-HISTORY and F-LANGUAGE) before they shipped \u2014 keeping the codebase lean for an upcoming React migration. Costs are healthy and stable: no session exceeded $1.30, and the project is complete.",
   "phase_summary": [
     {
       "phase": "Planning & Architecture",
@@ -30,6 +30,12 @@
       "status": "complete",
       "sessions": 2,
       "cost_usd": 1.145
+    },
+    {
+      "phase": "Phase 4 \u2014 v2 Features",
+      "status": "complete",
+      "sessions": 1,
+      "cost_usd": 0.76
     }
   ],
   "feature_costs": [
@@ -58,12 +64,16 @@
       "cost_usd": 0.42
     },
     {
-      "label": "Vibrancy & splash screen (FEATURE-001)",
+      "label": "Vibrancy & splash (FEATURE-001)",
       "cost_usd": 0.68
     },
     {
       "label": "Quality review, polish & ship",
       "cost_usd": 1.145
+    },
+    {
+      "label": "Phase 4: dark mode + tray + history/language (removed)",
+      "cost_usd": 0.76
     }
   ],
   "session_narratives": {
@@ -77,25 +87,26 @@
     "2026-04-18-008": "DECISION-004 (recording refactor from pillWin to main window) plus BUG-004 vibrancy fixes. Architecture-level refactor required deep reading.",
     "2026-04-18-009": "Heaviest Phase 2 session \u2014 vibrancy fixes across two rounds, BUG-007 RAF loop, and the full FEATURE-001 splash screen. $0.68 for 6 tasks is reasonable given the scope.",
     "2026-04-18-010": "Phase 2 review (L task, 80K input tokens) plus all BL-013\u2013023 fixes. The phase-2-review alone was $0.31 \u2014 expected for a full codebase audit.",
-    "2026-04-18-011": "Final review reading 9 source files, writing the gate report, RFX-001 console cleanup, and vibe-cost. Light session at $0.38 \u2014 the project is shipped."
+    "2026-04-18-011": "Final review reading 9 source files, writing the gate report, RFX-001 console cleanup, and vibe-cost. Light session at $0.38 \u2014 the project is shipped.",
+    "2026-04-19-012": "Phase 4 v2 features session: completed the parallel build (dark mode, tray, history, language), then removed F-HISTORY and F-LANGUAGE before shipping to keep the codebase clean for the planned React migration. Session cost slightly elevated by continuation overhead from a compacted prior session."
   },
   "recommendations": [
     {
       "code": "CP-05",
-      "title": "Prompt caching never activated across all 11 sessions",
-      "body": "Cache hit rate was 0% throughout the entire project \u2014 every session loaded CLAUDE.md, CODEBASE.md, and ARCHITECTURE.md from scratch. For a next project, keeping CLAUDE.md stable (separating the static architecture section from the active-feature section) would let Anthropic cache the large static context. Cache reads cost 90% less than fresh reads.",
+      "title": "Prompt caching never activated across all sessions",
+      "body": "Cache hit rate was 0% throughout the entire project \u2014 every session loaded CLAUDE.md and CODEBASE.md from scratch. For a next project, keeping CLAUDE.md stable would let Anthropic cache the large static context. Cache reads cost 90% less than fresh reads.",
       "saving": "save ~$0.15\u20130.25/session on future projects",
       "severity": "warn"
     },
     {
       "code": "CP-01",
-      "title": "Review sessions carry large context overhead",
-      "body": "The two review sessions (phase-2-review, final-review) each read 7-10 source files plus all vibe docs in a single pass. This is inherent to a thorough code audit. The overhead is justified \u2014 both reviews caught real bugs (BL-013 regex, BL-014 RAF leak) before ship.",
-      "saving": "informational \u2014 no change recommended",
-      "severity": "ok"
+      "title": "Session continuation adds ~40K token overhead",
+      "body": "Sessions that start from a compacted prior session load a large summary upfront (~40K tokens). Keeping sessions shorter (under ~80K tokens total) avoids compaction entirely and eliminates this overhead. Session 12 paid ~$0.12 just for the continuation context.",
+      "saving": "save ~$0.10\u20130.15 per session started from compaction",
+      "severity": "warn"
     }
   ],
-  "forecast_narrative": "Project is 100% complete and shipped. No remaining tasks. Total spend came in at $6.30 for a full-featured macOS desktop app \u2014 planning through distribution \u2014 in a single day. For v2 features (prompt history, menu bar, auto-paste), expect $0.40\u20130.80 per medium feature based on Phase 2 averages.",
+  "forecast_narrative": "Project is complete at $7.06. The React migration is the next major investment \u2014 expect $8\u201314 total based on the current rate of ~$0.15/task average. A typical migration of this scope (15\u201325 M-sized React component tasks) would run $2.70\u2013$4.50 in build cost alone, plus planning.",
   "sessions": [
     {
       "session_id": "2026-04-18-001",
@@ -222,6 +233,18 @@
       "patterns_detected": [
         "CP-01",
         "CP-05"
+      ]
+    },
+    {
+      "session_id": "2026-04-19-012",
+      "date": "2026-04-19T00:00:00",
+      "phase": "Phase 4 \u2014 v2 features + cleanup",
+      "tasks_completed": 5,
+      "cost_usd": 0.76,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-01",
+        "CP-02"
       ]
     }
   ]
