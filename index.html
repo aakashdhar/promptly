@@ -171,6 +171,9 @@
         transition: opacity 150ms ease;
       }
       .btn-action:hover { opacity: 0.85; }
+      .btn-action.btn-success {
+        background: var(--color-success);
+      }
       .btn-secondary {
         font-family: inherit;
         font-size: 12px;
@@ -643,6 +646,18 @@
         // Hide on any click outside menu
         window.addEventListener('click', () => {
           modeMenu.hidden = true;
+        });
+
+        // Copy
+        document.getElementById('action-copy').addEventListener('click', async () => {
+          await window.electronAPI.copyToClipboard(generatedPrompt);
+          const btn = document.getElementById('action-copy');
+          btn.textContent = 'Copied!';
+          btn.classList.add('btn-success');
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.classList.remove('btn-success');
+          }, 1800);
         });
 
         // Boot gate — first-run setup or direct IDLE
