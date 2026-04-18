@@ -125,7 +125,7 @@ Note: `setState('PROMPT_READY', { prompt })` already sets `#prompt-output` via `
 ---
 
 ### FAC-003 · Regenerate button — originalTranscript → THINKING → PROMPT_READY
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (Regenerate), SPEC.md#F7
 - **Dependencies**: None

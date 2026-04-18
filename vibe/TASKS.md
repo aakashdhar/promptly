@@ -73,7 +73,7 @@
    Estimated: approx. 3-4 hours (S: 3, M: 1)
    [x] FAC-001 · Copy button — green flash 1.8s + clipboard IPC
    [x] FAC-002 · Edit mode — contenteditable, Escape cancel, Done save
-   [ ] FAC-003 · Regenerate — originalTranscript → THINKING → PROMPT_READY
+   [x] FAC-003 · Regenerate — originalTranscript → THINKING → PROMPT_READY
    [ ] FAC-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-actions/FEATURE_TASKS.md (agent use)
 
@@ -111,8 +111,8 @@
 ---
 
 ## What just happened
-✅ FAC-002 done — Edit mode: Edit click enables contenteditable + shows Done, Escape restores generatedPrompt, Done saves textContent back to generatedPrompt.
+✅ FAC-003 done — Regenerate button: setState('THINKING') → generatePrompt(originalTranscript, getMode()) → PROMPT_READY on success, ERROR on failure.
 
 ## What's next
-⬜ FAC-003 · Regenerate — originalTranscript → THINKING → PROMPT_READY.
+⬜ FAC-004 · CODEBASE.md update — reflect all F-ACTIONS additions.
 Say "next" to begin.
