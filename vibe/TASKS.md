@@ -126,6 +126,9 @@
 ---
 
 ## What just happened
+💰 Cost tracked — Session #9: $0.68 est. · Project total: $5.15 · Trend: ↑ +62% (FEATURE-001 splash drove spike — expected)
+   6 work items · $0.11/item avg · vibe/cost/report-2026-04-18-session9.md
+
 ✅ FEATURE-001 — Splash screen shipped:
    - splash.html: frosted glass BrowserWindow, logo ring + pulse, name/tagline fade-up,
      CLI check (spinner → ✓/✗), mic check (getUserMedia → ✓/✗), install button on CLI fail

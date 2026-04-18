@@ -1,39 +1,63 @@
 {
-  "session_id": "2026-04-18-008",
+  "session_id": "2026-04-18-009",
   "date": "2026-04-18T23:59:59",
   "mode": "estimate",
   "trigger": "manual",
   "model": "claude-sonnet-4-6",
-  "tasks_completed": 5,
-  "phase": "Phase 2 \u2014 DECISION-004 + BUG-004",
-  "input_tokens": 80000,
-  "output_tokens": 12000,
+  "tasks_completed": 6,
+  "phase": "Phase 2 \u2014 vibrancy, BUG-007, FEATURE-001 splash",
+  "input_tokens": 145000,
+  "output_tokens": 22200,
   "cache_read_tokens": 0,
   "cache_write_tokens": 0,
-  "cost_usd": 0.42,
+  "cost_usd": 0.68,
   "is_estimate": true,
   "patterns_detected": [
     "CP-05",
-    "CP-01"
+    "CP-02"
   ],
   "task_breakdown": {
-    "DECISION-004": {
+    "BUG-006-followup": {
       "size": "M",
-      "cost_usd": 0.225,
-      "input_tokens": 40000,
-      "output_tokens": 7000
+      "cost_usd": 0.1,
+      "input_tokens": 22000,
+      "output_tokens": 2000
     },
-    "BUG-004": {
+    "BUG-007-A": {
+      "size": "M",
+      "cost_usd": 0.12,
+      "input_tokens": 25000,
+      "output_tokens": 3000
+    },
+    "BUG-007-B": {
       "size": "S",
-      "cost_usd": 0.098,
-      "input_tokens": 20000,
-      "output_tokens": 2500
+      "cost_usd": 0.08,
+      "input_tokens": 18000,
+      "output_tokens": 1500
+    },
+    "FEATURE-001-splash": {
+      "size": "L",
+      "cost_usd": 0.25,
+      "input_tokens": 42000,
+      "output_tokens": 8000
+    },
+    "diagnostic-morph": {
+      "size": "S",
+      "cost_usd": 0.09,
+      "input_tokens": 15000,
+      "output_tokens": 3000
+    },
+    "opacity-fix": {
+      "size": "S",
+      "cost_usd": 0.02,
+      "input_tokens": 5000,
+      "output_tokens": 200
     },
     "vibe-cost": {
       "size": "S",
-      "cost_usd": 0.097,
-      "input_tokens": 20000,
-      "output_tokens": 2500
+      "cost_usd": 0.12,
+      "input_tokens": 18000,
+      "output_tokens": 4500
     }
   }
 }
