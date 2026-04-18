@@ -841,7 +841,7 @@
       window.electronAPI.resizeWindow(regenH);
       const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
       if (!genResult.success) {
-        setState(STATES.ERROR, { message: 'Claude error' });
+        setState(STATES.ERROR, { message: genResult.error || 'Claude error' });
         return;
       }
       generatedPrompt = genResult.prompt;
