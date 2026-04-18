@@ -109,10 +109,10 @@
 ✅ BL-021/022/023 — all P3 code cleanup applied
 
 ### Phase 3 polish
-⬜ Error state audit — verify all error messages surface correctly with right text; all tap-to-dismiss
+✅ Error state audit — all error messages human-readable; regenerate path now propagates specific error; ERROR panel tap-to-dismiss confirmed; lint 0 errors
 ⬜ Manual smoke test — exercise all 5 states × all 5 modes; check shortcut conflict notice; verify no hangs; test Regenerate 5× to confirm no RAF accumulation after BL-014 fix
-⬜ Build verification — npm run dist produces universal .dmg; install and run on Apple Silicon; verify on Intel if available
-⬜ Distribution prep — write 5-line Slack message (what it does, download link, two clicks to start, example use case)
+✅ Build verification — dist/Promptly-1.0.0-universal.dmg produced (199 MB); human must install on Apple Silicon + verify on Intel
+✅ Distribution prep — vibe/distribution/slack-message.md written (5-line Slack message ready)
 
 ## Final gate
 ⬜ review: final — pending
@@ -134,19 +134,14 @@
 ---
 
 ## What just happened
-💰 Cost tracked — Session #10: $0.77 est · Project total: $5.92 · Trend: ↑ +13% (review task drove spike — expected)
-   4 work items · $0.19/item avg · vibe/cost/report-2026-04-18-session10.md
-
-✅ All phase-2 review findings resolved (BL-013 through BL-023):
-   Code: renderPromptOutput regex fixed (plain-text labels), RAF loop leak fixed,
-         URL validation added to splash-open-url, error truncation removed, onclick→addEventListener
-   Docs: CODEBASE.md full rewrite, ARCHITECTURE.md IPC table + CSS tokens updated,
-         SPEC.md F1 vibrancy + F8 first-run updated, DECISIONS.md D-005/D-006/D-007 logged
-   BL-024 (eslint devDep low-severity audit) deferred — no runtime risk
-   Lint: 0 errors
+⚡ vibe-parallel Wave 1+2 — 3 tasks complete:
+   PH3-ERR ✅ — regenerate error path fixed (specific error propagated); all error states audited; tap-to-dismiss confirmed
+   PH3-DIST ✅ — vibe/distribution/slack-message.md created (5-line Slack message)
+   PH3-BUILD ✅ — dist/Promptly-1.0.0-universal.dmg built (199 MB); cost ~$0.19 parallel
+   Cost: ~$0.19 total · Time saved vs sequential: ~1.5h · Context mode: graph-aware slicing
 
 ## What's next
-⬜ Manual smoke test: exercise all 5 states × all 5 modes; test Regenerate 5× to verify no RAF accumulation; confirm section headers styled in PROMPT_READY output
-⬜ Error state audit — all error messages surface with correct text; all tap-to-dismiss
-⬜ Build verification — npm run dist → universal .dmg; install on Apple Silicon
+⬜ Manual smoke test (human-only): exercise all 5 states × all 5 modes; test Regenerate 5× to verify no RAF accumulation; check shortcut conflict notice; verify no hangs
+⬜ Install dist/Promptly-1.0.0-universal.dmg on Apple Silicon; right-click → Open on first launch (not notarized yet); verify floating bar + shortcut; optionally test on Intel
+⬜ review: final — run when smoke test passes — 0 P0 + 0 P1 required before distributing
 ⬜ Distribution prep — Slack message draft
