@@ -24,7 +24,7 @@ function createWindow() {
     x: Math.round((screenWidth - windowWidth) / 2),
     y: Math.round(screenHeight * 0.85),
     frame: false,
-    transparent: false,
+    transparent: true,
     vibrancy: 'sidebar',
     alwaysOnTop: true,
     webPreferences: {
