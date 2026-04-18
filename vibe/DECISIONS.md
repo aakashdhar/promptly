@@ -267,3 +267,25 @@ Key fixes applied:
 
 - **Status**: FIXED 2026-04-18
 - **Approved by**: human
+
+**BUG-003-E — pillWin ghost rectangle, rectangular shadow, and incorrect transparency**
+- **Root cause (1)**: pillWin width was 520px but pill.html content is 480px wide — 40px gap on sides caused ghost transparent edges that macOS composited as grey artifacts.
+- **Root cause (2)**: macOS window shadow followed the 520×90 BrowserWindow rectangle, not the pill's CSS border-radius. `hasShadow: false` removes it; pill's own `box-shadow` provides depth.
+- **Root cause (3)**: No `vibrancy` or `visualEffectState` set — transparent regions not properly frosted, composited incorrectly by macOS.
+- **Root cause (4)**: No explicit `backgroundColor` — transparency not guaranteed before first paint.
+- **Fix**: pillWin config updated to `width: 480`, `hasShadow: false`, `vibrancy: 'under-window'`, `visualEffectState: 'active'`, `backgroundColor: '#00000000'`.
+- **Files**: main.js
+- **Status**: FIXED 2026-04-18
+- **Approved by**: human
+
+**BUG-003-F — Ghost window still visible behind pill (show-pill race condition)**
+- **Root cause**: `win.hide()` and pillWin creation were synchronous back-to-back — macOS compositor hadn't finished hiding `win` before pillWin rendered, causing the ghost to bleed through. Additionally, on some macOS versions the window remains visually composited even after `win.hide()` returns until the next render cycle.
+- **Fix 1**: Wrapped pillWin creation in `setTimeout(50)` after `win.hide()` — guarantees macOS has completed the hide before the pill window appears.
+- **Fix 2**: Renamed `switch-to-main` → `hide-pill` IPC. New handler hides pillWin first, waits 50ms, then destroys pillWin and shows win. This prevents win from appearing before pillWin is fully gone.
+- **Fix 3**: Added `win.setOpacity(0)` immediately before `win.hide()` (and `win.setOpacity(1)` before `win.show()`) — makes win invisible before the OS composites the hide, eliminating any frame where the window is visible during the hide animation.
+- **Fix 4**: Added `!important` to `background: transparent` on `body` in pill.html — prevents any browser default or inherited background from rendering under the pill.
+- **IPC rename**: `switch-to-main` → `hide-pill` (main.js + preload.js `switchToMain` → `hidePill` + index.html callers updated)
+- **Files**: main.js, preload.js, index.html, pill.html
+- **Status**: FIXED 2026-04-18
+- **Smoke checklist**: pill floats with nothing behind it — just pill over raw desktop; win.hide() completes before pill renders; no ghost on dismiss/stop path
+- **Approved by**: human
