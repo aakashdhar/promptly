@@ -264,6 +264,8 @@ The following are P0 review findings — they block phase gates:
 | IPC pattern | contextBridge + preload.js | Electron security best practice; sandboxed renderer | 2026-04-18 |
 | PATH resolution | zsh login shell at startup, cached | Most common failure mode in Electron+CLI; spec'd in BRIEF.md as high-risk | 2026-04-18 |
 | CSS approach | Inline in index.html, CSS custom properties | Single-file constraint; tokens prevent hardcoded colours | 2026-04-18 |
+| Window title bar | `titleBarStyle: 'hiddenInset'` + `trafficLightPosition` (not `frame: false`) | Traffic lights required per BRIEF.md; hiddenInset hides title bar while preserving traffic lights | 2026-04-18 |
+| Waveform animation | `setInterval` + sine wave + noise in renderer | Visual only — Whisper is post-processing, no real-time audio stream available; no Web Audio API needed | 2026-04-18 |
 
 ---
 
@@ -272,3 +274,4 @@ The following are P0 review findings — they block phase gates:
 > Updated by architect: when decisions change.
 > 2026-04-18 — Initial ARCHITECTURE.md created via architect: from BRIEF.md
 > 📝 2026-04-18 · Scope change D-003 — speech engine changed from webkitSpeechRecognition to MediaRecorder + Whisper CLI; transcribe-audio IPC channel added
+> 📝 2026-04-18 · Scope change D-004 — frame: false → titleBarStyle: hiddenInset + trafficLightPosition; 30-bar waveform pattern added
