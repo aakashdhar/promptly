@@ -143,6 +143,17 @@ Key fixes applied:
 
 ---
 
+### BUG-001 — Renderer complete rewrite: window bounds, shortcut, waveform, state containment
+- **Date**: 2026-04-18 · **Type**: drift
+- **Root cause**: Renderer (index.html) built without visual verification against SPEC.md. Multiple critical deviations accumulated across features.
+- **Confirmed issues**: (1) IDLE height 44px instead of 80px — STATE_HEIGHTS.IDLE = 44. (2) ⌥Space signal present in main.js/preload.js but UI elements rendered outside bar clipping area so shortcut appeared to do nothing. (3) Waveform bars rendered with `width: 3px` static — no bar-height-based animation. (4) PROMPT_READY resize to 200px caused content to overflow outside bar bounds. (5) All state panels used separate `div#app` child panels outside a single clipping container.
+- **Fix applied**: Complete replacement of index.html with single `#bar` container (overflow: hidden) that contains all states. Drag region (10px) + content-row (70px) = 80px IDLE. Transcript/prompt sections expand inside #bar. resize(360) for PROMPT_READY. 2px-wide animated bars for waveform.
+- **IPC adaptations**: Replacement spec assumed string returns from transcribeAudio/generatePrompt — adapted to existing `{ success, transcript/prompt/error }` response shape. Buffer.from() unavailable in isolated renderer — passes ArrayBuffer directly.
+- **Files changed**: index.html (full rewrite). main.js and preload.js unchanged (shortcut IPC was already correct).
+- **Approved by**: human
+
+---
+
 ## 2026-04-18 — Feature Start: F-SPEECH — Speech Recording
 > Folder: vibe/features/2026-04-18-speech-recording/
 > Implements webkitSpeechRecognition with live transcript, originalTranscript capture at stop, auto-stop on silence.
