@@ -30,13 +30,12 @@
 > Features marked [parallel with: X] can run simultaneously.
 > Phase 2 exit: run `review: phase 2` when all features complete.
 
-🔄 **F-STATE — State machine + full UI skeleton** (4/5)
-   Estimated: approx. 7 hours (S: 3, M: 2)
+✅ **F-STATE — State machine + full UI skeleton** (5/5 — COMPLETE)
    [x] FST-001 · JS foundation — module vars, localStorage wrappers, setState() skeleton
    [x] FST-002 · DOM structure — all 6 state panels in #app with correct IDs
    [x] FST-003 · CSS — all 6 states fully styled, animations, design tokens
    [x] FST-004 · Window resize IPC — resize-window channel in main.js + preload.js, setState() wires resize
-   [ ] FST-005 · Boot + IPC wire-up — shortcut listeners, DOMContentLoaded → IDLE, CODEBASE.md update
+   [x] FST-005 · Boot + IPC wire-up — shortcut listeners, DOMContentLoaded → IDLE, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-FIRST-RUN — First-run setup checklist**
@@ -99,9 +98,11 @@
 ---
 
 ## What just happened
-✅ Wave 2 complete — FST-003 done.
-   Full CSS: all 6 state heights, blink/spin animations, design tokens, opacity transitions.
+✅ F-STATE complete — all 5 tasks done via parallel execution (3 waves).
+   Wave 1 (parallel): FST-002 DOM + FST-004 IPC
+   Wave 2: FST-003 CSS
+   Wave 3: FST-005 boot sequence + CODEBASE.md
+   App boots to IDLE, shortcut cycles states, window resizes per state.
 
 ## What's next
-⬜ FST-005 · Boot sequence, shortcut/conflict listeners, setState resize call, CODEBASE.md update (Wave 3)
-Say "next" to begin.
+Run `review: F-STATE` to gate this feature before starting F-FIRST-RUN or F-SPEECH.

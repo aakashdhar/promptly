@@ -535,7 +535,7 @@ Also update initial window height in `main.js` `createWindow()`:
 ---
 
 ### FST-005 · Boot sequence, IPC wire-up, smoke test, CODEBASE.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (IPC listeners, boot) + FEATURE_SPEC.md#10 (conformance)
 - **Dependencies**: FST-001 through FST-004
