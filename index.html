@@ -6,9 +6,20 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --blue: #007AFF;
+      --bg-bar: rgba(255,255,255,0.04);
+      --border-top: 0.5px solid rgba(255,255,255,0.18);
+      --border-left: 0.5px solid rgba(255,255,255,0.1);
+      --border-right: 0.5px solid rgba(255,255,255,0.06);
+      --border-bottom: 0.5px solid rgba(255,255,255,0.04);
+      --bar-radius: 18px;
+      --bar-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
+      --bar-backdrop: blur(40px) saturate(180%);
+      --highlight-top: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+      --accent-bottom: linear-gradient(90deg, transparent, rgba(10,132,255,0.2), transparent);
+      --divider: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+      --blue: #0A84FF;
       --red: #FF3B30;
-      --green: #34C759;
+      --green: #30D158;
       --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
     }
 
@@ -20,252 +31,317 @@
       user-select: none;
     }
 
-    #bar {
-      width: 480px;
-      background: rgba(255,255,255,0.82);
-      border-radius: 14px;
-      overflow: hidden;
-      border: 0.5px solid rgba(0,0,0,0.08);
-    }
-
-    #drag-region {
-      height: 10px;
-      -webkit-app-region: drag;
-    }
-
-    #content-row {
-      height: 70px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px 0 76px;
-      -webkit-app-region: drag;
-    }
-
-    #waveform {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      height: 32px;
-      -webkit-app-region: no-drag;
-      cursor: pointer;
-    }
-
     .bar {
-      width: 2px;
-      border-radius: 2px;
-      background: #d0d0d0;
-      min-height: 3px;
-      transition: height 80ms ease, background 200ms ease;
-    }
-
-    #right-side {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-left: 12px;
-      -webkit-app-region: no-drag;
-      white-space: nowrap;
-    }
-
-    #right-side span {
-      font-size: 10px;
-      color: rgba(0,0,0,0.3);
-      letter-spacing: 0.02em;
-    }
-
-    #transcript-section {
-      display: none;
-      padding: 0 16px 10px 76px;
-      border-top: 1px solid rgba(0,0,0,0.06);
-      font-size: 13px;
-      color: rgba(0,0,0,0.65);
-      line-height: 1.5;
-      max-height: 100px;
+      width: 520px;
+      min-height: 100vh;
+      background: var(--bg-bar);
+      border-radius: var(--bar-radius);
+      border-top: var(--border-top);
+      border-left: var(--border-left);
+      border-right: var(--border-right);
+      border-bottom: var(--border-bottom);
+      backdrop-filter: var(--bar-backdrop);
+      -webkit-backdrop-filter: var(--bar-backdrop);
+      box-shadow: var(--bar-shadow);
+      position: relative;
       overflow: hidden;
     }
-
-    #prompt-section {
-      display: none;
-      padding: 0 16px 14px 16px;
-      border-top: 1px solid rgba(0,0,0,0.06);
+    .bar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 10%; right: 10%; height: 0.5px;
+      background: var(--highlight-top);
+      pointer-events: none;
+    }
+    .bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 15%; right: 15%; height: 1px;
+      background: var(--accent-bottom);
+      pointer-events: none;
     }
 
-    #you-said-label {
+    /* Traffic lights */
+    .traf { display: flex; align-items: center; gap: 7px; padding: 13px 16px 0; -webkit-app-region: drag; }
+    .tl { width: 12px; height: 12px; border-radius: 50%; -webkit-app-region: no-drag; }
+    .tl-r { background: #FF5F57; box-shadow: 0 0 6px rgba(255,95,87,0.5); }
+    .tl-y { background: #FFBD2E; box-shadow: 0 0 5px rgba(255,189,46,0.4); }
+    .tl-off { background: rgba(255,255,255,0.1); box-shadow: none; }
+
+    .div-line {
+      height: 0.5px;
+      background: var(--divider);
+      margin: 0 18px;
+    }
+
+    .mode-pill {
+      background: rgba(10,132,255,0.12);
+      border: 0.5px solid rgba(10,132,255,0.25);
+      border-radius: 20px;
+      padding: 3px 11px;
       font-size: 10px;
-      letter-spacing: 0.07em;
-      color: rgba(0,0,0,0.3);
-      margin-bottom: 4px;
-      margin-top: 10px;
-    }
-
-    #you-said-text {
-      font-size: 12px;
-      color: rgba(0,0,0,0.45);
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      margin-bottom: 10px;
-    }
-
-    #prompt-output {
-      font-size: 13px;
-      line-height: 1.65;
-      color: rgba(0,0,0,0.85);
-      max-height: 160px;
-      overflow-y: auto;
-      margin-bottom: 12px;
-    }
-
-    #prompt-output::-webkit-scrollbar { width: 3px; }
-    #prompt-output::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
-
-    #button-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    #top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0 0 0;
-      margin-bottom: 8px;
-    }
-
-    #status-left {
-      font-size: 13px;
-      color: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    #top-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    .text-btn {
-      font-size: 12px;
-      font-family: var(--font);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: rgba(0,0,0,0.3);
-      padding: 0;
-    }
-
-    .text-btn:hover { color: var(--blue); }
-
-    #btn-edit {
-      height: 30px;
-      padding: 0 14px;
-      border: 1px solid rgba(0,0,0,0.12);
-      border-radius: 8px;
-      background: transparent;
-      font-size: 13px;
-      font-family: var(--font);
-      cursor: pointer;
-      color: rgba(0,0,0,0.7);
-    }
-
-    #btn-copy {
-      flex: 1;
-      height: 30px;
-      background: var(--blue);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
       font-weight: 500;
-      font-family: var(--font);
-      cursor: pointer;
-      transition: background 200ms ease;
+      color: rgba(100,180,255,0.85);
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
     }
 
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    @keyframes thinking { 0%,100%{transform:scale(0.6);opacity:0.4} 50%{transform:scale(1);opacity:1} }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-    .rec-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--red);
-      animation: pulse 1s ease-in-out infinite;
-      display: inline-block;
-    }
-
-    .thinking-dot {
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      background: var(--blue);
-      display: inline-block;
-      animation: thinking 1.2s ease infinite;
-    }
-
-    #mode-menu {
-      position: fixed;
-      background: rgba(255,255,255,0.97);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(0,0,0,0.12);
-      border-radius: 8px;
-      padding: 4px 0;
-      min-width: 140px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-      z-index: 1000;
-      display: none;
-    }
-
-    .mode-menu-item {
+    /* === IDLE === */
+    .cr-idle {
+      height: 76px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      font-size: 13px;
-      color: #1a1a1a;
+      padding: 0 20px;
+      -webkit-app-region: drag;
       cursor: pointer;
-      user-select: none;
     }
 
-    .mode-menu-item:hover { background: rgba(0,122,255,0.08); }
-
-    .mode-check {
-      width: 12px;
-      color: var(--blue);
-      font-size: 11px;
+    .pulse-ring {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(10,132,255,0.08);
+      border: 0.5px solid rgba(10,132,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      -webkit-app-region: no-drag;
     }
+    .pulse-ring::before {
+      content: ''; position: absolute;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 0.5px solid rgba(10,132,255,0.15);
+      animation: pulse-expand 2.2s ease-out infinite;
+    }
+    .pulse-ring::after {
+      content: ''; position: absolute;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 0.5px solid rgba(10,132,255,0.08);
+      animation: pulse-expand 2.2s ease-out infinite 0.7s;
+    }
+    @keyframes pulse-expand {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    .ready-text { flex: 1; margin-left: 14px; -webkit-app-region: no-drag; }
+    .ready-title { font-size: 13px; color: rgba(255,255,255,0.5); font-weight: 500; letter-spacing: 0.01em; margin-bottom: 3px; }
+    .ready-sub { font-size: 11px; color: rgba(255,255,255,0.18); letter-spacing: 0.01em; }
+
+    /* === THINKING === */
+    .cr-think {
+      height: 68px; display: flex; align-items: center;
+      padding: 0 20px; gap: 14px;
+    }
+    .status-badge {
+      background: rgba(10,132,255,0.1);
+      border: 0.5px solid rgba(10,132,255,0.2);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 10px; font-weight: 500;
+      color: rgba(100,180,255,0.8); letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .status-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(10,132,255,0.9);
+      box-shadow: 0 0 6px rgba(10,132,255,0.7);
+      animation: status-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes status-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .think-title { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 500; letter-spacing: 0.01em; }
+    .morph-wrap { padding: 2px 20px 14px; }
+    .ys-label-s {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(255,255,255,0.14);
+      margin-bottom: 7px; padding: 0 20px; display: block;
+    }
+    .ys-text-s { padding: 0 20px 16px; font-size: 12.5px; color: rgba(255,255,255,0.26); line-height: 1.6; letter-spacing: 0.01em; }
+
+    /* === PROMPT READY === */
+    .top-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 16px; }
+    .pr-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.01em; }
+    .pr-check { color: #30D158; font-size: 15px; text-shadow: 0 0 8px rgba(48,209,88,0.5); }
+    .pr-actions { display: flex; gap: 18px; }
+    .pr-btn {
+      font-size: 11px; color: rgba(255,255,255,0.2); background: none; border: none;
+      cursor: pointer; font-family: var(--font); padding: 0; letter-spacing: 0.01em;
+      transition: color 150ms;
+    }
+    .pr-btn:hover { color: #0A84FF; }
+
+    .you-said-block { padding: 22px 22px 0; }
+    .ys-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.16); margin-bottom: 8px; }
+    .ys-text {
+      font-size: 12.5px; color: rgba(255,255,255,0.26); line-height: 1.6; letter-spacing: 0.01em;
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+
+    .inner-div { height: 0.5px; background: linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent); margin: 20px 22px; }
+
+    .prompt-out {
+      padding: 0 22px;
+      font-size: 13px; line-height: 1.85;
+      color: rgba(255,255,255,0.82);
+      letter-spacing: 0.01em;
+      max-height: 200px; overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .prompt-out::-webkit-scrollbar { width: 3px; }
+    .prompt-out::-webkit-scrollbar-track { background: transparent; }
+    .prompt-out::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .pt-sl {
+      font-size: 8.5px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(100,170,255,0.42);
+      display: block; margin-bottom: 5px; margin-top: 20px;
+    }
+
+    .btn-row { display: flex; gap: 10px; padding: 26px 22px 24px; }
+    .btn-edit {
+      height: 40px; padding: 0 24px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      font-size: 13px; font-family: var(--font);
+      color: rgba(255,255,255,0.4); cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: background 150ms, border-color 150ms;
+    }
+    .btn-edit:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
+
+    .btn-copy {
+      flex: 1; height: 40px;
+      background: linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92));
+      color: white; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600; font-family: var(--font);
+      cursor: pointer; letter-spacing: 0.02em;
+      border-top: 0.5px solid rgba(255,255,255,0.18);
+      box-shadow: 0 2px 20px rgba(10,132,255,0.4);
+      transition: box-shadow 150ms, background 150ms;
+    }
+    .btn-copy:hover { box-shadow: 0 4px 28px rgba(10,132,255,0.65); }
+    .btn-copy.copied { background: linear-gradient(135deg, rgba(48,209,88,0.9), rgba(36,160,68,0.9)); box-shadow: 0 2px 20px rgba(48,209,88,0.4); }
+
+    /* === ERROR === */
+    .cr-error {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      cursor: pointer;
+      -webkit-app-region: drag;
+    }
+    .error-badge {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(255,59,48,0.1);
+      border: 0.5px solid rgba(255,59,48,0.25);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      -webkit-app-region: no-drag;
+    }
+
   </style>
 </head>
 <body>
-  <div id="bar">
-    <div id="drag-region"></div>
-    <div id="content-row">
-      <div id="waveform"></div>
-      <div id="right-side"></div>
+
+  <div class="bar" id="bar">
+
+    <!-- IDLE -->
+    <div id="panel-idle">
+      <div class="traf">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-off"></div>
+      </div>
+      <div class="cr-idle" id="idle-area">
+        <div class="pulse-ring">
+          <svg width="13" height="15" viewBox="0 0 12 16" fill="none">
+            <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,180,255,0.7)" stroke-width="1"/>
+            <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,180,255,0.5)" stroke-width="1" stroke-linecap="round"/>
+            <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,180,255,0.5)" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="ready-text">
+          <div class="ready-title">Promptly is ready</div>
+          <div class="ready-sub">Press ⌥ Space or click to speak your prompt</div>
+        </div>
+        <span class="mode-pill" id="mode-pill">Balanced</span>
+      </div>
     </div>
-    <div id="transcript-section"></div>
-    <div id="prompt-section">
-      <div id="top-row">
-        <div id="status-left"><span style="color:#34C759">✓</span> Prompt ready</div>
-        <div id="top-actions">
-          <button class="text-btn" id="btn-regenerate">Regenerate</button>
-          <button class="text-btn" id="btn-reset">Reset</button>
+
+    <!-- THINKING -->
+    <div id="panel-thinking" style="display:none">
+      <div class="traf">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-off"></div>
+      </div>
+      <div class="cr-think">
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          Processing
+        </div>
+        <div class="think-title">Building your prompt</div>
+      </div>
+      <div class="morph-wrap">
+        <canvas id="morph-canvas" width="476" height="32"></canvas>
+      </div>
+      <div class="div-line"></div>
+      <span class="ys-label-s">You said</span>
+      <div class="ys-text-s" id="think-transcript"></div>
+    </div>
+
+    <!-- PROMPT READY -->
+    <div id="panel-ready" style="display:none">
+      <div class="traf">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-off"></div>
+      </div>
+      <div class="top-row">
+        <div class="pr-status">
+          <span class="pr-check">✓</span>
+          <span>Prompt ready</span>
+        </div>
+        <div class="pr-actions">
+          <button class="pr-btn" id="btn-regenerate">Regenerate</button>
+          <button class="pr-btn" id="btn-reset">Reset</button>
         </div>
       </div>
-      <p id="you-said-label">YOU SAID</p>
-      <p id="you-said-text"></p>
-      <div id="prompt-output"></div>
-      <div id="button-row">
-        <button id="btn-edit">Edit</button>
-        <button id="btn-copy">Copy prompt</button>
+      <div class="div-line"></div>
+      <div class="you-said-block">
+        <div class="ys-label">You said</div>
+        <div class="ys-text" id="you-said-text"></div>
+      </div>
+      <div class="inner-div"></div>
+      <div class="prompt-out" id="prompt-output"></div>
+      <div class="btn-row">
+        <button class="btn-edit" id="btn-edit">Edit</button>
+        <button class="btn-copy" id="btn-copy">Copy prompt</button>
       </div>
     </div>
+
+    <!-- ERROR -->
+    <div id="panel-error" style="display:none">
+      <div class="traf">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-off"></div>
+      </div>
+      <div class="cr-error" id="error-area">
+        <div class="error-badge" style="-webkit-app-region:no-drag">⚠</div>
+        <div class="ready-text" style="margin-left:14px;-webkit-app-region:no-drag">
+          <div class="ready-title" id="error-message">Something went wrong</div>
+          <div class="ready-sub">Tap to retry</div>
+        </div>
+      </div>
+    </div>
+
   </div>
-  <div id="mode-menu"></div>
+
   <script>
     const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR' };
     const MODES = [
@@ -276,145 +352,210 @@
       { key: 'code', label: 'Code' },
     ];
 
+    const STATE_HEIGHTS = {
+      IDLE: 101,
+      THINKING: 220,
+      PROMPT_READY: 480,
+      ERROR: 101,
+    };
+
     let state = STATES.IDLE;
     let originalTranscript = '';
     let generatedPrompt = '';
-    let waveInterval = null;
-    let t = 0;
 
-    // Build 30 waveform bars on load
-    const waveform = document.getElementById('waveform');
-    for (let i = 0; i < 30; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = (Math.sin(i * 0.4) * 0.5 + 0.5) * 16 + 4 + 'px';
-      waveform.appendChild(bar);
-    }
-    const bars = waveform.querySelectorAll('.bar');
-
-    function setIdleWave() {
-      bars.forEach((b, i) => {
-        b.style.height = (Math.sin(i * 0.4) * 0.5 + 0.5) * 16 + 4 + 'px';
-        b.style.background = '#d0d0d0';
-      });
-    }
-
-    function startWaveAnim() {
-      waveInterval = setInterval(() => {
-        t++;
-        bars.forEach((b, i) => {
-          b.style.height = (Math.sin(i * 0.3 + t * 0.08) * 0.5 + 0.5) * 20 + 3 + 'px';
-          b.style.background = '#FF3B30';
-        });
-      }, 60);
-    }
-
-    function stopWaveAnim() {
-      clearInterval(waveInterval);
-      waveInterval = null;
-      setIdleWave();
-    }
+    // Animation frame handles
+    let morphAnimFrame = null;
+    let morphT = 0;
 
     function getMode() { return localStorage.getItem('mode') || 'balanced'; }
     function setMode(m) {
       localStorage.setItem('mode', m);
-      if (state === STATES.IDLE) renderRightSide();
+      if (state === STATES.IDLE) {
+        document.getElementById('mode-pill').textContent = getModeLabel();
+      }
     }
-
     function getModeLabel() {
       return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code' }[getMode()];
     }
 
-    function resize(h) { window.electronAPI.resizeWindow(h); }
+    // --- Canvas: thinking morph wave (very slow, low-amplitude breathing) ---
+    function drawMorphWave(canvas, t) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height, mid = H / 2;
+      ctx.clearRect(0, 0, W, H);
+
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, 'rgba(10,132,255,0)');
+      grad.addColorStop(0.1, 'rgba(10,132,255,0.5)');
+      grad.addColorStop(0.9, 'rgba(10,132,255,0.5)');
+      grad.addColorStop(1, 'rgba(10,132,255,0)');
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(10,132,255,0.06)';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.moveTo(0, mid);
+      for (let i = 0; i <= 100; i++) {
+        const x = (i / 100) * W;
+        const a = Math.sin(i * 0.18 + t * 0.003) * 3.5 + Math.sin(i * 0.42 + t * 0.002) * 1.5 + 0.5;
+        ctx.lineTo(x, mid + (i % 2 === 0 ? a : -a));
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(0, mid);
+      for (let i = 0; i <= 100; i++) {
+        const x = (i / 100) * W;
+        const a = Math.sin(i * 0.18 + t * 0.003) * 3.5 + Math.sin(i * 0.42 + t * 0.002) * 1.5 + 0.5;
+        ctx.lineTo(x, mid + (i % 2 === 0 ? a : -a));
+      }
+      ctx.stroke();
+    }
+
+    function startMorphAnim() {
+      const canvas = document.getElementById('morph-canvas');
+      morphT = 0;
+      function loop() {
+        morphT++;
+        drawMorphWave(canvas, morphT);
+        morphAnimFrame = requestAnimationFrame(loop);
+      }
+      morphAnimFrame = requestAnimationFrame(loop);
+    }
+
+    function stopMorphAnim() {
+      if (morphAnimFrame) cancelAnimationFrame(morphAnimFrame);
+      morphAnimFrame = null;
+    }
+
+    // Parse **Header:** lines into pt-sl spans; rest is pre-wrapped text
+    function renderPromptOutput(text) {
+      const el = document.getElementById('prompt-output');
+      el.textContent = '';
+      const lines = text.split('\n');
+      let buf = [];
+
+      function flush() {
+        const t = buf.join('\n').trim();
+        if (t) {
+          const s = document.createElement('span');
+          s.textContent = t;
+          el.appendChild(s);
+        }
+        buf = [];
+      }
+
+      for (const line of lines) {
+        const m = line.trim().match(/^\*\*([^*]+)\*\*:?\s*$/);
+        if (m) {
+          flush();
+          const h = document.createElement('span');
+          h.className = 'pt-sl';
+          h.textContent = m[1].replace(/:$/, '').trim();
+          el.appendChild(h);
+        } else {
+          buf.push(line);
+        }
+      }
+      flush();
+    }
 
     function setState(newState, payload = {}) {
       state = newState;
-      const ts = document.getElementById('transcript-section');
-      const ps = document.getElementById('prompt-section');
-      ts.style.display = 'none';
-      ps.style.display = 'none';
+
+      stopMorphAnim();
+
+      const bar = document.getElementById('bar');
+      bar.style.display = 'none';
+      ['panel-idle','panel-thinking','panel-ready','panel-error'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
 
       if (newState === STATES.IDLE) {
-        stopWaveAnim();
-        setIdleWave();
-        renderRightSide();
-        resize(80);
+        bar.style.display = '';
+        document.getElementById('panel-idle').style.display = '';
+        document.getElementById('mode-pill').textContent = getModeLabel();
+        // BUG-003-C: resize after DOM paints
+        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.IDLE));
       }
 
       if (newState === STATES.RECORDING) {
-        startWaveAnim();
-        renderRightSide();
-        ts.style.display = 'block';
-        ts.textContent = '';
-        resize(80);
+        // win is hidden by showPill() IPC — nothing to show here
+        window.electronAPI.setWindowButtonsVisible(false);
       }
 
       if (newState === STATES.THINKING) {
-        stopWaveAnim();
-        renderRightSide();
-        ts.style.display = 'block';
-        ts.textContent = originalTranscript;
+        window.electronAPI.setWindowButtonsVisible(true);
+        bar.style.display = '';
+        document.getElementById('panel-thinking').style.display = '';
+        document.getElementById('think-transcript').textContent = '';
+        startMorphAnim();
+        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.THINKING));
       }
 
       if (newState === STATES.PROMPT_READY) {
-        renderRightSide();
-        ps.style.display = 'block';
+        window.electronAPI.setWindowButtonsVisible(true);
+        bar.style.display = '';
+        document.getElementById('panel-ready').style.display = '';
         document.getElementById('you-said-text').textContent = originalTranscript;
-        document.getElementById('prompt-output').textContent = generatedPrompt;
-        resize(360);
+        renderPromptOutput(generatedPrompt);
+        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.PROMPT_READY));
       }
 
       if (newState === STATES.ERROR) {
-        stopWaveAnim();
-        renderRightSide(payload.message);
-        resize(80);
+        bar.style.display = '';
+        document.getElementById('panel-error').style.display = '';
+        document.getElementById('error-message').textContent = payload.message || 'Something went wrong';
+        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.ERROR));
       }
     }
 
-    function renderRightSide(errorMsg) {
-      const rs = document.getElementById('right-side');
-      rs.innerHTML = '';
-
-      if (state === STATES.IDLE) {
-        rs.innerHTML = `<span>${getModeLabel()}</span><span>·</span><span>⌥ Space</span>`;
-      }
-      if (state === STATES.RECORDING) {
-        rs.innerHTML = `<span class="rec-dot"></span><span style="color:#FF3B30;font-weight:500;font-size:10px;letter-spacing:.05em">REC</span><span>·</span><span>tap to stop</span>`;
-      }
-      if (state === STATES.THINKING) {
-        rs.innerHTML = `<span class="thinking-dot" style="animation-delay:0s"></span><span class="thinking-dot" style="animation-delay:.2s"></span><span class="thinking-dot" style="animation-delay:.4s"></span><span style="font-size:12px;color:rgba(0,0,0,0.4);margin-left:8px">Building your prompt</span>`;
-      }
-      if (state === STATES.ERROR) {
-        rs.innerHTML = `<span style="color:#FF3B30;font-size:12px">${errorMsg || 'Something went wrong'} — tap to retry</span>`;
-      }
-    }
-
-    // Waveform click → toggle recording
-    waveform.addEventListener('click', () => {
+    // Idle area click → start recording
+    document.getElementById('idle-area').addEventListener('click', () => {
       if (state === STATES.IDLE) startRecording();
-      else if (state === STATES.RECORDING) stopRecording();
     });
 
-    document.getElementById('content-row').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('content-row')) {
-        if (state === STATES.IDLE) startRecording();
-      }
+    // Mode pill click → open native mode menu
+    document.getElementById('mode-pill').addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.electronAPI.showModeMenu(getMode());
     });
 
-    // Error bar click → retry (back to IDLE)
-    document.getElementById('right-side').addEventListener('click', () => {
+    // Error area click → retry
+    document.getElementById('error-area').addEventListener('click', () => {
       if (state === STATES.ERROR) setState(STATES.IDLE);
     });
 
-    // Global shortcut signal from main process
+    // Pill stop/dismiss actions forwarded from main process
+    window.electronAPI.onPillAction(async ({ action }) => {
+      if (action === 'stop') {
+        stopRecording();
+      } else if (action === 'dismiss') {
+        if (mediaRecorder) {
+          mediaRecorder.stream.getTracks().forEach(t => t.stop());
+          mediaRecorder = null;
+        }
+        audioChunks = [];
+        isProcessing = false;
+        setState(STATES.IDLE);
+        await window.electronAPI.switchToMain();
+      }
+    });
+
+    // Global shortcut from main process
     window.electronAPI.onShortcutTriggered(() => {
       if (state === STATES.IDLE) startRecording();
       else if (state === STATES.RECORDING) stopRecording();
     });
 
-    // Recording
+    // --- Recording ---
     let mediaRecorder = null;
     let audioChunks = [];
+
+    let isProcessing = false;
 
     async function startRecording() {
       try {
@@ -424,19 +565,23 @@
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.start();
         setState(STATES.RECORDING);
+        await window.electronAPI.showPill(); // hides win, shows pillWin
       } catch(e) {
         setState(STATES.ERROR, { message: 'Microphone access denied' });
       }
     }
 
     async function stopRecording() {
-      if (!mediaRecorder) return;
+      if (!mediaRecorder || isProcessing) return;
+      isProcessing = true;
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(t => t.stop());
       mediaRecorder.onstop = async () => {
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const arrayBuffer = await blob.arrayBuffer();
-        setState(STATES.THINKING);
+        setState(STATES.THINKING); // DOM ready before win is shown
+        await window.electronAPI.switchToMain(); // destroy pill, show win in THINKING state
+        isProcessing = false;
         const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer);
         if (!transcribeResult.success) {
           setState(STATES.ERROR, { message: transcribeResult.error });
@@ -447,6 +592,7 @@
           setState(STATES.IDLE);
           return;
         }
+        document.getElementById('think-transcript').textContent = originalTranscript;
         const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
         if (!genResult.success) {
           setState(STATES.ERROR, { message: genResult.error?.slice(0, 60) || 'Claude error' });
@@ -461,19 +607,23 @@
     document.getElementById('btn-copy').addEventListener('click', () => {
       window.electronAPI.copyToClipboard(generatedPrompt);
       const btn = document.getElementById('btn-copy');
+      btn.classList.add('copied');
       btn.textContent = 'Copied ✓';
-      btn.style.background = '#34C759';
-      setTimeout(() => { btn.textContent = 'Copy prompt'; btn.style.background = '#007AFF'; }, 1800);
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.textContent = 'Copy prompt';
+      }, 1800);
     });
 
-    // Edit / Done toggle
+    // Edit / Done
     document.getElementById('btn-edit').addEventListener('click', () => {
       const out = document.getElementById('prompt-output');
       const btn = document.getElementById('btn-edit');
       if (btn.textContent === 'Edit') {
         out.contentEditable = 'true';
-        out.style.outline = '1.5px solid #007AFF';
+        out.style.outline = '1.5px solid rgba(10,132,255,0.6)';
         out.style.outlineOffset = '4px';
+        out.style.borderRadius = '6px';
         out.focus();
         btn.textContent = 'Done';
       } else {
@@ -489,9 +639,9 @@
       if (e.key === 'Escape') {
         const out = document.getElementById('prompt-output');
         if (out.contentEditable === 'true') {
-          out.textContent = generatedPrompt;
           out.contentEditable = 'false';
           out.style.outline = 'none';
+          renderPromptOutput(generatedPrompt);
           document.getElementById('btn-edit').textContent = 'Edit';
         } else if (state === STATES.RECORDING) {
           stopRecording();
@@ -520,41 +670,16 @@
     // Reset
     document.getElementById('btn-reset').addEventListener('click', () => setState(STATES.IDLE));
 
-    // Mode context menu
-    const modeMenu = document.getElementById('mode-menu');
-    MODES.forEach(({ key, label }) => {
-      const item = document.createElement('div');
-      item.className = 'mode-menu-item';
-      item.dataset.mode = key;
-      const check = document.createElement('span');
-      check.className = 'mode-check';
-      check.textContent = getMode() === key ? '✓' : '';
-      const txt = document.createElement('span');
-      txt.textContent = label;
-      item.appendChild(check);
-      item.appendChild(txt);
-      item.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setMode(key);
-        document.querySelectorAll('.mode-check').forEach((el) => {
-          el.textContent = el.closest('.mode-menu-item').dataset.mode === key ? '✓' : '';
-        });
-        modeMenu.style.display = 'none';
-      });
-      modeMenu.appendChild(item);
-    });
-
+    // Mode menu — native Electron menu (avoids HTML overflow clipping)
     window.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       if (state !== STATES.IDLE) return;
-      modeMenu.style.display = 'block';
-      const x = Math.min(e.clientX, window.innerWidth - 160);
-      const y = Math.max(0, e.clientY - modeMenu.offsetHeight - 4);
-      modeMenu.style.left = x + 'px';
-      modeMenu.style.top = y + 'px';
+      window.electronAPI.showModeMenu(getMode());
     });
 
-    window.addEventListener('click', () => { modeMenu.style.display = 'none'; });
+    window.electronAPI.onModeSelected((key) => {
+      setMode(key);
+    });
 
     // Init
     setState(STATES.IDLE);

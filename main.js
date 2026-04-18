@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, screen } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -10,27 +10,31 @@ const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 
 const MODE_SYSTEM_PROMPTS = {
-  balanced: 'You are a prompt engineering assistant. Given the following description, write a structured Claude prompt with: a clear role, the specific task, concise constraints, and the desired output format. Be direct and precise. Return only the prompt — no explanation.',
-  detailed: 'You are a prompt engineering assistant. Given the following description, write a thorough Claude prompt that includes: role, task, detailed constraints, edge cases to handle, output format, and one concrete example of the desired output. Return only the prompt — no explanation.',
-  concise: 'You are a prompt engineering assistant. Given the following description, write the shortest possible Claude prompt that captures the core task with only the constraints that are necessary. Strip all scaffolding and fluff. Return only the prompt — no explanation.',
-  chain: 'You are a prompt engineering assistant. Given the following description, write a chain-of-thought Claude prompt that breaks the task into explicit numbered steps Claude should work through in sequence before giving a final answer. Return only the prompt — no explanation.',
-  code: 'You are a prompt engineering assistant. Given the following description, write a Claude prompt optimised for code generation. Specify: language, function signature or interface, constraints, edge cases to handle, and expected output format. Return only the prompt — no explanation.',
+  balanced: 'You are a prompt engineering assistant. Turn the following description into a structured Claude prompt. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Constraints:**, **Output Format:**. Write the section content on the lines below each header. Make reasonable assumptions for any unspecified details. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
+  detailed: 'You are a prompt engineering assistant. Turn the following description into a detailed Claude prompt. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Detailed Constraints:**, **Edge Cases:**, **Output Format:**, **Example:**. Write content under each header. Make reasonable assumptions for any unspecified details. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
+  concise: 'You are a prompt engineering assistant. Turn the following description into the shortest possible Claude prompt that still works. Use only the bold section headers that are essential — at minimum **Role:** and **Task:**. Make reasonable assumptions. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
+  chain: 'You are a prompt engineering assistant. Turn the following description into a chain-of-thought Claude prompt. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Steps:**, **Output Format:**. Under **Steps:** write numbered steps Claude must work through before answering. Make reasonable assumptions. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
+  code: 'You are a prompt engineering assistant. Turn the following description into a Claude prompt optimised for code generation. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Language & Interface:**, **Constraints:**, **Output Format:**. Make reasonable assumptions. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
 };
 
 let claudePath = null;
 let whisperPath = null;
 let win = null;
+let pillWin = null;
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 480,
-    height: 80,
+    width: 520,
+    height: 101,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 10 },
     transparent: true,
     vibrancy: 'sidebar',
     visualEffectState: 'active',
     alwaysOnTop: true,
+    maximizable: false,
+    fullscreenable: false,
+    resizable: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -38,9 +42,7 @@ function createWindow() {
     },
   });
 
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  win.setPosition(Math.floor(width / 2 - 240), Math.floor(height - 120));
-
+  win.center();
   win.loadFile('index.html');
   return win;
 }
@@ -139,8 +141,33 @@ app.whenReady().then(() => {
 
   ipcMain.handle('resize-window', (_event, { height }) => {
     if (win) {
-      win.setContentSize(480, height);
+      win.setResizable(true);
+      win.setSize(520, height, true);
+      win.setResizable(false);
     }
+    return { ok: true };
+  });
+
+  ipcMain.handle('set-window-buttons-visible', (_event, { visible }) => {
+    if (win) win.setWindowButtonVisibility(visible);
+    return { ok: true };
+  });
+
+  ipcMain.handle('show-mode-menu', (_event, { currentMode }) => {
+    const modes = [
+      { key: 'balanced', label: 'Balanced' },
+      { key: 'detailed', label: 'Detailed' },
+      { key: 'concise', label: 'Concise' },
+      { key: 'chain', label: 'Chain' },
+      { key: 'code', label: 'Code' },
+    ];
+    const menu = Menu.buildFromTemplate(modes.map(({ key, label }) => ({
+      label,
+      type: 'radio',
+      checked: currentMode === key,
+      click: () => { win.webContents.send('mode-selected', key); },
+    })));
+    menu.popup({ window: win });
     return { ok: true };
   });
 
@@ -178,6 +205,48 @@ app.whenReady().then(() => {
     }
     return { found: false, error: 'Claude CLI not found.' };
   });
+
+  // BUG-003-A/D: pill window lifecycle
+  ipcMain.handle('show-pill', () => {
+    win.hide();
+    pillWin = new BrowserWindow({
+      width: 520,
+      height: 90,
+      transparent: true,
+      frame: false,
+      alwaysOnTop: true,
+      resizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+    pillWin.center();
+    pillWin.loadFile('pill.html');
+    pillWin.on('closed', () => { pillWin = null; });
+    return { ok: true };
+  });
+
+  ipcMain.handle('switch-to-main', () => {
+    if (pillWin) {
+      pillWin.destroy();
+      pillWin = null;
+    }
+    win.show();
+    return { ok: true };
+  });
+
+  // pill → main → win: forward stop/dismiss actions
+  ipcMain.on('pill-stop', () => {
+    if (win) win.webContents.send('pill-action', { action: 'stop' });
+  });
+
+  ipcMain.on('pill-dismiss', () => {
+    if (win) win.webContents.send('pill-action', { action: 'dismiss' });
+  });
 });
 
 app.on('will-quit', () => {
@@ -191,7 +260,10 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  // Only recreate the main window — pill window lifecycle is managed per-recording
+  if (!win || win.isDestroyed()) {
     createWindow();
+  } else if (!win.isVisible() && !pillWin) {
+    win.show();
   }
 });
