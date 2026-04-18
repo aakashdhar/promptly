@@ -283,5 +283,88 @@
         "output_tokens": 2500
       }
     }
+  },
+  {
+    "session_id": "2026-04-18-007",
+    "date": "2026-04-18T23:59:59",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 3,
+    "phase": "Phase 2 \u2014 Design system + bug fixes",
+    "input_tokens": 95000,
+    "output_tokens": 15500,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.517,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "design-implementation": {
+        "size": "L",
+        "cost_usd": 0.27,
+        "input_tokens": 40000,
+        "output_tokens": 10000
+      },
+      "bug-fixes-6-items": {
+        "size": "M",
+        "cost_usd": 0.198,
+        "input_tokens": 30000,
+        "output_tokens": 3500
+      },
+      "mode-dropdown-fix": {
+        "size": "S",
+        "cost_usd": 0.033,
+        "input_tokens": 10000,
+        "output_tokens": 500
+      },
+      "vibe-cost": {
+        "size": "S",
+        "cost_usd": 0.016,
+        "input_tokens": 15000,
+        "output_tokens": 1500
+      }
+    }
+  },
+  {
+    "session_id": "2026-04-18-008",
+    "date": "2026-04-18T23:59:59",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 5,
+    "phase": "Phase 2 \u2014 DECISION-004 + BUG-004",
+    "input_tokens": 80000,
+    "output_tokens": 12000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.42,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-05",
+      "CP-01"
+    ],
+    "task_breakdown": {
+      "DECISION-004": {
+        "size": "M",
+        "cost_usd": 0.225,
+        "input_tokens": 40000,
+        "output_tokens": 7000
+      },
+      "BUG-004": {
+        "size": "S",
+        "cost_usd": 0.098,
+        "input_tokens": 20000,
+        "output_tokens": 2500
+      },
+      "vibe-cost": {
+        "size": "S",
+        "cost_usd": 0.097,
+        "input_tokens": 20000,
+        "output_tokens": 2500
+      }
+    }
   }
 ]

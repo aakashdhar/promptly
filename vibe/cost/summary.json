@@ -1,104 +1,91 @@
 {
   "project_name": "Promptly",
-  "generated_at": "2026-04-18T23:59:00",
+  "generated": "2026-04-18",
   "model": "claude-sonnet-4-6",
-  "build_progress_pct": 53,
-  "tasks_remaining": 14,
-  "total_cost_usd": 3.533,
-  "total_sessions": 6,
+  "build_progress_pct": 91,
+  "tasks_remaining": 4,
+  "total_cost_usd": 4.47,
+  "total_sessions": 8,
+  "total_input_tokens": 865000,
+  "total_output_tokens": 128400,
+  "at_a_glance": "You have spent $4.47 across 8 sessions, all on 2026-04-18. Phase 1 was the heaviest session at $1.30 \u2014 11 tasks in one push. This session resolved the last hard architectural problem (ghost window race) by eliminating pillWin entirely and fixed 3 IDLE visual bugs, landing at $0.42. With 4 Phase 3 polish tasks left, the project is 91% done and well on track to finish under $5.",
   "phase_summary": [
     {
-      "name": "Planning",
+      "phase": "Planning",
       "status": "complete",
       "sessions": 1,
-      "cost_usd": 0.606
+      "cost_usd": 0.606,
+      "tasks": 3
     },
     {
-      "name": "Phase 1 \u2014 Foundation",
+      "phase": "Phase 1 \u2014 Foundation",
       "status": "complete",
       "sessions": 1,
-      "cost_usd": 1.3
+      "cost_usd": 1.3,
+      "tasks": 11
     },
     {
-      "name": "Phase 2 \u2014 Core features",
+      "phase": "Phase 2 \u2014 Core Features",
       "status": "active",
-      "sessions": 4,
-      "cost_usd": 1.627
+      "sessions": 6,
+      "cost_usd": 2.564,
+      "tasks": 31
     },
     {
-      "name": "Phase 3 \u2014 Polish",
+      "phase": "Phase 3 \u2014 Polish & Hardening",
       "status": "not_started",
       "sessions": 0,
-      "cost_usd": 0.0
+      "cost_usd": 0.0,
+      "tasks": 0
     }
   ],
   "feature_costs": [
     {
-      "label": "Project setup & planning",
+      "label": "Planning & architecture",
       "cost_usd": 0.606
     },
     {
-      "label": "Phase 1 foundation (Electron shell)",
+      "label": "Electron shell (Phase 1)",
       "cost_usd": 1.3
     },
     {
-      "label": "F-STATE (state machine + UI)",
+      "label": "State machine & UI skeleton",
       "cost_usd": 0.983
     },
     {
-      "label": "F-FIRST-RUN (first-run checklist)",
+      "label": "First-run setup flow",
       "cost_usd": 0.644
+    },
+    {
+      "label": "Dark glass design + bug fixes",
+      "cost_usd": 0.937
     }
   ],
-  "session_costs": [
-    {
-      "session_id": "2026-04-18-001",
-      "cost_usd": 0.606,
-      "label": "Planning"
-    },
-    {
-      "session_id": "2026-04-18-002",
-      "cost_usd": 1.3,
-      "label": "Phase 1 build"
-    },
-    {
-      "session_id": "2026-04-18-003",
-      "cost_usd": 0.47,
-      "label": "F-STATE planning"
-    },
-    {
-      "session_id": "2026-04-18-004",
-      "cost_usd": 0.513,
-      "label": "F-STATE build"
-    },
-    {
-      "session_id": "2026-04-18-005",
-      "cost_usd": 0.44,
-      "label": "F-FIRST-RUN planning"
-    },
-    {
-      "session_id": "2026-04-18-006",
-      "cost_usd": 0.204,
-      "label": "F-FIRST-RUN build"
-    }
-  ],
-  "at_a_glance": "You have spent $3.53 across 6 sessions on April 18 alone. Phase 1 was the priciest at $1.30 \u2014 11 tasks plus a phase review in one sitting. Costs have steadily declined since then: the last 4 sessions averaged $0.41, and this session (just one S-sized task) came in at $0.20. Prompt caching is still inactive \u2014 fixing that would cut every future session by 20-30%.",
   "session_narratives": {
-    "2026-04-18-001": "Kick-off session covering brainstorm, architect, vibe-new-app, and spec review. Three large planning tasks read and wrote the full SPEC.md, ARCHITECTURE.md, BRIEF.md, and PLAN.md from scratch. Expensive per-token but unavoidable setup cost.",
-    "2026-04-18-002": "The heaviest session \u2014 11 Phase 1 tasks plus a full phase review and vibe-parallel orchestration. Average $0.12/task, right at the project norm for foundation work. Parallelisation added overhead but saved wall-clock time.",
-    "2026-04-18-003": "F-STATE feature planning session: vibe-add-feature read all 5 spec files plus index.html, then generated FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md. Spec review added $0.14. Near-identical pattern to other planning sessions \u2014 consistent.",
-    "2026-04-18-004": "F-STATE build \u2014 5 tasks (FST-001 through FST-005). Steady $0.10-0.13/task throughout. Context overhead ($0.045) reflects CLAUDE.md + CODEBASE.md being loaded every turn.",
-    "2026-04-18-005": "F-FIRST-RUN feature planning. Two parallel Explore agents reading index.html, main.js, preload.js, SPEC.md, PLAN.md, CODEBASE.md added ~20K input tokens vs a single-agent approach. Spec review found and fixed 1 P1 + 2 P2 issues.",
-    "2026-04-18-006": "Lightest session of the project \u2014 one S-sized task (FRN-004) completing the F-FIRST-RUN feature, plus this cost report. The checkFirstRunCompletion() stub was replaced in a single edit; most cost came from reading session context files and running vibe-cost."
+    "2026-04-18-001": "The brainstorm-to-spec day \u2014 vibe-new-app, vibe-architect, and spec-review generated the full BRIEF, ARCHITECTURE, SPEC, and PLAN documents. Heavy output, three large planning tasks. $0.61.",
+    "2026-04-18-002": "The biggest single session \u2014 all 9 Phase 1 tasks plus the Phase 1 review and vibe-parallel orchestration, built in one push. 11 tasks at $0.12 average each. $1.30.",
+    "2026-04-18-003": "Feature planning session for the state machine (F-STATE) \u2014 vibe-add-feature generated the full FEATURE_TASKS.md and vibe-spec-review validated it. No build tasks completed. $0.47.",
+    "2026-04-18-004": "F-STATE build \u2014 all 5 state machine tasks (FST-001 through FST-005) completed: JS foundation, DOM structure, CSS tokens, resize IPC, and boot wiring. $0.51.",
+    "2026-04-18-005": "Feature planning for F-FIRST-RUN \u2014 vibe-add-feature generated the first-run spec, spec-review validated. Again no build tasks, pure planning overhead. $0.44.",
+    "2026-04-18-006": "Short build session \u2014 just FRN-004 (checkFirstRunCompletion + IDLE transition) plus a vibe-cost run. Low token session at $0.20.",
+    "2026-04-18-007": "Complete dark-glass visual redesign of index.html plus 6 production bug fixes covering traffic lights, window resize, transcript timing, waveform, and system prompts. $0.52.",
+    "2026-04-18-008": "Architectural fix session \u2014 pillWin eliminated entirely (DECISION-004): removed show-pill/hide-pill IPC, deleted pill.html, moved RECORDING panel into main win with canvas waveform and timer. Then BUG-004 fixed vibrancy (sidebar\u2192under-window + backgroundColor), stripped colored dot halos from traffic light spacers, and patched mode pill appearance. 5 tasks at $0.084 average. $0.42."
   },
   "recommendations": [
     {
       "code": "CP-05",
-      "title": "Prompt caching off \u2014 paying full price every turn",
-      "body": "Zero cache reads across all 6 sessions. CLAUDE.md, ARCHITECTURE.md, and SPEC.md are re-read from scratch on every turn. These files alone are ~15,000 tokens. Enabling Anthropic prompt caching on the stable portions of CLAUDE.md would save ~90% on those reads. The active-feature block changes per session \u2014 split it into a stable cached header and a dynamic footer.",
-      "saving": "save ~$0.10-0.15/session",
+      "title": "No prompt caching \u2014 every session pays full input price",
+      "body": "All 8 sessions show 0 cache read tokens. CLAUDE.md is read on every turn and changes frequently (active feature specs appended after each feature), preventing it from being cached. With Phase 2 now complete, the three active feature spec blocks (F-SPEECH, F-CLAUDE, F-ACTIONS) embedded in CLAUDE.md are stale and should be trimmed. Doing this before Phase 3 would reduce context overhead and unlock caching on the stable sections.",
+      "saving": "save ~$0.06\u20130.10/session",
+      "severity": "warn"
+    },
+    {
+      "code": "CP-01",
+      "title": "CLAUDE.md context bloat from completed feature specs",
+      "body": "CLAUDE.md now embeds full spec blocks for F-SPEECH, F-CLAUDE, and F-ACTIONS \u2014 all completed features. These add ~3,000\u20134,000 tokens of context overhead on every turn with no benefit. Removing or archiving these blocks to the feature folders would bring CLAUDE.md back to a lean active-session document. This is the single highest-leverage cleanup before Phase 3.",
+      "saving": "save ~$0.05\u20130.08/session",
       "severity": "warn"
     }
   ],
-  "forecast_narrative": "F-SPEECH, F-CLAUDE, and F-ACTIONS are next \u2014 each needs a planning session (~$0.44) and a build session (~$0.45-0.55). That is roughly $2.50-3.00 for Phase 2 completion. Phase 3 polish (4 tasks) should run ~$0.40-0.50. Full project total estimate: $6.40-7.00. Enabling prompt caching before F-SPEECH starts could save $0.30-0.50 off the remaining work."
+  "forecast_narrative": "Phase 3 has 4 tasks remaining \u2014 error state audit, full smoke test across all states and modes, build verification (.dmg on Apple Silicon), and distribution prep. These are review and testing tasks with minimal code writes. Based on the Phase 1 review ($0.25) and short build sessions ($0.20), expect $0.25\u20130.40 to complete Phase 3. Total project cost will land at $4.70\u20134.90 \u2014 well under $5 for a fully shipped v1."
 }

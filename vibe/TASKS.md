@@ -126,6 +126,9 @@
 ---
 
 ## What just happened
+💰 Cost tracked — Session #8: $0.42 est. · Project total: $4.47 · Trend: → stable
+   5 tasks · $0.084/task avg · vibe/cost/report-2026-04-18-session8.md
+
 ✅ DECISION-004 — pillWin eliminated; RECORDING state now inside main win:
    - panel-recording HTML + CSS added to index.html (traf, cr-rec, waveform canvas, timer, dismiss/stop buttons)
    - drawRecordingWave(), startRecTimer(), stopRecTimer() added to index.html

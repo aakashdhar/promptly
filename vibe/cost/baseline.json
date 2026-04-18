@@ -1,39 +1,39 @@
 {
-  "session_id": "2026-04-18-005",
-  "date": "2026-04-18T23:30:00",
+  "session_id": "2026-04-18-008",
+  "date": "2026-04-18T23:59:59",
   "mode": "estimate",
   "trigger": "manual",
   "model": "claude-sonnet-4-6",
-  "tasks_completed": 0,
-  "phase": "Phase 2 \u2014 F-FIRST-RUN planning",
-  "input_tokens": 113000,
-  "output_tokens": 10500,
+  "tasks_completed": 5,
+  "phase": "Phase 2 \u2014 DECISION-004 + BUG-004",
+  "input_tokens": 80000,
+  "output_tokens": 12000,
   "cache_read_tokens": 0,
   "cache_write_tokens": 0,
-  "cost_usd": 0.44,
+  "cost_usd": 0.42,
   "is_estimate": true,
   "patterns_detected": [
-    "CP-02",
-    "CP-05"
+    "CP-05",
+    "CP-01"
   ],
   "task_breakdown": {
-    "vibe-add-feature-first-run": {
-      "size": "L",
-      "cost_usd": 0.32,
-      "input_tokens": 88000,
-      "output_tokens": 8000
-    },
-    "spec-review-first-run": {
+    "DECISION-004": {
       "size": "M",
-      "cost_usd": 0.09,
+      "cost_usd": 0.225,
+      "input_tokens": 40000,
+      "output_tokens": 7000
+    },
+    "BUG-004": {
+      "size": "S",
+      "cost_usd": 0.098,
       "input_tokens": 20000,
-      "output_tokens": 2000
+      "output_tokens": 2500
     },
     "vibe-cost": {
       "size": "S",
-      "cost_usd": 0.03,
-      "input_tokens": 5000,
-      "output_tokens": 500
+      "cost_usd": 0.097,
+      "input_tokens": 20000,
+      "output_tokens": 2500
     }
   }
 }
