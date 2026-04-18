@@ -2,12 +2,15 @@
 
 const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, screen } = require('electron');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
 const { exec } = require('child_process');
 
 const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 
 let claudePath = null;
+let whisperPath = null;
 let win = null;
 
 function createWindow() {
@@ -32,13 +35,19 @@ function createWindow() {
   });
 
   win.loadFile('index.html');
+  win.webContents.openDevTools({ mode: 'detach' });
   return win;
 }
 
 app.whenReady().then(() => {
   createWindow();
 
-  // P1-006: PATH resolution
+  // PATH resolution — claude + whisper
+  exec('zsh -lc "which whisper"', (err, stdout) => {
+    whisperPath = stdout.trim() || null;
+    console.log('whisperPath:', whisperPath || 'not found');
+  });
+
   exec('zsh -lc "which claude"', (err, stdout) => {
     claudePath = stdout.trim();
     if (err || !claudePath) {
@@ -87,6 +96,34 @@ app.whenReady().then(() => {
       win.setContentSize(480, height);
     }
     return { ok: true };
+  });
+
+  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
+    if (!whisperPath) {
+      return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    }
+    const tmpFile = path.join(os.tmpdir(), `promptly-${Date.now()}.webm`);
+    const outDir = os.tmpdir();
+    const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
+    try {
+      fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
+      const transcript = await new Promise((resolve, reject) => {
+        exec(`"${whisperPath}" "${tmpFile}" --model tiny --output_format txt --output_dir "${outDir}"`, { timeout: 60000 }, (err, _stdout, stderr) => {
+          try {
+            const text = fs.readFileSync(txtFile, 'utf8').trim();
+            try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
+            resolve(text);
+          } catch {
+            reject(new Error(stderr || err?.message || 'Whisper output not found'));
+          }
+        });
+      });
+      return { success: true, transcript };
+    } catch (err) {
+      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+      return { success: false, error: err.message || 'Transcription failed' };
+    }
   });
 
   ipcMain.handle('check-claude-path', () => {

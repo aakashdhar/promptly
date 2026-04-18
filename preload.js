@@ -16,6 +16,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resizeWindow: (height) =>
     ipcRenderer.invoke('resize-window', { height }),
 
+  transcribeAudio: (arrayBuffer) =>
+    ipcRenderer.invoke('transcribe-audio', arrayBuffer),
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),
