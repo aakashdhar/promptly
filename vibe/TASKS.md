@@ -64,7 +64,7 @@
 🔄 **F-CLAUDE — Claude CLI integration + 5 prompt modes** (0/4)
    Estimated: approx. 5-6 hours (S: 2, M: 2)
    [x] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
-   [ ] FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY
+   [x] FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY
    [ ] FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update
    [ ] FCL-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md (agent use)
@@ -109,8 +109,8 @@
 ---
 
 ## What just happened
-✅ FCL-001 done — generate-prompt IPC: MODE_SYSTEM_PROMPTS constant (5 exact strings), spawn(claudePath, ['--print', '--system-prompt', systemPrompt, '--no-session-persistence']) with transcript via stdin, 30s timeout with resolved guard, eslint.config.js updated with setTimeout/clearTimeout globals.
+✅ FCL-002 done — replaced F-CLAUDE setTimeout stub in mediaRecorder.onstop with real generatePrompt IPC call; transitions to ERROR on failure or PROMPT_READY on success with generatedPrompt set.
 
 ## What's next
-⬜ FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY.
+⬜ FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update.
 Say "next" to begin.

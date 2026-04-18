@@ -110,7 +110,7 @@ ipcMain.handle('generate-prompt', (_event, { transcript, mode }) => {
 ---
 
 ### FCL-002 · Replace F-CLAUDE setTimeout stub in `mediaRecorder.onstop`
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3, FEATURE_SPEC.md#5
 - **Dependencies**: FCL-001
