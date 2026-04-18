@@ -1,11 +1,11 @@
 # SPEC_INDEX — Promptly
 > Compressed map of SPEC.md. Read each session. Fetch the full section you need.
-> Last synced: 2026-04-18
+> Last synced: 2026-04-18 (D-004)
 
 ## Overview — macOS floating bar: speak loosely → get tight structured Claude prompt → SPEC.md#overview
 
 ## Features — 9 features (v1)
-- F1 Floating bar: always-on-top frameless Electron window, vibrancy, system font → SPEC.md#f1
+- F1 Floating bar: always-on-top, titleBarStyle: hiddenInset (traffic lights), vibrancy, 30-bar waveform (IDLE static grey / RECORDING animated red) — D-004 → SPEC.md#f1
 - F2 Global shortcut: ⌥Space (fallback ⌃\`) from any app → SPEC.md#f2
 - F3 Speech recording: MediaRecorder + Whisper CLI, "Recording…" indicator, red dot — D-003 replaced webkitSpeechRecognition → SPEC.md#f3
 - F4 Claude CLI + 5 modes: generate-prompt IPC, login-shell PATH, mode right-click → SPEC.md#f4

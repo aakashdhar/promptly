@@ -1,7 +1,7 @@
 # SPEC.md — Promptly
 > Created: 2026-04-18 | Source: BRIEF.md + architect: decisions
 > Living document — changes only via `change:` command. Strikethrough for removed items.
-> ⚠️ Last updated: 2026-04-18 · Scope change D-003: speech engine replaced webkitSpeechRecognition → MediaRecorder + Whisper CLI · Build stage: Mid-phase
+> ⚠️ Last updated: 2026-04-18 · Scope change D-004: traffic lights (titleBarStyle: hiddenInset) + 30-bar visual waveform added to F1/IDLE/RECORDING · Build stage: Between tasks
 
 ---
 
@@ -22,16 +22,27 @@ Promptly is a macOS floating bar that turns spoken words into structured Claude 
 ## Core features
 
 ### F1 — Floating bar window
-**What:** Always-on-top frameless window at bottom-centre of screen with macOS vibrancy frosted-glass effect.
+**What:** Always-on-top window at bottom-centre of screen with macOS vibrancy frosted-glass effect, native traffic lights, and a 30-bar visual waveform.
+
+> ~~Original: `frame: false` — no native title bar~~
+> Changed 2026-04-18 (D-004): `titleBarStyle: 'hiddenInset'` + `trafficLightPosition: { x: 12, y: 10 }` — traffic lights were in BRIEF.md and omitted from spec at planning time.
+> Added 2026-04-18 (D-004): 30-bar animated waveform centred in IDLE and RECORDING states.
 
 **Acceptance criteria:**
 - [ ] Window is always-on-top (Electron `alwaysOnTop: true`)
-- [ ] Frameless — no native title bar
+- [ ] `titleBarStyle: 'hiddenInset'` — traffic lights visible, inset into window content
+- [ ] `trafficLightPosition: { x: 12, y: 10 }` — traffic lights positioned in top-left
+- [ ] Bar content has left padding (~70px) so content does not overlap traffic light area
 - [ ] Vibrancy: `vibrancy: 'sidebar'` with `rgba(255,255,255,0.85)` background fallback
+- [ ] `transparent: true` on BrowserWindow so vibrancy + rounded corners render correctly
 - [ ] Window radius: 14px, inner elements: 8px
 - [ ] System font only: `-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
 - [ ] Window opens centred horizontally near bottom of screen
 - [ ] Electron `contextIsolation: true`, `nodeIntegration: false` enforced
+- [ ] 30-bar waveform centred in IDLE bar — static grey bars, no animation
+- [ ] 30-bar waveform centred in RECORDING bar — animated red bars driven by sine wave + noise via `setInterval`
+- [ ] Waveform animation starts when `setState('RECORDING')` is called; stops when recording ends
+- [ ] Waveform is visual only — not driven by actual audio data (Whisper is post-processing only)
 
 ### F2 — Global shortcut
 **What:** ⌥Space activates the bar from anywhere on the system. Falls back to ⌃` if taken.
@@ -256,17 +267,17 @@ No navigation — single persistent floating bar. UI is driven entirely by a 6-s
 
 #### IDLE state
 - **Purpose:** Rest state — app is ready
-- **Layout:** Single bar row: mode label (left) · shortcut hint (centre) · [reserved right]
-- **Key components:** Mode label pill, shortcut hint text, blinking cursor hint
+- **Layout:** Single bar row: traffic lights (left, inset) · mode label · 30-bar static waveform (centred) · shortcut hint
+- **Key components:** Mode label pill, 30 static grey bars, shortcut hint text
 - **User interactions:** Press shortcut → RECORDING; right-click → mode context menu
 - **States:** Normal, shortcut-conflict notice overlay
 
 #### RECORDING state
-- **Purpose:** Actively recording speech with live transcript
-- **Layout:** Bar expands slightly; red recording dot (left) · live transcript · stop hint
-- **Key components:** Red blinking dot, live transcript text, cursor animation
+- **Purpose:** Actively recording speech
+- **Layout:** Bar expands slightly; traffic lights (left) · red blinking dot · 30-bar animated waveform (centred) · stop hint
+- **Key components:** Red blinking dot, 30 animated red bars (sine + noise), stop hint text
 - **User interactions:** Press shortcut again → stop recording → THINKING
-- **States:** Live transcript updating, silence detected (auto-stop)
+- **States:** Waveform animating
 
 #### THINKING state
 - **Purpose:** Claude CLI is running — waiting for response
