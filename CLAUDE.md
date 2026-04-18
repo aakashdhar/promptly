@@ -158,6 +158,53 @@ Never let CODEBASE.md drift more than one task behind.
 
 ---
 
+---
+
+### Active Feature: F-STATE (State machine + full UI skeleton)
+> Folder: vibe/features/2026-04-18-state-machine/ | Added: 2026-04-18
+
+**Feature summary**: Build all 6 state DOM panels, setState(), module vars, localStorage wrappers, CSS, and window resize IPC. No actual speech/Claude/clipboard logic.
+**Files in scope**: `index.html` (major), `main.js` (add resize-window IPC), `preload.js` (expose resizeWindow)
+**Files out of scope**: `package.json`, `entitlements.plist`, `eslint.config.js`
+
+**Conventions** (from vibe/ARCHITECTURE.md):
+- `setState(newState, payload)` is the ONLY function that mutates DOM visibility — never toggle `hidden` directly
+- All elements accessed by `id` — never querySelector chains
+- `textContent` for all dynamic text — never `innerHTML` with user content
+- localStorage only via `getMode()` / `setMode()` / `getFirstRunComplete()` / `setFirstRunComplete()`
+- IPC: renderer calls `window.electronAPI.resizeWindow(height)` — never `ipcRenderer` directly
+- Transitions: `opacity 150ms ease` only — no transforms, bounces, slides
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run manual smoke test after every change ·
+        keep changes additive · update CODEBASE.md for new functions/IDs/IPC (FST-005)
+
+Ask first: changing any element ID listed in FEATURE_SPEC.md §3 · adding IPC channels beyond resize-window ·
+           changing STATE_HEIGHTS values · adding localStorage keys beyond mode/firstRunComplete
+
+Never: use innerHTML with payload content · access localStorage directly · touch files not in scope ·
+       add runtime npm dependencies · toggle DOM visibility outside setState()
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Manual smoke test: exercise affected state(s)
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add main.js preload.js index.html
+   git commit -m "feat(state-machine): [FST-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FST-00X] done — state-machine"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
 ## Never list (P0 — block commit immediately)
 
 - Adding any runtime npm dependency
