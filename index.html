@@ -689,6 +689,18 @@
           }
         });
 
+        // Regenerate
+        document.getElementById('action-regenerate').addEventListener('click', async () => {
+          setState('THINKING');
+          const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
+          if (!genResult.success) {
+            setState('ERROR', { message: genResult.error });
+            return;
+          }
+          generatedPrompt = genResult.prompt;
+          setState('PROMPT_READY', { prompt: generatedPrompt });
+        });
+
         // Boot gate — first-run setup or direct IDLE
         if (getFirstRunComplete()) {
           setState('IDLE');
