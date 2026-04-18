@@ -86,6 +86,8 @@ ipcMain.handle('generate-prompt', (_event, { transcript, mode }) => {
 });
 ```
 
+**⚠️ Verify with `claude --help` before implementing.** The spawn call shown is the intended pattern (system prompt as `-p` arg, transcript via stdin). Exact flags must be confirmed at implementation time — adjust args to match actual CLI interface if it differs.
+
 **Key decisions:**
 - `spawn` not `exec` — transcript passed via stdin, not shell argument; avoids any injection risk
 - `spawn` destructured inline (not at top of file) to keep diff minimal — only this handler needs it

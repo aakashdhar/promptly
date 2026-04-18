@@ -111,6 +111,13 @@ Key fixes applied:
 
 ---
 
+## 2026-04-18 — Spec review: add-feature (F-CLAUDE)
+> P0: 0 · P1: 1 fixed · P2: 1 logged
+> Action: P1-001 fixed — claude --help verification step added to FCL-001; THINKING text mismatch logged for Phase 3
+> Report: vibe/spec-reviews/2026-04-18-add-feature-claude-integration.md
+
+---
+
 ## — Feature Start: F-CLAUDE (Claude CLI integration + 5 prompt modes) — 2026-04-18
 > Folder: vibe/features/2026-04-18-claude-integration/
 > Replaces generate-prompt stub with real spawn call; adds MODE_SYSTEM_PROMPTS; adds mode context menu; wires PROMPT_READY.

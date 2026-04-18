@@ -16,6 +16,19 @@
 
 **What to do**:
 
+0. **Verify claude CLI interface first** — before writing any spawn code, run:
+   ```
+   "<resolved_claudePath>" --help
+   ```
+   Identify: (1) the flag for non-interactive/print mode, (2) the flag for system prompt (if separate from user message), (3) whether user message is passed as a positional argument or via stdin.
+
+   The spawn call shown below assumes `-p <systemPrompt>` sets the system prompt and transcript is sent via stdin. **Adjust the spawn args to match the actual CLI interface if it differs.** Common alternatives:
+   - `spawn(claudePath, ['--system', systemPrompt, '-p', transcript])` — system + message both as args
+   - `spawn(claudePath, ['-p', systemPrompt + '\n\n' + transcript])` — concatenated single arg
+   - `spawn(claudePath, ['--print', '--system', systemPrompt])` + stdin — fully stdin-driven
+
+   Do not proceed to the code steps until you have confirmed the correct invocation.
+
 1. Add `MODE_SYSTEM_PROMPTS` constant just before the `generate-prompt` handler (exact strings from SPEC.md F4 — do not alter):
 
 ```js
