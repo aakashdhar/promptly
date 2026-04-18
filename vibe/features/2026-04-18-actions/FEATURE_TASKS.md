@@ -61,7 +61,7 @@ document.getElementById('action-copy').addEventListener('click', async () => {
 ---
 
 ### FAC-002 · Edit mode — contenteditable, Escape cancel, Done save
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (Edit), SPEC.md#F6
 - **Dependencies**: None
