@@ -299,6 +299,8 @@
       let generatedPrompt = '';
       let cliOk = false;
       let micOk = false;
+      let recognition = null;
+      let isRecording = false;
 
       const STATE_HEIGHTS = {
         FIRST_RUN: 120,
@@ -405,6 +407,25 @@
           setFirstRunComplete(true);
           setTimeout(() => setState('IDLE'), 600);
         }
+      }
+
+      function startRecording() {
+        if (typeof webkitSpeechRecognition === 'undefined') {
+          setState('ERROR', { message: 'Speech recognition not available' });
+          return;
+        }
+        transcript = '';
+        document.getElementById('recording-transcript').textContent = 'Listening…';
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.onresult = null;  // wired in FPH-002
+        recognition.onerror = null;   // wired in FPH-002
+        recognition.onend = null;     // wired in FPH-002
+        recognition.start();
+        isRecording = true;
+        setState('RECORDING');
       }
 
       document.addEventListener('DOMContentLoaded', () => {
