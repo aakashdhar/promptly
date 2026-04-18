@@ -7,7 +7,7 @@
 
 ## Current state
 
-**Phase:** Phase 2 in progress — F-STATE (4/5 tasks done)
+**Phase:** Phase 2 in progress — F-STATE complete (5/5) — F-FIRST-RUN or F-SPEECH next
 **Files written:** 6 source files + eslint.config.js
 
 ---

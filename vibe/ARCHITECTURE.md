@@ -73,7 +73,7 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 - All state transitions go through a single `setState(newState, payload)` function.
 - `setState` is the only place DOM class changes and element visibility are toggled.
 - No state stored outside `currentState` + `localStorage` (mode only).
-- localStorage accessed only via two wrapper functions: `getMode()` and `setMode()` — never `localStorage.*` directly in other code.
+- localStorage accessed only via four wrapper functions: `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()` — never `localStorage.*` directly in other code.
 - `transcript` and `generatedPrompt` are plain module-scope variables — not in localStorage, not in DOM attributes.
 - The `originalTranscript` is captured once at recording stop and never mutated — regenerate always uses it.
 
@@ -115,6 +115,7 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | renderer → main | `generate-prompt` | Send transcript + mode, returns Claude output |
 | renderer → main | `copy-to-clipboard` | Write string to system clipboard |
 | renderer → main | `check-claude-path` | Returns resolved claude binary path or error |
+| renderer → main | `resize-window` | Resize BrowserWindow height per state (STATE_HEIGHTS) |
 | main → renderer | `shortcut-triggered` | Global ⌥Space / ⌃\` fired from outside app |
 | main → renderer | `shortcut-conflict` | Primary shortcut taken, fallback active |
 

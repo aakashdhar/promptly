@@ -98,11 +98,16 @@
 ---
 
 ## What just happened
-✅ F-STATE complete — all 5 tasks done via parallel execution (3 waves).
-   Wave 1 (parallel): FST-002 DOM + FST-004 IPC
-   Wave 2: FST-003 CSS
-   Wave 3: FST-005 boot sequence + CODEBASE.md
-   App boots to IDLE, shortcut cycles states, window resizes per state.
+✅ F-STATE reviewed — Score 7.9/10 (B) — 0 P0, 1 P1, 4 P2, 3 P3
+   Gate: PASS — no P0 issues.
+   Report: vibe/reviews/f-state-review.md | Backlog updated: vibe/reviews/backlog.md
+   Key findings: ARCHITECTURE.md IPC table missing resize-window (BL-007, P1);
+   conflict-notice direct DOM mutation outside setState() (BL-008, P2 latent bug).
+💰 Cost tracked — Session #4: $0.513 est. | Project total: $2.89 | Trend: → stable
+   vibe/cost/report-2026-04-18-session4.md
 
 ## What's next
-Run `review: F-STATE` to gate this feature before starting F-FIRST-RUN or F-SPEECH.
+F-STATE gate passed. Choose next feature:
+- **F-FIRST-RUN** — First-run setup checklist (can run in parallel with F-SPEECH)
+- **F-SPEECH** — Speech recording (can run in parallel with F-FIRST-RUN)
+Run `feature: first-run` or `feature: speech-recording` to plan. Or say "next" to start F-FIRST-RUN (build order 2, recommended first).
