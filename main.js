@@ -68,10 +68,8 @@ function resolveClaudePath() {
     exec('zsh -lc "which claude"', (err, stdout) => {
       const p = stdout.trim();
       if (err || !p) {
-        console.log('claudePath: not resolved —', err?.message);
         resolve(null);
       } else {
-        console.log('claudePath:', p);
         resolve(p);
       }
     });
@@ -82,19 +80,14 @@ function registerShortcut() {
   const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
     win.webContents.send('shortcut-triggered');
   });
-  if (primaryRegistered) {
-    console.log('Shortcut registered:', SHORTCUT_PRIMARY);
-  } else {
+  if (!primaryRegistered) {
     const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
       win.webContents.send('shortcut-triggered');
     });
     if (fallbackRegistered) {
-      console.log('Shortcut registered (fallback):', SHORTCUT_FALLBACK);
       win.webContents.on('did-finish-load', () => {
         win.webContents.send('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
       });
-    } else {
-      console.log('Shortcut registration failed for both', SHORTCUT_PRIMARY, 'and', SHORTCUT_FALLBACK);
     }
   }
 }
@@ -135,7 +128,6 @@ app.whenReady().then(async () => {
 
   exec('zsh -lc "which whisper"', (err, stdout) => {
     whisperPath = stdout.trim() || null;
-    console.log('whisperPath:', whisperPath || 'not found');
   });
 
   splashWin = new BrowserWindow({
