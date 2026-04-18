@@ -121,6 +121,7 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | renderer → main | `set-window-buttons-visible` | Show/hide native traffic light buttons — hidden during RECORDING |
 | renderer → main | `splash-done` | Splash complete — hide splashWin, show main win, register shortcut |
 | renderer → main | `splash-check-cli` | Check if claudePath resolved — returns `{ ok, path }` |
+| renderer → main | `splash-check-whisper` | Check if whisperPath resolved — returns `{ ok, path }` |
 | renderer → main | `splash-open-url` | Open install URL in system browser (https:// only) |
 | renderer → main | `request-mic` | Reserved for future mic permission IPC (currently no-op) |
 | main → renderer | `shortcut-triggered` | Global ⌥Space / ⌃\` fired from outside app |
