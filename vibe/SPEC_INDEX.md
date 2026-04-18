@@ -7,7 +7,7 @@
 ## Features — 9 features (v1)
 - F1 Floating bar: always-on-top frameless Electron window, vibrancy, system font → SPEC.md#f1
 - F2 Global shortcut: ⌥Space (fallback ⌃\`) from any app → SPEC.md#f2
-- F3 Speech recording: webkitSpeechRecognition, live transcript, red dot → SPEC.md#f3
+- F3 Speech recording: MediaRecorder + Whisper CLI, "Recording…" indicator, red dot — D-003 replaced webkitSpeechRecognition → SPEC.md#f3
 - F4 Claude CLI + 5 modes: generate-prompt IPC, login-shell PATH, mode right-click → SPEC.md#f4
 - F5 Copy: clipboard write, green flash 1.8s → SPEC.md#f5
 - F6 Edit: contenteditable, Escape cancels, Done saves → SPEC.md#f6
@@ -19,7 +19,7 @@
 
 ## Boundaries — Out of scope: dark mode, history, auto-paste, tray icon, multi-language, accounts, custom shortcuts, Windows/Linux → SPEC.md#out-of-scope
 
-## Technical — Stack: Electron v31 + Vanilla JS/HTML/CSS + Web Speech API + claude -p CLI · Data: in-memory vars + localStorage (mode, firstRunComplete) · IPC: 5 channels
+## Technical — Stack: Electron v31 + Vanilla JS/HTML/CSS + MediaRecorder + Whisper CLI + claude -p CLI · Data: in-memory vars + localStorage (mode, firstRunComplete) · IPC: 6 channels
 
 ## Done condition — Conformance: 12 items → SPEC.md#conformance-checklist
 

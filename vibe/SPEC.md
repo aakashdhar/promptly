@@ -1,6 +1,7 @@
 # SPEC.md — Promptly
 > Created: 2026-04-18 | Source: BRIEF.md + architect: decisions
 > Living document — changes only via `change:` command. Strikethrough for removed items.
+> ⚠️ Last updated: 2026-04-18 · Scope change D-003: speech engine replaced webkitSpeechRecognition → MediaRecorder + Whisper CLI · Build stage: Mid-phase
 
 ---
 
@@ -42,15 +43,22 @@ Promptly is a macOS floating bar that turns spoken words into structured Claude 
 - [ ] Shortcut hint visible in IDLE state at all times
 
 ### F3 — Speech recording
-**What:** Tap shortcut → bar enters RECORDING state. Live transcript shown as user speaks. Tap again or silence → stops.
+**What:** Tap shortcut → bar enters RECORDING state. Audio recorded locally via MediaRecorder. Tap again → stops, audio sent to Whisper CLI for transcription, transcript returned as `originalTranscript`.
+
+> ~~Original: webkitSpeechRecognition, live transcript~~
+> Changed 2026-04-18 (D-003): MediaRecorder + Whisper CLI — webkitSpeechRecognition fails in Electron with network error (no bundled Google API key)
 
 **Acceptance criteria:**
-- [ ] `webkitSpeechRecognition` initialised with `continuous: true`, `interimResults: true`
-- [ ] Live transcript updates in real time with blinking cursor animation
+- [ ] `getUserMedia({ audio: true })` opens mic stream at recording start
+- [ ] `MediaRecorder` records audio chunks into `audioChunks` array
+- [ ] RECORDING state shows "Recording…" — no live transcript (Whisper is post-processing only)
 - [ ] Recording indicator dot shown (red `--color-recording`)
-- [ ] Stops on second tap of shortcut or manual stop
+- [ ] Stops on second tap of shortcut
+- [ ] On stop: audio blob sent via `transcribe-audio` IPC → Whisper CLI transcribes → result set as `originalTranscript`
 - [ ] `originalTranscript` captured once at stop — never mutated after
 - [ ] If mic permission denied → ERROR state with message "Microphone access denied"
+- [ ] If Whisper returns empty transcript → ERROR "No speech detected — try again"
+- [ ] If Whisper CLI not found → ERROR "Whisper not found — install via pip install openai-whisper"
 
 ### F4 — Claude CLI integration + 5 prompt modes
 **What:** Speech transcript sent to `claude -p` with a mode-specific system prompt. Returns a structured prompt.
@@ -150,7 +158,7 @@ The user's speech transcript is appended after the system prompt as the user mes
 |-------|--------|--------|
 | Shell | Electron v31+ | Native macOS window APIs, .dmg distribution |
 | Frontend | Vanilla HTML + CSS + JS, single `index.html` | Zero build step, zero runtime deps |
-| Speech | Web Speech API (`webkitSpeechRecognition`) | Native macOS engine, private, no API key |
+| Speech | `getUserMedia` + `MediaRecorder` + Whisper CLI | Local transcription, offline, no API key — webkitSpeechRecognition requires Google API key not bundled in Electron |
 | Prompt gen | `claude -p` via `child_process` | Zero setup for Claude Code users |
 | IPC | Electron ipcMain + preload.js contextBridge | Sandboxed renderer → main |
 | Storage | localStorage | Mode only — nothing sensitive |
@@ -190,6 +198,7 @@ No database. All data is in-memory or localStorage.
 | renderer → main | `generate-prompt` | `{ transcript, mode }` | `{ success, prompt, error }` |
 | renderer → main | `copy-to-clipboard` | `{ text }` | `{ success }` |
 | renderer → main | `check-claude-path` | — | `{ found, path, error }` |
+| renderer → main | `transcribe-audio` | `{ audioData: ArrayBuffer }` | `{ success, transcript, error }` |
 | main → renderer | `shortcut-triggered` | — | — |
 | main → renderer | `shortcut-conflict` | `{ fallback }` | — |
 
