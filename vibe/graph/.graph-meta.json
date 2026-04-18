@@ -1,12 +1,21 @@
 {
   "version": 2,
   "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-18T13:36:46Z",
-  "update_count": 0,
-  "mode": "build",
+  "last_updated": "2026-04-19T00:00:00Z",
+  "update_count": 1,
+  "mode": "incremental",
+  "files_updated_this_run": 3,
   "nodes_planned": 0,
   "nodes_built": 7,
+  "nodes_deleted": 2,
   "project": "promptly",
+  "inferred_to_extracted_this_run": 5,
+  "rationale_nodes_added": 5,
+  "concepts_built": 7,
+  "concepts_deleted": [
+    "history",
+    "language"
+  ],
   "god_nodes": [
     {
       "file": "preload.js",
@@ -14,7 +23,7 @@
       "concept": "foundation",
       "type": "electron-preload",
       "risk": "LOW",
-      "note": "Used as preload for both win and splashWin; exposes all IPC to both renderers"
+      "note": "Exposes all IPC to both renderers; any new IPC channel requires a preload.js change"
     },
     {
       "file": "main.js",
@@ -22,7 +31,7 @@
       "concept": "foundation",
       "type": "electron-main",
       "risk": "LOW",
-      "note": "Loads preload.js, index.html, splash.html; handles all IPC"
+      "note": "Loads preload.js, index.html, splash.html; handles all IPC \u2014 13 handle channels + 4 send channels"
     },
     {
       "file": "index.html",
@@ -30,20 +39,47 @@
       "concept": "foundation",
       "type": "renderer-html",
       "risk": "LOW",
-      "note": "Loaded by main.js; consumes preload.js via window.electronAPI"
+      "note": "Loaded by main.js; consumes preload.js via window.electronAPI; all 5 UI states live here"
     }
   ],
-  "god_nodes_computed_at": "2026-04-18T13:36:46Z",
+  "god_nodes_computed_at": "2026-04-19T00:00:00Z",
+  "extracted_edges": 16,
+  "inferred_edges": 8,
   "ambiguous_count": 1,
+  "ambiguous_edges": 1,
   "ambiguous_files": [
     {
       "file": "index.html",
-      "issue": "Concept ownership unclear — all 4 UI features (state-machine, speech-recording, claude-integration, actions) write to this file",
-      "action": "Assigned to foundation as shared UI infrastructure; secondary_concepts lists all features"
+      "issue": "Concept ownership ambiguous \u2014 all UI features write to this file",
+      "action": "Assigned to foundation as shared UI infrastructure; secondary_concepts lists active features"
     }
   ],
-  "extracted_edges": 11,
-  "inferred_edges": 8,
-  "ambiguous_edges": 1,
-  "rationale_nodes": 5
+  "rationale_nodes": 10,
+  "changes_this_update": {
+    "main.js": [
+      "nativeTheme added",
+      "createTray/updateTrayMenu added",
+      "get-theme IPC handle added",
+      "theme-changed IPC send added",
+      "language param removed from transcribe-audio",
+      "tray var added"
+    ],
+    "preload.js": [
+      "getTheme/onThemeChanged added",
+      "showLanguageMenu/onLanguageSelected removed",
+      "transcribeAudio signature simplified"
+    ],
+    "index.html": [
+      "body.light CSS block added",
+      "getTheme/onThemeChanged wired at boot",
+      "STATES.HISTORY removed",
+      "F-HISTORY JS removed",
+      "F-LANGUAGE JS removed",
+      "language-pill removed"
+    ]
+  },
+  "concepts_added": [
+    "dark-mode",
+    "tray"
+  ]
 }

@@ -3,6 +3,7 @@
     "version": 2,
     "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
     "built_at": "2026-04-18T13:36:46Z",
+    "last_updated": "2026-04-19T00:00:00Z",
     "project": "promptly"
   },
 
@@ -19,7 +20,7 @@
       { "file": "index.html",        "state": "built", "source": "AMBIGUOUS","confidence": 0.50 }
     ],
     "depends_on": [],
-    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run"],
+    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray"],
     "tasks_complete": 9,
     "tasks_total": 9,
     "phase": "Phase 1 — complete",
@@ -29,10 +30,10 @@
   "state-machine": {
     "state": "built",
     "type": "feature",
-    "description": "5-state UI state machine (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR), CSS tokens, DOM structure, window resize IPC",
+    "description": "5-state UI state machine (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR), CSS tokens, DOM structure, window resize IPC. HISTORY state was added (F-HISTORY) then removed (deferred to React migration).",
     "files": [
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md Touches field" },
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FST-004: resize-window IPC channel" }
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "resize-window IPC channel" }
     ],
     "depends_on": ["foundation"],
     "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run"],
@@ -47,9 +48,9 @@
     "type": "feature",
     "description": "Launch-time splash screen with CLI + mic checks before main bar shows; replaces in-bar FIRST_RUN state (D-007)",
     "files": [
-      { "file": "splash.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "D-007: splash.html is the first-run screen, separate splashWin BrowserWindow" },
-      { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "splash-done, splash-check-cli, splash-open-url, request-mic IPC channels" },
-      { "file": "index.html",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FRN tasks touched index.html; FIRST_RUN state later removed (D-007)" }
+      { "file": "splash.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "index.html",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation", "state-machine"],
     "depended_on_by": [],
@@ -62,11 +63,11 @@
   "speech-recording": {
     "state": "built",
     "type": "feature",
-    "description": "MediaRecorder audio capture → Whisper CLI transcription → originalTranscript captured once; transitions to THINKING",
+    "description": "MediaRecorder audio capture → Whisper CLI transcription (--language en hardcoded) → originalTranscript captured once; transitions to THINKING",
     "files": [
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md Touches" },
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FPH-004: transcribe-audio IPC channel in main.js" },
-      { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FPH-004: transcribeAudio exposed via contextBridge" }
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribe-audio IPC channel" },
+      { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribeAudio(arrayBuffer) exposed via contextBridge" }
     ],
     "depends_on": ["foundation", "state-machine"],
     "depended_on_by": ["claude-integration", "actions"],
@@ -74,16 +75,16 @@
     "tasks_total": 5,
     "phase": "Phase 2 — complete",
     "feature_folder": "vibe/features/2026-04-18-speech-recording",
-    "notes": "Originally built with webkitSpeechRecognition (FPH-001/002), retrofitted to MediaRecorder + Whisper (FPH-001-R/002-R)"
+    "notes": "Originally built with webkitSpeechRecognition, retrofitted to MediaRecorder + Whisper. Language flag removed 2026-04-19 — hardcoded to en."
   },
 
   "claude-integration": {
     "state": "built",
     "type": "feature",
-    "description": "Claude CLI spawn via generate-prompt IPC; 5 prompt modes (balanced/detailed/concise/chain/code); right-click mode context menu",
+    "description": "Claude CLI spawn via generate-prompt IPC; 6 prompt modes (balanced/detailed/concise/chain/code/design); right-click mode context menu",
     "files": [
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FCL-001: generate-prompt + show-mode-menu IPC in main.js; MODE_CONFIG constant" },
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FCL-002+003: generatePrompt call + mode menu handler in index.html" }
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation", "state-machine", "speech-recording"],
     "depended_on_by": ["actions"],
@@ -98,7 +99,7 @@
     "type": "feature",
     "description": "PROMPT_READY action buttons: Copy (clipboard + green flash 1.8s), Edit (contenteditable + Escape/Done), Regenerate (originalTranscript re-run)",
     "files": [
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "vibe/features/2026-04-18-actions/FEATURE_TASKS.md Touches — index.html only" }
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation", "state-machine", "claude-integration"],
     "depended_on_by": [],
@@ -106,5 +107,70 @@
     "tasks_total": 4,
     "phase": "Phase 2 — complete",
     "feature_folder": "vibe/features/2026-04-18-actions"
+  },
+
+  "dark-mode": {
+    "state": "built",
+    "type": "feature",
+    "description": "macOS dark/light mode support: body.light CSS token overrides for all states, nativeTheme IPC (get-theme + theme-changed), applied at boot and on system change",
+    "files": [
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "nativeTheme import, get-theme IPC handler, nativeTheme.on('updated') → theme-changed send" },
+      { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "getTheme() and onThemeChanged() exposed via contextBridge" },
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "body.light CSS block + getTheme().then() at boot + onThemeChanged listener" }
+    ],
+    "depends_on": ["foundation"],
+    "depended_on_by": [],
+    "tasks_complete": 3,
+    "tasks_total": 3,
+    "phase": "Phase 4 — complete 2026-04-19",
+    "notes": "body.light toggled orthogonally to app state — never routed through setState()"
+  },
+
+  "tray": {
+    "state": "built",
+    "type": "feature",
+    "description": "macOS menu bar tray icon: Show/Hide + Quit menu, app stays alive when window closed, Dock icon hidden",
+    "files": [
+      { "file": "main.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "createTray(), updateTrayMenu(), tray var, app.dock.hide(), window-all-closed updated" }
+    ],
+    "depends_on": ["foundation"],
+    "depended_on_by": [],
+    "tasks_complete": 3,
+    "tasks_total": 3,
+    "phase": "Phase 4 — complete 2026-04-19"
+  },
+
+  "history": {
+    "state": "deleted",
+    "type": "feature",
+    "description": "Prompt history: saveToHistory/loadHistory (capped at 20), HISTORY state panel, history pill in IDLE, btn in PROMPT_READY. REMOVED 2026-04-19.",
+    "deletion_reason": "Deferred to React migration — localStorage history schema would create backwards-compatibility debt in new stack",
+    "deletion_date": "2026-04-19",
+    "files": [
+      { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0, "evidence": "All history CSS, DOM, JS removed in feat(history): remove F-HISTORY commit" }
+    ],
+    "depends_on": ["foundation", "state-machine"],
+    "depended_on_by": [],
+    "tasks_complete": 4,
+    "tasks_total": 4,
+    "phase": "Phase 4 — removed before shipping"
+  },
+
+  "language": {
+    "state": "deleted",
+    "type": "feature",
+    "description": "Multi-language speech: LANGUAGES constant (12 entries), language pill in IDLE, Whisper --language flag, show-language-menu IPC. REMOVED 2026-04-19.",
+    "deletion_reason": "Whisper tiny model non-English transcription quality was unusable — output bore no resemblance to spoken input",
+    "deletion_date": "2026-04-19",
+    "files": [
+      { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",    "state": "deleted", "source": "EXTRACTED", "confidence": 1.0, "evidence": "show-language-menu IPC removed; transcribe-audio language param removed" },
+      { "file": "preload.js", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0, "evidence": "showLanguageMenu + onLanguageSelected removed" }
+    ],
+    "depends_on": ["foundation", "speech-recording"],
+    "depended_on_by": [],
+    "tasks_complete": 3,
+    "tasks_total": 3,
+    "phase": "Phase 4 — removed before shipping"
   }
 }
