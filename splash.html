@@ -209,12 +209,18 @@ html, body {
       </div>
       <div class="sep"></div>
       <div class="check-item">
+        <div class="check-icon" id="icon-whisper"></div>
+        <span class="check-label" id="label-whisper">Whisper</span>
+      </div>
+      <div class="sep"></div>
+      <div class="check-item">
         <div class="check-icon" id="icon-mic"></div>
         <span class="check-label" id="label-mic">Microphone</span>
       </div>
     </div>
     <div class="ready-text" id="ready-text"></div>
     <button class="install-btn" id="install-btn">Install Claude CLI</button>
+    <button class="install-btn" id="whisper-btn" style="display:none">Copy install command</button>
   </div>
 </div>
 
@@ -250,6 +256,12 @@ function openInstall() {
 }
 
 document.getElementById('install-btn').addEventListener('click', openInstall);
+document.getElementById('whisper-btn').addEventListener('click', () => {
+  window.electronAPI.copyToClipboard('pip install openai-whisper');
+  const btn = document.getElementById('whisper-btn');
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => { btn.textContent = 'Copy install command'; }, 2000);
+});
 
 async function runChecks() {
   await new Promise(r => setTimeout(r, 1400));
@@ -265,6 +277,19 @@ async function runChecks() {
     return;
   }
   setCheck('cli', 'done');
+
+  await new Promise(r => setTimeout(r, 200));
+  setCheck('whisper', 'checking');
+  await new Promise(r => setTimeout(r, 400));
+  const whisperResult = await window.electronAPI.splashCheckWhisper();
+
+  if (!whisperResult.ok) {
+    setCheck('whisper', 'fail');
+    document.getElementById('whisper-btn').style.display = 'block';
+    showReady('Whisper not found — pip install openai-whisper', true);
+    return;
+  }
+  setCheck('whisper', 'done');
 
   await new Promise(r => setTimeout(r, 200));
   setCheck('mic', 'checking');

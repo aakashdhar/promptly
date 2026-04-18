@@ -35,6 +35,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   splashCheckCLI: () =>
     ipcRenderer.invoke('splash-check-cli'),
 
+  splashCheckWhisper: () =>
+    ipcRenderer.invoke('splash-check-whisper'),
+
   splashOpenURL: (url) =>
     ipcRenderer.invoke('splash-open-url', url),
 

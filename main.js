@@ -171,6 +171,10 @@ app.whenReady().then(async () => {
     return { ok: !!claudePath, path: claudePath };
   });
 
+  ipcMain.handle('splash-check-whisper', async () => {
+    return { ok: !!whisperPath, path: whisperPath };
+  });
+
   ipcMain.handle('splash-open-url', async (_event, url) => {
     if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url);
   });
