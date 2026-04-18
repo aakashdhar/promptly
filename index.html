@@ -353,7 +353,54 @@
         }
       }
 
-      function initFirstRun() {}
+      async function initFirstRun() {
+        setState('FIRST_RUN');
+
+        // CLI check
+        const cliStatus = document.getElementById('firstrun-cli-status');
+        const cliLabel = document.getElementById('firstrun-cli-label');
+        let cliResult;
+        try {
+          cliResult = await window.electronAPI.checkClaudePath();
+        } catch {
+          cliResult = { found: false, error: 'IPC unavailable' };
+        }
+        if (cliResult.found) {
+          cliOk = true;
+          cliStatus.textContent = '✓';
+          cliStatus.className = 'firstrun-status status-ok';
+        } else {
+          cliStatus.textContent = '✗';
+          cliStatus.className = 'firstrun-status status-error';
+          cliLabel.textContent = 'Install: npm i -g @anthropic-ai/claude-code';
+        }
+
+        // Mic pre-check
+        const micStatus = document.getElementById('firstrun-mic-status');
+        const micLabel = document.getElementById('firstrun-mic-label');
+        const micBtn = document.getElementById('firstrun-mic-btn');
+        try {
+          const permResult = await navigator.permissions.query({ name: 'microphone' });
+          if (permResult.state === 'granted') {
+            micOk = true;
+            micStatus.textContent = '✓';
+            micStatus.className = 'firstrun-status status-ok';
+            micBtn.hidden = true;
+          } else if (permResult.state === 'denied') {
+            micStatus.textContent = '✗';
+            micStatus.className = 'firstrun-status status-error';
+            micLabel.textContent = 'Enable in System Settings → Privacy';
+            micBtn.hidden = true;
+          }
+          // 'prompt' state: leave button visible, ○ stays
+        } catch {
+          // permissions API unsupported — leave button visible
+        }
+
+        checkFirstRunCompletion();
+      }
+
+      function checkFirstRunCompletion() {}
 
       document.addEventListener('DOMContentLoaded', () => {
         // Shortcut listener — stub cycle (F-SPEECH will replace this)
