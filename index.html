@@ -357,80 +357,6 @@
     }
     @keyframes cb { 0%,100%{opacity:1} 50%{opacity:0} }
 
-    /* === HISTORY === */
-    .history-header {
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 18px;
-      -webkit-app-region: drag;
-    }
-    .history-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.25);
-      -webkit-app-region: no-drag;
-    }
-    .history-header-actions {
-      display: flex;
-      gap: 14px;
-      -webkit-app-region: no-drag;
-    }
-    .history-hdr-btn {
-      font-size: 11px;
-      color: rgba(255,255,255,0.2);
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: var(--font);
-      padding: 0;
-      letter-spacing: 0.01em;
-      transition: color 150ms;
-    }
-    .history-hdr-btn:hover { color: #0A84FF; }
-    .history-list {
-      padding: 0 14px 18px;
-      max-height: 340px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-    }
-    .history-list::-webkit-scrollbar { width: 3px; }
-    .history-list::-webkit-scrollbar-track { background: transparent; }
-    .history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-    .history-item {
-      padding: 10px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 150ms;
-      margin-bottom: 2px;
-    }
-    .history-item:hover { background: rgba(255,255,255,0.05); }
-    .history-item-prompt {
-      font-size: 12px;
-      color: rgba(255,255,255,0.55);
-      line-height: 1.5;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      margin-bottom: 4px;
-    }
-    .history-item-meta {
-      font-size: 10px;
-      color: rgba(255,255,255,0.18);
-      letter-spacing: 0.02em;
-    }
-    .history-empty {
-      padding: 32px 18px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.18);
-      text-align: center;
-      letter-spacing: 0.01em;
-    }
-
     /* === ERROR === */
     .cr-error {
       height: 76px;
@@ -473,7 +399,6 @@
           <div class="ready-sub">Press ⌥ Space or click to speak your prompt</div>
         </div>
         <span class="mode-pill" id="mode-pill">Balanced</span>
-        <button class="mode-pill" id="history-btn" style="-webkit-app-region:no-drag">History</button>
         <span class="mode-pill" id="language-pill" style="-webkit-app-region:no-drag">Auto</span>
       </div>
     </div>
@@ -530,7 +455,6 @@
           <span>Prompt ready</span>
         </div>
         <div class="pr-actions">
-          <button class="pr-btn" id="btn-history">History</button>
           <button class="pr-btn" id="btn-regenerate">Regenerate</button>
           <button class="pr-btn" id="btn-reset">Reset</button>
         </div>
@@ -548,20 +472,6 @@
       </div>
     </div>
 
-    <!-- HISTORY -->
-    <div id="panel-history" style="display:none">
-      <div class="traf"></div>
-      <div class="history-header">
-        <span class="history-title">History</span>
-        <div class="history-header-actions">
-          <button class="history-hdr-btn" id="btn-history-clear">Clear</button>
-          <button class="history-hdr-btn" id="btn-history-close">Close</button>
-        </div>
-      </div>
-      <div class="div-line"></div>
-      <div class="history-list" id="history-list"></div>
-    </div>
-
     <!-- ERROR -->
     <div id="panel-error" style="display:none">
       <div class="traf"></div>
@@ -577,7 +487,7 @@
   </div>
 
   <script>
-    const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR', HISTORY:'HISTORY' };
+    const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR' };
     const MODES = [
       { key: 'balanced', label: 'Balanced' },
       { key: 'detailed', label: 'Detailed' },
@@ -609,7 +519,6 @@
       THINKING: 320,
       PROMPT_READY: 540,
       ERROR: 101,
-      HISTORY: 420,
     };
 
     let state = STATES.IDLE;
@@ -634,60 +543,6 @@
     function setLanguage(code) { localStorage.setItem(LANGUAGE_KEY, code); }
     function getLanguageLabel() {
       return (LANGUAGES.find(l => l.code === getLanguage()) || LANGUAGES[0]).label;
-    }
-
-    // --- History storage ---
-    const HISTORY_KEY = 'promptHistory';
-    const HISTORY_MAX = 20;
-
-    function loadHistory() {
-      try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
-      catch(e) { return []; }
-    }
-
-    function saveToHistory(transcript, prompt, mode) {
-      const history = loadHistory();
-      history.unshift({ transcript, prompt, mode, ts: Date.now() });
-      if (history.length > HISTORY_MAX) history.length = HISTORY_MAX;
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-    }
-
-    function clearHistory() {
-      localStorage.setItem(HISTORY_KEY, '[]');
-    }
-
-    function renderHistoryList() {
-      const list = document.getElementById('history-list');
-      if (!list) return;
-      list.textContent = '';
-      const history = loadHistory();
-      if (!history.length) {
-        const empty = document.createElement('div');
-        empty.className = 'history-empty';
-        empty.textContent = 'No history yet';
-        list.appendChild(empty);
-        return;
-      }
-      history.forEach((entry) => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        const promptEl = document.createElement('div');
-        promptEl.className = 'history-item-prompt';
-        promptEl.textContent = entry.prompt;
-        const meta = document.createElement('div');
-        meta.className = 'history-item-meta';
-        const d = new Date(entry.ts);
-        const modeLabel = { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code', design:'Design' }[entry.mode] || entry.mode;
-        meta.textContent = modeLabel + ' · ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        item.appendChild(promptEl);
-        item.appendChild(meta);
-        item.addEventListener('click', () => {
-          originalTranscript = entry.transcript;
-          generatedPrompt = entry.prompt;
-          setState(STATES.PROMPT_READY);
-        });
-        list.appendChild(item);
-      });
     }
 
     // --- Canvas: thinking morph wave (very slow, low-amplitude breathing) ---
@@ -846,7 +701,7 @@
 
       const bar = document.getElementById('bar');
       bar.style.display = 'none';
-      ['panel-idle','panel-recording','panel-thinking','panel-ready','panel-error','panel-history'].forEach(id => {
+      ['panel-idle','panel-recording','panel-thinking','panel-ready','panel-error'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
 
@@ -904,13 +759,6 @@
         requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.ERROR));
       }
 
-      if (newState === STATES.HISTORY) {
-        window.electronAPI.setWindowButtonsVisible(true);
-        bar.style.display = '';
-        document.getElementById('panel-history').style.display = '';
-        renderHistoryList();
-        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.HISTORY));
-      }
     }
 
     // Idle area click → start recording
@@ -924,12 +772,6 @@
       window.electronAPI.showModeMenu(getMode());
     });
 
-    // History button in IDLE
-    document.getElementById('history-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      setState(STATES.HISTORY);
-    });
-
     // Language pill click → open native language menu
     document.getElementById('language-pill').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -940,16 +782,6 @@
       setLanguage(code);
       document.getElementById('language-pill').textContent = getLanguageLabel();
     });
-
-    // History button in PROMPT_READY
-    document.getElementById('btn-history').addEventListener('click', () => setState(STATES.HISTORY));
-
-    // History panel — Clear and Close
-    document.getElementById('btn-history-clear').addEventListener('click', () => {
-      clearHistory();
-      renderHistoryList();
-    });
-    document.getElementById('btn-history-close').addEventListener('click', () => setState(STATES.IDLE));
 
     // Error area click → retry
     document.getElementById('error-area').addEventListener('click', () => {
@@ -977,7 +809,6 @@
     window.electronAPI.onShortcutTriggered(() => {
       if (state === STATES.IDLE) startRecording();
       else if (state === STATES.RECORDING) stopRecording();
-      else if (state === STATES.HISTORY) setState(STATES.IDLE);
     });
 
     // --- Recording ---
@@ -1029,7 +860,6 @@
           return;
         }
         generatedPrompt = genResult.prompt;
-        saveToHistory(originalTranscript, generatedPrompt, getMode());
         setState(STATES.PROMPT_READY);
       };
     }
@@ -1098,7 +928,6 @@
         return;
       }
       generatedPrompt = genResult.prompt;
-      saveToHistory(originalTranscript, generatedPrompt, getMode());
       setState(STATES.PROMPT_READY);
     });
 
