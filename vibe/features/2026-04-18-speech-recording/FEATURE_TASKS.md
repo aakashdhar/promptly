@@ -227,7 +227,7 @@
 ---
 
 ### FPH-003 · CODEBASE.md update
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#10 (conformance: CODEBASE.md updated)
 - **Dependencies**: FPH-002

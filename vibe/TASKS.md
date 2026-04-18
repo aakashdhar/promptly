@@ -46,14 +46,14 @@
    [x] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-first-run/FEATURE_TASKS.md (agent use)
 
-🔄 **F-SPEECH — Speech recording** (0/5 — retrofitting D-003)
+✅ **F-SPEECH — Speech recording** (5/5 — COMPLETE)
    Estimated: approx. 5 hours (S: 3, M: 2)
    [~] FPH-001 · Module vars + startRecording() — webkitSpeechRecognition (superseded — retrofit pending)
    [~] FPH-002 · Handlers + stopRecording() — webkitSpeechRecognition (superseded — retrofit pending)
    [x] FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
    [x] FPH-004 · transcribe-audio IPC — main.js + preload.js (Whisper CLI)
    [x] FPH-002-R · Retrofit stopRecording() + onstop handler + shortcut wiring
-   [ ] FPH-003 · CODEBASE.md update
+   [x] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-CLAUDE — Claude CLI integration + 5 prompt modes**
@@ -102,8 +102,9 @@
 ---
 
 ## What just happened
-✅ FPH-002-R done — mediaRecorder.onstop wired: collects chunks → Blob → ArrayBuffer → transcribeAudio IPC → originalTranscript. ERROR states for IPC failure and empty transcript. stopRecording() guards double-stop, stops MediaRecorder, releases all mic tracks.
+✅ FPH-003 done — CODEBASE.md updated: Last updated, Current state, index.html key exports (startRecording, stopRecording, mediaRecorder, audioChunks, isRecording), module-scope vars table (3 new rows), main.js vars (whisperPath), IPC channels (transcribe-audio). F-SPEECH feature complete.
 
 ## What's next
-⬜ FPH-003 · CODEBASE.md update — update Last updated line, Current state, module-scope vars table, and index.html key exports to reflect F-SPEECH complete.
+⬜ F-CLAUDE — Claude CLI integration + 5 prompt modes (needs F-SPEECH + F-FIRST-RUN complete ✅)
+Run `feature: claude-integration` to plan this feature in detail.
 Say "next" to begin.
