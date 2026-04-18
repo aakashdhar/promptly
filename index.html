@@ -23,60 +23,6 @@
       --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
     }
 
-    body.light {
-      --bg-bar: rgba(0,0,0,0.02);
-      --border-top: 0.5px solid rgba(0,0,0,0.12);
-      --border-left: 0.5px solid rgba(0,0,0,0.08);
-      --border-right: 0.5px solid rgba(0,0,0,0.05);
-      --border-bottom: 0.5px solid rgba(0,0,0,0.03);
-      --bar-shadow: 0 0 0 0.5px rgba(0,0,0,0.06) inset, 0 16px 48px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1);
-      --highlight-top: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
-      --accent-bottom: linear-gradient(90deg, transparent, rgba(10,132,255,0.1), transparent);
-      --divider: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
-      --blue: #007AFF;
-      --red: #FF3B30;
-      --green: #34C759;
-    }
-
-    body.light .bar::before {
-      background: rgba(255,255,255,0.7);
-    }
-
-    body.light .ready-title  { color: rgba(0,0,0,0.7); }
-    body.light .ready-sub    { color: rgba(0,0,0,0.35); }
-    body.light .think-title  { color: rgba(0,0,0,0.5); }
-    body.light .mode-pill    {
-      background: rgba(0,122,255,0.1);
-      border-color: rgba(0,122,255,0.2);
-      color: rgba(0,100,200,0.8);
-    }
-    body.light .pr-status    { color: rgba(0,0,0,0.45); }
-    body.light .pr-btn       { color: rgba(0,0,0,0.3); }
-    body.light .pr-btn:hover { color: #007AFF; }
-    body.light .ys-label     { color: rgba(0,0,0,0.25); }
-    body.light .ys-text      { color: rgba(0,0,0,0.6); }
-    body.light .ys-label-s   { color: rgba(0,0,0,0.2); }
-    body.light .ys-text-s    { color: rgba(0,0,0,0.55); }
-    body.light .prompt-out   { color: rgba(0,0,0,0.8); }
-    body.light .pt-sl        { color: rgba(0,100,200,0.5); }
-    body.light .btn-edit     {
-      border-color: rgba(0,0,0,0.1);
-      background: rgba(0,0,0,0.03);
-      color: rgba(0,0,0,0.5);
-    }
-    body.light .btn-edit:hover {
-      background: rgba(0,0,0,0.06);
-      border-color: rgba(0,0,0,0.15);
-    }
-    body.light .ready-title#error-message { color: rgba(0,0,0,0.7); }
-    body.light .transcript-text { color: rgba(0,0,0,0.45); }
-    body.light .rec-dur      { color: rgba(0,0,0,0.35); }
-    body.light .dismiss-btn  {
-      background: rgba(0,0,0,0.04);
-      border-color: rgba(0,0,0,0.1);
-    }
-    body.light .dismiss-btn:hover { background: rgba(0,0,0,0.08); }
-
     html, body {
       margin: 0 !important;
       padding: 0 !important;
@@ -242,14 +188,14 @@
     /* === PROMPT READY === */
     .top-row { display: flex; justify-content: space-between; align-items: center; padding: 26px 22px 20px; }
     .pr-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.01em; }
-    .pr-check { color: var(--green); font-size: 15px; text-shadow: 0 0 8px rgba(48,209,88,0.5); }
+    .pr-check { color: #30D158; font-size: 15px; text-shadow: 0 0 8px rgba(48,209,88,0.5); }
     .pr-actions { display: flex; gap: 18px; }
     .pr-btn {
       font-size: 11px; color: rgba(255,255,255,0.2); background: none; border: none;
       cursor: pointer; font-family: var(--font); padding: 0; letter-spacing: 0.01em;
       transition: color 150ms;
     }
-    .pr-btn:hover { color: var(--blue); }
+    .pr-btn:hover { color: #0A84FF; }
 
     .you-said-block { padding: 28px 22px 0; }
     .ys-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.16); margin-bottom: 12px; }
@@ -338,7 +284,7 @@
     }
     .stop-btn {
       width: 32px; height: 32px; border-radius: 50%;
-      background: var(--red); border: none;
+      background: #FF3B30; border: none;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; flex-shrink: 0;
       -webkit-app-region: no-drag;
@@ -513,6 +459,9 @@
       { key: 'design', label: 'Design' },
     ];
 
+    const HISTORY_KEY = 'promptHistory';
+    const HISTORY_MAX = 20;
+
     const STATE_HEIGHTS = {
       IDLE: 101,
       RECORDING: 89,
@@ -537,6 +486,18 @@
     }
     function getModeLabel() {
       return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code', design:'Design' }[getMode()];
+    }
+    function loadHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+      catch { return []; }
+    }
+    function saveToHistory(transcript, prompt, mode) {
+      const entry = { id: Date.now(), transcript, prompt, mode, date: new Date().toISOString() };
+      const h = [entry, ...loadHistory()].slice(0, HISTORY_MAX);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+    }
+    function clearHistory() {
+      localStorage.removeItem(HISTORY_KEY);
     }
 
     // --- Canvas: thinking morph wave (very slow, low-amplitude breathing) ---
@@ -842,6 +803,7 @@
         }
         generatedPrompt = genResult.prompt;
         setState(STATES.PROMPT_READY);
+        saveToHistory(originalTranscript, generatedPrompt, getMode());
       };
     }
 
@@ -910,6 +872,7 @@
       }
       generatedPrompt = genResult.prompt;
       setState(STATES.PROMPT_READY);
+      saveToHistory(originalTranscript, generatedPrompt, getMode());
     });
 
     // Reset

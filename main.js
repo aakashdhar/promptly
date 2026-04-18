@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, shell, nativeTheme } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, shell } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -103,6 +103,40 @@ let claudePath = null;
 let whisperPath = null;
 let win = null;
 let splashWin = null;
+let tray = null;
+
+function updateTrayMenu() {
+  if (!tray) return;
+  const menu = Menu.buildFromTemplate([
+    {
+      label: win && win.isVisible() ? 'Hide Promptly' : 'Show Promptly',
+      click: () => {
+        if (!win || win.isDestroyed()) return;
+        if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
+        updateTrayMenu();
+      },
+    },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() },
+  ]);
+  tray.setContextMenu(menu);
+  tray.on('click', () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
+    updateTrayMenu();
+  });
+}
+
+function createTray() {
+  // Minimal 16x16 black circle on transparent background — template image (macOS inverts for dark/light menu bar)
+  const icon = nativeImage.createFromDataURL(
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAAP0lEQVQ4jWNgGAWjgJqAkYGBgYGJiYmBiYkJIsDAwMDAxMTEwMTExMDExMTAxMTEwMTExMDExMTAxMTEMAIAsAAFoAABFhAAAAAASUVORK5CYII='
+  );
+  icon.setTemplateImage(true);
+  tray = new Tray(icon);
+  tray.setToolTip('Promptly');
+  updateTrayMenu();
+}
 
 function resolveClaudePath() {
   return new Promise((resolve) => {
@@ -158,11 +192,6 @@ function createWindow() {
     },
   });
   win.loadFile('index.html');
-  nativeTheme.on('updated', () => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
-    }
-  });
   return win;
 }
 
@@ -210,6 +239,7 @@ app.whenReady().then(async () => {
       win.show();
       win.center();
       registerShortcut();
+      createTray();
     }, 400);
   });
 
@@ -227,10 +257,6 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('request-mic', async () => {
     return { ok: true };
-  });
-
-  ipcMain.handle('get-theme', () => {
-    return { dark: nativeTheme.shouldUseDarkColors };
   });
 
   // P1-008: IPC handlers
