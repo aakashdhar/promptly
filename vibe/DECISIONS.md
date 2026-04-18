@@ -531,3 +531,49 @@ Key fixes applied:
 - **Alternatives considered**: Leave `min-h-screen` and add explicit heights per state — rejected (brittle, every state needs independent sizing logic). Use `overflow: hidden` on `#root` — not sufficient alone, window itself was growing.
 - **Impact on other tasks**: Bar container pattern now established for all future states — always `h-full flex flex-col` on the root glass div.
 - **Approved by**: human
+
+---
+
+### BUG-010 — PROMPT_READY state: layout, spacing, and button visibility fixes
+- **Date**: 2026-04-19 · **Task**: post-BUG-009 · **Type**: blocker-resolution
+
+#### Issues reported (all in PromptReadyState.jsx)
+
+**BUG-010-A — Edit button: text clipping at left/right edges**
+- **Symptom**: "Edit" / "Done" label had barely any horizontal breathing room inside the button.
+- **Root cause**: Button had `px-6` (24px each side) but no `min-w` — in a flex row next to a `flex-1` Copy button, the Edit button collapsed to minimum intrinsic width, making the text appear edge-to-edge.
+- **Fix**: Added `px-8 min-w-[80px]` to the Edit button.
+
+**BUG-010-B — Copy/Edit buttons not pinned to bottom**
+- **Symptom**: Buttons floated inline after the prompt text rather than being anchored to the bottom of the window.
+- **Root cause**: Layout was normal block flow — buttons followed directly after the prompt div. Long text caused overflow; short text left buttons mid-screen.
+- **Fix**: Converted panel to `flex flex-col` (`flex-1 flex flex-col min-h-0`). Prompt output set to `flex-1 min-h-0 overflow-y-auto`. Button row set to `flex-shrink-0` so it is always visible at the bottom.
+
+**BUG-010-C — Insufficient breathing room between "Prompt ready" header and "You said" section**
+- **Symptom**: Header and "You said" appeared compressed.
+- **Fix**: Added `pt-6 pb-6` to the "You said" wrapper. Dividers reduced from `marginLeft/Right: 32` → `16` so they extend wider, matching ThinkingState full-width look.
+
+**BUG-010-D — Generated prompt section: condensed, non-scrollable**
+- **Symptom**: Prompt output shrank to fit short text; no scrollbar on long text.
+- **Root cause**: `max-h-[200px] overflow-y-auto` — soft ceiling with no floor.
+- **Fix**: Replaced with `flex-1 min-h-0 overflow-y-auto` — fills remaining space between "You said" and buttons, scrolls regardless of content length.
+
+**BUG-010-E — Insufficient breathing room between "Prompt ready" and the title-bar/traffic-light area**
+- **Symptom**: "Prompt ready" label appeared immediately below the macOS traffic lights.
+- **Fix**: Drag area increased from `h-7` (28px) → `h-10` (40px). PROMPT_READY window height bumped 540 → 560px.
+
+---
+
+#### Bug introduced by first fix attempt
+
+**BUG-010-F — Buttons disappeared entirely after flex layout change (root cause: min-h-screen)**
+- **Symptom**: After applying BUG-010-B, the Copy and Edit buttons vanished. "You said" and generated prompt had no visible divider. No scrollbar appeared.
+- **Root cause**: `#bar` in `App.jsx` used `min-h-screen` (`min-height: 100vh`). In CSS flexbox, `min-height` sets a floor but no ceiling — child elements with `flex-1` grow without bound because the parent has no fixed height. The prompt div expanded infinitely, pushing the button row below the window's visible viewport. `overflow-hidden` on `#bar` clipped the buttons silently off-screen.
+- **Fix**: Changed `min-h-screen` → `h-screen` (`height: 100vh`) on `#bar` in `App.jsx`. Since `resizeWindow()` sets the Electron window to `STATE_HEIGHTS[state]` on every transition, `100vh` always equals the exact window height — a safe equivalence. With a fixed height on the parent, `flex-1` is properly bounded.
+- **Secondary fix**: Converted `DIVIDER` module-level JSX constant to a `Divider()` React component — same element reference at two tree positions can cause React reconciliation edge cases.
+- **Files changed**: `App.jsx` (`min-h-screen` → `h-screen`), `PromptReadyState.jsx` (flex layout, dividers, spacing, `Divider` component)
+
+**Key learning for future states**: `min-h-screen` on a flex column makes `flex-1` children unbounded. Always use `h-screen` (or an explicit height) on the root flex container when child elements need to divide space via `flex-1`.
+
+- **Status**: FIXED 2026-04-19
+- **Approved by**: human
