@@ -1,13 +1,13 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-18 (FCL-004 — F-CLAUDE complete: generate-prompt IPC, mode menu, PROMPT_READY)
+> Last updated: 2026-04-18 (FAC-004 — F-ACTIONS complete: Copy flash, Edit contenteditable, Regenerate)
 
 ---
 
 ## Current state
 
-**Phase:** Phase 2 in progress — F-STATE ✅ — F-FIRST-RUN ✅ — F-SPEECH ✅ — F-CLAUDE ✅ — F-ACTIONS next
+**Phase:** Phase 2 in progress — F-STATE ✅ — F-FIRST-RUN ✅ — F-SPEECH ✅ — F-CLAUDE ✅ — F-ACTIONS ✅ — Phase 2 complete (pending review: phase 2)
 **Files written:** 6 source files + eslint.config.js
 
 ---
@@ -21,7 +21,7 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `main.js` | Electron main: window, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `claudePath`, `win`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer | `window.electronAPI` |
-| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up | `setState()`, `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()`, `initFirstRun()`, `checkFirstRunCompletion()`, `startRecording()`, `stopRecording()`, `STATE_HEIGHTS`, `MODES`, `currentState`, `transcript`, `originalTranscript`, `generatedPrompt`, `cliOk`, `micOk`, `mediaRecorder`, `audioChunks`, `isRecording` |
+| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate) | `setState()`, `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()`, `initFirstRun()`, `checkFirstRunCompletion()`, `startRecording()`, `stopRecording()`, `STATE_HEIGHTS`, `MODES`, `currentState`, `transcript`, `originalTranscript`, `generatedPrompt`, `cliOk`, `micOk`, `mediaRecorder`, `audioChunks`, `isRecording` |
 
 ---
 
@@ -98,6 +98,8 @@
   --radius-inner: 8px;
 }
 ```
+
+**Additional rule:** `.btn-action.btn-success { background: var(--color-success); }` — applied on Copy click, removed after 1800ms.
 
 ---
 

@@ -170,7 +170,7 @@ document.getElementById('action-regenerate').addEventListener('click', async () 
 ---
 
 ### FAC-004 · CODEBASE.md update
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#10
 - **Dependencies**: FAC-001, FAC-002, FAC-003

@@ -69,12 +69,12 @@
    [x] FCL-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md (agent use)
 
-🔄 **F-ACTIONS — Copy, Edit, Regenerate** (0/4)
+✅ **F-ACTIONS — Copy, Edit, Regenerate** (4/4 — COMPLETE)
    Estimated: approx. 3-4 hours (S: 3, M: 1)
    [x] FAC-001 · Copy button — green flash 1.8s + clipboard IPC
    [x] FAC-002 · Edit mode — contenteditable, Escape cancel, Done save
    [x] FAC-003 · Regenerate — originalTranscript → THINKING → PROMPT_READY
-   [ ] FAC-004 · CODEBASE.md update
+   [x] FAC-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-actions/FEATURE_TASKS.md (agent use)
 
 ## Phase 2 gate
@@ -111,8 +111,8 @@
 ---
 
 ## What just happened
-✅ FAC-003 done — Regenerate button: setState('THINKING') → generatePrompt(originalTranscript, getMode()) → PROMPT_READY on success, ERROR on failure.
+✅ FAC-004 done — CODEBASE.md updated: Last updated line, Current state (F-ACTIONS ✅), .btn-success CSS note, index.html action handlers noted.
 
 ## What's next
-⬜ FAC-004 · CODEBASE.md update — reflect all F-ACTIONS additions.
-Say "next" to begin.
+⬜ F-ACTIONS complete — run `review: phase 2` to gate Phase 2, or proceed to Phase 3 tasks.
+Say "review: phase 2" to trigger the phase gate.
