@@ -77,6 +77,13 @@
    [x] FAC-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-actions/FEATURE_TASKS.md (agent use)
 
+✅ **BUG-003 — 4 visual fixes** (4/4 — COMPLETE 2026-04-18)
+   [x] Ghost behind recording pill — pill now own BrowserWindow (pillWin); win.hide() on recording start
+   [x] Traffic lights at bottom — .traf align-items:center added
+   [x] Blank flash before THINKING — resizeWindow wrapped in requestAnimationFrame
+   [x] Ghost below prompt ready — #bar min-height:100vh fills window; pillWin lifecycle ensures clean transitions
+   → Specs: vibe/bugs/2026-04-18-bug-003/ | DECISIONS.md BUG-003 entry
+
 ## Phase 2 gate
 ⬜ review: phase 2 — pending
 
@@ -111,8 +118,15 @@
 ---
 
 ## What just happened
-✅ FAC-004 done — CODEBASE.md updated: Last updated line, Current state (F-ACTIONS ✅), .btn-success CSS note, index.html action handlers noted.
+✅ BUG-003 fixed — 4 visual bugs resolved:
+   - Recording pill is now a separate BrowserWindow (pillWin) — no ghost behind it
+   - Traffic light dots centred with align-items:center
+   - Window resize now happens in requestAnimationFrame — no blank flash
+   - #bar fills window height — no vibrancy ghost below content
+   New file: pill.html (self-contained pill UI with waveform/timer/buttons)
+   New IPC channels: show-pill, switch-to-main, pill-stop, pill-dismiss, pill-action
+   Lint: 0 errors
 
 ## What's next
-⬜ F-ACTIONS complete — run `review: phase 2` to gate Phase 2, or proceed to Phase 3 tasks.
-Say "review: phase 2" to trigger the phase gate.
+⬜ Smoke test all 4 fixed states visually — then run `review: phase 2`.
+Say "review: phase 2" to trigger the phase gate after smoke test passes.

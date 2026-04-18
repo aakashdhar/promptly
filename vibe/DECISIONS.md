@@ -181,3 +181,89 @@ Key fixes applied:
 Key fixes applied:
 - onerror 'no-speech' branch added to FEATURE_PLAN.md handler code and FEATURE_TASKS.md FPH-002 criteria
 - Text cursor animation clarified as v2 deferral (blinking dot covers v1 requirement)
+
+---
+
+### BUG-002 — 6 visual bugs across 3 states after dark-glass design implementation
+- **Date**: 2026-04-18 · **Type**: drift
+- **Root cause**: Design implementation session shipped without visual verification against a running build. Six separate bugs introduced across window management, context menu, and CSS.
+
+**BUG-002-A — Window positioning offset left (all states)**
+- **Symptom**: Thinking and Prompt Ready states render offset left, overlapping the terminal behind.
+- **Root cause**: `win.setPosition(width/2 - 260, height - 120)` combined with `setContentSize()` — macOS anchors `setContentSize` resizes from the top-left corner, drifting the window on each state change.
+- **Fix**: Replace `win.setPosition()` with `win.center()` on launch. Change all resize calls from `setContentSize(520, h)` to `setSize(520, h, true)` — width always 520, height-only resizes, no position drift.
+- **Files**: main.js
+
+**BUG-002-B — Window width not constrained (thinking, prompt ready)**
+- **Symptom**: Bar appears wider than 520px in thinking and prompt ready states.
+- **Root cause**: `setContentSize` and `setSize` without explicit width in the resize-window IPC allowed the window to expand horizontally on some resize paths.
+- **Fix**: `win.setSize(520, height, true)` hardcodes 520 as width on every resize call.
+- **Files**: main.js
+
+**BUG-002-C — Thinking state bottom clipped**
+- **Symptom**: Bottom of the bar (YOU SAID transcript area) cut off in thinking state.
+- **Root cause**: `STATE_HEIGHTS.THINKING = 204` — too short; traf(25) + cr-think(68) + morph-wrap(48) + divider(1) + ys-label(23) + ys-text(36) + padding = ~220px.
+- **Fix**: `STATE_HEIGHTS.THINKING = 220`.
+- **Files**: index.html
+
+**BUG-002-D — Mode context menu first/last items not clickable, text cut off**
+- **Symptom**: Clicking "Balanced" or "Code" does nothing; menu text truncated.
+- **Root cause**: HTML `#mode-menu` absolutely positioned inside the Electron window — when the menu renders near the bottom/top of the 101px window, it overflows the window bounds and clips.
+- **Fix**: Replace HTML context menu entirely with Electron native `Menu.buildFromTemplate` + `menu.popup({ window: win })`. IPC: renderer sends `show-mode-menu` → main builds radio menu → click handler sends `mode-selected` back to renderer.
+- **Files**: main.js, preload.js, index.html
+
+**BUG-002-E — Prompt ready scrollbar always visible**
+- **Symptom**: Scrollbar renders on right edge of prompt output area even when content fits.
+- **Root cause**: Missing `-webkit-scrollbar-track { background: transparent }` — system scrollbar track bleeds through the custom thin scrollbar styles.
+- **Fix**: Add `:-webkit-scrollbar-track { background: transparent }` to `.prompt-out` scrollbar block.
+- **Files**: index.html
+
+**BUG-002-F — Prompt ready window height too tall (empty space below Copy button)**
+- **Symptom**: Window expands beyond 480px showing dead space below btn-row.
+- **Root cause**: `setContentSize` does not enforce a hard cap on macOS with `hiddenInset` — content layout can push the reported content size beyond the requested value.
+- **Fix**: Switch to `win.setSize(520, height, true)` which enforces exact outer frame dimensions regardless of content.
+- **Files**: main.js
+
+- **Status**: FIXED 2026-04-18
+- **Smoke test**: ⬜ pending — visual verification required by user (screenshots of all 4 states)
+- **Approved by**: human
+
+---
+
+### BUG-003 — 4 visual bugs: ghost window, traffic lights, flash, ghost below prompt ready
+- **Date**: 2026-04-18 · **Type**: drift
+- **Folder**: vibe/bugs/2026-04-18-bug-003/
+
+**BUG-003-A — Ghost window visible behind recording pill**
+- **Root cause**: `vibrancy:'sidebar'` is a window-level macOS material applied to the full BrowserWindow frame. Hiding `#bar` via `display:none` removes content but vibrancy persists across the full window area.
+- **Fix**: Recording pill is now a separate `BrowserWindow` (`pillWin` — transparent, frame:false, alwaysOnTop). On recording start: `win.hide()` + create pillWin. On stop/dismiss: `setState(THINKING/IDLE)` → `switchToMain()` (destroy pillWin, show win).
+- **Files**: main.js (pillWin lifecycle, show-pill / switch-to-main / pill-stop / pill-dismiss IPC), preload.js (showPill, switchToMain, pillStop, pillDismiss, onPillAction), index.html (startRecording, stopRecording, onPillAction handler), pill.html (new file — pill UI)
+
+**BUG-003-B — Traffic light dots rendering below traf container**
+- **Root cause**: `.traf` had `display:flex` but was missing `align-items:center`.
+- **Fix**: Added `align-items: center` to `.traf` CSS rule.
+- **Files**: index.html
+
+**BUG-003-C — Blank flash before THINKING state renders**
+- **Root cause**: `resizeWindow()` IPC dispatched synchronously before the next paint. Window resized while old DOM still clearing.
+- **Fix**: Wrapped all `resizeWindow()` calls in `requestAnimationFrame()` so window resizes after DOM paints.
+- **Files**: index.html
+
+**BUG-003-D — Ghost panel below prompt ready**
+- **Root cause**: Same as A (vibrancy fills full window) + content shorter than window height. Also: no second createWindow() found — existing code was already single-window.
+- **Fix**: Added `min-height: 100vh` to `.bar` so bar always fills window — no exposed vibrancy ghost below content. pillWin lifecycle (fix A) also ensures no stale window during THINKING/PROMPT_READY.
+- **Files**: index.html
+
+**Architecture note**: As of this fix there is ONE `win` (main BrowserWindow) and at most ONE `pillWin` (alive only during RECORDING). `pillWin` is created in `show-pill` IPC handler and destroyed in `switch-to-main` IPC handler. No other BrowserWindows are ever created.
+
+**New file**: `pill.html` — justified deviation from "all UI in index.html" rule. The pill must be a separate BrowserWindow to isolate the vibrancy ghost. ARCHITECTURE.md note: pill.html contains self-contained pill UI with waveform/timer/buttons. It uses the same preload.js.
+
+**New IPC channels** (deviations from locked IPC table — approved via this bug fix):
+- `show-pill` (renderer → main): hide win, create pillWin
+- `switch-to-main` (renderer → main): destroy pillWin, show win
+- `pill-stop` (pill → main → win): forward stop action
+- `pill-dismiss` (pill → main → win): forward dismiss action
+- `pill-action` (main → win): forwarded stop/dismiss from pill
+
+- **Status**: FIXED 2026-04-18
+- **Approved by**: human
