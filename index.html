@@ -74,7 +74,7 @@
       z-index: 2;
     }
 
-    #panel-idle, #panel-recording, #panel-thinking, #panel-ready, #panel-error {
+    #panel-idle, #panel-recording, #panel-thinking, #panel-ready, #panel-error, #panel-history {
       position: relative;
       z-index: 1;
     }
@@ -340,6 +340,32 @@
       -webkit-app-region: no-drag;
     }
 
+    /* === HISTORY === */
+    .history-list {
+      overflow-y: auto; max-height: 340px;
+      padding: 8px 0;
+    }
+    .history-list::-webkit-scrollbar { width: 3px; }
+    .history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    .history-item {
+      padding: 12px 22px;
+      cursor: pointer;
+      border-bottom: 0.5px solid rgba(255,255,255,0.04);
+      transition: background 150ms;
+    }
+    .history-item:hover { background: rgba(255,255,255,0.04); }
+    .history-meta {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(255,255,255,0.2);
+      margin-bottom: 5px;
+    }
+    .history-transcript {
+      font-size: 12px; color: rgba(255,255,255,0.5);
+      line-height: 1.5; letter-spacing: 0.01em;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+
   </style>
 </head>
 <body>
@@ -434,6 +460,22 @@
       </div>
     </div>
 
+    <!-- HISTORY -->
+    <div id="panel-history" style="display:none">
+      <div class="traf"></div>
+      <div class="top-row">
+        <div class="pr-status">
+          <span style="color:rgba(255,255,255,0.4);font-size:13px">Recent prompts</span>
+        </div>
+        <div class="pr-actions">
+          <button class="pr-btn" id="btn-history-clear">Clear</button>
+          <button class="pr-btn" id="btn-history-close">Close</button>
+        </div>
+      </div>
+      <div class="div-line"></div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
     <!-- ERROR -->
     <div id="panel-error" style="display:none">
       <div class="traf"></div>
@@ -449,7 +491,7 @@
   </div>
 
   <script>
-    const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR' };
+    const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR', HISTORY:'HISTORY' };
     const MODES = [
       { key: 'balanced', label: 'Balanced' },
       { key: 'detailed', label: 'Detailed' },
@@ -459,15 +501,13 @@
       { key: 'design', label: 'Design' },
     ];
 
-    const HISTORY_KEY = 'promptHistory';
-    const HISTORY_MAX = 20;
-
     const STATE_HEIGHTS = {
       IDLE: 101,
       RECORDING: 89,
       THINKING: 320,
       PROMPT_READY: 540,
       ERROR: 101,
+      HISTORY: 420,
     };
 
     let state = STATES.IDLE;
@@ -487,17 +527,57 @@
     function getModeLabel() {
       return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code', design:'Design' }[getMode()];
     }
+
+    // --- History ---
+    const HISTORY_KEY = 'promptHistory';
+    const HISTORY_MAX = 20;
+
     function loadHistory() {
       try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
-      catch { return []; }
+      catch(e) { return []; }
     }
+
     function saveToHistory(transcript, prompt, mode) {
-      const entry = { id: Date.now(), transcript, prompt, mode, date: new Date().toISOString() };
-      const h = [entry, ...loadHistory()].slice(0, HISTORY_MAX);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+      const entries = loadHistory();
+      entries.unshift({ transcript, prompt, mode, date: new Date().toISOString() });
+      if (entries.length > HISTORY_MAX) entries.splice(HISTORY_MAX);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
     }
+
     function clearHistory() {
-      localStorage.removeItem(HISTORY_KEY);
+      localStorage.setItem(HISTORY_KEY, '[]');
+    }
+
+    function renderHistoryList() {
+      const list = document.getElementById('history-list');
+      list.textContent = '';
+      const entries = loadHistory();
+      if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding:20px 22px;font-size:12px;color:rgba(255,255,255,0.2)';
+        empty.textContent = 'No prompts yet — speak one to get started';
+        list.appendChild(empty);
+        return;
+      }
+      for (const entry of entries) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const meta = document.createElement('div');
+        meta.className = 'history-meta';
+        const d = new Date(entry.date);
+        meta.textContent = d.toLocaleDateString() + ' · ' + entry.mode;
+        const text = document.createElement('div');
+        text.className = 'history-transcript';
+        text.textContent = entry.transcript;
+        item.appendChild(meta);
+        item.appendChild(text);
+        item.addEventListener('click', () => {
+          originalTranscript = entry.transcript;
+          generatedPrompt = entry.prompt;
+          setState(STATES.PROMPT_READY);
+        });
+        list.appendChild(item);
+      }
     }
 
     // --- Canvas: thinking morph wave (very slow, low-amplitude breathing) ---
@@ -656,7 +736,7 @@
 
       const bar = document.getElementById('bar');
       bar.style.display = 'none';
-      ['panel-idle','panel-recording','panel-thinking','panel-ready','panel-error'].forEach(id => {
+      ['panel-idle','panel-recording','panel-thinking','panel-ready','panel-error','panel-history'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
 
@@ -711,6 +791,13 @@
         document.getElementById('panel-error').style.display = '';
         document.getElementById('error-message').textContent = payload.message || 'Something went wrong';
         requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.ERROR));
+      }
+
+      if (newState === STATES.HISTORY) {
+        bar.style.display = '';
+        document.getElementById('panel-history').style.display = '';
+        renderHistoryList();
+        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.HISTORY));
       }
     }
 
@@ -887,6 +974,13 @@
 
     window.electronAPI.onModeSelected((key) => {
       setMode(key);
+    });
+
+    // History panel buttons
+    document.getElementById('btn-history-close').addEventListener('click', () => setState(STATES.IDLE));
+    document.getElementById('btn-history-clear').addEventListener('click', () => {
+      clearHistory();
+      renderHistoryList();
     });
 
     // Init

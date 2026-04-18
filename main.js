@@ -136,6 +136,7 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Promptly');
   updateTrayMenu();
+  if (app.dock) app.dock.hide();
 }
 
 function resolveClaudePath() {
@@ -389,15 +390,15 @@ app.on('will-quit', () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' || !tray) {
     app.quit();
   }
 });
 
 app.on('activate', () => {
-  if (!win || win.isDestroyed()) {
-    createWindow();
-  } else if (!win.isVisible()) {
+  if (win && !win.isDestroyed()) {
     win.show();
+    win.focus();
+    updateTrayMenu();
   }
 });
