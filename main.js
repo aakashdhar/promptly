@@ -22,19 +22,14 @@ let whisperPath = null;
 let win = null;
 
 function createWindow() {
-  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
-  const windowWidth = 480;
-  const windowHeight = 44;
-
   win = new BrowserWindow({
-    width: windowWidth,
-    height: windowHeight,
-    x: Math.round((screenWidth - windowWidth) / 2),
-    y: Math.round(screenHeight * 0.85),
+    width: 480,
+    height: 80,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 10 },
     transparent: true,
     vibrancy: 'sidebar',
+    visualEffectState: 'active',
     alwaysOnTop: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -43,8 +38,10 @@ function createWindow() {
     },
   });
 
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  win.setPosition(Math.floor(width / 2 - 240), Math.floor(height - 120));
+
   win.loadFile('index.html');
-  win.webContents.openDevTools({ mode: 'detach' });
   return win;
 }
 
