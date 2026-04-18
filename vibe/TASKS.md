@@ -49,7 +49,7 @@
 🔄 **F-SPEECH — Speech recording** (0/3)
    Estimated: approx. 3 hours (S: 2, M: 1)
    [x] FPH-001 · Module vars + `startRecording()` skeleton — availability guard + recognition init
-   [ ] FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
+   [x] FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
    [ ] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
@@ -99,9 +99,9 @@
 ---
 
 ## What just happened
-✅ FPH-001 done — `recognition` + `isRecording` module vars added after `micOk`; `startRecording()` with availability guard, recognition init (continuous/interimResults/lang), null handler stubs, and `setState('RECORDING')` call. Lint passes.
+✅ FPH-002 done — onresult (final+interim transcript), onerror (3 cases), onend (guard), stopRecording() (originalTranscript capture, THINKING stub), shortcut wired to startRecording/stopRecording. Lint passes.
 
 ## What's next
-⬜ FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
-   Fill in the 3 null handlers inside startRecording(); add stopRecording(); replace the shortcut stub in DOMContentLoaded.
+⬜ FPH-003 · CODEBASE.md update
+   Update last-updated line, current state, index.html key exports, and module-scope vars table.
 Say "next" to begin.

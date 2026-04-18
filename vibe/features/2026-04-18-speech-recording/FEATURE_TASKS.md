@@ -68,7 +68,7 @@
 ---
 
 ### FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (criteria 6–14), FEATURE_SPEC.md#8
 - **Dependencies**: FPH-001
@@ -161,20 +161,20 @@
    ```
 
 **Acceptance criteria**:
-- [ ] `onresult`: `transcript` updated with combined final + interim text on every event
-- [ ] `onresult`: `#recording-transcript` textContent updated — falls back to `'Listening…'` if empty
-- [ ] `onerror('not-allowed')`: sets `isRecording = false`, shows ERROR "Microphone access denied"
-- [ ] `onerror('no-speech')`: sets `isRecording = false`, shows ERROR "No speech detected — try again"
-- [ ] `onerror(other)`: sets `isRecording = false`, shows ERROR "Speech recognition error — try again"
-- [ ] `onend`: calls `stopRecording()` only if `isRecording` is true — no-op if already false
-- [ ] `stopRecording()`: sets `isRecording = false`, calls `recognition.stop()`
-- [ ] `stopRecording()`: captures `originalTranscript = transcript.trim()`
-- [ ] `stopRecording()`: empty transcript → ERROR "No speech detected — try again"
-- [ ] `stopRecording()`: non-empty transcript → `setState('THINKING')` then `setTimeout → setState('IDLE') 1500ms`
-- [ ] Shortcut from IDLE → `startRecording()` (not `setState('RECORDING')` directly)
-- [ ] Shortcut from RECORDING → `stopRecording()` (not `setState('THINKING')` directly)
-- [ ] Error messages match FEATURE_SPEC.md§8 exactly (em dash `—`, correct capitalisation)
-- [ ] `npm run lint` passes
+- [x] `onresult`: `transcript` updated with combined final + interim text on every event
+- [x] `onresult`: `#recording-transcript` textContent updated — falls back to `'Listening…'` if empty
+- [x] `onerror('not-allowed')`: sets `isRecording = false`, shows ERROR "Microphone access denied"
+- [x] `onerror('no-speech')`: sets `isRecording = false`, shows ERROR "No speech detected — try again"
+- [x] `onerror(other)`: sets `isRecording = false`, shows ERROR "Speech recognition error — try again"
+- [x] `onend`: calls `stopRecording()` only if `isRecording` is true — no-op if already false
+- [x] `stopRecording()`: sets `isRecording = false`, calls `recognition.stop()`
+- [x] `stopRecording()`: captures `originalTranscript = transcript.trim()`
+- [x] `stopRecording()`: empty transcript → ERROR "No speech detected — try again"
+- [x] `stopRecording()`: non-empty transcript → `setState('THINKING')` then `setTimeout → setState('IDLE') 1500ms`
+- [x] Shortcut from IDLE → `startRecording()` (not `setState('RECORDING')` directly)
+- [x] Shortcut from RECORDING → `stopRecording()` (not `setState('THINKING')` directly)
+- [x] Error messages match FEATURE_SPEC.md§8 exactly (em dash `—`, correct capitalisation)
+- [x] `npm run lint` passes
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 criteria 6-14 and #8. Full happy path: ⌥Space → speak → ⌥Space → THINKING → (1.5s) IDLE. Auto-stop: ⌥Space → speak → silence → THINKING → IDLE. No-speech: ⌥Space → say nothing → silence → ERROR. Tap error → IDLE.
 **Test requirement**: Manual smoke — all 4 paths from §8 exercised before commit.
