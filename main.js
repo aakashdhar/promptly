@@ -20,7 +20,6 @@ const MODE_SYSTEM_PROMPTS = {
 let claudePath = null;
 let whisperPath = null;
 let win = null;
-let pillWin = null;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -205,59 +204,6 @@ app.whenReady().then(() => {
     }
     return { found: false, error: 'Claude CLI not found.' };
   });
-
-  // BUG-003-A/D/F: pill window lifecycle
-  ipcMain.handle('show-pill', () => {
-    win.setOpacity(0); // Fix 3: invisible immediately even before OS composites the hide
-    win.hide();
-    setTimeout(() => { // Fix 1: guarantee win is fully hidden before pill appears
-      pillWin = new BrowserWindow({
-        width: 480,
-        height: 90,
-        transparent: true,
-        frame: false,
-        alwaysOnTop: true,
-        resizable: false,
-        maximizable: false,
-        fullscreenable: false,
-        hasShadow: false,
-        vibrancy: 'under-window',
-        visualEffectState: 'active',
-        backgroundColor: '#00000000',
-        webPreferences: {
-          preload: path.join(__dirname, 'preload.js'),
-          contextIsolation: true,
-          nodeIntegration: false,
-        },
-      });
-      pillWin.center();
-      pillWin.loadFile('pill.html');
-      pillWin.on('closed', () => { pillWin = null; });
-    }, 50);
-    return { ok: true };
-  });
-
-  ipcMain.handle('hide-pill', () => { // Fix 2: hide pill FIRST, then restore win atomically
-    if (pillWin) {
-      pillWin.hide();
-      setTimeout(() => {
-        if (pillWin) { pillWin.destroy(); pillWin = null; }
-        win.setOpacity(1); // Fix 3: restore opacity before showing
-        win.show();
-        win.focus();
-      }, 50);
-    }
-    return { ok: true };
-  });
-
-  // pill → main → win: forward stop/dismiss actions
-  ipcMain.on('pill-stop', () => {
-    if (win) win.webContents.send('pill-action', { action: 'stop' });
-  });
-
-  ipcMain.on('pill-dismiss', () => {
-    if (win) win.webContents.send('pill-action', { action: 'dismiss' });
-  });
 });
 
 app.on('will-quit', () => {
@@ -274,7 +220,7 @@ app.on('activate', () => {
   // Only recreate the main window — pill window lifecycle is managed per-recording
   if (!win || win.isDestroyed()) {
     createWindow();
-  } else if (!win.isVisible() && !pillWin) {
+  } else if (!win.isVisible()) {
     win.show();
   }
 });

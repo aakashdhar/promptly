@@ -223,6 +223,67 @@
     .btn-copy:hover { box-shadow: 0 4px 28px rgba(10,132,255,0.65); }
     .btn-copy.copied { background: linear-gradient(135deg, rgba(48,209,88,0.9), rgba(36,160,68,0.9)); box-shadow: 0 2px 20px rgba(48,209,88,0.4); }
 
+    /* === RECORDING === */
+    .cr-rec {
+      height: 68px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      -webkit-app-region: drag;
+    }
+    .dismiss-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      -webkit-app-region: no-drag;
+      transition: background 150ms;
+    }
+    .dismiss-btn:hover { background: rgba(255,255,255,0.12); }
+    .wave-wrap { flex: 1; display: flex; align-items: center; height: 36px; -webkit-app-region: no-drag; }
+    .rec-dur {
+      font-size: 11px; font-weight: 500;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.06em;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+    .stop-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #FF3B30; border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      -webkit-app-region: no-drag;
+      animation: sglow 2s ease-in-out infinite;
+    }
+    @keyframes sglow {
+      0%,100% { box-shadow: 0 0 14px rgba(255,59,48,0.5), 0 2px 8px rgba(0,0,0,0.4); }
+      50% { box-shadow: 0 0 24px rgba(255,59,48,0.85), 0 2px 8px rgba(0,0,0,0.4); }
+    }
+    .transcript-wrap {
+      padding: 12px 18px 14px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    .transcript-wrap::-webkit-scrollbar { width: 3px; }
+    .transcript-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    .transcript-text {
+      font-size: 12.5px;
+      color: rgba(255,255,255,0.42);
+      line-height: 1.6;
+      letter-spacing: 0.01em;
+    }
+    .cursor-b {
+      display: inline-block; width: 1.5px; height: 13px;
+      background: rgba(255,255,255,0.6);
+      margin-left: 1px; vertical-align: middle;
+      animation: cb 1s step-end infinite;
+    }
+    @keyframes cb { 0%,100%{opacity:1} 50%{opacity:0} }
+
     /* === ERROR === */
     .cr-error {
       height: 76px;
@@ -269,6 +330,35 @@
           <div class="ready-sub">Press ⌥ Space or click to speak your prompt</div>
         </div>
         <span class="mode-pill" id="mode-pill">Balanced</span>
+      </div>
+    </div>
+
+    <!-- RECORDING -->
+    <div id="panel-recording" style="display:none">
+      <div class="traf">
+        <div class="tl tl-r"></div>
+        <div class="tl tl-y"></div>
+        <div class="tl tl-off"></div>
+      </div>
+      <div class="cr-rec">
+        <div class="dismiss-btn" id="dismissBtn">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="wave-wrap">
+          <canvas id="recCanvas" width="340" height="36" style="width:100%;height:36px;display:block"></canvas>
+        </div>
+        <span class="rec-dur" id="recDur">0:00</span>
+        <div class="stop-btn" id="stopBtn">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <rect x="1.5" y="1.5" width="7" height="7" rx="1.5" fill="white"/>
+          </svg>
+        </div>
+      </div>
+      <div class="div-line"></div>
+      <div class="transcript-wrap" id="transcriptWrap">
+        <div class="transcript-text" id="transcriptText"></div>
       </div>
     </div>
 
@@ -354,6 +444,7 @@
 
     const STATE_HEIGHTS = {
       IDLE: 101,
+      RECORDING: 160,
       THINKING: 220,
       PROMPT_READY: 480,
       ERROR: 101,
@@ -431,6 +522,66 @@
       morphAnimFrame = null;
     }
 
+    // --- Recording waveform + timer ---
+    let recSecs = 0;
+    let recTimer = null;
+    let waveT = 0;
+    let waveRAF = null;
+
+    function drawRecordingWave(t) {
+      const canvas = document.getElementById('recCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height, mid = H / 2;
+      ctx.clearRect(0, 0, W, H);
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, 'rgba(255,59,48,0)');
+      grad.addColorStop(0.08, 'rgba(255,59,48,0.85)');
+      grad.addColorStop(0.92, 'rgba(255,59,48,0.85)');
+      grad.addColorStop(1, 'rgba(255,59,48,0)');
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,59,48,0.1)';
+      ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.moveTo(0, mid);
+      for (let i = 0; i <= 100; i++) {
+        const x = (i / 100) * W;
+        const a = (Math.sin(i * 0.42 + t * 0.13) * 0.5 + 0.5) * 10 + (Math.sin(i * 0.85 + t * 0.08) * 0.4) * 4 + 1;
+        ctx.lineTo(x, mid + (i % 2 === 0 ? a : -a));
+      }
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = grad; ctx.lineWidth = 1.5; ctx.moveTo(0, mid);
+      for (let i = 0; i <= 100; i++) {
+        const x = (i / 100) * W;
+        const a = (Math.sin(i * 0.42 + t * 0.13) * 0.5 + 0.5) * 10 + (Math.sin(i * 0.85 + t * 0.08) * 0.4) * 4 + 1;
+        ctx.lineTo(x, mid + (i % 2 === 0 ? a : -a));
+      }
+      ctx.stroke();
+    }
+
+    function startRecTimer() {
+      recSecs = 0;
+      recTimer = setInterval(() => {
+        recSecs++;
+        const m = Math.floor(recSecs / 60);
+        const s = recSecs % 60;
+        const el = document.getElementById('recDur');
+        if (el) el.textContent = m + ':' + String(s).padStart(2, '0');
+      }, 1000);
+      function animateWave() {
+        drawRecordingWave(waveT++);
+        waveRAF = requestAnimationFrame(animateWave);
+      }
+      animateWave();
+    }
+
+    function stopRecTimer() {
+      clearInterval(recTimer);
+      cancelAnimationFrame(waveRAF);
+      recSecs = 0;
+      waveT = 0;
+    }
+
     // Parse **Header:** lines into pt-sl spans; rest is pre-wrapped text
     function renderPromptOutput(text) {
       const el = document.getElementById('prompt-output');
@@ -470,7 +621,7 @@
 
       const bar = document.getElementById('bar');
       bar.style.display = 'none';
-      ['panel-idle','panel-thinking','panel-ready','panel-error'].forEach(id => {
+      ['panel-idle','panel-recording','panel-thinking','panel-ready','panel-error'].forEach(id => {
         document.getElementById(id).style.display = 'none';
       });
 
@@ -483,8 +634,16 @@
       }
 
       if (newState === STATES.RECORDING) {
-        // win is hidden by showPill() IPC — nothing to show here
         window.electronAPI.setWindowButtonsVisible(false);
+        bar.style.display = '';
+        document.getElementById('panel-recording').style.display = '';
+        const durEl = document.getElementById('recDur');
+        if (durEl) durEl.textContent = '0:00';
+        const textEl = document.getElementById('transcriptText');
+        if (textEl) textEl.textContent = '';
+        stopRecTimer();
+        startRecTimer();
+        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.RECORDING));
       }
 
       if (newState === STATES.THINKING) {
@@ -529,20 +688,21 @@
       if (state === STATES.ERROR) setState(STATES.IDLE);
     });
 
-    // Pill stop/dismiss actions forwarded from main process
-    window.electronAPI.onPillAction(async ({ action }) => {
-      if (action === 'stop') {
-        stopRecording();
-      } else if (action === 'dismiss') {
-        if (mediaRecorder) {
-          mediaRecorder.stream.getTracks().forEach(t => t.stop());
-          mediaRecorder = null;
-        }
-        audioChunks = [];
-        isProcessing = false;
-        setState(STATES.IDLE);
-        await window.electronAPI.hidePill();
+    // Dismiss button — cancel recording
+    document.getElementById('dismissBtn').addEventListener('click', () => {
+      if (mediaRecorder) {
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        mediaRecorder = null;
       }
+      audioChunks = [];
+      isProcessing = false;
+      stopRecTimer();
+      setState(STATES.IDLE);
+    });
+
+    // Stop button — end recording and process
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      stopRecording();
     });
 
     // Global shortcut from main process
@@ -565,7 +725,6 @@
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.start();
         setState(STATES.RECORDING);
-        await window.electronAPI.showPill(); // hides win, shows pillWin
       } catch(e) {
         setState(STATES.ERROR, { message: 'Microphone access denied' });
       }
@@ -574,13 +733,13 @@
     async function stopRecording() {
       if (!mediaRecorder || isProcessing) return;
       isProcessing = true;
+      stopRecTimer();
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(t => t.stop());
       mediaRecorder.onstop = async () => {
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const arrayBuffer = await blob.arrayBuffer();
-        setState(STATES.THINKING); // DOM ready before win is shown
-        await window.electronAPI.hidePill(); // hide pill, restore win in THINKING state
+        setState(STATES.THINKING);
         isProcessing = false;
         const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer);
         if (!transcribeResult.success) {

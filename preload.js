@@ -28,24 +28,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   transcribeAudio: (arrayBuffer) =>
     ipcRenderer.invoke('transcribe-audio', arrayBuffer),
 
-  // pill window lifecycle
-  showPill: () =>
-    ipcRenderer.invoke('show-pill'),
-
-  hidePill: () =>
-    ipcRenderer.invoke('hide-pill'),
-
-  // pill.html → main (fire-and-forget from pill window)
-  pillStop: () =>
-    ipcRenderer.send('pill-stop'),
-
-  pillDismiss: () =>
-    ipcRenderer.send('pill-dismiss'),
-
-  // main → index.html (forwarded pill actions)
-  onPillAction: (callback) =>
-    ipcRenderer.on('pill-action', (_event, payload) => callback(payload)),
-
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),
