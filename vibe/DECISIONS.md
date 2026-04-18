@@ -479,6 +479,17 @@ Key fixes applied:
 
 ---
 
+---
+
+## — Feature Start: FEATURE-004 (React migration) — 2026-04-19
+> Folder: vibe/features/2026-04-19-react-migration/
+> Migrates renderer from vanilla JS/HTML to React + Vite. Electron main process unchanged.
+> Tasks: FCR-001 · FCR-002 · FCR-003 · FCR-004 · FCR-005 · FCR-006 · FCR-007 · FCR-008 · FCR-009 · FCR-010 · FCR-011 · FCR-012 · FCR-013 · FCR-014 | Estimated: ~20-24 hours
+> Branch: feat/react-migration — DO NOT merge to main until all 18 smoke test items pass
+> Drift logged below.
+
+---
+
 ### D-LANGUAGE-REMOVE — F-LANGUAGE removed; English-only via --language en flag
 - **Date**: 2026-04-19 · **Type**: scope-change (feature removal)
 - **Trigger**: User-initiated — Whisper transcription quality in Hindi was poor and the output was unusable

@@ -160,6 +160,25 @@
    [x] FLG-003 · CODEBASE.md + ARCHITECTURE.md update
    → Full spec: vibe/features/2026-04-18-multi-language/FEATURE_TASKS.md
 
+🔄 **FEATURE-004 — React migration** — Renderer migrated to React + Vite (0/14)
+   Estimated: approx. 20-24 hours (S: 8, M: 6)
+   Branch: feat/react-migration (DO NOT merge to main until all smoke tests pass)
+   [ ] FCR-001 · Branch + install devDeps — git checkout -b feat/react-migration, npm install vite + react
+   [ ] FCR-002 · vite.config.js + package.json scripts + electron-builder files config
+   [ ] FCR-003 · src/renderer folder structure + index.html + main.jsx
+   [ ] FCR-004 · CSS migration: tokens.css + bar.css + states.css (exact copy from index.html)
+   [ ] FCR-005 · useMode.js + useWindowResize.js hooks
+   [ ] FCR-006 · App.jsx state machine core — state vars, transition(), IPC wiring, theme
+   [ ] FCR-007 · IdleState.jsx — pulse ring, mode pill, click handler
+   [ ] FCR-008 · WaveformCanvas.jsx + RecordingState.jsx — red sine wave RAF + timer
+   [ ] FCR-009 · MorphCanvas.jsx + ThinkingState.jsx — blue morph wave + YOU SAID
+   [ ] FCR-010 · PromptReadyState.jsx — copy flash, edit/done, regenerate, reset
+   [ ] FCR-011 · ErrorState.jsx — error badge + dismiss
+   [ ] FCR-012 · main.js: load React build (NODE_ENV dev → localhost:5173, prod → dist-renderer)
+   [ ] FCR-013 · History foundation: saveToHistory() in App.jsx, localStorage cap 100
+   [ ] FCR-014 · Full wiring + smoke test (18 items) + CODEBASE.md update
+   → Full specs: vibe/features/2026-04-19-react-migration/FEATURE_TASKS.md (agent use)
+
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
@@ -167,17 +186,11 @@
 ---
 
 ## What just happened
-💰 Cost tracked — Session #12: ~$0.76 est. | Project total: ~$7.06 | Trend: ↑ +35% (continuation overhead)
-   vibe/cost/report-2026-04-19-session12.md
-
-⚡ vibe-parallel — Phase 4 complete (session 2026-04-19):
-   F-HISTORY ✅ — FHI-001/002/003/004 — HISTORY state, saveToHistory/loadHistory, history pill in IDLE + btn in PROMPT_READY
-   F-TRAY ✅ — FTR-001/002/003 — system tray icon, app stays alive when window closed, dock hidden
-   F-DARKMODE ✅ — FDM-001/002/003 — body.light CSS tokens, nativeTheme IPC, theme wiring at boot
-   F-LANGUAGE ✅ — FLG-001/002/003 — LANGUAGES constant, language pill in IDLE, Whisper lang flag, show-language-menu IPC
-   UI fixes: THINKING state height → 320px; idle pulse ring enlarged + glow added
+🗂️ FEATURE-004 spec kit created — React migration planned (2026-04-19)
+   vibe/features/2026-04-19-react-migration/ — FEATURE_SPEC.md + FEATURE_PLAN.md + FEATURE_TASKS.md
+   14 tasks, ~20-24h estimated | Branch: feat/react-migration
 
 ## What's next
-⬜ Manual smoke test — exercise all 6 states × all 6 modes (including Design); test history, language picker, tray toggle, dark/light switching
-⬜ Build new .dmg — npm run dist — v1.1.0 with Phase 4 features
-⬜ Distribution / notarisation
+⬜ FCR-001 · Create branch + install vite, @vitejs/plugin-react, react, react-dom as devDeps
+   When done: vite.config.js, folder structure, hooks, components, App.jsx, main.js update
+Say "next" to begin.
