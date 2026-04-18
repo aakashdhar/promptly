@@ -56,7 +56,8 @@ Not web, not mobile, not cross-platform for v1.
 
 | Feature | Priority | Notes |
 |---|---|---|
-| Floating bar, always on top, vibrancy | Must | macOS-native feel — this is the first impression |
+| Floating bar, always on top, vibrancy, traffic lights | Must | macOS-native feel — `titleBarStyle: hiddenInset` with traffic lights at `{ x: 12, y: 10 }` |
+| 30-bar visual waveform (IDLE + RECORDING) | Must | Static grey in IDLE, animated red in RECORDING — sine+noise, not real audio data |
 | Speech recording via Web Speech API | Must | Live transcript with blinking cursor |
 | Claude CLI integration (`claude -p`) | Must | PATH resolved via login shell, not bare exec |
 | 5 prompt modes | Must | Balanced, Detailed, Concise, Chain, Code — right-click menu |
@@ -177,6 +178,8 @@ All critical questions resolved. No open items blocking build start.
 - ✅ Mode visibility: label in idle bar next to shortcut hint
 
 ---
+
+- Scope change 2026-04-18: Traffic lights added via titleBarStyle: hiddenInset (was in original intent, omitted from SPEC.md F1); 30-bar visual waveform added to IDLE/RECORDING (was referenced in files list, never specced)
 
 ## Architecture decisions
 > Decided during architect: — 2026-04-18
