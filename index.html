@@ -660,6 +660,35 @@
           }, 1800);
         });
 
+        // Edit
+        document.getElementById('action-edit').addEventListener('click', () => {
+          const output = document.getElementById('prompt-output');
+          output.contentEditable = 'true';
+          output.focus();
+          document.getElementById('action-edit').hidden = true;
+          document.getElementById('action-done').hidden = false;
+        });
+
+        // Done
+        document.getElementById('action-done').addEventListener('click', () => {
+          const output = document.getElementById('prompt-output');
+          generatedPrompt = output.textContent;
+          output.contentEditable = 'false';
+          document.getElementById('action-done').hidden = true;
+          document.getElementById('action-edit').hidden = false;
+        });
+
+        // Escape to cancel edit
+        document.getElementById('prompt-output').addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            const output = document.getElementById('prompt-output');
+            output.textContent = generatedPrompt;
+            output.contentEditable = 'false';
+            document.getElementById('action-done').hidden = true;
+            document.getElementById('action-edit').hidden = false;
+          }
+        });
+
         // Boot gate — first-run setup or direct IDLE
         if (getFirstRunComplete()) {
           setState('IDLE');
