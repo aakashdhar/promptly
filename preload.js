@@ -50,4 +50,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onShortcutConflict: (callback) =>
     ipcRenderer.on('shortcut-conflict', callback),
+
+  getTheme: () =>
+    ipcRenderer.invoke('get-theme'),
+
+  onThemeChanged: (callback) =>
+    ipcRenderer.on('theme-changed', (_event, data) => callback(data)),
 });

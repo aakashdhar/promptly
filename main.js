@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, shell } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, shell, nativeTheme } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -158,6 +158,11 @@ function createWindow() {
     },
   });
   win.loadFile('index.html');
+  nativeTheme.on('updated', () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
+    }
+  });
   return win;
 }
 
@@ -222,6 +227,10 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('request-mic', async () => {
     return { ok: true };
+  });
+
+  ipcMain.handle('get-theme', () => {
+    return { dark: nativeTheme.shouldUseDarkColors };
   });
 
   // P1-008: IPC handlers
