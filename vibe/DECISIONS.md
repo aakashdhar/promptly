@@ -476,3 +476,16 @@ Key fixes applied:
 - **Impact on other tasks**: None — feature was self-contained in index.html only. main.js and preload.js untouched.
 - **Approved by**: human
 - **Status**: REMOVED 2026-04-19 — revisit in React migration
+
+---
+
+### D-LANGUAGE-REMOVE — F-LANGUAGE removed; English-only via --language en flag
+- **Date**: 2026-04-19 · **Type**: scope-change (feature removal)
+- **Trigger**: User-initiated — Whisper transcription quality in Hindi was poor and the output was unusable
+- **What was planned**: F-LANGUAGE — 12-language picker, language pill in IDLE, Whisper --language flag passed from renderer
+- **What was done**: Entire feature removed. Language pill, LANGUAGES constant, LANGUAGE_KEY, getLanguage/setLanguage/getLanguageLabel, showLanguageMenu IPC, onLanguageSelected callback all deleted. Whisper CLI now hardcoded to --language en for reliable English-only transcription.
+- **Why**: Whisper tiny model + non-English speech produced garbled output with no resemblance to what was said. Multi-language support in Whisper tiny is unreliable without significant model size increase. Will revisit in React migration with a better transcription strategy (larger model, cloud API, or browser-native speech recognition).
+- **Alternatives considered**: Upgrade to whisper medium/large model — too slow for real-time UX. Keep the picker but warn about quality — adds UI complexity for a broken feature.
+- **Impact**: main.js transcribe-audio handler simplified (language param + langFlag removed, --language en hardcoded). preload.js transcribeAudio reverted to single argument. index.html cleaned of all language UI and logic.
+- **Approved by**: human
+- **Status**: REMOVED 2026-04-19 — revisit in React migration
