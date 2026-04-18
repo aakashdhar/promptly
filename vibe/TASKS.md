@@ -38,12 +38,12 @@
    [x] FST-005 · Boot + IPC wire-up — shortcut listeners, DOMContentLoaded → IDLE, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md (agent use)
 
-🔄 **F-FIRST-RUN — First-run setup checklist** (0/4)
+✅ **F-FIRST-RUN — First-run setup checklist** (4/4 — COMPLETE)
    Estimated: approx. 3-4 hours (S: 3, M: 1)
    [x] FRN-001 · Boot gate + DOM ID fix — gate boot on firstRunComplete, add id to mic status span
    [x] FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
    [x] FRN-003 · Mic grant button handler — getUserMedia, success/error status update
-   [ ] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
+   [x] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-first-run/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-SPEECH — Speech recording**
@@ -99,10 +99,13 @@
 ---
 
 ## What just happened
-✅ FRN-003 done — mic grant button handler wired at DOMContentLoaded: getUserMedia success sets
-   micOk=true, ✓, hides button, calls checkFirstRunCompletion(); error sets ✗, updates label, hides button.
+✅ FRN-004 done — checkFirstRunCompletion() stub replaced with real impl: if cliOk && micOk →
+   setFirstRunComplete(true) → setTimeout 600ms → setState('IDLE'). CODEBASE.md updated with
+   cliOk, micOk vars, initFirstRun(), checkFirstRunCompletion(), all firstrun DOM IDs.
+   F-FIRST-RUN feature complete (4/4).
 
 ## What's next
-⬜ FRN-004 · checkFirstRunCompletion() + IDLE transition
-   Replace stub: if cliOk && micOk → setFirstRunComplete(true) → setTimeout 600ms → setState('IDLE'). Then update CODEBASE.md.
+⬜ F-SPEECH — Speech recording feature
+   Needs: F-STATE complete ✅, F-FIRST-RUN complete ✅ (claudePath confirmed)
+   Run `feature: speech-recording` to plan this feature in detail.
 Say "next" to begin.

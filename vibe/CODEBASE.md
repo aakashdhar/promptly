@@ -1,13 +1,13 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-18 (FST-005 — boot sequence, IPC wire-up, setState resize call)
+> Last updated: 2026-04-18 (FRN-004 — checkFirstRunCompletion() + IDLE transition, F-FIRST-RUN complete)
 
 ---
 
 ## Current state
 
-**Phase:** Phase 2 in progress — F-STATE complete (5/5) — F-FIRST-RUN or F-SPEECH next
+**Phase:** Phase 2 in progress — F-STATE complete (5/5) — F-FIRST-RUN complete (4/4) — F-SPEECH next
 **Files written:** 6 source files + eslint.config.js
 
 ---
@@ -21,7 +21,7 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `main.js` | Electron main: window, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `claudePath`, `win`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer | `window.electronAPI` |
-| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up | `setState()`, `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()`, `STATE_HEIGHTS`, `currentState`, `transcript`, `originalTranscript`, `generatedPrompt` |
+| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up | `setState()`, `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()`, `initFirstRun()`, `checkFirstRunCompletion()`, `STATE_HEIGHTS`, `currentState`, `transcript`, `originalTranscript`, `generatedPrompt`, `cliOk`, `micOk` |
 
 ---
 
@@ -63,6 +63,8 @@
 | Variable | Type | Set by | Read by |
 |----------|------|--------|---------|
 | `currentState` | string | `setState()` | all features |
+| `cliOk` | boolean | `initFirstRun()` | `checkFirstRunCompletion()` |
+| `micOk` | boolean | `initFirstRun()`, mic btn handler | `checkFirstRunCompletion()` |
 | `transcript` | string | F-SPEECH (live updates) | F-CLAUDE |
 | `originalTranscript` | string | F-SPEECH (captured once on stop) | F-CLAUDE, F-ACTIONS |
 | `generatedPrompt` | string | F-CLAUDE | F-ACTIONS |
@@ -121,6 +123,9 @@
 | `action-regenerate` | PROMPT_READY | F-ACTIONS |
 | `error-message` | ERROR | setState() (set via payload.message) |
 | `firstrun-cli-status` | FIRST_RUN | F-FIRST-RUN |
+| `firstrun-cli-label` | FIRST_RUN | F-FIRST-RUN |
+| `firstrun-mic-status` | FIRST_RUN | F-FIRST-RUN |
+| `firstrun-mic-label` | FIRST_RUN | F-FIRST-RUN |
 | `firstrun-mic-btn` | FIRST_RUN | F-FIRST-RUN |
 
 ---

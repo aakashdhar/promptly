@@ -211,7 +211,7 @@ document.getElementById('firstrun-mic-btn').addEventListener('click', async () =
 ---
 
 ### FRN-004 · `checkFirstRunCompletion()` + IDLE transition
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (criteria 10-11), FEATURE_SPEC.md#9 (600ms delay)
 - **Dependencies**: FRN-002, FRN-003
@@ -236,12 +236,12 @@ Then update `vibe/CODEBASE.md`:
 - Update "Current state" to note F-FIRST-RUN as in progress
 
 **Acceptance criteria**:
-- [ ] `checkFirstRunCompletion()` calls `setFirstRunComplete(true)` when both flags true
-- [ ] `setState('IDLE')` fires after 600ms delay (not immediately)
-- [ ] When only one flag is true, function is a no-op
-- [ ] `setFirstRunComplete` used — never `localStorage.setItem` directly
-- [ ] CODEBASE.md updated with all new vars/functions/IDs from this feature
-- [ ] `npm run lint` passes
+- [x] `checkFirstRunCompletion()` calls `setFirstRunComplete(true)` when both flags true
+- [x] `setState('IDLE')` fires after 600ms delay (not immediately)
+- [x] When only one flag is true, function is a no-op
+- [x] `setFirstRunComplete` used — never `localStorage.setItem` directly
+- [x] CODEBASE.md updated with all new vars/functions/IDs from this feature
+- [x] `npm run lint` passes
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 criteria 10-11. Full happy-path smoke test: clear localStorage → launch → CLI ✓ → click Grant Access → allow → both ✓ → 600ms → IDLE. Then restart → IDLE directly.
 **Test requirement**: Full happy-path smoke test as described above. Also verify `localStorage.getItem('firstRunComplete')` is `'true'` after completion (check in DevTools).
@@ -257,17 +257,17 @@ Then update `vibe/CODEBASE.md`:
 
 #### Conformance: F-FIRST-RUN
 > Tick after every task. All items ✅ before feature is shippable.
-- [ ] First launch shows FIRST_RUN state, not IDLE
-- [ ] CLI check reflects actual claudePath resolution result
-- [ ] Mic grant button triggers macOS permission dialog
-- [ ] Both checks pass → auto-transition to IDLE within 600ms
-- [ ] Subsequent launches skip directly to IDLE
-- [ ] No new IPC channels added
-- [ ] No `innerHTML` with dynamic content
-- [ ] No `localStorage.*` direct access (wrappers only)
-- [ ] All existing tests still pass (manual: all 6 states still reachable)
-- [ ] Linter clean (`npm run lint`)
-- [ ] No regressions: IDLE, RECORDING stub, ERROR dismiss all still work
-- [ ] CODEBASE.md updated: cliOk, micOk, initFirstRun(), checkFirstRunCompletion(), firstrun-mic-status
+- [x] First launch shows FIRST_RUN state, not IDLE
+- [x] CLI check reflects actual claudePath resolution result
+- [x] Mic grant button triggers macOS permission dialog
+- [x] Both checks pass → auto-transition to IDLE within 600ms
+- [x] Subsequent launches skip directly to IDLE
+- [x] No new IPC channels added
+- [x] No `innerHTML` with dynamic content
+- [x] No `localStorage.*` direct access (wrappers only)
+- [x] All existing tests still pass (manual: all 6 states still reachable)
+- [x] Linter clean (`npm run lint`)
+- [x] No regressions: IDLE, RECORDING stub, ERROR dismiss all still work
+- [x] CODEBASE.md updated: cliOk, micOk, initFirstRun(), checkFirstRunCompletion(), firstrun-mic-status
 
 ---
