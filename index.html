@@ -43,7 +43,7 @@
       /* IDLE */
       #state-idle {
         height: 44px;
-        justify-content: center;
+        padding: 0 16px 0 72px;
         gap: 8px;
         position: relative;
       }
@@ -71,9 +71,8 @@
       /* RECORDING */
       #state-recording {
         height: 80px;
-        flex-direction: column;
-        padding: 8px 16px;
-        gap: 6px;
+        padding: 0 16px 0 72px;
+        gap: 10px;
       }
       .recording-row {
         width: 100%;
@@ -235,6 +234,26 @@
       }
       .status-ok    { color: var(--color-success); }
       .status-error { color: var(--color-recording); }
+
+      /* Waveform */
+      .waveform {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex: 1;
+        justify-content: center;
+      }
+      .waveform-bar {
+        width: 3px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      .waveform-idle .waveform-bar {
+        background: rgba(0, 0, 0, 0.18);
+      }
+      .waveform-recording .waveform-bar {
+        background: var(--color-recording);
+      }
     </style>
   </head>
   <body>
@@ -255,17 +274,17 @@
       <!-- IDLE -->
       <div id="state-idle" class="state-panel" hidden>
         <span id="idle-mode-label" class="mode-pill">Balanced</span>
+        <div id="idle-waveform" class="waveform waveform-idle"></div>
         <span id="idle-shortcut-hint" class="shortcut-hint">⌥Space</span>
         <span id="idle-conflict-notice" class="conflict-notice" hidden>Shortcut ⌥Space taken — using ⌃`</span>
       </div>
 
       <!-- RECORDING -->
       <div id="state-recording" class="state-panel" hidden>
-        <div class="recording-row">
-          <span id="recording-dot" class="recording-dot"></span>
-          <span id="recording-transcript" class="recording-transcript">Listening…</span>
-          <span id="recording-stop-hint" class="stop-hint">⌥Space to stop</span>
-        </div>
+        <span id="recording-dot" class="recording-dot"></span>
+        <div id="recording-waveform" class="waveform waveform-recording"></div>
+        <span id="recording-stop-hint" class="stop-hint">⌥Space to stop</span>
+        <span id="recording-transcript" hidden></span>
       </div>
 
       <!-- THINKING -->
@@ -302,6 +321,7 @@
       let mediaRecorder = null;
       let audioChunks = [];
       let isRecording = false;
+      let waveformInterval = null;
 
       const STATE_HEIGHTS = {
         FIRST_RUN: 120,
@@ -330,7 +350,10 @@
           console.error('setState: unknown state', newState);
           return;
         }
+        const prevState = currentState;
         currentState = newState;
+        if (newState === 'RECORDING') startWaveform();
+        else if (prevState === 'RECORDING') stopWaveform();
 
         // Hide all panels; show active
         const panels = ['FIRST_RUN', 'IDLE', 'RECORDING', 'THINKING', 'PROMPT_READY', 'ERROR'];
@@ -453,7 +476,47 @@
         mediaRecorder.stream.getTracks().forEach(t => t.stop());
       }
 
+      function buildWaveforms() {
+        const idleContainer = document.getElementById('idle-waveform');
+        for (let i = 0; i < 30; i++) {
+          const bar = document.createElement('div');
+          bar.className = 'waveform-bar';
+          bar.style.height = Math.round(3 + (Math.sin(i * 0.5) + 1) * 3) + 'px';
+          idleContainer.appendChild(bar);
+        }
+        const recContainer = document.getElementById('recording-waveform');
+        for (let i = 0; i < 30; i++) {
+          const bar = document.createElement('div');
+          bar.className = 'waveform-bar';
+          bar.style.height = '4px';
+          recContainer.appendChild(bar);
+        }
+      }
+
+      function startWaveform() {
+        const bars = document.querySelectorAll('#recording-waveform .waveform-bar');
+        let t = 0;
+        waveformInterval = setInterval(() => {
+          t += 0.12;
+          bars.forEach((bar, i) => {
+            const sine = (Math.sin(t + i * 0.35) + 1) / 2;
+            const noise = Math.random() * 0.25;
+            bar.style.height = Math.max(4, Math.round((sine * 0.75 + noise) * 32)) + 'px';
+          });
+        }, 50);
+      }
+
+      function stopWaveform() {
+        clearInterval(waveformInterval);
+        waveformInterval = null;
+        document.querySelectorAll('#recording-waveform .waveform-bar').forEach(bar => {
+          bar.style.height = '4px';
+        });
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
+        buildWaveforms();
+
         // Shortcut listener — start/stop real speech recording
         window.electronAPI.onShortcutTriggered(() => {
           if (currentState === 'IDLE') {
