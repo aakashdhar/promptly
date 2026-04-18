@@ -233,6 +233,8 @@
         font-size: 13px;
         color: rgba(0,0,0,0.75);
       }
+      .status-ok    { color: var(--color-success); }
+      .status-error { color: var(--color-recording); }
     </style>
   </head>
   <body>
@@ -240,12 +242,12 @@
       <!-- FIRST_RUN -->
       <div id="state-first-run" class="state-panel" hidden>
         <div class="firstrun-row" id="firstrun-cli-row">
-          <span id="firstrun-cli-status" class="firstrun-status"></span>
-          <span class="firstrun-label">Claude CLI installed</span>
+          <span id="firstrun-cli-status" class="firstrun-status">○</span>
+          <span id="firstrun-cli-label" class="firstrun-label">Claude CLI installed</span>
         </div>
         <div class="firstrun-row" id="firstrun-mic-row">
-          <span class="firstrun-status">○</span>
-          <span class="firstrun-label">Microphone access granted</span>
+          <span id="firstrun-mic-status" class="firstrun-status">○</span>
+          <span id="firstrun-mic-label" class="firstrun-label">Microphone access granted</span>
           <button id="firstrun-mic-btn" class="btn-action">Grant Access</button>
         </div>
       </div>
@@ -295,6 +297,8 @@
       let transcript = '';
       let originalTranscript = '';
       let generatedPrompt = '';
+      let cliOk = false;
+      let micOk = false;
 
       const STATE_HEIGHTS = {
         FIRST_RUN: 120,
@@ -349,6 +353,8 @@
         }
       }
 
+      function initFirstRun() {}
+
       document.addEventListener('DOMContentLoaded', () => {
         // Shortcut listener — stub cycle (F-SPEECH will replace this)
         window.electronAPI.onShortcutTriggered(() => {
@@ -376,8 +382,12 @@
         document.getElementById('idle-mode-label').textContent =
           initialMode.charAt(0).toUpperCase() + initialMode.slice(1);
 
-        // Boot into IDLE (F-FIRST-RUN will later decide FIRST_RUN vs IDLE)
-        setState('IDLE');
+        // Boot gate — first-run setup or direct IDLE
+        if (getFirstRunComplete()) {
+          setState('IDLE');
+        } else {
+          initFirstRun();
+        }
       });
     </script>
   </body>
