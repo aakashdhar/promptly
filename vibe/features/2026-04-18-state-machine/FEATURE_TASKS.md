@@ -86,7 +86,7 @@ function setState(newState, payload = {}) {
 ---
 
 ### FST-002 · DOM structure: all 6 state panels in #app
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (DOM structure criteria)
 - **Dependencies**: FST-001
@@ -480,7 +480,7 @@ body {
 ---
 
 ### FST-004 · Window resize IPC channel
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#7 (resize-window IPC)
 - **Dependencies**: FST-001 (STATE_HEIGHTS constant)

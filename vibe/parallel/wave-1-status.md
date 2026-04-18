@@ -1,16 +1,21 @@
-# Wave 1 — Phase 1 Foundation
-Started: 2026-04-18T06:00:00Z
+# Wave 1 — F-STATE: State machine + full UI skeleton
+Started: 2026-04-18 · Completed: 2026-04-18
 
 ## Tasks
-| ID | Size | Status | Started | Completed | Duration |
-|----|------|--------|---------|-----------|----------|
-| P1-002 | S | 🔄 running | 06:00 | — | — |
-| P1-003 | M | 🔄 running | 06:00 | — | — |
-| P1-004 | S | 🔄 running | 06:00 | — | — |
-| P1-005 | S | 🔄 running | 06:00 | — | — |
+| ID | Size | Status | Notes |
+|----|------|--------|-------|
+| FST-002 | M | ✅ complete | DOM + setState() panel switching; all criteria met |
+| FST-004 | S | ✅ complete | resize-window IPC; applied manually (subagent made unintended edits, 3 accepted changes only) |
 
 ## Summary
-Total tasks: 4 · Complete: 0 · Partial: 0 · Failed: 0
+Total tasks: 2 · Complete: 2 · Partial: 0 · Failed: 0
+
+## Files modified this wave
+index.html, main.js, preload.js
+
+## Notes
+FST-004 subagent made unintended changes (removed screen positioning, altered IPC shapes).
+Applied only the 3 correct changes manually: resize-window handler, resizeWindow preload, windowHeight 44.
 
 ## Next wave
-Wave 2 — P1-006 (PATH resolution) — unlocks when Wave 1 completes
+Wave 2 — FST-003 (CSS) — unlocked
