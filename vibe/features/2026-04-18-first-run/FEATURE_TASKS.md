@@ -160,7 +160,7 @@ function checkFirstRunCompletion() {}
 ---
 
 ### FRN-003 · Mic grant button handler
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (criteria 7-9), FEATURE_SPEC.md#8 (getUserMedia error)
 - **Dependencies**: FRN-001
