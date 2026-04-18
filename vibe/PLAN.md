@@ -18,7 +18,7 @@ macOS floating bar (Electron) that records speech via Web Speech API, sends the 
 |-------|--------|-------|
 | Shell | Electron v31+ | Native window APIs, .dmg builder |
 | Frontend | Vanilla HTML + CSS + JS | Single index.html — no build step |
-| Speech | webkitSpeechRecognition | Native macOS engine, private |
+| Speech | getUserMedia + MediaRecorder + Whisper CLI | Local transcription, no API key — D-003 replaced webkitSpeechRecognition |
 | Prompt gen | claude -p via child_process | PATH via zsh login shell |
 | IPC | ipcMain + contextBridge preload | Sandboxed renderer |
 | Storage | localStorage | mode + firstRunComplete only |
