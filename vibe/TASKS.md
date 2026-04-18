@@ -30,11 +30,14 @@
 > Features marked [parallel with: X] can run simultaneously.
 > Phase 2 exit: run `review: phase 2` when all features complete.
 
-⬜ **F-STATE — State machine + full UI skeleton**
-   Build order: 1 · No dependencies · Start here after Phase 1 gate passes
-   What you can do when done: Bar renders all 6 states on command; transitions are instant and correct
-   Shared data: establishes currentState var and setState() used by every subsequent feature
-   Spec: run `feature: state-machine` to plan this feature in detail
+🔄 **F-STATE — State machine + full UI skeleton** (1/5)
+   Estimated: approx. 7 hours (S: 3, M: 2)
+   [x] FST-001 · JS foundation — module vars, localStorage wrappers, setState() skeleton
+   [ ] FST-002 · DOM structure — all 6 state panels in #app with correct IDs
+   [ ] FST-003 · CSS — all 6 states fully styled, animations, design tokens
+   [ ] FST-004 · Window resize IPC — resize-window channel in main.js + preload.js, setState() wires resize
+   [ ] FST-005 · Boot + IPC wire-up — shortcut listeners, DOMContentLoaded → IDLE, CODEBASE.md update
+   → Full specs: vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-FIRST-RUN — First-run setup checklist**
    Build order: 2 · Needs: F-STATE complete
@@ -96,13 +99,9 @@
 ---
 
 ## What just happened
-Phase 1 review complete. Score 7.9/10 (B). 3 P1 IPC contract bugs fixed inline. Phase 1 gate ✅ passed.
-💰 Cost tracked — Session #2: ~$1.30 (est. ±25%) · Project total: ~$1.91 · Sessions: 2
-   vibe/cost/report-2026-04-18-phase1.md
+✅ FST-001 done — module-scope vars, STATE_HEIGHTS, localStorage wrappers, setState() skeleton added to index.html.
+   setState() logs correctly; unknown state logs error and returns; no direct localStorage access outside wrappers.
 
 ## What's next
-⬜ Phase 2 begins — run `feature: state-machine` to plan F-STATE (no dependencies, start here)
-
-Read `CLAUDE.md`, then `vibe/CODEBASE.md`, then `vibe/ARCHITECTURE.md`, then `vibe/SPEC_INDEX.md`, then `vibe/TASKS.md`.
-Confirm the first task before writing any code. Say **"next"** after each task.
-Run **`review: phase 1`** when all Phase 1 tasks are complete.
+⬜ FST-002 · DOM structure — all 6 state panels in #app with correct IDs; setState() updated to switch panels.
+Say "next" to begin.
