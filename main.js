@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, shell } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -20,6 +20,43 @@ const MODE_SYSTEM_PROMPTS = {
 let claudePath = null;
 let whisperPath = null;
 let win = null;
+let splashWin = null;
+
+function resolveClaudePath() {
+  return new Promise((resolve) => {
+    exec('zsh -lc "which claude"', (err, stdout) => {
+      const p = stdout.trim();
+      if (err || !p) {
+        console.log('claudePath: not resolved —', err?.message);
+        resolve(null);
+      } else {
+        console.log('claudePath:', p);
+        resolve(p);
+      }
+    });
+  });
+}
+
+function registerShortcut() {
+  const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
+    win.webContents.send('shortcut-triggered');
+  });
+  if (primaryRegistered) {
+    console.log('Shortcut registered:', SHORTCUT_PRIMARY);
+  } else {
+    const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
+      win.webContents.send('shortcut-triggered');
+    });
+    if (fallbackRegistered) {
+      console.log('Shortcut registered (fallback):', SHORTCUT_FALLBACK);
+      win.webContents.on('did-finish-load', () => {
+        win.webContents.send('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
+      });
+    } else {
+      console.log('Shortcut registration failed for both', SHORTCUT_PRIMARY, 'and', SHORTCUT_FALLBACK);
+    }
+  }
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -45,57 +82,71 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-
   win.loadFile('index.html');
-  win.once('ready-to-show', () => { win.show(); });
   return win;
 }
 
-app.commandLine.appendSwitch('enable-transparent-visuals')
-app.commandLine.appendSwitch('disable-gpu-compositing')
+app.commandLine.appendSwitch('enable-transparent-visuals');
+app.commandLine.appendSwitch('disable-gpu-compositing');
 
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  claudePath = await resolveClaudePath();
 
-  // PATH resolution — claude + whisper
   exec('zsh -lc "which whisper"', (err, stdout) => {
     whisperPath = stdout.trim() || null;
     console.log('whisperPath:', whisperPath || 'not found');
   });
 
-  exec('zsh -lc "which claude"', (err, stdout) => {
-    claudePath = stdout.trim();
-    if (err || !claudePath) {
-      claudePath = null;
-      console.log('claudePath: not resolved —', err?.message);
-    } else {
-      console.log('claudePath:', claudePath);
-    }
+  splashWin = new BrowserWindow({
+    width: 520,
+    height: 300,
+    show: false,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    vibrancy: 'fullscreen-ui',
+    visualEffectState: 'active',
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+  splashWin.loadFile('splash.html');
+  splashWin.once('ready-to-show', () => {
+    splashWin.show();
+    splashWin.center();
   });
 
-  // P1-007: global shortcut registration
-  const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
-    win.webContents.send('shortcut-triggered');
+  createWindow();
+
+  ipcMain.handle('splash-done', async () => {
+    if (splashWin) splashWin.hide();
+    setTimeout(() => {
+      if (splashWin) { splashWin.destroy(); splashWin = null; }
+      win.show();
+      win.center();
+      registerShortcut();
+    }, 400);
   });
 
-  if (primaryRegistered) {
-    console.log('Shortcut registered:', SHORTCUT_PRIMARY);
-  } else {
-    const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
-      win.webContents.send('shortcut-triggered');
-    });
+  ipcMain.handle('splash-check-cli', async () => {
+    return { ok: !!claudePath, path: claudePath };
+  });
 
-    if (fallbackRegistered) {
-      console.log('Shortcut registered (fallback):', SHORTCUT_FALLBACK);
-      win.webContents.on('did-finish-load', () => {
-        win.webContents.send('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
-      });
-    } else {
-      console.log('Shortcut registration failed for both', SHORTCUT_PRIMARY, 'and', SHORTCUT_FALLBACK);
-    }
-  }
+  ipcMain.handle('splash-open-url', async (_event, url) => {
+    shell.openExternal(url);
+  });
 
-  // P1-008: IPC channel stubs
+  ipcMain.handle('request-mic', async () => {
+    return { ok: true };
+  });
+
+  // P1-008: IPC handlers
   ipcMain.handle('generate-prompt', (_event, { transcript, mode }) => {
     return new Promise((resolve) => {
       if (!claudePath) {
@@ -225,7 +276,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  // Only recreate the main window — pill window lifecycle is managed per-recording
   if (!win || win.isDestroyed()) {
     createWindow();
   } else if (!win.isVisible()) {

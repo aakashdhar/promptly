@@ -28,6 +28,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   transcribeAudio: (arrayBuffer) =>
     ipcRenderer.invoke('transcribe-audio', arrayBuffer),
 
+  // splash → main
+  splashDone: () =>
+    ipcRenderer.invoke('splash-done'),
+
+  splashCheckCLI: () =>
+    ipcRenderer.invoke('splash-check-cli'),
+
+  splashOpenURL: (url) =>
+    ipcRenderer.invoke('splash-open-url', url),
+
+  requestMic: () =>
+    ipcRenderer.invoke('request-mic'),
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),

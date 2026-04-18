@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: transparent !important;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  width: 520px;
+  height: 300px;
+}
+
+.splash {
+  width: 520px;
+  height: 300px;
+  background: transparent;
+  border-radius: 18px;
+  border-top: 0.5px solid rgba(255,255,255,0.18);
+  border-left: 0.5px solid rgba(255,255,255,0.1);
+  border-right: 0.5px solid rgba(255,255,255,0.06);
+  border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  box-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: drag;
+}
+
+.splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.splash::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%; height: 0.5px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo-ring {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(10,132,255,0.08);
+  border: 0.5px solid rgba(10,132,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: logo-in 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards 0.2s;
+}
+.logo-ring::before {
+  content: ''; position: absolute;
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 0.5px solid rgba(10,132,255,0.12);
+  animation: pulse-expand 2.5s ease-out infinite 1s;
+}
+.logo-ring::after {
+  content: ''; position: absolute;
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 0.5px solid rgba(10,132,255,0.06);
+  animation: pulse-expand 2.5s ease-out infinite 1.5s;
+}
+
+@keyframes logo-in {
+  0% { opacity:0; transform:scale(0.6); }
+  100% { opacity:1; transform:scale(1); }
+}
+@keyframes pulse-expand {
+  0% { transform:scale(1); opacity:1; }
+  100% { transform:scale(2.8); opacity:0; }
+}
+
+.app-name {
+  font-size: 28px; font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: fade-up 0.5s ease forwards 0.7s;
+}
+
+.tagline {
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: fade-up 0.5s ease forwards 1s;
+}
+
+@keyframes fade-up {
+  0% { opacity:0; transform:translateY(8px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+
+.checks {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  opacity: 0;
+  animation: fade-up 0.5s ease forwards 1.3s;
+  margin-bottom: 20px;
+}
+
+.check-item { display:flex; align-items:center; gap:7px; }
+
+.check-icon {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 0.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+.check-icon.checking {
+  background: rgba(10,132,255,0.1);
+  border-color: rgba(10,132,255,0.3);
+  animation: spin 1s linear infinite;
+}
+.check-icon.done {
+  background: rgba(48,209,88,0.12);
+  border-color: rgba(48,209,88,0.3);
+  animation: none;
+}
+.check-icon.fail {
+  background: rgba(255,59,48,0.12);
+  border-color: rgba(255,59,48,0.3);
+  animation: none;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.check-label {
+  font-size: 11.5px; color: rgba(255,255,255,0.25);
+  letter-spacing: 0.01em; transition: color 0.3s; white-space: nowrap;
+}
+.check-label.active { color: rgba(255,255,255,0.55); }
+.check-label.done { color: rgba(48,209,88,0.65); }
+.check-label.fail { color: rgba(255,59,48,0.65); }
+
+.sep { width:1px; height:12px; background:rgba(255,255,255,0.08); }
+
+.ready-text {
+  font-size: 11px;
+  color: rgba(48,209,88,0.5);
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  height: 16px;
+}
+
+.install-btn {
+  display: none;
+  margin-top: 16px;
+  height: 32px;
+  padding: 0 20px;
+  background: #0A84FF;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+</style>
+</head>
+<body>
+<div class="splash">
+  <div class="content">
+    <div class="logo-ring">
+      <svg width="24" height="28" viewBox="0 0 12 16" fill="none">
+        <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,180,255,0.8)" stroke-width="1"/>
+        <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,180,255,0.6)" stroke-width="1" stroke-linecap="round"/>
+        <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,180,255,0.6)" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="app-name">Promptly</div>
+    <div class="tagline">Speak · Engineer · Copy</div>
+    <div class="checks">
+      <div class="check-item">
+        <div class="check-icon" id="icon-cli"></div>
+        <span class="check-label" id="label-cli">Claude CLI</span>
+      </div>
+      <div class="sep"></div>
+      <div class="check-item">
+        <div class="check-icon" id="icon-mic"></div>
+        <span class="check-label" id="label-mic">Microphone</span>
+      </div>
+    </div>
+    <div class="ready-text" id="ready-text"></div>
+    <button class="install-btn" id="install-btn" onclick="openInstall()">Install Claude CLI</button>
+  </div>
+</div>
+
+<script>
+function setCheck(id, state) {
+  const icon = document.getElementById('icon-' + id);
+  const label = document.getElementById('label-' + id);
+  label.className = 'check-label ' + (state === 'checking' ? 'active' : state);
+  if (state === 'checking') {
+    icon.className = 'check-icon checking';
+    icon.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M4 1.5A2.5 2.5 0 0 1 6.5 4" stroke="rgba(10,132,255,0.9)" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  } else if (state === 'done') {
+    icon.className = 'check-icon done';
+    icon.innerHTML = '<svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#30D158" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  } else if (state === 'fail') {
+    icon.className = 'check-icon fail';
+    icon.innerHTML = '<svg width="7" height="7" viewBox="0 0 7 7" fill="none"><path d="M1 1L6 6M6 1L1 6" stroke="#FF3B30" stroke-width="1.2" stroke-linecap="round"/></svg>';
+  } else {
+    icon.className = 'check-icon';
+    icon.innerHTML = '';
+  }
+}
+
+function showReady(msg, isError) {
+  const el = document.getElementById('ready-text');
+  el.textContent = msg;
+  el.style.color = isError ? 'rgba(255,59,48,0.6)' : 'rgba(48,209,88,0.5)';
+  el.style.opacity = '1';
+}
+
+function openInstall() {
+  window.electronAPI.splashOpenURL('https://claude.ai/code');
+}
+
+async function runChecks() {
+  await new Promise(r => setTimeout(r, 1400));
+
+  setCheck('cli', 'checking');
+  await new Promise(r => setTimeout(r, 600));
+  const cliResult = await window.electronAPI.splashCheckCLI();
+
+  if (!cliResult.ok) {
+    setCheck('cli', 'fail');
+    document.getElementById('install-btn').style.display = 'block';
+    showReady('Claude CLI not found — install it to continue', true);
+    return;
+  }
+  setCheck('cli', 'done');
+
+  await new Promise(r => setTimeout(r, 200));
+  setCheck('mic', 'checking');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+    setCheck('mic', 'done');
+  } catch (e) {
+    setCheck('mic', 'fail');
+    showReady('Microphone access denied — check System Preferences', true);
+    return;
+  }
+
+  await new Promise(r => setTimeout(r, 300));
+  showReady('All checks passed — launching');
+  await new Promise(r => setTimeout(r, 600));
+  window.electronAPI.splashDone();
+}
+
+runChecks();
+</script>
+</body>
+</html>
