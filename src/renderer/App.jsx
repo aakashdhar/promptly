@@ -95,6 +95,7 @@ export default function App() {
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
       const arrayBuffer = await blob.arrayBuffer()
 
+      setThinkTranscript('')
       transition(STATES.THINKING)
       isProcessingRef.current = false
 
