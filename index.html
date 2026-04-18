@@ -445,6 +445,7 @@
       { key: 'concise', label: 'Concise' },
       { key: 'chain', label: 'Chain' },
       { key: 'code', label: 'Code' },
+      { key: 'design', label: 'Design' },
     ];
 
     const STATE_HEIGHTS = {
@@ -470,7 +471,7 @@
       }
     }
     function getModeLabel() {
-      return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code' }[getMode()];
+      return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code', design:'Design' }[getMode()];
     }
 
     // --- Canvas: thinking morph wave (very slow, low-amplitude breathing) ---

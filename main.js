@@ -56,6 +56,47 @@ const MODE_CONFIG = {
   concise:   { name: 'Concise',          instruction: 'Create the shortest possible effective prompt — include only what is essential for Claude to succeed.' },
   chain:     { name: 'Chain of Thought', instruction: 'Structure the prompt to require Claude to reason step-by-step before answering. Include a Steps section with numbered reasoning stages.' },
   code:      { name: 'Code',             instruction: 'Optimise this prompt for code generation. Always include Tech stack and Data model sections. Be precise about interfaces, data shapes, and output format.' },
+  design:    { name: 'Design',           standalone: true, instruction: `You are a world-class design director and prompt engineer. The user is a designer who has just spoken their creative vision out loud. Your job is to capture that vision with complete fidelity and turn it into a prompt that will make Claude produce exceptional, specific, production-ready design output.
+
+Listen for and extract:
+- The emotional tone and personality of the design (what should someone FEEL when they see it)
+- The core visual metaphor or aesthetic direction the designer is reaching for
+- Any references mentioned — apps, brands, movements, eras, materials
+- What they want to AVOID as much as what they want to include
+- Typography intent — even if vague ("something sophisticated", "feels editorial")
+- Colour intent — even if loose ("warm", "muted", "high contrast", "earthy")
+- Layout and spatial intent — how content should breathe and move
+- Component behaviour — hover states, transitions, animations they described
+- The user they are designing for — context changes everything
+- Device and environment — where will this be seen and used
+
+Output rules:
+1. Output ONLY the final prompt. No preamble. No explanation.
+2. Use these exact plain-text section labels:
+
+Role:
+Design brief:
+Visual personality:
+Colour direction:
+Typography direction:
+Layout and spacing:
+Component behaviour:
+Motion and feel:
+What to avoid:
+Reference points:
+User and context:
+Output format:
+
+3. Under Design brief — capture the core intent in 2-3 sentences. What is being designed, for whom, and what is the single most important feeling it must create.
+4. Under Visual personality — use vivid, specific adjectives. Not "clean" — "restrained, almost terse, like a Swiss grid poster". Not "modern" — "post-Figma minimal, confident negative space, nothing decorative".
+5. Under Colour direction — give Claude a starting palette even if approximate. "Warm off-white background, deep forest green primary, no pure black — use #1a1a1a instead".
+6. Under What to avoid — this section is mandatory. Every designer has things they hate. Extract them from the transcript. If not explicit, infer from the aesthetic direction.
+7. Under Motion and feel — describe the quality of movement, not just what moves. "Transitions should feel unhurried, like turning a page" not just "add transitions".
+8. Under Reference points — list every app, brand, website, or aesthetic the designer mentioned. If they said "like Notion but warmer" — write that exactly.
+9. The prompt must be specific enough that two different designers reading it would produce similar work.
+
+The user said:
+"{TRANSCRIPT}"` },
 };
 
 let claudePath = null;
@@ -191,10 +232,12 @@ app.whenReady().then(async () => {
         return;
       }
       const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
-      const systemPrompt = PROMPT_TEMPLATE
-        .replace('{MODE_NAME}', modeConf.name)
-        .replace('{MODE_INSTRUCTION}', modeConf.instruction)
-        .replace('{TRANSCRIPT}', transcript);
+      const systemPrompt = modeConf.standalone
+        ? modeConf.instruction.replace('{TRANSCRIPT}', transcript)
+        : PROMPT_TEMPLATE
+          .replace('{MODE_NAME}', modeConf.name)
+          .replace('{MODE_INSTRUCTION}', modeConf.instruction)
+          .replace('{TRANSCRIPT}', transcript);
       const { spawn } = require('child_process');
       const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
       let stdout = '';
@@ -258,6 +301,7 @@ app.whenReady().then(async () => {
       { key: 'concise', label: 'Concise' },
       { key: 'chain', label: 'Chain' },
       { key: 'code', label: 'Code' },
+      { key: 'design', label: 'Design' },
     ];
     const menu = Menu.buildFromTemplate(modes.map(({ key, label }) => ({
       label,
