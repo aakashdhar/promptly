@@ -135,29 +135,29 @@
    [x] `standalone: true` flag on design config — bypasses PROMPT_TEMPLATE
    → DECISIONS.md: FEATURE-002 entry logged
 
-⬜ **F-HISTORY — Prompt history** (0/4)
-   [ ] FHI-001 · History storage module — saveToHistory(), loadHistory(), capped at 20
-   [ ] FHI-002 · HISTORY state panel + CSS — scrollable list, empty state
-   [ ] FHI-003 · History trigger — pill in IDLE, button in PROMPT_READY, ⌥Space to close
-   [ ] FHI-004 · CODEBASE.md update
+✅ **F-HISTORY — Prompt history** (4/4 — COMPLETE 2026-04-19)
+   [x] FHI-001 · History storage module — saveToHistory(), loadHistory(), capped at 20
+   [x] FHI-002 · HISTORY state panel + CSS — scrollable list, empty state
+   [x] FHI-003 · History trigger — pill in IDLE, button in PROMPT_READY, ⌥Space to close
+   [x] FHI-004 · CODEBASE.md update
    → Full spec: vibe/features/2026-04-18-prompt-history/FEATURE_TASKS.md
 
-⬜ **F-TRAY — Menu bar / tray icon** (0/3)
-   [ ] FTR-001 · Create tray icon in main.js — NativeImage, click to toggle show/hide
-   [ ] FTR-002 · Keep app alive when window closed + hide Dock icon
-   [ ] FTR-003 · CODEBASE.md update
+✅ **F-TRAY — Menu bar / tray icon** (3/3 — COMPLETE 2026-04-19)
+   [x] FTR-001 · Create tray icon in main.js — NativeImage, click to toggle show/hide
+   [x] FTR-002 · Keep app alive when window closed + hide Dock icon
+   [x] FTR-003 · CODEBASE.md update
    → Full spec: vibe/features/2026-04-18-tray-icon/FEATURE_TASKS.md
 
-⬜ **F-DARKMODE — Dark / light mode** (0/3)
-   [ ] FDM-001 · Light mode CSS tokens + body.light overrides for all 5 states
-   [ ] FDM-002 · main.js nativeTheme listener → theme-changed IPC + get-theme handler
-   [ ] FDM-003 · Renderer theme wiring + CODEBASE.md + ARCHITECTURE.md
+✅ **F-DARKMODE — Dark / light mode** (3/3 — COMPLETE 2026-04-19)
+   [x] FDM-001 · Light mode CSS tokens + body.light overrides for all 5 states
+   [x] FDM-002 · main.js nativeTheme listener → theme-changed IPC + get-theme handler
+   [x] FDM-003 · Renderer theme wiring + CODEBASE.md + ARCHITECTURE.md
    → Full spec: vibe/features/2026-04-18-dark-mode/FEATURE_TASKS.md
 
-⬜ **F-LANGUAGE — Multi-language speech** (0/3)
-   [ ] FLG-001 · Language storage module — LANGUAGES constant, getLanguage/setLanguage wrappers
-   [ ] FLG-002 · Wire language to Whisper CLI + language pill + native menu
-   [ ] FLG-003 · CODEBASE.md + ARCHITECTURE.md update
+✅ **F-LANGUAGE — Multi-language speech** (3/3 — COMPLETE 2026-04-19)
+   [x] FLG-001 · Language storage module — LANGUAGES constant, getLanguage/setLanguage wrappers
+   [x] FLG-002 · Wire language to Whisper CLI + language pill + native menu
+   [x] FLG-003 · CODEBASE.md + ARCHITECTURE.md update
    → Full spec: vibe/features/2026-04-18-multi-language/FEATURE_TASKS.md
 
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
@@ -167,18 +167,14 @@
 ---
 
 ## What just happened
-💰 Cost tracked — Session #11: $0.38 est. | Project total: $6.30 | Trend: ↓ -31% (light final session)
-   vibe/cost/report-2026-04-18-session11.md
-
-
-⚡ vibe-parallel Wave 1+2 — 3 tasks complete:
-   PH3-ERR ✅ — regenerate error path fixed (specific error propagated); all error states audited; tap-to-dismiss confirmed
-   PH3-DIST ✅ — vibe/distribution/slack-message.md created (5-line Slack message)
-   PH3-BUILD ✅ — dist/Promptly-1.0.0-universal.dmg built (199 MB); cost ~$0.19 parallel
-   Cost: ~$0.19 total · Time saved vs sequential: ~1.5h · Context mode: graph-aware slicing
+⚡ vibe-parallel — Phase 4 complete (session 2026-04-19):
+   F-HISTORY ✅ — FHI-001/002/003/004 — HISTORY state, saveToHistory/loadHistory, history pill in IDLE + btn in PROMPT_READY
+   F-TRAY ✅ — FTR-001/002/003 — system tray icon, app stays alive when window closed, dock hidden
+   F-DARKMODE ✅ — FDM-001/002/003 — body.light CSS tokens, nativeTheme IPC, theme wiring at boot
+   F-LANGUAGE ✅ — FLG-001/002/003 — LANGUAGES constant, language pill in IDLE, Whisper lang flag, show-language-menu IPC
+   UI fixes: THINKING state height → 320px; idle pulse ring enlarged + glow added
 
 ## What's next
-⬜ Manual smoke test (human-only): exercise all 5 states × all 5 modes; test Regenerate 5× to verify no RAF accumulation; check shortcut conflict notice; verify no hangs
-⬜ Install dist/Promptly-1.0.0-universal.dmg on Apple Silicon; right-click → Open on first launch (not notarized yet); verify floating bar + shortcut; optionally test on Intel
-⬜ review: final — run when smoke test passes — 0 P0 + 0 P1 required before distributing
-⬜ Distribution prep — Slack message draft
+⬜ Manual smoke test — exercise all 6 states × all 6 modes (including Design); test history, language picker, tray toggle, dark/light switching
+⬜ Build new .dmg — npm run dist — v1.1.0 with Phase 4 features
+⬜ Distribution / notarisation
