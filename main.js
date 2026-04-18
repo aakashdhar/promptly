@@ -354,18 +354,17 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
-  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer, language) => {
+  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
     if (!whisperPath) {
       return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
     }
     const tmpFile = path.join(os.tmpdir(), `promptly-${Date.now()}.webm`);
     const outDir = os.tmpdir();
     const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
-    const langFlag = (language && language !== 'auto' && /^[a-z]{2,3}$/.test(language)) ? `--language ${language}` : '';
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        exec(`"${whisperPath}" "${tmpFile}" --model tiny ${langFlag} --output_format txt --output_dir "${outDir}"`,
+        exec(`"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`,
           { timeout: 60000 }, (err, _stdout, stderr) => {
             try {
               const text = fs.readFileSync(txtFile, 'utf8').trim();
@@ -382,17 +381,6 @@ app.whenReady().then(async () => {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
       return { success: false, error: err.message || 'Transcription failed' };
     }
-  });
-
-  ipcMain.handle('show-language-menu', (_event, { currentLanguage, languages }) => {
-    const menu = Menu.buildFromTemplate(languages.map(({ code, label }) => ({
-      label,
-      type: 'radio',
-      checked: currentLanguage === code,
-      click: () => { win.webContents.send('language-selected', code); },
-    })));
-    menu.popup({ window: win });
-    return { ok: true };
   });
 
   ipcMain.handle('get-theme', () => {
