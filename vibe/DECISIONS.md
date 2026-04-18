@@ -500,3 +500,18 @@ Key fixes applied:
 - **Impact**: main.js transcribe-audio handler simplified (language param + langFlag removed, --language en hardcoded). preload.js transcribeAudio reverted to single argument. index.html cleaned of all language UI and logic.
 - **Approved by**: human
 - **Status**: REMOVED 2026-04-19 — revisit in React migration
+
+---
+
+## — Feature Start: FEATURE-005 (Tailwind v4 migration) — 2026-04-19
+> Adds Tailwind CSS v4 to the React renderer. All vanilla CSS files deleted; all styles expressed as Tailwind utilities.
+
+### FEATURE-005 — Tailwind v4 added to React renderer
+- **Date**: 2026-04-19 · **Task**: FEATURE-005 · **Type**: tech-choice
+- **What was planned**: Three CSS files in src/renderer/styles/ (tokens.css, bar.css, states.css)
+- **What was done**: Installed tailwindcss + @tailwindcss/vite. All three CSS files deleted. All component styles converted to inline Tailwind className utilities. index.css created with @import "tailwindcss" + @theme block (color/font/animation tokens) + @keyframes + body reset + custom scrollbar utilities.
+- **Why**: User-directed migration. Tailwind v4 eliminates separate CSS files and the CSS variable token system, expressing all design decisions directly in component markup. Easier to reason about per-component styles without context-switching to CSS files.
+- **Alternatives considered**: Keep CSS files alongside Tailwind (hybrid) — rejected per spec (no separate CSS files). Use CSS modules — rejected (adds build complexity, still separate files).
+- **Impact on other tasks**: light-mode body.light overrides from tokens.css are not yet ported to Tailwind (no dark: variant wiring). body.light class is still toggled by App.jsx theme logic; light-mode visual overrides will need Tailwind variants in a follow-up if light mode support is required.
+- **Pseudo-elements**: bar ::before and ::after (top highlight, bottom accent) replaced with child divs in App.jsx. pulse-ring ::before and ::after pulse-expand rings replaced with child divs in IdleState.jsx.
+- **Approved by**: human
