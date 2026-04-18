@@ -463,3 +463,16 @@ Key fixes applied:
 **Files changed**: `main.js`, `index.html`
 - **Status**: SHIPPED 2026-04-18
 - **Approved by**: human
+
+---
+
+### D-HISTORY-REMOVE — F-HISTORY removed pending React migration
+- **Date**: 2026-04-19 · **Type**: scope-change (feature removal)
+- **Trigger**: User-initiated — explicit request to remove history feature
+- **What was planned**: F-HISTORY shipped as part of Phase 4 — saveToHistory/loadHistory capped at 20, HISTORY state panel, history pill in IDLE, btn in PROMPT_READY, ⌥Space to close.
+- **What was done**: Entire feature removed — all history CSS, DOM panel, JS functions (saveToHistory, loadHistory, clearHistory, renderHistoryList), STATES.HISTORY, STATE_HEIGHTS.HISTORY, history-btn in IDLE, btn-history in PROMPT_READY, HISTORY→IDLE shortcut case, and both saveToHistory call-sites in stopRecording and regenerate handlers.
+- **Why**: User is planning to migrate Promptly from vanilla JS/Electron to React (or a better framework). Building history persistence on localStorage now creates schema baggage to carry into the migration. Removing it keeps the codebase lean for the rewrite — history will be re-implemented properly (likely with a real database or state manager) in the new stack.
+- **Alternatives considered**: Keep it and migrate later. Rejected — adds dead weight and a localStorage schema that the React version would need to stay compatible with or explicitly clear.
+- **Impact on other tasks**: None — feature was self-contained in index.html only. main.js and preload.js untouched.
+- **Approved by**: human
+- **Status**: REMOVED 2026-04-19 — revisit in React migration
