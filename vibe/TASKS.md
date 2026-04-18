@@ -126,17 +126,14 @@
 ---
 
 ## What just happened
-💰 Cost tracked — Session #8: $0.42 est. · Project total: $4.47 · Trend: → stable
-   5 tasks · $0.084/task avg · vibe/cost/report-2026-04-18-session8.md
-
-✅ DECISION-004 — pillWin eliminated; RECORDING state now inside main win:
-   - panel-recording HTML + CSS added to index.html (traf, cr-rec, waveform canvas, timer, dismiss/stop buttons)
-   - drawRecordingWave(), startRecTimer(), stopRecTimer() added to index.html
-   - pillWin + all pill IPC (show-pill, hide-pill, pill-stop, pill-dismiss, pill-action) removed
-   - pill.html deleted; preload.js simplified
-   - Ghost window problem solved permanently — no second BrowserWindow ever created
-   Lint: 0 errors
+✅ BUG-006 (follow-up) — Vibrancy fix: confirmed two new root causes, applied 4 fixes:
+   - .bar background removed (rgba blocks native vibrancy layer even at 0.04 opacity)
+   - .bar::before repurposed as frosted tint layer (inset: 0, rgba white 0.06, z-index: 0)
+   - All 5 panels given position: relative; z-index: 1 (stack above frosted tint)
+   - vibrancy: 'fullscreen-ui' (more reliable than 'under-window' in Electron v31+)
+   - disable-gpu-compositing flag added (required for Electron v41 transparency)
+   Lint: 0 errors · DECISIONS.md BUG-006 follow-up logged
 
 ## What's next
-⬜ Smoke test RECORDING state in main win, then all other states — then run `review: phase 2`.
-Say "review: phase 2" to trigger the phase gate after smoke test passes.
+⬜ Smoke test all 4 states — bar should show desktop wallpaper through frosted glass surface.
+Then run `review: phase 2` to trigger the phase gate.

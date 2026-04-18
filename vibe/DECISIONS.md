@@ -344,5 +344,24 @@ Key fixes applied:
 **Scope**: One-time global fix — applies to all states (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR) without per-state changes. No solid dark hex backgrounds found in CSS — all colours are rgba or #FF3B30 (stop button, not a window background).
 
 **Files**: main.js, index.html
+- **Status**: ~~FIXED 2026-04-18~~ → superseded by follow-up below
+- **Approved by**: human
+
+---
+
+### BUG-006 (follow-up) — Vibrancy: second round of root causes confirmed via visual diagnosis
+- **Date**: 2026-04-18 · **Type**: drift
+
+**New root causes** (found after BUG-006 first fix still showed flat/opaque bar):
+1. `.bar { background: rgba(255,255,255,0.04) !important }` — even 0.04 opacity sits on top of the native vibrancy layer and blocks it. macOS vibrancy only shows through elements with `background: transparent`.
+2. Electron v41 changed how `transparent: true` windows composite with vibrancy. `disable-gpu-compositing` flag required in addition to `enable-transparent-visuals`.
+3. `vibrancy: 'under-window'` unreliable in Electron v31+ on some macOS GPU configurations — `'fullscreen-ui'` is more reliable.
+4. No `z-index` stacking guard between `::before` frosted tint layer and content panels — content could paint below the tint.
+
+**Fixes applied**:
+- `main.js`: `vibrancy: 'under-window'` → `'fullscreen-ui'`; added `app.commandLine.appendSwitch('disable-gpu-compositing')`.
+- `index.html`: `.bar { background }` changed from `rgba(255,255,255,0.04) !important` → `transparent`. `.bar::before` repurposed from top-highlight line to full frosted tint layer (`inset: 0; background: rgba(255,255,255,0.06); z-index: 0`). Top border highlight preserved via existing `border-top: var(--border-top)` on `.bar`. All 5 panels (`#panel-idle`, `#panel-recording`, `#panel-thinking`, `#panel-ready`, `#panel-error`) given `position: relative; z-index: 1` to stack above frosted tint.
+
+**Files**: main.js, index.html
 - **Status**: FIXED 2026-04-18
 - **Approved by**: human
