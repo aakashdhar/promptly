@@ -126,34 +126,14 @@
 ---
 
 ## What just happened
-💰 Cost tracked — Session #9: $0.68 est. · Project total: $5.15 · Trend: ↑ +62% (FEATURE-001 splash drove spike — expected)
-   6 work items · $0.11/item avg · vibe/cost/report-2026-04-18-session9.md
-
-✅ FEATURE-001 — Splash screen shipped:
-   - splash.html: frosted glass BrowserWindow, logo ring + pulse, name/tagline fade-up,
-     CLI check (spinner → ✓/✗), mic check (getUserMedia → ✓/✗), install button on CLI fail
-   - main.js: resolveClaudePath() Promise, registerShortcut() extracted, splashWin lifecycle,
-     4 new IPC handlers (splash-done, splash-check-cli, splash-open-url, request-mic)
-   - preload.js: splashDone, splashCheckCLI, splashOpenURL, requestMic added to contextBridge
-   - createWindow() no longer auto-shows — main win hidden until splash-done fires
-   Lint: 0 errors
-
-✅ BUG-007 — Thinking state two-bug fix:
-   A: YOU SAID div now scrollable (max-height 80px, overflow-y auto, thin scrollbar)
-      Window height now clamps to transcript length (220–320px) on both onstop + regenerate paths
-      Regenerate path was also missing transcript population — fixed
-   B: Morph wave animation now starts reliably — inline RAF with local morphT replaces
-      startMorphAnim() which was leaking RAF loops across repeated THINKING transitions
-   Lint: 0 errors
-
-✅ BUG-006 (follow-up) — Vibrancy fix: confirmed two new root causes, applied 4 fixes:
-   - .bar background removed (rgba blocks native vibrancy layer even at 0.04 opacity)
-   - .bar::before repurposed as frosted tint layer (inset: 0, rgba white 0.06, z-index: 0)
-   - All 5 panels given position: relative; z-index: 1 (stack above frosted tint)
-   - vibrancy: 'fullscreen-ui' (more reliable than 'under-window' in Electron v31+)
-   - disable-gpu-compositing flag added (required for Electron v41 transparency)
-   Lint: 0 errors · DECISIONS.md BUG-006 follow-up logged
+✅ BUG-008 — Prompt output formatting fixed:
+   - Replaced 5 separate MODE_SYSTEM_PROMPTS strings with a single PROMPT_TEMPLATE + MODE_CONFIG
+   - Section labels now plain text (Role: not **Role:**) — rule 10 enforced in template
+   - Technical prompts always get Tech stack + Data model sections (rule 3)
+   - UI/design prompts always get Visual style section (rule 4)
+   - Transcript embedded in system prompt via {TRANSCRIPT} replacement — stdin write removed
+   Lint: 0 errors · DECISIONS.md BUG-008 logged
 
 ## What's next
-⬜ Smoke test all 4 states — bar should show desktop wallpaper through frosted glass surface.
+⬜ Manual smoke test: record a technical prompt and a UI prompt, verify section labels are plain text, Tech stack/Data model appear for technical, Visual style appears for UI.
 Then run `review: phase 2` to trigger the phase gate.
