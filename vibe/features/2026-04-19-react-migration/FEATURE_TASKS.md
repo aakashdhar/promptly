@@ -887,7 +887,7 @@ Call sites:
 ---
 
 ### FCR-014 · Full wiring + smoke test + CODEBASE.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (all 18 acceptance criteria)
 - **Dependencies**: FCR-007 through FCR-013
@@ -942,8 +942,7 @@ function handleDismiss() {
 **Architecture compliance**: All patterns from ARCHITECTURE.md confirmed in React implementation.
 
 **Decisions**:
-> Filled in by agent after completing.
-- None yet.
+- Smoke test passed 2026-04-19 (human-confirmed). All 18 items verified. Branch merged to main.
 
 ---
 
@@ -951,23 +950,23 @@ function handleDismiss() {
 
 > Tick after every task. All items ✅ before merging to main.
 
-- [ ] `npm run dev` starts Vite + Electron together
-- [ ] All 5 states render correctly
-- [ ] Waveform animates in recording state (RAF cleanup on unmount)
-- [ ] Morph wave animates in thinking state (RAF cleanup on unmount)
-- [ ] Mode selection persists in localStorage
-- [ ] ⌥ Space shortcut triggers recording / stops recording
-- [ ] Whisper transcription end-to-end
-- [ ] Prompt generation end-to-end (all 6 modes)
-- [ ] Copy prompt flashes green 1.8s
-- [ ] Edit mode (contentEditable, Escape cancel, Done save)
-- [ ] Regenerate uses originalTranscript (useRef, never mutated)
-- [ ] Splash screen works independently
-- [ ] History saves to localStorage (promptly_history, cap 100)
-- [ ] `npm run build:renderer` produces dist-renderer/
-- [ ] `npm run start:react` loads built renderer
-- [ ] Window sizing correct in all states
-- [ ] Glass morphism renders correctly
-- [ ] No console errors in any state
-- [ ] CODEBASE.md updated for React structure
-- [ ] DECISIONS.md FEATURE-004 entry logged
+- [x] `npm run dev` starts Vite + Electron together
+- [x] All 5 states render correctly
+- [x] Waveform animates in recording state (RAF cleanup on unmount)
+- [x] Morph wave animates in thinking state (RAF cleanup on unmount)
+- [x] Mode selection persists in localStorage
+- [x] ⌥ Space shortcut triggers recording / stops recording
+- [x] Whisper transcription end-to-end
+- [x] Prompt generation end-to-end (all 6 modes)
+- [x] Copy prompt flashes green 1.8s
+- [x] Edit mode (contentEditable, Escape cancel, Done save)
+- [x] Regenerate uses originalTranscript (useRef, never mutated)
+- [x] Splash screen works independently
+- [x] History saves to localStorage (promptly_history, cap 100)
+- [x] `npm run build:renderer` produces dist-renderer/
+- [x] `npm run start:react` loads built renderer
+- [x] Window sizing correct in all states
+- [x] Glass morphism renders correctly
+- [x] No console errors in any state
+- [x] CODEBASE.md updated for React structure
+- [x] DECISIONS.md FEATURE-004 entry logged

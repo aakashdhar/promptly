@@ -160,9 +160,9 @@
    [x] FLG-003 · CODEBASE.md + ARCHITECTURE.md update
    → Full spec: vibe/features/2026-04-18-multi-language/FEATURE_TASKS.md
 
-🔄 **FEATURE-004 — React migration** — Renderer migrated to React + Vite (13/14)
+✅ **FEATURE-004 — React migration** — Renderer migrated to React + Vite (14/14 — COMPLETE 2026-04-19)
    Estimated: approx. 20-24 hours (S: 8, M: 6)
-   Branch: feat/react-migration (DO NOT merge to main until all smoke tests pass)
+   Branch: feat/react-migration → merged to main
    [x] FCR-001 · Branch + install devDeps — git checkout -b feat/react-migration, npm install vite + react
    [x] FCR-002 · vite.config.js + package.json scripts + electron-builder files config
    [x] FCR-003 · src/renderer folder structure + index.html + main.jsx
@@ -176,7 +176,7 @@
    [x] FCR-011 · ErrorState.jsx — error badge + dismiss
    [x] FCR-012 · main.js: load React build (NODE_ENV dev → localhost:5173, prod → dist-renderer)
    [x] FCR-013 · History foundation: saveToHistory() in App.jsx, localStorage cap 100
-   [ ] FCR-014 · Manual smoke test (18 items) — human must verify before merge to main
+   [x] FCR-014 · Manual smoke test (18 items) — human-confirmed 2026-04-19, all items pass
    → Full specs: vibe/features/2026-04-19-react-migration/FEATURE_TASKS.md (agent use)
 
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
@@ -186,16 +186,13 @@
 ---
 
 ## What just happened
-✅ FCR-001 thru FCR-013 complete — React migration code shipped (2026-04-19)
-   Branch: feat/react-migration | Build: npm run build:renderer → dist-renderer/ ✅
-   - vite.config.js, package.json scripts (dev, build:renderer, start:react)
-   - src/renderer/: App.jsx, 5 state components, WaveformCanvas, MorphCanvas, 2 hooks, 3 CSS files
-   - main.js: loadURL/loadFile based on NODE_ENV
-   - History: saveToHistory() on every PROMPT_READY (promptly_history, cap 100)
-   - lint: 0 errors
+✅ FCR-014 · Manual smoke test complete — human-confirmed 2026-04-19, all 18 items pass
+✅ FEATURE-004 React migration complete — feat/react-migration merged to main
+   - All 14 tasks done: Vite + React renderer, 6 components, 2 hooks, 3 CSS files, history foundation
+   - Renderer is now React + Vite; main.js, preload.js, splash.html unchanged
 
 ## What's next
-⬜ FCR-014 · Manual smoke test — run `npm run start:react` and verify all 18 items in FEATURE_SPEC.md§3
-   - All 5 states render · waveforms animate · shortcut · transcription · copy/edit/regen · history · glass morphism
-   - Then: merge feat/react-migration → main
-Say "next" to continue OR run the smoke test manually and report results.
+⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
+⬜ Custom shortcuts — user-configurable hotkey
+⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
+Say "feature: [name]" to plan the next feature, or run `review: final` for a fresh gate check.
