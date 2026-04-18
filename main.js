@@ -9,12 +9,53 @@ const { exec } = require('child_process');
 const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 
-const MODE_SYSTEM_PROMPTS = {
-  balanced: 'You are a prompt engineering assistant. Turn the following description into a structured Claude prompt. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Constraints:**, **Output Format:**. Write the section content on the lines below each header. Make reasonable assumptions for any unspecified details. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
-  detailed: 'You are a prompt engineering assistant. Turn the following description into a detailed Claude prompt. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Detailed Constraints:**, **Edge Cases:**, **Output Format:**, **Example:**. Write content under each header. Make reasonable assumptions for any unspecified details. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
-  concise: 'You are a prompt engineering assistant. Turn the following description into the shortest possible Claude prompt that still works. Use only the bold section headers that are essential — at minimum **Role:** and **Task:**. Make reasonable assumptions. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
-  chain: 'You are a prompt engineering assistant. Turn the following description into a chain-of-thought Claude prompt. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Steps:**, **Output Format:**. Under **Steps:** write numbered steps Claude must work through before answering. Make reasonable assumptions. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
-  code: 'You are a prompt engineering assistant. Turn the following description into a Claude prompt optimised for code generation. Use exactly these bold section headers, each on its own line: **Role:**, **Task:**, **Language & Interface:**, **Constraints:**, **Output Format:**. Make reasonable assumptions. Do not ask clarifying questions. Return only the prompt — no preamble, no commentary.',
+const PROMPT_TEMPLATE = `You are an expert Claude prompt engineer. Your job is to transform raw spoken descriptions into precision-engineered Claude prompts that get exceptional results.
+
+Analyse the transcript carefully for:
+- Core intent and primary goal
+- What the user emphasised or repeated (make this prominent)
+- Implied constraints they did not explicitly state
+- Expected output format or deliverable
+- Technical domain (code, writing, analysis, design, data)
+
+Mode: {MODE_NAME}
+Mode instruction: {MODE_INSTRUCTION}
+
+Output rules — follow every rule precisely:
+1. Output ONLY the final prompt. No preamble. No "Here is your prompt:". No explanation. Just the prompt itself.
+2. Structure every prompt with these exact plain-text section labels on their own line, followed by a colon and newline:
+
+Role:
+Task:
+Context:
+Constraints:
+Output format:
+
+3. For technical/code prompts always add:
+
+Tech stack:
+Data model: (if data structures are involved)
+
+4. For UI/design prompts always add:
+
+Visual style:
+
+5. What the user stressed or repeated must appear explicitly and prominently in the Task section.
+6. Never invent requirements the user did not mention or imply.
+7. Be specific enough that Claude cannot misinterpret the task.
+8. If the user mentioned a specific format (table, list, code block), preserve it exactly.
+9. Write the prompt in second person: "You are...", "Your task is...", "Write..."
+10. Section labels must be plain text — no markdown bold, no asterisks, no hashtags.
+
+The user said:
+"{TRANSCRIPT}"`;
+
+const MODE_CONFIG = {
+  balanced:  { name: 'Balanced',         instruction: 'Create a well-rounded prompt with appropriate detail for general use.' },
+  detailed:  { name: 'Detailed',         instruction: 'Create a thorough, comprehensive prompt with extensive context, edge cases, and detailed constraints.' },
+  concise:   { name: 'Concise',          instruction: 'Create the shortest possible effective prompt — include only what is essential for Claude to succeed.' },
+  chain:     { name: 'Chain of Thought', instruction: 'Structure the prompt to require Claude to reason step-by-step before answering. Include a Steps section with numbered reasoning stages.' },
+  code:      { name: 'Code',             instruction: 'Optimise this prompt for code generation. Always include Tech stack and Data model sections. Be precise about interfaces, data shapes, and output format.' },
 };
 
 let claudePath = null;
@@ -153,7 +194,11 @@ app.whenReady().then(async () => {
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code' });
         return;
       }
-      const systemPrompt = MODE_SYSTEM_PROMPTS[mode] || MODE_SYSTEM_PROMPTS.balanced;
+      const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
+      const systemPrompt = PROMPT_TEMPLATE
+        .replace('{MODE_NAME}', modeConf.name)
+        .replace('{MODE_INSTRUCTION}', modeConf.instruction)
+        .replace('{TRANSCRIPT}', transcript);
       const { spawn } = require('child_process');
       const child = spawn(claudePath, ['-p', systemPrompt]);
       let stdout = '';
@@ -166,7 +211,6 @@ app.whenReady().then(async () => {
       }, 60000);
       child.stdout.on('data', (d) => { stdout += d.toString(); });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
-      child.stdin.write(transcript);
       child.stdin.end();
       child.on('close', (code) => {
         if (resolved) return;
