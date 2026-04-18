@@ -386,6 +386,34 @@ Key fixes applied:
 
 ---
 
+### D-005 — Claude CLI timeout extended from 30s to 60s
+- **Date**: 2026-04-18 · **Type**: tech-choice
+- **What was planned**: SPEC.md F4 timeout 30 seconds
+- **What was done**: main.js generate-prompt handler uses `60000` ms timeout
+- **Why**: 30s proved too short for complex/detailed prompts during testing — Claude CLI with a large system prompt template can take 20-40s in practice. 60s provides headroom without meaningfully degrading UX (spinner is shown throughout).
+- **Approved by**: agent-autonomous (logged retroactively during phase-2 review)
+
+---
+
+### D-006 — set-window-buttons-visible IPC channel added
+- **Date**: 2026-04-18 · **Type**: tech-choice
+- **What was planned**: No IPC channel to control traffic light visibility
+- **What was done**: Added `set-window-buttons-visible` IPC channel (renderer → main) that calls `win.setWindowButtonVisibility(visible)`. Called with `false` on RECORDING start, `true` on THINKING and PROMPT_READY.
+- **Why**: Traffic lights are distracting during the active recording state (red stop button is the primary CTA). Electron's `setWindowButtonVisibility` API provides clean show/hide without CSS workarounds.
+- **Approved by**: agent-autonomous (logged retroactively during phase-2 review)
+
+---
+
+### D-007 — FIRST_RUN state removed from index.html; replaced by splash.html
+- **Date**: 2026-04-18 · **Type**: scope-change
+- **What was planned**: F-FIRST-RUN: in-bar FIRST_RUN state, `firstRunComplete` localStorage gate, shown only on first launch
+- **What was done**: FIRST_RUN state and `panel-first-run` removed from index.html (during BUG-001 full rewrite). Replaced by `splashWin` BrowserWindow (`splash.html`) via FEATURE-001 — runs every launch, auto-proceeds when checks pass.
+- **Why**: Separate splash window provides better UX — animated, full-screen, branded. Runs every launch rather than first-launch-only (fast path completes in ~2s when everything is fine, so no friction on subsequent launches). Removes need for `firstRunComplete` localStorage key.
+- **Impact**: `firstRunComplete` localStorage key is now unused. `STATES.FIRST_RUN` removed from state machine. `getFirstRunComplete()`/`setFirstRunComplete()` wrappers no longer needed.
+- **Approved by**: human (FEATURE-001 approved, retroactively documented for D-007)
+
+---
+
 ### BUG-008 — Prompt output formatting: plain-text section labels + data/visual sections
 - **Date**: 2026-04-18 · **Task**: BUG-008 · **Type**: blocker-resolution
 - **Root cause**: `MODE_SYSTEM_PROMPTS` instructed Claude to use markdown bold headers (`**Role:**`) and lacked data model / visual style sections for technical and UI prompts.

@@ -89,13 +89,13 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 
 **Styling:**
 - All styles inline in `<style>` block inside `index.html`. No external stylesheets.
-- Design tokens as CSS custom properties at `:root`:
-  - `--color-action: #007AFF` (iOS blue)
-  - `--color-recording: #FF3B30` (iOS red)
-  - `--color-success: #34C759` (iOS green)
-  - `--bg-window: rgba(255,255,255,0.85)`
-  - `--radius-window: 14px`
-  - `--radius-inner: 8px`
+- Design tokens as CSS custom properties at `:root` (dark-glass palette — updated from original iOS-light spec during design pivot):
+  - `--blue: #0A84FF` (action colour — iOS dark-mode blue)
+  - `--red: #FF3B30` (recording / stop)
+  - `--green: #30D158` (success / copy flash)
+  - `--font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
+  - `--bar-radius: 18px`
+  - Border/shadow/backdrop tokens (`--border-top`, `--bar-shadow`, `--bar-backdrop`, etc.) defined in index.html `:root`
 - System font only: `-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
 - CSS `transition`: opacity `150ms ease` only — no transforms in transitions, no bounces, no slides.
 - CSS `@keyframes` animations may use `transform` for functional animations (spinner rotation, recording dot pulse). No transforms in `transition` declarations anywhere.
@@ -117,8 +117,15 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | renderer → main | `check-claude-path` | Returns resolved claude binary path or error |
 | renderer → main | `resize-window` | Resize BrowserWindow height per state (STATE_HEIGHTS) |
 | renderer → main | `transcribe-audio` | Send audio ArrayBuffer → Whisper CLI → return transcript string |
+| renderer → main | `show-mode-menu` | Open native Electron radio menu for mode selection (BUG-002-D) |
+| renderer → main | `set-window-buttons-visible` | Show/hide native traffic light buttons — hidden during RECORDING |
+| renderer → main | `splash-done` | Splash complete — hide splashWin, show main win, register shortcut |
+| renderer → main | `splash-check-cli` | Check if claudePath resolved — returns `{ ok, path }` |
+| renderer → main | `splash-open-url` | Open install URL in system browser (https:// only) |
+| renderer → main | `request-mic` | Reserved for future mic permission IPC (currently no-op) |
 | main → renderer | `shortcut-triggered` | Global ⌥Space / ⌃\` fired from outside app |
 | main → renderer | `shortcut-conflict` | Primary shortcut taken, fallback active |
+| main → renderer | `mode-selected` | Mode key chosen from native menu — sent after show-mode-menu (BUG-002-D) |
 
 ---
 

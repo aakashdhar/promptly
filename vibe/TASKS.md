@@ -102,9 +102,11 @@
 > Runs after Phase 2 gate passes. No new features.
 > Phase 3 exit: run `review: final` — 0 P0 + 0 P1 before distributing.
 
-### P1 fixes from Phase 2 review (BL-013, BL-014)
-⬜ BL-013 — Fix renderPromptOutput regex: update /^\*\*([^*]+)\*\*:?\s*$/ → /^([A-Za-z][A-Za-z\s]*):\s*$/ to match plain-text labels from new BUG-008 system prompt · index.html:622-624
-⬜ BL-014 — Fix RAF loop leak: store inline animMorph handle in morphAnimFrame so stopMorphAnim() cancels it; clean up dead startMorphAnim/stopMorphAnim code after · index.html:463-528, 676-681
+### P1 fixes from Phase 2 review (BL-013, BL-014) — COMPLETE
+✅ BL-013 — renderPromptOutput regex updated → /^([A-Za-z][A-Za-z\s]*):\s*$/ — plain-text labels now styled
+✅ BL-014 — RAF loop leak fixed — morphAnimFrame stores inline RAF handle; stopMorphAnim() now cancels correctly
+✅ BL-015/016/017/018/019/020 — all P2 doc + security fixes applied
+✅ BL-021/022/023 — all P3 code cleanup applied
 
 ### Phase 3 polish
 ⬜ Error state audit — verify all error messages surface correctly with right text; all tap-to-dismiss
@@ -132,13 +134,16 @@
 ---
 
 ## What just happened
-✅ review: phase 2 — PASS (0 P0 · 2 P1 · 6 P2 · 4 P3)
-   Score: 6.4/10 (C+) — functional core is solid, score pulled down by documentation debt
-   Key P1 bugs found:
-   - BL-013: renderPromptOutput regex won't match plain-text labels from BUG-008 — headers render flat
-   - BL-014: RAF loop leak in setState(THINKING) — each Regenerate adds an orphaned 60fps loop
-   Both added as first Phase 3 tasks.
-   Full report: vibe/reviews/phase-2-review.md
+✅ All phase-2 review findings resolved (BL-013 through BL-023):
+   Code: renderPromptOutput regex fixed (plain-text labels), RAF loop leak fixed,
+         URL validation added to splash-open-url, error truncation removed, onclick→addEventListener
+   Docs: CODEBASE.md full rewrite, ARCHITECTURE.md IPC table + CSS tokens updated,
+         SPEC.md F1 vibrancy + F8 first-run updated, DECISIONS.md D-005/D-006/D-007 logged
+   BL-024 (eslint devDep low-severity audit) deferred — no runtime risk
+   Lint: 0 errors
 
 ## What's next
-⬜ Phase 3 begins — fix BL-013 first (renderPromptOutput regex), then BL-014 (RAF loop), then polish tasks.
+⬜ Manual smoke test: exercise all 5 states × all 5 modes; test Regenerate 5× to verify no RAF accumulation; confirm section headers styled in PROMPT_READY output
+⬜ Error state audit — all error messages surface with correct text; all tap-to-dismiss
+⬜ Build verification — npm run dist → universal .dmg; install on Apple Silicon
+⬜ Distribution prep — Slack message draft

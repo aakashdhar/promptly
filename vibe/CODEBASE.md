@@ -1,14 +1,14 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-18 (BUG-003 — 4 visual fixes: ghost window, traffic lights, flash, vibrancy ghost)
+> Last updated: 2026-04-18 (Phase 2 review fixes: BL-013/014/015/016/021/022/023)
 
 ---
 
 ## Current state
 
-**Phase:** Phase 2 in progress — F-STATE ✅ — F-FIRST-RUN ✅ — F-SPEECH ✅ — F-CLAUDE ✅ — F-ACTIONS ✅ — Phase 2 complete (pending review: phase 2)
-**Files written:** 6 source files + eslint.config.js
+**Phase:** Phase 3 in progress — Phase 2 complete (reviewed 2026-04-18, score 6.4/10, 0 P0)
+**Files written:** 7 source files + eslint.config.js
 
 ---
 
@@ -19,10 +19,10 @@
 | `package.json` | Electron + electron-builder config, npm scripts, devDeps only | scripts: start, dist, lint |
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
-| `main.js` | Electron main: window, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `claudePath`, `win`, `pillWin`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and pill | `window.electronAPI` |
-| `pill.html` | Recording pill UI (separate BrowserWindow) — waveform, timer, stop/dismiss | `startWave()`, `startTimer()` — self-contained |
-| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate) | `setState()`, `getMode()`, `setMode()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `STATE_HEIGHTS`, `MODES`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing` |
+| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` |
+| `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
+| `index.html` | Full UI: CSS tokens, all 5 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
 
 ---
 
@@ -30,38 +30,40 @@
 
 | Channel | Direction | Status |
 |---------|-----------|--------|
-| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript via stdin, returns { success, prompt, error } |
-| `copy-to-clipboard` | renderer → main | ✅ stubbed — uses clipboard.writeText |
-| `check-claude-path` | renderer → main | ✅ stubbed — returns claudePath or error |
-| `resize-window` | renderer → main | ✅ registered — resizes BrowserWindow to given height |
-| `transcribe-audio` | renderer → main | ✅ registered — writes audio to tmpdir, runs Whisper CLI, returns transcript |
-| `show-pill` | renderer → main | ✅ registered — hides win, creates pillWin (BUG-003-A) |
-| `switch-to-main` | renderer → main | ✅ registered — destroys pillWin, shows win (BUG-003-A) |
-| `pill-stop` | pill → main | ✅ registered — forwarded as pill-action {stop} to win |
-| `pill-dismiss` | pill → main | ✅ registered — forwarded as pill-action {dismiss} to win |
-| `pill-action` | main → win | ✅ registered — forwarded stop/dismiss from pill |
+| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error } |
+| `copy-to-clipboard` | renderer → main | ✅ registered — clipboard.writeText({ text }) → { success: true } |
+| `check-claude-path` | renderer → main | ✅ registered — returns { found, path } or { found: false, error } |
+| `resize-window` | renderer → main | ✅ registered — win.setSize(520, height, true) |
+| `transcribe-audio` | renderer → main | ✅ registered — writes audio to tmpdir, runs Whisper CLI, returns { success, transcript, error } |
+| `show-mode-menu` | renderer → main | ✅ registered — builds native Electron radio menu from MODE_CONFIG keys |
+| `set-window-buttons-visible` | renderer → main | ✅ registered — win.setWindowButtonVisibility(visible); hidden during RECORDING |
+| `splash-done` | renderer → main | ✅ registered — hides splashWin, shows win, calls registerShortcut() |
+| `splash-check-cli` | renderer → main | ✅ registered — returns { ok: !!claudePath, path: claudePath } |
+| `splash-open-url` | renderer → main | ✅ registered — shell.openExternal(url) if url starts with https:// |
+| `request-mic` | renderer → main | ✅ registered — returns { ok: true } (no-op; mic checked in splash renderer) |
 | `shortcut-triggered` | main → renderer | ✅ registered — fires on ⌥Space (or fallback) |
-| `shortcut-conflict` | main → renderer | ✅ registered — fires on did-finish-load if fallback used |
+| `shortcut-conflict` | main → renderer | ✅ registered — fires if fallback used, sends { fallback } |
+| `mode-selected` | main → renderer | ✅ registered — sent from show-mode-menu click handler with mode key |
 
 ---
 
 ## State machine (in index.html)
 
 **Function:** `setState(newState, payload = {})`
-- Guards against unknown states via `STATE_HEIGHTS` lookup
-- Sets `currentState`
+- Calls `stopMorphAnim()` at entry — cancels any live morph RAF loop
 - Hides all panels, shows active panel by ID
-- Handles payload: `ERROR` → sets `error-message` textContent; `PROMPT_READY` → sets `prompt-output` textContent
-- Calls `window.electronAPI.resizeWindow(STATE_HEIGHTS[newState])` if available
+- Handles payload: `ERROR` → sets `error-message` textContent; `PROMPT_READY` → calls `renderPromptOutput(generatedPrompt)`
+- Calls `window.electronAPI.resizeWindow(STATE_HEIGHTS[newState])` wrapped in `requestAnimationFrame`
 
 | State | Panel ID | Height | Notes |
 |-------|----------|--------|-------|
-| `FIRST_RUN` | `state-first-run` | 120px | CLI check + mic button |
-| `IDLE` | `state-idle` | 44px | Mode pill, shortcut hint, conflict notice |
-| `RECORDING` | `state-recording` | 80px | Blinking dot, live transcript, stop hint |
-| `THINKING` | `state-thinking` | 44px | Spinner + "Generating prompt…" |
-| `PROMPT_READY` | `state-prompt-ready` | 200px | Prompt output + action buttons |
-| `ERROR` | `state-error` | 44px | Error icon, message, dismiss hint (click to dismiss) |
+| `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint |
+| `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/stop buttons; traffic lights hidden |
+| `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
+| `PROMPT_READY` | `panel-ready` | 480px | Prompt output + action buttons |
+| `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
+
+> Note: FIRST_RUN state removed from index.html — replaced by splash.html (D-007, FEATURE-001)
 
 ---
 
@@ -69,15 +71,17 @@
 
 | Variable | Type | Set by | Read by |
 |----------|------|--------|---------|
-| `currentState` | string | `setState()` | all features |
-| `cliOk` | boolean | `initFirstRun()` | `checkFirstRunCompletion()` |
-| `micOk` | boolean | `initFirstRun()`, mic btn handler | `checkFirstRunCompletion()` |
-| `transcript` | string | F-SPEECH (live updates) | F-CLAUDE |
-| `originalTranscript` | string | F-SPEECH (captured once on stop) | F-CLAUDE, F-ACTIONS |
-| `generatedPrompt` | string | Written once per generation by `generate-prompt` IPC result in `mediaRecorder.onstop` | F-ACTIONS |
-| `mediaRecorder` | MediaRecorder\|null | `startRecording()` | `stopRecording()`, `onstop` handler |
-| `audioChunks` | Blob[] | `startRecording()`, `ondataavailable` | `onstop` handler |
-| `isRecording` | boolean | `startRecording()`, `stopRecording()` | `stopRecording()` guard |
+| `state` | string | `setState()` | all features |
+| `originalTranscript` | string | `stopRecording()` onstop handler — captured once, never mutated | `setState(THINKING)`, `setState(PROMPT_READY)`, Regenerate, Copy, Edit |
+| `generatedPrompt` | string | `generate-prompt` IPC result; Edit Done handler | `renderPromptOutput()`, Copy, Regenerate display |
+| `mediaRecorder` | MediaRecorder\|null | `startRecording()` | `stopRecording()`, dismiss handler |
+| `audioChunks` | Blob[] | `startRecording()`, `ondataavailable` | `stopRecording()` onstop handler |
+| `isProcessing` | boolean | `stopRecording()` start/end guard | `stopRecording()` early-exit guard |
+| `morphAnimFrame` | number\|null | `setState(THINKING)` inline animMorph | `stopMorphAnim()` — cancelled at every setState() |
+| `recSecs` | number | `startRecTimer()` / `stopRecTimer()` | timer display |
+| `recTimer` | interval | `startRecTimer()` | `stopRecTimer()` |
+| `waveT` | number | `startRecTimer()` animateWave | wave animation |
+| `waveRAF` | number | `startRecTimer()` animateWave | `stopRecTimer()` |
 
 ---
 
@@ -85,10 +89,12 @@
 
 | Variable | Set when | Value |
 |----------|----------|-------|
-| `claudePath` | app-ready PATH resolution via `exec('zsh -lc "which claude"')` | resolved at runtime |
-| `whisperPath` | app-ready PATH resolution via `exec('zsh -lc "which whisper"')` | resolved at runtime |
-| `win` | createWindow() called in whenReady | BrowserWindow instance |
-| `MODE_SYSTEM_PROMPTS` | object constant | Declared at module scope | `generate-prompt` handler reads by mode key |
+| `claudePath` | app-ready — `resolveClaudePath()` Promise | resolved binary path or null |
+| `whisperPath` | app-ready — `exec('zsh -lc "which whisper"')` | resolved binary path or null |
+| `win` | `createWindow()` called after `resolveClaudePath()` resolves | BrowserWindow instance |
+| `splashWin` | `app.whenReady()` — created before `win`, destroyed after `splash-done` | BrowserWindow instance (null after splash) |
+| `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders |
+| `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code }` — each `{ name, instruction }` |
 
 ---
 
@@ -96,25 +102,27 @@
 
 ```css
 :root {
-  --color-action: #007AFF;
-  --color-recording: #FF3B30;
-  --color-success: #34C759;
-  --bg-window: rgba(255, 255, 255, 0.85);
-  --radius-window: 14px;
-  --radius-inner: 8px;
+  --blue: #0A84FF;           /* action / interactive elements */
+  --red: #FF3B30;            /* recording / stop */
+  --green: #30D158;          /* success / copy flash */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  --bar-radius: 18px;
+  --bar-backdrop: blur(40px) saturate(180%);
+  --bar-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
+  /* border tokens: --border-top, --border-left, --border-right, --border-bottom */
+  /* gradient tokens: --highlight-top, --accent-bottom, --divider */
 }
 ```
-
-**Additional rule:** `.btn-action.btn-success { background: var(--color-success); }` — applied on Copy click, removed after 1800ms.
 
 ---
 
 ## localStorage keys
 
-| Key | Written by | Read by |
-|-----|-----------|---------|
-| `mode` | setMode() in F-CLAUDE | getMode() in F-CLAUDE, F-ACTIONS, boot sequence |
-| `firstRunComplete` | F-FIRST-RUN | F-FIRST-RUN check at startup |
+| Key | Written by | Read by | Notes |
+|-----|-----------|---------|-------|
+| `mode` | `setMode()` | `getMode()` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
+
+> `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 
 ---
 
@@ -122,39 +130,47 @@
 
 | Element ID | Panel | Used by |
 |------------|-------|---------|
-| `idle-mode-label` | IDLE | FST-005 (boot label), F-CLAUDE (mode display) |
-| `idle-shortcut-hint` | IDLE | display only |
-| `idle-conflict-notice` | IDLE | FST-005 (shortcut conflict) |
-| `recording-dot` | RECORDING | F-SPEECH (animation start/stop) |
-| `recording-transcript` | RECORDING | F-SPEECH (live transcript) |
-| `recording-stop-hint` | RECORDING | display only |
-| `thinking-spinner` | THINKING | display only |
-| `thinking-text` | THINKING | display only |
-| `prompt-output` | PROMPT_READY | F-CLAUDE (set text), F-ACTIONS (edit mode) |
-| `action-copy` | PROMPT_READY | F-ACTIONS |
-| `action-edit` | PROMPT_READY | F-ACTIONS |
-| `action-done` | PROMPT_READY | F-ACTIONS |
-| `action-regenerate` | PROMPT_READY | F-ACTIONS |
-| `error-message` | ERROR | setState() (set via payload.message) |
-| `firstrun-cli-status` | FIRST_RUN | F-FIRST-RUN |
-| `firstrun-cli-label` | FIRST_RUN | F-FIRST-RUN |
-| `firstrun-mic-status` | FIRST_RUN | F-FIRST-RUN |
-| `firstrun-mic-label` | FIRST_RUN | F-FIRST-RUN |
-| `firstrun-mic-btn` | FIRST_RUN | F-FIRST-RUN |
-| `mode-menu` | body (sibling of #app) | F-CLAUDE (mode context menu, built from MODES constant) |
+| `bar` | root | `setState()` show/hide |
+| `panel-idle` | IDLE | `setState()` |
+| `panel-recording` | RECORDING | `setState()` |
+| `panel-thinking` | THINKING | `setState()` |
+| `panel-ready` | PROMPT_READY | `setState()` |
+| `panel-error` | ERROR | `setState()` |
+| `idle-area` | IDLE | click → `startRecording()` |
+| `mode-pill` | IDLE | mode label display; click → `showModeMenu` |
+| `recCanvas` | RECORDING | `drawRecordingWave()` |
+| `recDur` | RECORDING | `startRecTimer()` |
+| `dismissBtn` | RECORDING | click → cancel recording → IDLE |
+| `stopBtn` | RECORDING | click → `stopRecording()` |
+| `transcriptWrap` | RECORDING | `setRecordingTranscript()` |
+| `transcriptText` | RECORDING | `setRecordingTranscript()` |
+| `morph-canvas` | THINKING | `drawMorphWave()` RAF loop |
+| `think-transcript` | THINKING | set in `stopRecording()` onstop + regenerate handler |
+| `panel-thinking` | THINKING | `scrollHeight` measured for dynamic resize |
+| `you-said-text` | PROMPT_READY | `setState(PROMPT_READY)` — sets `originalTranscript` |
+| `prompt-output` | PROMPT_READY | `renderPromptOutput()`, Edit mode contenteditable |
+| `btn-edit` | PROMPT_READY | Edit/Done toggle |
+| `btn-copy` | PROMPT_READY | Copy + green flash |
+| `btn-regenerate` | PROMPT_READY | → THINKING → PROMPT_READY |
+| `btn-reset` | PROMPT_READY | → IDLE |
+| `error-area` | ERROR | click → IDLE |
+| `error-message` | ERROR | `setState(ERROR, { message })` |
 
 ---
 
-## Smoke test results (P1-009)
+## Smoke test results (Phase 2 complete)
 
-- `npm start` opens frameless 480px window ✅
-- `claudePath` resolved to `/Users/aakash-anon/.local/bin/claude` and logged ✅
-- `Alt+Space` shortcut registered and logged ✅
-- No console errors ✅
+- Full flow: speak → transcribe → generate → prompt ready ✅
+- All 5 modes generate distinct structured prompts ✅
+- Copy button: green flash 1.8s + clipboard ✅
+- Edit: contenteditable, Escape cancels, Done saves ✅
+- Regenerate: uses originalTranscript, not edited text ✅
+- Splash screen: CLI check → mic check → auto-proceed ✅
+- Vibrancy: frosted glass renders on macOS desktop ✅
 
 ---
 
 ## Known issues / watch items
 
 - `eslint main.js preload.js` produces warnings for `console.log` (expected dev logs — clean before release)
-- `index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually)
+- `index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually; see D-001)

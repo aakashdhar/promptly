@@ -33,9 +33,9 @@ Promptly is a macOS floating bar that turns spoken words into structured Claude 
 - [ ] `titleBarStyle: 'hiddenInset'` — traffic lights visible, inset into window content
 - [ ] `trafficLightPosition: { x: 12, y: 10 }` — traffic lights positioned in top-left
 - [ ] Bar content has left padding (~70px) so content does not overlap traffic light area
-- [ ] Vibrancy: `vibrancy: 'sidebar'` with `rgba(255,255,255,0.85)` background fallback
+- [ ] Vibrancy: `vibrancy: 'fullscreen-ui'` (changed from `'sidebar'` in BUG-006 — more reliable on Electron v31+) with `transparent: true` and `backgroundColor: '#00000000'`
 - [ ] `transparent: true` on BrowserWindow so vibrancy + rounded corners render correctly
-- [ ] Window radius: 14px, inner elements: 8px
+- [ ] Window radius: 18px (changed from 14px in dark-glass design pivot)
 - [ ] System font only: `-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
 - [ ] Window opens centred horizontally near bottom of screen
 - [ ] Electron `contextIsolation: true`, `nodeIntegration: false` enforced
@@ -85,7 +85,7 @@ Promptly is a macOS floating bar that turns spoken words into structured Claude 
 - [ ] Bar enters THINKING state while `claude -p` runs (spinner shown)
 - [ ] On success → PROMPT_READY state, generated prompt rendered
 - [ ] On failure → ERROR state with message from stderr
-- [ ] Timeout after 30 seconds → ERROR state: "Claude took too long — try again"
+- [ ] Timeout after 60 seconds → ERROR state: "Claude took too long — try again" (extended from 30s — complex prompts need more time)
 
 **Mode system prompts (exact `claude -p` system prompt for each mode):**
 
@@ -127,17 +127,21 @@ The user's speech transcript is appended after the system prompt as the user mes
 - [ ] Re-enters THINKING state, then PROMPT_READY on success
 - [ ] Mode used is current active mode at time of regenerate (not the mode used for original)
 
-### F8 — First-run setup
-**What:** On very first launch, a checklist screen guides user through two prerequisites.
+### F8 — Launch-time checks (splash screen)
+**What:** On every launch, a separate frosted-glass splash window runs CLI + mic checks before showing the main bar. Replaces original in-bar first-run flow (FEATURE-001, 2026-04-18).
+
+> ~~Original: In-bar FIRST_RUN state, only shown on first launch, stored `firstRunComplete` in localStorage~~
+> Changed 2026-04-18 (FEATURE-001): Separate `splashWin` BrowserWindow (`splash.html`) — runs every launch, auto-proceeds when all checks pass.
 
 **Acceptance criteria:**
-- [ ] Shown on first launch when either Claude CLI is missing or mic permission not granted
-- [ ] Two checklist items: "Claude CLI installed" + "Microphone access granted"
-- [ ] CLI item: green check if found, red X + install link if not
-- [ ] Mic item: "Grant Access" button triggers permission request
-- [ ] Once both satisfied → automatically transitions to IDLE state
-- [ ] First-run state stored in localStorage; never shown again after completion
-- [ ] If CLI found and mic already granted on subsequent launch → skip directly to IDLE
+- [ ] Separate `splashWin` BrowserWindow shown before main window on every launch
+- [ ] Two check items: "Claude CLI" + "Microphone"
+- [ ] CLI check: green ✓ if `claudePath` resolved, red ✗ + "Install Claude CLI" button if not
+- [ ] Mic check: `getUserMedia({ audio: true })` — green ✓ on success, red ✗ on deny
+- [ ] If CLI missing: shows install button that opens `https://claude.ai/code` — no auto-proceed
+- [ ] If mic denied: shows error message — no auto-proceed
+- [ ] On all-clear: "All checks passed — launching" → 600ms → splash hides, main bar shows
+- [ ] Main bar hidden until `splash-done` IPC fires
 
 ### F9 — Error states (in-bar)
 **What:** All errors shown inline in the bar — no separate windows, no crashes.
