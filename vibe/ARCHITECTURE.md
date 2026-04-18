@@ -12,7 +12,7 @@
 **Stack (locked):**
   Shell:    Electron v31+, universal binary (arm64 + x64)
   Frontend: Vanilla HTML + CSS + JS — single index.html, zero build step
-  Speech:   Web Speech API (webkitSpeechRecognition) — native macOS engine
+  Speech:   getUserMedia + MediaRecorder (renderer) → transcribe-audio IPC → Whisper CLI (main)
   CLI:      `claude -p` via child_process — PATH resolved via login shell at startup
   IPC:      Electron ipcMain + preload.js contextBridge
   Storage:  localStorage — mode only, nothing sensitive
@@ -116,6 +116,7 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | renderer → main | `copy-to-clipboard` | Write string to system clipboard |
 | renderer → main | `check-claude-path` | Returns resolved claude binary path or error |
 | renderer → main | `resize-window` | Resize BrowserWindow height per state (STATE_HEIGHTS) |
+| renderer → main | `transcribe-audio` | Send audio ArrayBuffer → Whisper CLI → return transcript string |
 | main → renderer | `shortcut-triggered` | Global ⌥Space / ⌃\` fired from outside app |
 | main → renderer | `shortcut-conflict` | Primary shortcut taken, fallback active |
 
@@ -270,3 +271,4 @@ The following are P0 review findings — they block phase gates:
 
 > Updated by architect: when decisions change.
 > 2026-04-18 — Initial ARCHITECTURE.md created via architect: from BRIEF.md
+> 📝 2026-04-18 · Scope change D-003 — speech engine changed from webkitSpeechRecognition to MediaRecorder + Whisper CLI; transcribe-audio IPC channel added
