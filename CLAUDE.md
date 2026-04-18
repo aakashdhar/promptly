@@ -160,46 +160,46 @@ Never let CODEBASE.md drift more than one task behind.
 
 ---
 
-### Active Feature: F-STATE (State machine + full UI skeleton)
-> Folder: vibe/features/2026-04-18-state-machine/ | Added: 2026-04-18
+### Active Feature: F-FIRST-RUN (First-run setup checklist)
+> Folder: vibe/features/2026-04-18-first-run/ | Added: 2026-04-18
 
-**Feature summary**: Build all 6 state DOM panels, setState(), module vars, localStorage wrappers, CSS, and window resize IPC. No actual speech/Claude/clipboard logic.
-**Files in scope**: `index.html` (major), `main.js` (add resize-window IPC), `preload.js` (expose resizeWindow)
-**Files out of scope**: `package.json`, `entitlements.plist`, `eslint.config.js`
+**Feature summary**: Gate the IDLE boot on `getFirstRunComplete()`, show FIRST_RUN checklist on first launch, check Claude CLI via IPC and mic permission via Web API, auto-transition to IDLE when both pass.
+**Files in scope**: `index.html` (only)
+**Files out of scope**: `main.js`, `preload.js`, `package.json`, `entitlements.plist`
 
 **Conventions** (from vibe/ARCHITECTURE.md):
-- `setState(newState, payload)` is the ONLY function that mutates DOM visibility — never toggle `hidden` directly
-- All elements accessed by `id` — never querySelector chains
-- `textContent` for all dynamic text — never `innerHTML` with user content
-- localStorage only via `getMode()` / `setMode()` / `getFirstRunComplete()` / `setFirstRunComplete()`
-- IPC: renderer calls `window.electronAPI.resizeWindow(height)` — never `ipcRenderer` directly
-- Transitions: `opacity 150ms ease` only — no transforms, bounces, slides
+- `setState(newState, payload)` is the ONLY function that mutates DOM visibility — never toggle `hidden` directly on state panels
+- `textContent` for all dynamic text — never `innerHTML` with any external content
+- localStorage only via `getFirstRunComplete()` / `setFirstRunComplete()` — never `localStorage.*` directly
+- IPC: `window.electronAPI.checkClaudePath()` — never `ipcRenderer` directly
+- New module-scope vars: `cliOk`, `micOk` (booleans)
+- New functions: `initFirstRun()` (async), `checkFirstRunCompletion()`
 
 **Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
 
 **Boundaries:**
 Always: follow ARCHITECTURE.md patterns · run manual smoke test after every change ·
-        keep changes additive · update CODEBASE.md for new functions/IDs/IPC (FST-005)
+        keep changes additive · update CODEBASE.md for new functions/IDs/vars (FRN-004)
 
-Ask first: changing any element ID listed in FEATURE_SPEC.md §3 · adding IPC channels beyond resize-window ·
-           changing STATE_HEIGHTS values · adding localStorage keys beyond mode/firstRunComplete
+Ask first: adding any new IPC channel · adding localStorage keys beyond mode/firstRunComplete ·
+           changing STATE_HEIGHTS for FIRST_RUN · changing firstrun panel element IDs
 
-Never: use innerHTML with payload content · access localStorage directly · touch files not in scope ·
+Never: use innerHTML with dynamic content · access localStorage directly · touch main.js or preload.js ·
        add runtime npm dependencies · toggle DOM visibility outside setState()
 
 **Between tasks:** "next" triggers this exact sequence:
 1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
-2. Manual smoke test: exercise affected state(s)
+2. Manual smoke test: exercise FIRST_RUN state and affected boot paths
 3. Run lint: `npm run lint` (must pass)
 4. Commit code changes:
    ```
-   git add main.js preload.js index.html
-   git commit -m "feat(state-machine): [FST-00X] — description"
+   git add index.html
+   git commit -m "feat(first-run): [FRN-00X] — description"
    ```
 5. Commit doc updates separately:
    ```
-   git add vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
-   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FST-00X] done — state-machine"
+   git add vibe/features/2026-04-18-first-run/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FRN-00X] done — first-run"
    ```
 6. Re-read TASKS.md silently → state next task → confirm before starting.
 

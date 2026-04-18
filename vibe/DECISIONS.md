@@ -53,6 +53,23 @@
 
 ---
 
+---
+
+## 2026-04-18 — Spec review: add-feature (F-FIRST-RUN)
+> P0: 0 · P1: 1 · P2: 2
+> Action: all fixed — label IDs added, CLI status initialised to ○, quit edge case documented
+> Report: vibe/spec-reviews/2026-04-18-add-feature-first-run.md
+
+---
+
+## — Feature Start: F-FIRST-RUN (First-run setup checklist) — 2026-04-18
+> Folder: vibe/features/2026-04-18-first-run/
+> Gates IDLE boot on firstRunComplete; shows CLI + mic checklist on first launch; auto-transitions to IDLE when both pass.
+> Tasks: FRN-001 · FRN-002 · FRN-003 · FRN-004 | Estimated: ~3-4 hours
+> Drift logged below.
+
+---
+
 ## 2026-04-18 — Spec review: add-feature (F-STATE)
 > P0: 0 · P1: 2 · P2: 1
 > Action: all fixed

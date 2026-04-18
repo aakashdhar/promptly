@@ -38,12 +38,13 @@
    [x] FST-005 · Boot + IPC wire-up — shortcut listeners, DOMContentLoaded → IDLE, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md (agent use)
 
-⬜ **F-FIRST-RUN — First-run setup checklist**
-   Build order: 2 · Needs: F-STATE complete
-   Parallel with: F-SPEECH (no shared writes)
-   What you can do when done: First launch shows CLI check + mic permission steps; completion transitions to IDLE
-   Shared data: reads claudePath (Phase 1), writes firstRunComplete to localStorage
-   Spec: run `feature: first-run` to plan this feature in detail
+🔄 **F-FIRST-RUN — First-run setup checklist** (0/4)
+   Estimated: approx. 3-4 hours (S: 3, M: 1)
+   [ ] FRN-001 · Boot gate + DOM ID fix — gate boot on firstRunComplete, add id to mic status span
+   [ ] FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
+   [ ] FRN-003 · Mic grant button handler — getUserMedia, success/error status update
+   [ ] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
+   → Full specs: vibe/features/2026-04-18-first-run/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-SPEECH — Speech recording**
    Build order: 2 · Needs: F-STATE complete
@@ -98,16 +99,11 @@
 ---
 
 ## What just happened
-✅ F-STATE reviewed — Score 7.9/10 (B) — 0 P0, 1 P1, 4 P2, 3 P3
-   Gate: PASS — no P0 issues.
-   Report: vibe/reviews/f-state-review.md | Backlog updated: vibe/reviews/backlog.md
-   Key findings: ARCHITECTURE.md IPC table missing resize-window (BL-007, P1);
-   conflict-notice direct DOM mutation outside setState() (BL-008, P2 latent bug).
-💰 Cost tracked — Session #4: $0.513 est. | Project total: $2.89 | Trend: → stable
-   vibe/cost/report-2026-04-18-session4.md
+✅ F-FIRST-RUN feature kit created — FEATURE_SPEC.md · FEATURE_PLAN.md · FEATURE_TASKS.md written
+   4 tasks planned (S: 3, M: 1) · est. 3-4 hours
+   All scaffolding already exists from F-STATE — this feature wires up the logic only.
 
 ## What's next
-F-STATE gate passed. Choose next feature:
-- **F-FIRST-RUN** — First-run setup checklist (can run in parallel with F-SPEECH)
-- **F-SPEECH** — Speech recording (can run in parallel with F-FIRST-RUN)
-Run `feature: first-run` or `feature: speech-recording` to plan. Or say "next" to start F-FIRST-RUN (build order 2, recommended first).
+⬜ FRN-001 · Boot gate + DOM ID fix
+   Add `id="firstrun-mic-status"` to mic row, gate boot on getFirstRunComplete(), add cliOk/micOk vars.
+Say "next" to begin.
