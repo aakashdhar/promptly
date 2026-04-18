@@ -205,6 +205,53 @@ Never: use innerHTML with dynamic content · access localStorage directly · tou
 
 ---
 
+---
+
+### Active Feature: F-CLAUDE (Claude CLI integration + 5 prompt modes)
+> Folder: vibe/features/2026-04-18-claude-integration/ | Added: 2026-04-18
+
+**Feature summary**: Replace generate-prompt stub with real claude CLI spawn call; add 5-mode system prompts; add right-click mode context menu; wire PROMPT_READY on success.
+**Files in scope**: `main.js`, `index.html`
+**Files out of scope**: `preload.js` (generatePrompt already exposed), `package.json`, `entitlements.plist`
+
+**Conventions** (from vibe/ARCHITECTURE.md):
+- `spawn(claudePath, ['-p', systemPrompt])` — transcript via stdin, never shell argument
+- `setState()` for all state transitions
+- `textContent` for all dynamic text (mode labels, checkmarks, prompt output)
+- `getMode()` / `setMode()` for all localStorage mode access
+- No new IPC channels — `generate-prompt` already registered
+- MODE_SYSTEM_PROMPTS in main.js only; MODES (keys+labels) in index.html only
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · manual smoke test after every change ·
+        keep changes additive · update CODEBASE.md for new constants/functions (FCL-004)
+
+Ask first: changing any system prompt text · adding any new IPC channel · new localStorage key
+
+Never: use innerHTML with dynamic content · access localStorage directly ·
+       pass transcript as shell argument · mutate originalTranscript ·
+       add runtime npm dependencies
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Manual smoke test: exercise affected states
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add main.js index.html
+   git commit -m "feat(claude): [FCL-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FCL-00X] done — claude"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
 ## Never list (P0 — block commit immediately)
 
 - Adding any runtime npm dependency

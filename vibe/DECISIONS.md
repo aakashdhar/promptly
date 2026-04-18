@@ -111,6 +111,15 @@ Key fixes applied:
 
 ---
 
+## — Feature Start: F-CLAUDE (Claude CLI integration + 5 prompt modes) — 2026-04-18
+> Folder: vibe/features/2026-04-18-claude-integration/
+> Replaces generate-prompt stub with real spawn call; adds MODE_SYSTEM_PROMPTS; adds mode context menu; wires PROMPT_READY.
+> Tasks: FCL-001 · FCL-002 · FCL-003 · FCL-004 | Estimated: ~5-6 hours
+> Dependencies met: F-SPEECH ✅, F-FIRST-RUN ✅
+> Drift logged below.
+
+---
+
 ## 2026-04-18 — Feature Start: F-SPEECH — Speech Recording
 > Folder: vibe/features/2026-04-18-speech-recording/
 > Implements webkitSpeechRecognition with live transcript, originalTranscript capture at stop, auto-stop on silence.

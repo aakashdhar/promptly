@@ -56,11 +56,13 @@
    [x] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
-⬜ **F-CLAUDE — Claude CLI integration + 5 prompt modes**
-   Build order: 3 · Needs: F-SPEECH (originalTranscript) + F-FIRST-RUN (claudePath confirmed) complete
-   What you can do when done: Speak → generate → THINKING spinner → PROMPT_READY with structured prompt; right-click to switch modes; mode label in idle bar
-   Shared data: reads originalTranscript; writes generatedPrompt (read by F-ACTIONS); reads/writes mode in localStorage
-   Spec: run `feature: claude-integration` to plan this feature in detail
+🔄 **F-CLAUDE — Claude CLI integration + 5 prompt modes** (0/4)
+   Estimated: approx. 5-6 hours (S: 2, M: 2)
+   [ ] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
+   [ ] FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY
+   [ ] FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update
+   [ ] FCL-004 · CODEBASE.md update
+   → Full specs: vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-ACTIONS — Copy, Edit, Regenerate**
    Build order: 4 · Needs: F-CLAUDE (generatedPrompt in PROMPT_READY state) complete
@@ -102,9 +104,8 @@
 ---
 
 ## What just happened
-✅ FPH-003 done — CODEBASE.md updated: Last updated, Current state, index.html key exports (startRecording, stopRecording, mediaRecorder, audioChunks, isRecording), module-scope vars table (3 new rows), main.js vars (whisperPath), IPC channels (transcribe-audio). F-SPEECH feature complete.
+✅ F-CLAUDE feature kit created — FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md written; TASKS.md, CLAUDE.md, DECISIONS.md, PLAN.md updated. 4 tasks planned (FCL-001–FCL-004).
 
 ## What's next
-⬜ F-CLAUDE — Claude CLI integration + 5 prompt modes (needs F-SPEECH + F-FIRST-RUN complete ✅)
-Run `feature: claude-integration` to plan this feature in detail.
+⬜ FCL-001 · generate-prompt IPC — replace stub in main.js with real spawn call, MODE_SYSTEM_PROMPTS, 30s timeout, all error cases.
 Say "next" to begin.
