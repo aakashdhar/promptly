@@ -369,8 +369,9 @@
         });
 
         // Set mode label from localStorage
+        const initialMode = getMode();
         document.getElementById('idle-mode-label').textContent =
-          getMode().charAt(0).toUpperCase() + getMode().slice(1);
+          initialMode.charAt(0).toUpperCase() + initialMode.slice(1);
 
         // Boot into IDLE (F-FIRST-RUN will later decide FIRST_RUN vs IDLE)
         setState('IDLE');
