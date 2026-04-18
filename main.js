@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, screen } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -11,9 +11,15 @@ let claudePath = null;
 let win = null;
 
 function createWindow() {
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+  const windowWidth = 480;
+  const windowHeight = 80;
+
   win = new BrowserWindow({
-    width: 480,
-    height: 80,
+    width: windowWidth,
+    height: windowHeight,
+    x: Math.round((screenWidth - windowWidth) / 2),
+    y: Math.round(screenHeight * 0.85),
     frame: false,
     transparent: false,
     vibrancy: 'sidebar',
@@ -78,9 +84,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('check-claude-path', () => {
     if (claudePath) {
-      return { path: claudePath };
+      return { found: true, path: claudePath };
     }
-    return { error: 'Claude CLI not found.' };
+    return { found: false, error: 'Claude CLI not found.' };
   });
 });
 
