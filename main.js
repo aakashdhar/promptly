@@ -31,7 +31,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     backgroundColor: '#00000000',
-    vibrancy: 'under-window',
+    vibrancy: 'fullscreen-ui',
     visualEffectState: 'active',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
@@ -52,6 +52,7 @@ function createWindow() {
 }
 
 app.commandLine.appendSwitch('enable-transparent-visuals')
+app.commandLine.appendSwitch('disable-gpu-compositing')
 
 app.whenReady().then(() => {
   createWindow();

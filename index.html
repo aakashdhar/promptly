@@ -44,7 +44,7 @@
     .bar {
       width: 520px;
       min-height: 100vh;
-      background: rgba(255,255,255,0.04) !important;
+      background: transparent;
       border-radius: var(--bar-radius);
       border-top: var(--border-top);
       border-left: var(--border-left);
@@ -59,10 +59,11 @@
     .bar::before {
       content: '';
       position: absolute;
-      top: 0; left: 10%; right: 10%; height: 0.5px;
-      background: var(--highlight-top);
+      inset: 0;
+      background: rgba(255,255,255,0.06);
+      border-radius: inherit;
       pointer-events: none;
-      z-index: 2;
+      z-index: 0;
     }
     .bar::after {
       content: '';
@@ -71,6 +72,11 @@
       background: var(--accent-bottom);
       pointer-events: none;
       z-index: 2;
+    }
+
+    #panel-idle, #panel-recording, #panel-thinking, #panel-ready, #panel-error {
+      position: relative;
+      z-index: 1;
     }
 
     /* Traffic light spacer — native macOS buttons render here via titleBarStyle: hiddenInset */
