@@ -95,11 +95,7 @@ app.whenReady().then(() => {
       }
       const systemPrompt = MODE_SYSTEM_PROMPTS[mode] || MODE_SYSTEM_PROMPTS.balanced;
       const { spawn } = require('child_process');
-      const child = spawn(claudePath, [
-        '--print',
-        '--system-prompt', systemPrompt,
-        '--no-session-persistence',
-      ]);
+      const child = spawn(claudePath, ['-p', systemPrompt]);
       let stdout = '';
       let stderr = '';
       let resolved = false;
@@ -107,7 +103,7 @@ app.whenReady().then(() => {
         resolved = true;
         child.kill();
         resolve({ success: false, error: 'Claude took too long — try again' });
-      }, 30000);
+      }, 60000);
       child.stdout.on('data', (d) => { stdout += d.toString(); });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.write(transcript);
