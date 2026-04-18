@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 
+const PAD = { paddingLeft: 32, paddingRight: 32 }
+
 function renderPromptOutput(text) {
   if (!text) return null
   const lines = text.split('\n')
@@ -33,6 +35,15 @@ function renderPromptOutput(text) {
   }
   flush()
   return result
+}
+
+function Divider() {
+  return (
+    <div
+      className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent flex-shrink-0"
+      style={{ marginLeft: 16, marginRight: 16 }}
+    />
+  )
 }
 
 export default function PromptReadyState({
@@ -94,9 +105,13 @@ export default function PromptReadyState({
   }, [isEditing, generatedPrompt])
 
   return (
-    <div id="panel-ready" className="relative z-[1]">
-      <div className="h-7 [-webkit-app-region:drag]" />
-      <div className="flex justify-between items-center px-[22px] pt-[26px] pb-5">
+    <div id="panel-ready" className="relative z-[1] flex-1 flex flex-col min-h-0">
+
+      {/* Drag area — tall enough for traffic-light buttons to breathe */}
+      <div className="h-10 [-webkit-app-region:drag] flex-shrink-0" />
+
+      {/* Header: Prompt ready + Regenerate / Reset */}
+      <div className="flex justify-between items-center pt-3 pb-5 flex-shrink-0" style={PAD}>
         <div className="flex items-center gap-2 text-[13px] text-white/40 tracking-[0.01em]">
           <span className="text-[#30D158] text-[15px] [text-shadow:0_0_8px_rgba(48,209,88,0.5)]">✓</span>
           <span>Prompt ready</span>
@@ -118,31 +133,40 @@ export default function PromptReadyState({
           </button>
         </div>
       </div>
-      <div className="h-px mx-[18px] bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
-      <div className="px-[22px] pt-7 pb-0">
+
+      <Divider />
+
+      {/* You said */}
+      <div className="pt-6 pb-6 flex-shrink-0" style={PAD}>
         <div className="block text-[9px] font-bold tracking-[0.14em] uppercase text-white/[0.14] mb-3">You said</div>
-        <div className="text-[13px] text-white/55 leading-[1.7] line-clamp-2 mb-1" id="you-said-text">
+        <div className="text-[13px] text-white/55 leading-[1.7] line-clamp-2" id="you-said-text">
           {originalTranscript}
         </div>
       </div>
-      <div className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent mx-[22px] my-[26px]" />
+
+      <Divider />
+
+      {/* Generated prompt — fills remaining space, scrollable */}
       <div
         ref={promptRef}
-        className="px-[22px] text-[13.5px] leading-[1.9] text-white/[0.82] tracking-[0.01em] max-h-[200px] overflow-y-auto mb-4 whitespace-pre-wrap scrollbar-thin"
+        className="flex-1 min-h-0 overflow-y-auto py-5 text-[13.5px] leading-[1.9] text-white/[0.82] tracking-[0.01em] whitespace-pre-wrap scrollbar-thin"
         id="prompt-output"
         contentEditable={isEditing}
         suppressContentEditableWarning
         style={isEditing ? {
+          ...PAD,
           outline: '1.5px solid rgba(10,132,255,0.6)',
           outlineOffset: '4px',
           borderRadius: '6px',
-        } : {}}
+        } : PAD}
       >
         {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt)}
       </div>
-      <div className="flex gap-[10px] px-[22px] pt-[32px] pb-7">
+
+      {/* Action buttons — always pinned at bottom */}
+      <div className="flex gap-[10px] pt-4 pb-6 flex-shrink-0" style={PAD}>
         <button
-          className="h-11 px-6 border border-white/[0.10] rounded-[10px] bg-white/[0.04] text-[13px] text-white/40 cursor-pointer tracking-[0.01em] hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-150"
+          className="h-11 px-8 min-w-[80px] border border-white/[0.10] rounded-[10px] bg-white/[0.04] text-[13px] text-white/40 cursor-pointer tracking-[0.01em] hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-150"
           id="btn-edit"
           onClick={handleEdit}
         >

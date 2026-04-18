@@ -16,10 +16,10 @@ const STATES = {
 }
 
 const STATE_HEIGHTS = {
-  IDLE: 101,
+  IDLE: 118,
   RECORDING: 89,
   THINKING: 320,
-  PROMPT_READY: 540,
+  PROMPT_READY: 560,
   ERROR: 101,
 }
 
@@ -54,6 +54,7 @@ export default function App() {
   // Resize window to IDLE height on initial mount
   useEffect(() => {
     resizeWindow(STATE_HEIGHTS.IDLE)
+    console.log('window resized to', STATE_HEIGHTS.IDLE)
   }, [])
 
   // Keep stateRef in sync with currentState
@@ -203,7 +204,7 @@ export default function App() {
 
   return (
     <div
-      className="w-[520px] h-full flex flex-col rounded-[18px] overflow-hidden relative bg-white/[0.04] border-t border-t-white/[0.18] border-l border-l-white/[0.10] border-r border-r-white/[0.06] border-b border-b-white/[0.04] backdrop-blur-[40px] shadow-[0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_32px_64px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4)]"
+      className="w-[520px] h-screen flex flex-col rounded-[18px] overflow-hidden relative bg-white/[0.04] border-t border-t-white/[0.18] border-l border-l-white/[0.10] border-r border-r-white/[0.06] border-b border-b-white/[0.04] backdrop-blur-[40px] shadow-[0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_32px_64px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4)]"
       id="bar"
       onContextMenu={handleContextMenu}
     >

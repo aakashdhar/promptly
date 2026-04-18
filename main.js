@@ -192,12 +192,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-  const isDev = process.env.NODE_ENV === 'development'
-  if (isDev) {
-    win.loadURL('http://localhost:5173')
-  } else {
-    win.loadFile(path.join(__dirname, 'dist-renderer/index.html'))
-  }
+  win.loadFile(path.join(__dirname, 'dist-renderer/index.html'))
   nativeTheme.on('updated', () => {
     if (win && !win.isDestroyed()) {
       win.webContents.send('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
@@ -247,6 +242,7 @@ app.whenReady().then(async () => {
     setTimeout(() => {
       if (splashWin) { splashWin.destroy(); splashWin = null; }
       win.show();
+      win.webContents.openDevTools({ mode: 'detach' });
       win.center();
       registerShortcut();
       createTray();

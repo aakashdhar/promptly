@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import WaveformCanvas from './WaveformCanvas.jsx'
 
+const PAD = { paddingLeft: 32, paddingRight: 32 }
+
 export default function RecordingState({ onStop, onDismiss }) {
   const [secs, setSecs] = useState(0)
 
@@ -17,7 +19,10 @@ export default function RecordingState({ onStop, onDismiss }) {
   return (
     <div id="panel-recording" className="relative z-[1]">
       <div className="h-[13px] [-webkit-app-region:drag]" />
-      <div className="h-[68px] flex items-center px-4 gap-3 [-webkit-app-region:drag]">
+      <div
+        className="h-[68px] flex items-center gap-3 [-webkit-app-region:drag]"
+        style={PAD}
+      >
         <div
           className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/[0.10] flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] hover:bg-white/[0.12] transition-colors duration-150"
           id="dismissBtn"
@@ -46,7 +51,7 @@ export default function RecordingState({ onStop, onDismiss }) {
           </svg>
         </div>
       </div>
-      <div className="h-px mx-[18px] bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" style={{marginLeft:32, marginRight:32}} />
     </div>
   )
 }
