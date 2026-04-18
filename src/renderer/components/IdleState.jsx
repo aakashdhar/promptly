@@ -6,7 +6,6 @@ export default function IdleState({ mode, modeLabel, onStart }) {
 
   return (
     <div id="panel-idle" className="relative z-[1]">
-      <div className="h-7 [-webkit-app-region:drag]" />
       <div
         className="h-[76px] flex items-center px-5 [-webkit-app-region:drag]"
         id="idle-area"

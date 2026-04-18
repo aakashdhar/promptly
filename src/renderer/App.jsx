@@ -51,6 +51,11 @@ export default function App() {
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
 
+  // Resize window to IDLE height on initial mount
+  useEffect(() => {
+    resizeWindow(STATE_HEIGHTS.IDLE)
+  }, [])
+
   // Keep stateRef in sync with currentState
   useEffect(() => {
     stateRef.current = currentState
@@ -198,7 +203,7 @@ export default function App() {
 
   return (
     <div
-      className="w-[520px] min-h-screen rounded-[18px] overflow-hidden relative bg-white/[0.04] border-t border-t-white/[0.18] border-l border-l-white/[0.10] border-r border-r-white/[0.06] border-b border-b-white/[0.04] backdrop-blur-[40px] shadow-[0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_32px_64px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4)]"
+      className="w-[520px] h-full flex flex-col rounded-[18px] overflow-hidden relative bg-white/[0.04] border-t border-t-white/[0.18] border-l border-l-white/[0.10] border-r border-r-white/[0.06] border-b border-b-white/[0.04] backdrop-blur-[40px] shadow-[0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_32px_64px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4)]"
       id="bar"
       onContextMenu={handleContextMenu}
     >

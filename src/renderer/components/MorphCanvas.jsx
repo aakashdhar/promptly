@@ -54,5 +54,13 @@ export default function MorphCanvas() {
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  return <canvas ref={canvasRef} id="morph-canvas" width={476} height={32} />
+  return (
+    <canvas
+      ref={canvasRef}
+      id="morph-canvas"
+      width={476}
+      height={32}
+      style={{ width: '100%', height: '32px', display: 'block' }}
+    />
+  )
 }

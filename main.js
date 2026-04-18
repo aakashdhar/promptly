@@ -207,7 +207,6 @@ function createWindow() {
 }
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
-app.commandLine.appendSwitch('disable-gpu-compositing');
 
 app.whenReady().then(async () => {
   claudePath = await resolveClaudePath();
