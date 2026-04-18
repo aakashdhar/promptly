@@ -24,28 +24,34 @@ let win = null;
 function createWindow() {
   win = new BrowserWindow({
     width: 520,
-    height: 101,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 12, y: 12 },
+    height: 89,
+    minWidth: 520,
+    maxWidth: 520,
+    show: false,
+    frame: false,
     transparent: true,
     backgroundColor: '#00000000',
     vibrancy: 'under-window',
     visualEffectState: 'active',
-    alwaysOnTop: true,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 12 },
+    resizable: false,
     maximizable: false,
     fullscreenable: false,
-    resizable: false,
+    alwaysOnTop: true,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
       nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
-  win.center();
   win.loadFile('index.html');
+  win.once('ready-to-show', () => { win.show(); });
   return win;
 }
+
+app.commandLine.appendSwitch('enable-transparent-visuals')
 
 app.whenReady().then(() => {
   createWindow();
