@@ -400,7 +400,12 @@
         checkFirstRunCompletion();
       }
 
-      function checkFirstRunCompletion() {}
+      function checkFirstRunCompletion() {
+        if (cliOk && micOk) {
+          setFirstRunComplete(true);
+          setTimeout(() => setState('IDLE'), 600);
+        }
+      }
 
       document.addEventListener('DOMContentLoaded', () => {
         // Shortcut listener — stub cycle (F-SPEECH will replace this)
