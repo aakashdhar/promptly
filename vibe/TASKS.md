@@ -46,12 +46,12 @@
    [x] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-first-run/FEATURE_TASKS.md (agent use)
 
-⬜ **F-SPEECH — Speech recording**
-   Build order: 2 · Needs: F-STATE complete
-   Parallel with: F-FIRST-RUN (no shared writes)
-   What you can do when done: Press shortcut → bar records speech → live transcript shown → stop → transcript ready
-   Shared data: writes originalTranscript (read by F-CLAUDE and F-ACTIONS)
-   Spec: run `feature: speech-recording` to plan this feature in detail
+🔄 **F-SPEECH — Speech recording** (0/3)
+   Estimated: approx. 3 hours (S: 2, M: 1)
+   [ ] FPH-001 · Module vars + `startRecording()` skeleton — availability guard + recognition init
+   [ ] FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
+   [ ] FPH-003 · CODEBASE.md update
+   → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-CLAUDE — Claude CLI integration + 5 prompt modes**
    Build order: 3 · Needs: F-SPEECH (originalTranscript) + F-FIRST-RUN (claudePath confirmed) complete
@@ -99,13 +99,11 @@
 ---
 
 ## What just happened
-✅ FRN-004 done — checkFirstRunCompletion() stub replaced with real impl: if cliOk && micOk →
-   setFirstRunComplete(true) → setTimeout 600ms → setState('IDLE'). CODEBASE.md updated with
-   cliOk, micOk vars, initFirstRun(), checkFirstRunCompletion(), all firstrun DOM IDs.
-   F-FIRST-RUN feature complete (4/4).
+✅ F-SPEECH feature kit ready — FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md created.
+   CLAUDE.md updated (replaced F-FIRST-RUN section with F-SPEECH). TASKS.md expanded. DECISIONS.md updated.
+   3 tasks planned: FPH-001 (S), FPH-002 (M), FPH-003 (S) — ~3 hours.
 
 ## What's next
-⬜ F-SPEECH — Speech recording feature
-   Needs: F-STATE complete ✅, F-FIRST-RUN complete ✅ (claudePath confirmed)
-   Run `feature: speech-recording` to plan this feature in detail.
+⬜ FPH-001 · Module vars + `startRecording()` skeleton
+   Add `recognition` + `isRecording` vars; availability guard; recognition init with null handler stubs; startRecording() calls setState('RECORDING').
 Say "next" to begin.

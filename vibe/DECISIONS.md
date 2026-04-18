@@ -87,3 +87,24 @@ Key fixes applied:
 - Conformance checklist error condition count corrected
 - ARCHITECTURE.md Always + Ask First sections added (three-tier complete)
 - Git branch naming convention added to ARCHITECTURE.md
+
+
+---
+
+## 2026-04-18 — Feature Start: F-SPEECH — Speech Recording
+> Folder: vibe/features/2026-04-18-speech-recording/
+> Implements webkitSpeechRecognition with live transcript, originalTranscript capture at stop, auto-stop on silence.
+> Tasks: FPH-001, FPH-002, FPH-003 | Estimated: ~3 hours (S: 2, M: 1)
+> Dependencies met: F-STATE ✅, F-FIRST-RUN ✅
+> Drift logged below.
+
+---
+
+## 2026-04-18 — Spec review: add-feature (F-SPEECH)
+> P0: 0 · P1: 1 · P2: 1
+> Action: all fixed
+> Report: vibe/spec-reviews/2026-04-18-add-feature-speech-recording.md
+
+Key fixes applied:
+- onerror 'no-speech' branch added to FEATURE_PLAN.md handler code and FEATURE_TASKS.md FPH-002 criteria
+- Text cursor animation clarified as v2 deferral (blinking dot covers v1 requirement)

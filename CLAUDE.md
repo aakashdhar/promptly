@@ -160,46 +160,46 @@ Never let CODEBASE.md drift more than one task behind.
 
 ---
 
-### Active Feature: F-FIRST-RUN (First-run setup checklist)
-> Folder: vibe/features/2026-04-18-first-run/ | Added: 2026-04-18
+### Active Feature: F-SPEECH (Speech recording)
+> Folder: vibe/features/2026-04-18-speech-recording/ | Added: 2026-04-18
 
-**Feature summary**: Gate the IDLE boot on `getFirstRunComplete()`, show FIRST_RUN checklist on first launch, check Claude CLI via IPC and mic permission via Web API, auto-transition to IDLE when both pass.
+**Feature summary**: Replace the shortcut stub with real `webkitSpeechRecognition` — live transcript in RECORDING state, `originalTranscript` captured once at stop, transitions to THINKING. Stub (setTimeout IDLE) left for F-CLAUDE to replace.
 **Files in scope**: `index.html` (only)
 **Files out of scope**: `main.js`, `preload.js`, `package.json`, `entitlements.plist`
 
 **Conventions** (from vibe/ARCHITECTURE.md):
-- `setState(newState, payload)` is the ONLY function that mutates DOM visibility — never toggle `hidden` directly on state panels
+- `setState(newState, payload)` is the ONLY function that mutates DOM visibility
 - `textContent` for all dynamic text — never `innerHTML` with any external content
-- localStorage only via `getFirstRunComplete()` / `setFirstRunComplete()` — never `localStorage.*` directly
-- IPC: `window.electronAPI.checkClaudePath()` — never `ipcRenderer` directly
-- New module-scope vars: `cliOk`, `micOk` (booleans)
-- New functions: `initFirstRun()` (async), `checkFirstRunCompletion()`
+- No new IPC channels — `webkitSpeechRecognition` is a renderer Web API
+- New module-scope vars: `recognition` (webkitSpeechRecognition|null), `isRecording` (boolean)
+- New functions: `startRecording()`, `stopRecording()`
+- `originalTranscript` captured ONCE in `stopRecording()` — never mutated after
 
 **Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
 
 **Boundaries:**
 Always: follow ARCHITECTURE.md patterns · run manual smoke test after every change ·
-        keep changes additive · update CODEBASE.md for new functions/IDs/vars (FRN-004)
+        keep changes additive · update CODEBASE.md for new functions/vars (FPH-003)
 
-Ask first: adding any new IPC channel · adding localStorage keys beyond mode/firstRunComplete ·
-           changing STATE_HEIGHTS for FIRST_RUN · changing firstrun panel element IDs
+Ask first: adding any new IPC channel · adding localStorage keys beyond mode/firstRunComplete
 
 Never: use innerHTML with dynamic content · access localStorage directly · touch main.js or preload.js ·
-       add runtime npm dependencies · toggle DOM visibility outside setState()
+       add runtime npm dependencies · toggle DOM visibility outside setState() ·
+       mutate `originalTranscript` after `stopRecording()` captures it
 
 **Between tasks:** "next" triggers this exact sequence:
 1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
-2. Manual smoke test: exercise FIRST_RUN state and affected boot paths
+2. Manual smoke test: exercise RECORDING, auto-stop, and ERROR paths
 3. Run lint: `npm run lint` (must pass)
 4. Commit code changes:
    ```
    git add index.html
-   git commit -m "feat(first-run): [FRN-00X] — description"
+   git commit -m "feat(speech): [FPH-00X] — description"
    ```
 5. Commit doc updates separately:
    ```
-   git add vibe/features/2026-04-18-first-run/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
-   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FRN-00X] done — first-run"
+   git add vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FPH-00X] done — speech"
    ```
 6. Re-read TASKS.md silently → state next task → confirm before starting.
 
