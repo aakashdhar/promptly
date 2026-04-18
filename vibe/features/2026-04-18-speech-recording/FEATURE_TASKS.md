@@ -80,7 +80,7 @@
 ---
 
 ### FPH-002-R · Retrofit `stopRecording()` + `onstop` handler + shortcut wiring for MediaRecorder
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: SPEC.md#f3
 - **Dependencies**: FPH-001-R, FPH-004

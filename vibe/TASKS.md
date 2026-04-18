@@ -52,7 +52,7 @@
    [~] FPH-002 · Handlers + stopRecording() — webkitSpeechRecognition (superseded — retrofit pending)
    [x] FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
    [x] FPH-004 · transcribe-audio IPC — main.js + preload.js (Whisper CLI)
-   [ ] FPH-002-R · Retrofit stopRecording() + onstop handler + shortcut wiring
+   [x] FPH-002-R · Retrofit stopRecording() + onstop handler + shortcut wiring
    [ ] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
@@ -102,9 +102,8 @@
 ---
 
 ## What just happened
-✅ FPH-004 done — transcribe-audio IPC registered in main.js: whisperPath resolved via zsh login shell, audio written to tmpdir, Whisper CLI runs with --model tiny, transcript read from output txt file, temp files cleaned up. transcribeAudio exposed via preload. Buffer added to ESLint globals.
+✅ FPH-002-R done — mediaRecorder.onstop wired: collects chunks → Blob → ArrayBuffer → transcribeAudio IPC → originalTranscript. ERROR states for IPC failure and empty transcript. stopRecording() guards double-stop, stops MediaRecorder, releases all mic tracks.
 
 ## What's next
-⬜ FPH-002-R · Retrofit stopRecording() + onstop handler for MediaRecorder
-   Wire mediaRecorder.onstop to collect blob → ArrayBuffer → transcribeAudio IPC → originalTranscript. Rewrite stopRecording() to stop MediaRecorder and release mic tracks.
+⬜ FPH-003 · CODEBASE.md update — update Last updated line, Current state, module-scope vars table, and index.html key exports to reflect F-SPEECH complete.
 Say "next" to begin.
