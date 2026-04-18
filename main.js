@@ -9,6 +9,14 @@ const { exec } = require('child_process');
 const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 
+const MODE_SYSTEM_PROMPTS = {
+  balanced: 'You are a prompt engineering assistant. Given the following description, write a structured Claude prompt with: a clear role, the specific task, concise constraints, and the desired output format. Be direct and precise. Return only the prompt — no explanation.',
+  detailed: 'You are a prompt engineering assistant. Given the following description, write a thorough Claude prompt that includes: role, task, detailed constraints, edge cases to handle, output format, and one concrete example of the desired output. Return only the prompt — no explanation.',
+  concise: 'You are a prompt engineering assistant. Given the following description, write the shortest possible Claude prompt that captures the core task with only the constraints that are necessary. Strip all scaffolding and fluff. Return only the prompt — no explanation.',
+  chain: 'You are a prompt engineering assistant. Given the following description, write a chain-of-thought Claude prompt that breaks the task into explicit numbered steps Claude should work through in sequence before giving a final answer. Return only the prompt — no explanation.',
+  code: 'You are a prompt engineering assistant. Given the following description, write a Claude prompt optimised for code generation. Specify: language, function signature or interface, constraints, edge cases to handle, and expected output format. Return only the prompt — no explanation.',
+};
+
 let claudePath = null;
 let whisperPath = null;
 let win = null;
@@ -83,8 +91,52 @@ app.whenReady().then(() => {
 
   // P1-008: IPC channel stubs
   ipcMain.handle('generate-prompt', (_event, { transcript, mode }) => {
-    console.log('generate-prompt called — transcript:', transcript, 'mode:', mode);
-    return '[placeholder — Claude integration coming in F-CLAUDE]';
+    return new Promise((resolve) => {
+      if (!claudePath) {
+        resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code' });
+        return;
+      }
+      const systemPrompt = MODE_SYSTEM_PROMPTS[mode] || MODE_SYSTEM_PROMPTS.balanced;
+      const { spawn } = require('child_process');
+      const child = spawn(claudePath, [
+        '--print',
+        '--system-prompt', systemPrompt,
+        '--no-session-persistence',
+      ]);
+      let stdout = '';
+      let stderr = '';
+      let resolved = false;
+      const timer = setTimeout(() => {
+        resolved = true;
+        child.kill();
+        resolve({ success: false, error: 'Claude took too long — try again' });
+      }, 30000);
+      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stderr.on('data', (d) => { stderr += d.toString(); });
+      child.stdin.write(transcript);
+      child.stdin.end();
+      child.on('close', (code) => {
+        if (resolved) return;
+        clearTimeout(timer);
+        resolved = true;
+        if (code !== 0) {
+          resolve({ success: false, error: stderr.trim() || 'Claude CLI error' });
+          return;
+        }
+        const prompt = stdout.trim();
+        if (!prompt) {
+          resolve({ success: false, error: 'Claude returned an empty response — try again' });
+          return;
+        }
+        resolve({ success: true, prompt });
+      });
+      child.on('error', (err) => {
+        if (resolved) return;
+        clearTimeout(timer);
+        resolved = true;
+        resolve({ success: false, error: err.message || 'Claude CLI error' });
+      });
+    });
   });
 
   ipcMain.handle('copy-to-clipboard', (_event, { text }) => {
