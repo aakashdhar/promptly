@@ -24,7 +24,7 @@
     }
 
     body {
-      background: transparent;
+      background: transparent !important;
       overflow: hidden;
       font-family: var(--font);
       -webkit-font-smoothing: antialiased;
@@ -34,7 +34,7 @@
     .bar {
       width: 520px;
       min-height: 100vh;
-      background: var(--bg-bar);
+      background: rgba(255,255,255,0.04) !important;
       border-radius: var(--bar-radius);
       border-top: var(--border-top);
       border-left: var(--border-left);
@@ -61,12 +61,8 @@
       pointer-events: none;
     }
 
-    /* Traffic lights */
-    .traf { display: flex; align-items: center; gap: 7px; padding: 13px 16px 0; -webkit-app-region: drag; }
-    .tl { width: 12px; height: 12px; border-radius: 50%; -webkit-app-region: no-drag; }
-    .tl-r { background: #FF5F57; box-shadow: 0 0 6px rgba(255,95,87,0.5); }
-    .tl-y { background: #FFBD2E; box-shadow: 0 0 5px rgba(255,189,46,0.4); }
-    .tl-off { background: rgba(255,255,255,0.1); box-shadow: none; }
+    /* Traffic light spacer — native macOS buttons render here via titleBarStyle: hiddenInset */
+    .traf { height: 28px; -webkit-app-region: drag; }
 
     .div-line {
       height: 0.5px;
@@ -84,6 +80,7 @@
       color: rgba(100,180,255,0.85);
       letter-spacing: 0.03em;
       flex-shrink: 0;
+      -webkit-appearance: none;
       -webkit-app-region: no-drag;
     }
 
@@ -312,11 +309,7 @@
 
     <!-- IDLE -->
     <div id="panel-idle">
-      <div class="traf">
-        <div class="tl tl-r"></div>
-        <div class="tl tl-y"></div>
-        <div class="tl tl-off"></div>
-      </div>
+      <div class="traf"></div>
       <div class="cr-idle" id="idle-area">
         <div class="pulse-ring">
           <svg width="13" height="15" viewBox="0 0 12 16" fill="none">
@@ -335,11 +328,7 @@
 
     <!-- RECORDING -->
     <div id="panel-recording" style="display:none">
-      <div class="traf">
-        <div class="tl tl-r"></div>
-        <div class="tl tl-y"></div>
-        <div class="tl tl-off"></div>
-      </div>
+      <div class="traf"></div>
       <div class="cr-rec">
         <div class="dismiss-btn" id="dismissBtn">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -364,11 +353,7 @@
 
     <!-- THINKING -->
     <div id="panel-thinking" style="display:none">
-      <div class="traf">
-        <div class="tl tl-r"></div>
-        <div class="tl tl-y"></div>
-        <div class="tl tl-off"></div>
-      </div>
+      <div class="traf"></div>
       <div class="cr-think">
         <div class="status-badge">
           <div class="status-dot"></div>
@@ -386,11 +371,7 @@
 
     <!-- PROMPT READY -->
     <div id="panel-ready" style="display:none">
-      <div class="traf">
-        <div class="tl tl-r"></div>
-        <div class="tl tl-y"></div>
-        <div class="tl tl-off"></div>
-      </div>
+      <div class="traf"></div>
       <div class="top-row">
         <div class="pr-status">
           <span class="pr-check">✓</span>
@@ -416,11 +397,7 @@
 
     <!-- ERROR -->
     <div id="panel-error" style="display:none">
-      <div class="traf">
-        <div class="tl tl-r"></div>
-        <div class="tl tl-y"></div>
-        <div class="tl tl-off"></div>
-      </div>
+      <div class="traf"></div>
       <div class="cr-error" id="error-area">
         <div class="error-badge" style="-webkit-app-region:no-drag">⚠</div>
         <div class="ready-text" style="margin-left:14px;-webkit-app-region:no-drag">
