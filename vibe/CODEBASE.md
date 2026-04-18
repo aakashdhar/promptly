@@ -1,42 +1,39 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-18 (project kit created — no code written yet)
+> Last updated: 2026-04-18 (P1-009 — Phase 1 complete, smoke test passed)
 
 ---
 
 ## Current state
 
-**Phase:** Phase 1 — in progress (P1-001 done)
-**Files written:** 1
+**Phase:** Phase 1 — complete (all P1-001 through P1-009 done)
+**Files written:** 6 source files + eslint.config.js
 
 ---
 
 ## File map
 
-*Populated when Phase 1 begins. Each entry added as files are created.*
-
 | File | Purpose | Key exports / functions |
 |------|---------|------------------------|
 | `package.json` | Electron + electron-builder config, npm scripts, devDeps only | scripts: start, dist, lint |
-| `entitlements.plist` | — not yet written — | |
-| `main.js` | — not yet written — | |
-| `preload.js` | — not yet written — | |
-| `index.html` | — not yet written — | |
+| `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
+| `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
+| `main.js` | Electron main: window, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `claudePath`, `win`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer | `window.electronAPI` |
+| `index.html` | Entire UI: CSS tokens, #app container, DOMContentLoaded stub | `#app` |
 
 ---
 
 ## IPC channels (registered in main.js)
 
-*Populated when P1-008 completes.*
-
 | Channel | Direction | Status |
 |---------|-----------|--------|
-| `generate-prompt` | renderer → main | — not registered — |
-| `copy-to-clipboard` | renderer → main | — not registered — |
-| `check-claude-path` | renderer → main | — not registered — |
-| `shortcut-triggered` | main → renderer | — not registered — |
-| `shortcut-conflict` | main → renderer | — not registered — |
+| `generate-prompt` | renderer → main | ✅ stubbed — returns placeholder string |
+| `copy-to-clipboard` | renderer → main | ✅ stubbed — uses clipboard.writeText |
+| `check-claude-path` | renderer → main | ✅ stubbed — returns claudePath or error |
+| `shortcut-triggered` | main → renderer | ✅ registered — fires on ⌥Space (or fallback) |
+| `shortcut-conflict` | main → renderer | ✅ registered — fires on did-finish-load if fallback used |
 
 ---
 
@@ -64,20 +61,24 @@ setState() function: — not yet written —
 
 ## Module-scope variables (in main.js)
 
-*Populated when P1-006 completes.*
-
 | Variable | Set when | Value |
 |----------|----------|-------|
-| `claudePath` | app-ready PATH resolution | — not resolved — |
+| `claudePath` | app-ready PATH resolution via `exec('zsh -lc "which claude"')` | resolved at runtime |
+| `win` | createWindow() called in whenReady | BrowserWindow instance |
 
 ---
 
 ## CSS design tokens (in index.html)
 
-*Populated when F-STATE completes.*
-
 ```css
-/* not yet defined */
+:root {
+  --color-action: #007AFF;
+  --color-recording: #FF3B30;
+  --color-success: #34C759;
+  --bg-window: rgba(255, 255, 255, 0.85);
+  --radius-window: 14px;
+  --radius-inner: 8px;
+}
 ```
 
 ---
@@ -91,8 +92,16 @@ setState() function: — not yet written —
 
 ---
 
+## Smoke test results (P1-009)
+
+- `npm start` opens frameless 480px window ✅
+- `claudePath` resolved to `/Users/aakash-anon/.local/bin/claude` and logged ✅
+- `Alt+Space` shortcut registered and logged ✅
+- No console errors ✅
+
+---
+
 ## Known issues / watch items
 
-*Populated as issues are discovered during Phase 1-3.*
-
-(none yet)
+- `eslint main.js preload.js` produces warnings for `console.log` (expected dev logs — clean before release)
+- `index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually)

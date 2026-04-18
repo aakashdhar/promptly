@@ -10,14 +10,14 @@
 > Phase 1 exit: run `review: phase 1` when all tasks complete.
 
 - [x] P1-001 · package.json — electron v31+, electron-builder config, start + dist + lint scripts, no runtime deps
-- [ ] P1-002 · entitlements.plist — microphone entitlement for hardened runtime (required for webkitSpeechRecognition)
-- [ ] P1-003 · main.js skeleton — BrowserWindow: frameless, vibrancy, alwaysOnTop, contextIsolation, 480px wide
-- [ ] P1-004 · preload.js skeleton — contextBridge with placeholder electronAPI methods (all 5 IPC channels stubbed)
-- [ ] P1-005 · index.html skeleton — valid HTML5, empty body, system font applied, window opens without errors
-- [ ] P1-006 · PATH resolution — exec('zsh -lc "which claude"') at app-ready, cache to claudePath, log result
-- [ ] P1-007 · Global shortcut — register ⌥Space (fallback ⌃\` if taken), send shortcut-triggered to renderer, log in console
-- [ ] P1-008 · IPC channel stubs — all 5 channels in ipcMain: generate-prompt, copy-to-clipboard, check-claude-path return placeholder
-- [ ] P1-009 · Smoke test + CODEBASE.md — npm start opens window, shortcut fires console log, claudePath visible; populate CODEBASE.md
+- [x] P1-002 · entitlements.plist — microphone entitlement for hardened runtime (required for webkitSpeechRecognition)
+- [x] P1-003 · main.js skeleton — BrowserWindow: frameless, vibrancy, alwaysOnTop, contextIsolation, 480px wide
+- [x] P1-004 · preload.js skeleton — contextBridge with placeholder electronAPI methods (all 5 IPC channels stubbed)
+- [x] P1-005 · index.html skeleton — valid HTML5, empty body, system font applied, window opens without errors
+- [x] P1-006 · PATH resolution — exec('zsh -lc "which claude"') at app-ready, cache to claudePath, log result
+- [x] P1-007 · Global shortcut — register ⌥Space (fallback ⌃\` if taken), send shortcut-triggered to renderer, log in console
+- [x] P1-008 · IPC channel stubs — all 5 channels in ipcMain: generate-prompt, copy-to-clipboard, check-claude-path return placeholder
+- [x] P1-009 · Smoke test + CODEBASE.md — npm start opens window, shortcut fires console log, claudePath visible; populate CODEBASE.md
 
 ## Phase 1 gate
 ⬜ review: phase 1 — pending
@@ -96,10 +96,10 @@
 ---
 
 ## What just happened
-P1-001 complete. package.json created with Electron v41.2.1, electron-builder v26.8.1, ESLint v9, universal dmg build config, zero runtime deps. .gitignore added. npm audit: 0 high/critical (2 low only).
+Phase 1 complete via vibe-parallel. Wave 1 (P1-002/003/004/005) ran in parallel; Waves 2-4 (P1-006/007/008) sequential due to main.js write conflicts; Wave 5 (P1-009) smoke test passed. claudePath resolved to /Users/aakash-anon/.local/bin/claude. Alt+Space shortcut registered.
 
 ## What's next
-⬜ P1-002 · Create entitlements.plist — microphone entitlement for hardened runtime
+⬜ Run `review: phase 1` — all Phase 1 tasks complete
 
 Read `CLAUDE.md`, then `vibe/CODEBASE.md`, then `vibe/ARCHITECTURE.md`, then `vibe/SPEC_INDEX.md`, then `vibe/TASKS.md`.
 Confirm the first task before writing any code. Say **"next"** after each task.
