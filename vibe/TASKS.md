@@ -58,7 +58,7 @@
 
 🔄 **D-004 — Traffic lights + visual waveform** (0/2)
    Estimated: approx. 2-3 hours (S: 1, M: 1)
-   [ ] D004-001 · main.js — titleBarStyle: hiddenInset + trafficLightPosition: { x: 12, y: 10 }
+   [x] D004-001 · main.js — titleBarStyle: hiddenInset + trafficLightPosition: { x: 12, y: 10 }
    [ ] D004-002 · index.html — left padding for traffic light area + 30-bar waveform (IDLE static grey, RECORDING animated red sine+noise)
 
 🔄 **F-CLAUDE — Claude CLI integration + 5 prompt modes** (0/4)
@@ -109,8 +109,8 @@
 ---
 
 ## What just happened
-🔄 Scope change D-004: traffic lights (titleBarStyle: hiddenInset + trafficLightPosition) and 30-bar visual waveform (IDLE static grey, RECORDING animated red) added to spec. 2 new tasks inserted before F-CLAUDE.
+✅ D004-001 done — main.js: frame: false replaced with titleBarStyle: hiddenInset + trafficLightPosition: { x: 12, y: 10 }.
 
 ## What's next
-⬜ D004-001 · main.js — swap frame: false → titleBarStyle: hiddenInset, add trafficLightPosition: { x: 12, y: 10 }.
+⬜ D004-002 · index.html — left padding for traffic light area + 30-bar waveform (IDLE static grey, RECORDING animated red sine+noise).
 Say "next" to begin.
