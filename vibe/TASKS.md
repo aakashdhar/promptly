@@ -93,7 +93,8 @@
    → DECISIONS.md DECISION-004 entry
 
 ## Phase 2 gate
-⬜ review: phase 2 — pending
+✅ review: phase 2 — reviewed 2026-04-18 — Score 6.4/10 (C+) — 0 P0, 2 P1 logged, 6 P2 logged, 4 P3 logged
+   → Full report: vibe/reviews/phase-2-review.md
 
 ---
 
@@ -101,8 +102,13 @@
 > Runs after Phase 2 gate passes. No new features.
 > Phase 3 exit: run `review: final` — 0 P0 + 0 P1 before distributing.
 
-⬜ Error state audit — verify all 9 error messages surface correctly with right text; all tap-to-dismiss
-⬜ Manual smoke test — exercise all 6 states × all 5 modes; check shortcut conflict notice; verify no hangs
+### P1 fixes from Phase 2 review (BL-013, BL-014)
+⬜ BL-013 — Fix renderPromptOutput regex: update /^\*\*([^*]+)\*\*:?\s*$/ → /^([A-Za-z][A-Za-z\s]*):\s*$/ to match plain-text labels from new BUG-008 system prompt · index.html:622-624
+⬜ BL-014 — Fix RAF loop leak: store inline animMorph handle in morphAnimFrame so stopMorphAnim() cancels it; clean up dead startMorphAnim/stopMorphAnim code after · index.html:463-528, 676-681
+
+### Phase 3 polish
+⬜ Error state audit — verify all error messages surface correctly with right text; all tap-to-dismiss
+⬜ Manual smoke test — exercise all 5 states × all 5 modes; check shortcut conflict notice; verify no hangs; test Regenerate 5× to confirm no RAF accumulation after BL-014 fix
 ⬜ Build verification — npm run dist produces universal .dmg; install and run on Apple Silicon; verify on Intel if available
 ⬜ Distribution prep — write 5-line Slack message (what it does, download link, two clicks to start, example use case)
 
@@ -126,14 +132,13 @@
 ---
 
 ## What just happened
-✅ BUG-008 — Prompt output formatting fixed:
-   - Replaced 5 separate MODE_SYSTEM_PROMPTS strings with a single PROMPT_TEMPLATE + MODE_CONFIG
-   - Section labels now plain text (Role: not **Role:**) — rule 10 enforced in template
-   - Technical prompts always get Tech stack + Data model sections (rule 3)
-   - UI/design prompts always get Visual style section (rule 4)
-   - Transcript embedded in system prompt via {TRANSCRIPT} replacement — stdin write removed
-   Lint: 0 errors · DECISIONS.md BUG-008 logged
+✅ review: phase 2 — PASS (0 P0 · 2 P1 · 6 P2 · 4 P3)
+   Score: 6.4/10 (C+) — functional core is solid, score pulled down by documentation debt
+   Key P1 bugs found:
+   - BL-013: renderPromptOutput regex won't match plain-text labels from BUG-008 — headers render flat
+   - BL-014: RAF loop leak in setState(THINKING) — each Regenerate adds an orphaned 60fps loop
+   Both added as first Phase 3 tasks.
+   Full report: vibe/reviews/phase-2-review.md
 
 ## What's next
-⬜ Manual smoke test: record a technical prompt and a UI prompt, verify section labels are plain text, Tech stack/Data model appear for technical, Visual style appears for UI.
-Then run `review: phase 2` to trigger the phase gate.
+⬜ Phase 3 begins — fix BL-013 first (renderPromptOutput regex), then BL-014 (RAF loop), then polish tasks.

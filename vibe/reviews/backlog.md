@@ -50,6 +50,39 @@
 
 ---
 
+---
+
+## From Phase 2 Review (2026-04-18)
+
+### Outstanding P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-013 | index.html | 622-624 | renderPromptOutput regex matches `**bold:**` only — plain-text `Role:` labels from BUG-008 system prompt won't get `.pt-sl` styling; section headers render flat | ⬜ open |
+| BL-014 | index.html | 676-681 | RAF loop leak in setState(THINKING) — inline animMorph never cancelled; each Regenerate adds an orphaned 60fps loop drawing to hidden canvas | ⬜ open |
+
+### Outstanding P2 — Fix before deploy (lower priority)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-015 | vibe/CODEBASE.md | multiple | Stale: pill.html listed (deleted), pillWin listed (removed), wrong IPC channels, isRecording→isProcessing, missing splash.html, PROMPT_TEMPLATE/MODE_CONFIG | ⬜ open |
+| BL-016 | main.js | 182-184 | shell.openExternal URL not validated — renderer can pass any URL; add `url.startsWith('https://')` guard | ⬜ open |
+| BL-017 | main.js / SPEC.md | 207 / 88 | 30s SPEC timeout vs 60s code — document 60s decision in DECISIONS.md or revert to 30s | ⬜ open |
+| BL-018 | main.js / ARCHITECTURE.md | 253 | set-window-buttons-visible IPC channel not in ARCHITECTURE.md table or DECISIONS.md | ⬜ open |
+| BL-019 | vibe/SPEC.md | 36, F8 | SPEC.md stale: vibrancy 'sidebar' vs 'fullscreen-ui'; F8 first-run in-bar vs splash.html | ⬜ open |
+| BL-020 | vibe/DECISIONS.md | — | FIRST_RUN state removal from index.html is undocumented — no DECISIONS.md entry | ⬜ open |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-021 | index.html | 463-528 | Dead code: startMorphAnim, stopMorphAnim, module-scope morphAnimFrame never used as intended (clean up after BL-014 fix) | ⬜ open |
+| BL-022 | index.html | 787 | Error message truncated to 60 chars — may hide actionable CLI errors | ⬜ open |
+| BL-023 | splash.html | 217 | inline onclick="openInstall()" — minor deviation from event-listener pattern | ⬜ open |
+| BL-024 | package.json | — | 2 low severity npm audit vulns in eslint devDep (@eslint/plugin-kit) — not in .dmg, no runtime risk | ⬜ open |
+
+---
+
 ## Resolved Issues
 
 | ID | Finding | Resolved in |
