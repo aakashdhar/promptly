@@ -8,7 +8,7 @@
 ---
 
 ### FPH-001 · Module vars + `startRecording()`
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (criteria 1–6), FEATURE_SPEC.md#6
 - **Dependencies**: None
@@ -47,13 +47,13 @@
    Note: handlers are stubbed `null` here — FPH-002 fills them in.
 
 **Acceptance criteria**:
-- [ ] `recognition` and `isRecording` declared as module-scope vars (after `micOk`)
-- [ ] `startRecording()` calls availability guard — returns early with ERROR if `webkitSpeechRecognition` undefined
-- [ ] `transcript` reset to `''` at start of `startRecording()`
-- [ ] `#recording-transcript` textContent set to `'Listening…'` at recording start
-- [ ] `recognition` created fresh: `continuous: true`, `interimResults: true`, `lang: 'en-US'`
-- [ ] `recognition.start()` called, `isRecording = true`, `setState('RECORDING')` called
-- [ ] `npm run lint` passes
+- [x] `recognition` and `isRecording` declared as module-scope vars (after `micOk`)
+- [x] `startRecording()` calls availability guard — returns early with ERROR if `webkitSpeechRecognition` undefined
+- [x] `transcript` reset to `''` at start of `startRecording()`
+- [x] `#recording-transcript` textContent set to `'Listening…'` at recording start
+- [x] `recognition` created fresh: `continuous: true`, `interimResults: true`, `lang: 'en-US'`
+- [x] `recognition.start()` called, `isRecording = true`, `setState('RECORDING')` called
+- [x] `npm run lint` passes
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 criteria 1-6. From DevTools console: call `startRecording()` → bar should show RECORDING state with "Listening…". Shortcut still uses old stub — that's expected; replaced in FPH-002.
 **Test requirement**: Console call `startRecording()` shows RECORDING state. `webkitSpeechRecognition` guard: temporarily shadow `window.webkitSpeechRecognition = undefined` in console, call `startRecording()` → ERROR shown.
