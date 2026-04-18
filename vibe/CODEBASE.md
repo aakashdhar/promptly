@@ -1,7 +1,7 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-18 (Phase 2 review fixes: BL-013/014/015/016/021/022/023)
+> Last updated: 2026-04-19
 
 ---
 
@@ -19,8 +19,8 @@
 | `package.json` | Electron + electron-builder config, npm scripts, devDeps only | scripts: start, dist, lint |
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
-| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` |
+| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Full UI: CSS tokens, all 5 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
 
@@ -44,6 +44,8 @@
 | `shortcut-triggered` | main → renderer | ✅ registered — fires on ⌥Space (or fallback) |
 | `shortcut-conflict` | main → renderer | ✅ registered — fires if fallback used, sends { fallback } |
 | `mode-selected` | main → renderer | ✅ registered — sent from show-mode-menu click handler with mode key |
+| `get-theme` | renderer → main | ✅ registered — returns { dark: boolean } for current macOS appearance |
+| `theme-changed` | main → renderer | ✅ registered — sent by nativeTheme.on('updated') with { dark: boolean } |
 
 ---
 
@@ -95,6 +97,7 @@
 | `splashWin` | `app.whenReady()` — created before `win`, destroyed after `splash-done` | BrowserWindow instance (null after splash) |
 | `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |
 | `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, design }` — each `{ name, instruction }`; design has `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
+| `tray` | `createTray()` called from splash-done | Tray instance or null |
 
 ---
 
@@ -113,6 +116,9 @@
   /* gradient tokens: --highlight-top, --accent-bottom, --divider */
 }
 ```
+
+> `body.light` override block applies the light-mode palette when macOS is in Light Mode.
+> Applied via `classList.toggle('light', !dark)` — orthogonal to app state, never routed through `setState()`.
 
 ---
 

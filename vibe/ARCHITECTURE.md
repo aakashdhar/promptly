@@ -127,6 +127,8 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | main → renderer | `shortcut-triggered` | Global ⌥Space / ⌃\` fired from outside app |
 | main → renderer | `shortcut-conflict` | Primary shortcut taken, fallback active |
 | main → renderer | `mode-selected` | Mode key chosen from native menu — sent after show-mode-menu (BUG-002-D) |
+| renderer → main | `get-theme` | Returns `{ dark: boolean }` — current macOS appearance |
+| main → renderer | `theme-changed` | Sent when macOS appearance changes; payload `{ dark: boolean }` |
 
 ---
 
