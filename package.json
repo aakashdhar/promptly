@@ -1,0 +1,41 @@
+{
+  "name": "promptly",
+  "version": "1.0.0",
+  "description": "macOS floating bar that turns speech into structured Claude prompts",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --universal",
+    "lint": "eslint main.js preload.js index.html"
+  },
+  "devDependencies": {
+    "electron": "41.2.1",
+    "electron-builder": "26.8.1",
+    "eslint": "9.24.0"
+  },
+  "build": {
+    "appId": "io.betacraft.promptly",
+    "productName": "Promptly",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.plist",
+      "entitlementsInherit": "entitlements.plist",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Promptly"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "package.json"
+    ]
+  }
+}
