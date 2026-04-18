@@ -22,7 +22,7 @@
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
-| `index.html` | Full UI: CSS tokens, all 5 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
+| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations, history panel | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `loadHistory()`, `saveToHistory()`, `clearHistory()`, `renderHistoryList()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `HISTORY_KEY`, `HISTORY_MAX`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
 
 ---
 
@@ -64,6 +64,7 @@
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 480px | Prompt output + action buttons |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
+| `HISTORY` | `panel-history` | 420px | Scrollable list of past prompts; Clear + Close buttons; click entry → PROMPT_READY |
 
 > Note: FIRST_RUN state removed from index.html — replaced by splash.html (D-007, FEATURE-001)
 
@@ -127,6 +128,7 @@
 | Key | Written by | Read by | Notes |
 |-----|-----------|---------|-------|
 | `mode` | `setMode()` | `getMode()` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
+| `promptHistory` | `saveToHistory()` | `loadHistory()` | JSON array of up to 20 history entries `{ id, transcript, prompt, mode, date }` |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 
@@ -161,6 +163,12 @@
 | `btn-reset` | PROMPT_READY | → IDLE |
 | `error-area` | ERROR | click → IDLE |
 | `error-message` | ERROR | `setState(ERROR, { message })` |
+| `panel-history` | HISTORY | `setState()` |
+| `history-list` | HISTORY | `renderHistoryList()` |
+| `btn-history-close` | HISTORY | click → IDLE |
+| `btn-history-clear` | HISTORY | click → `clearHistory()` + re-render |
+| `history-btn` | IDLE | click → HISTORY state |
+| `btn-history` | PROMPT_READY | click → HISTORY state |
 
 ---
 

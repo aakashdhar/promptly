@@ -586,6 +586,22 @@
       { key: 'design', label: 'Design' },
     ];
 
+    const LANGUAGES = [
+      { code: 'auto',  label: 'Auto-detect' },
+      { code: 'en',    label: 'English' },
+      { code: 'es',    label: 'Spanish' },
+      { code: 'fr',    label: 'French' },
+      { code: 'de',    label: 'German' },
+      { code: 'zh',    label: 'Chinese' },
+      { code: 'ja',    label: 'Japanese' },
+      { code: 'ko',    label: 'Korean' },
+      { code: 'pt',    label: 'Portuguese' },
+      { code: 'ar',    label: 'Arabic' },
+      { code: 'hi',    label: 'Hindi' },
+      { code: 'it',    label: 'Italian' },
+    ];
+    const LANGUAGE_KEY = 'language';
+
     const STATE_HEIGHTS = {
       IDLE: 101,
       RECORDING: 89,
@@ -611,6 +627,12 @@
     }
     function getModeLabel() {
       return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code', design:'Design' }[getMode()];
+    }
+
+    function getLanguage() { return localStorage.getItem(LANGUAGE_KEY) || 'auto'; }
+    function setLanguage(code) { localStorage.setItem(LANGUAGE_KEY, code); }
+    function getLanguageLabel() {
+      return (LANGUAGES.find(l => l.code === getLanguage()) || LANGUAGES[0]).label;
     }
 
     // --- History storage ---
@@ -975,7 +997,7 @@
         const arrayBuffer = await blob.arrayBuffer();
         setState(STATES.THINKING);
         isProcessing = false;
-        const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer);
+        const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer, getLanguage());
         if (!transcribeResult.success) {
           setState(STATES.ERROR, { message: transcribeResult.error });
           return;
