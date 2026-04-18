@@ -113,30 +113,40 @@
     }
 
     .pulse-ring {
-      width: 36px; height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: rgba(10,132,255,0.08);
-      border: 0.5px solid rgba(10,132,255,0.2);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      background: rgba(10,132,255,0.15);
+      border: 1px solid rgba(10,132,255,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: relative;
+      flex-shrink: 0;
       -webkit-app-region: no-drag;
+      box-shadow: 0 0 12px rgba(10,132,255,0.3), 0 0 24px rgba(10,132,255,0.12);
     }
     .pulse-ring::before {
-      content: ''; position: absolute;
-      width: 36px; height: 36px; border-radius: 50%;
-      border: 0.5px solid rgba(10,132,255,0.15);
-      animation: pulse-expand 2.2s ease-out infinite;
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(10,132,255,0.35);
+      animation: pulse-expand 1.8s ease-out infinite;
     }
     .pulse-ring::after {
-      content: ''; position: absolute;
-      width: 36px; height: 36px; border-radius: 50%;
-      border: 0.5px solid rgba(10,132,255,0.08);
-      animation: pulse-expand 2.2s ease-out infinite 0.7s;
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(10,132,255,0.18);
+      animation: pulse-expand 1.8s ease-out infinite 0.6s;
     }
     @keyframes pulse-expand {
       0% { transform: scale(1); opacity: 1; }
-      100% { transform: scale(2.4); opacity: 0; }
+      100% { transform: scale(2.2); opacity: 0; }
     }
 
     .ready-text { flex: 1; margin-left: 14px; -webkit-app-region: no-drag; }
@@ -145,8 +155,8 @@
 
     /* === THINKING === */
     .cr-think {
-      height: 68px; display: flex; align-items: center;
-      padding: 0 20px; gap: 14px;
+      height: 80px; display: flex; align-items: center;
+      padding: 0 22px; gap: 14px;
     }
     .status-badge {
       background: rgba(10,132,255,0.1);
@@ -164,19 +174,19 @@
     }
     @keyframes status-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
     .think-title { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 500; letter-spacing: 0.01em; }
-    .morph-wrap { padding: 2px 20px 14px; }
+    .morph-wrap { padding: 10px 22px 24px; }
     .ys-label-s {
       font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
       text-transform: uppercase; color: rgba(255,255,255,0.14);
-      margin-bottom: 7px; padding: 0 20px; display: block;
+      margin-bottom: 12px; padding: 0 22px; display: block;
     }
-    .ys-text-s { padding: 0 20px 16px; font-size: 12.5px; color: rgba(255,255,255,0.55); line-height: 1.6; letter-spacing: 0.01em; max-height: 80px; overflow-y: auto; scrollbar-width: thin; }
+    .ys-text-s { padding: 0 22px 28px; font-size: 13px; color: rgba(255,255,255,0.26); line-height: 1.75; letter-spacing: 0.01em; max-height: 120px; overflow-y: auto; scrollbar-width: thin; }
     .ys-text-s::-webkit-scrollbar { width: 3px; }
     .ys-text-s::-webkit-scrollbar-track { background: transparent; }
     .ys-text-s::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
     /* === PROMPT READY === */
-    .top-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 16px; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; padding: 26px 22px 20px; }
     .pr-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.01em; }
     .pr-check { color: #30D158; font-size: 15px; text-shadow: 0 0 8px rgba(48,209,88,0.5); }
     .pr-actions { display: flex; gap: 18px; }
@@ -187,18 +197,19 @@
     }
     .pr-btn:hover { color: #0A84FF; }
 
-    .you-said-block { padding: 22px 22px 0; }
-    .ys-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.16); margin-bottom: 8px; }
+    .you-said-block { padding: 28px 22px 0; }
+    .ys-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.16); margin-bottom: 12px; }
     .ys-text {
-      font-size: 12.5px; color: rgba(255,255,255,0.55); line-height: 1.6; letter-spacing: 0.01em;
+      font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.7; letter-spacing: 0.01em;
       overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      margin-bottom: 4px;
     }
 
-    .inner-div { height: 0.5px; background: linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent); margin: 20px 22px; }
+    .inner-div { height: 0.5px; background: linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent); margin: 26px 22px; }
 
     .prompt-out {
-      padding: 0 22px;
-      font-size: 13px; line-height: 1.85;
+      padding: 0 22px; padding-bottom: 4px;
+      font-size: 13.5px; line-height: 1.9;
       color: rgba(255,255,255,0.82);
       letter-spacing: 0.01em;
       max-height: 200px; overflow-y: auto;
@@ -212,12 +223,12 @@
       font-size: 8.5px; font-weight: 700;
       letter-spacing: 0.14em; text-transform: uppercase;
       color: rgba(100,170,255,0.42);
-      display: block; margin-bottom: 5px; margin-top: 20px;
+      display: block; margin-bottom: 8px; margin-top: 26px;
     }
 
-    .btn-row { display: flex; gap: 10px; padding: 26px 22px 24px; }
+    .btn-row { display: flex; gap: 10px; padding: 32px 22px 28px; }
     .btn-edit {
-      height: 40px; padding: 0 24px;
+      height: 44px; padding: 0 24px;
       border: 0.5px solid rgba(255,255,255,0.1);
       border-radius: 10px;
       background: rgba(255,255,255,0.04);
@@ -229,7 +240,7 @@
     .btn-edit:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
 
     .btn-copy {
-      flex: 1; height: 40px;
+      flex: 1; height: 44px;
       background: linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92));
       color: white; border: none; border-radius: 10px;
       font-size: 13px; font-weight: 600; font-family: var(--font);
@@ -341,9 +352,9 @@
       <div class="cr-idle" id="idle-area">
         <div class="pulse-ring">
           <svg width="13" height="15" viewBox="0 0 12 16" fill="none">
-            <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,180,255,0.7)" stroke-width="1"/>
-            <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,180,255,0.5)" stroke-width="1" stroke-linecap="round"/>
-            <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,180,255,0.5)" stroke-width="1" stroke-linecap="round"/>
+            <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,180,255,1)" stroke-width="1"/>
+            <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,180,255,0.85)" stroke-width="1" stroke-linecap="round"/>
+            <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,180,255,0.85)" stroke-width="1" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="ready-text">
@@ -451,8 +462,8 @@
     const STATE_HEIGHTS = {
       IDLE: 101,
       RECORDING: 89,
-      THINKING: 220,
-      PROMPT_READY: 480,
+      THINKING: 320,
+      PROMPT_READY: 540,
       ERROR: 101,
     };
 
@@ -769,8 +780,7 @@
         }
         document.getElementById('think-transcript').textContent = originalTranscript;
         const thinkingPanel = document.getElementById('panel-thinking');
-        const clampedH = Math.min(Math.max(thinkingPanel.scrollHeight, 220), 320);
-        window.electronAPI.resizeWindow(clampedH);
+        window.electronAPI.resizeWindow(320);
         const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
         if (!genResult.success) {
           setState(STATES.ERROR, { message: genResult.error || 'Claude error' });
@@ -838,8 +848,7 @@
       setState(STATES.THINKING);
       document.getElementById('think-transcript').textContent = originalTranscript;
       const regenPanel = document.getElementById('panel-thinking');
-      const regenH = Math.min(Math.max(regenPanel.scrollHeight, 220), 320);
-      window.electronAPI.resizeWindow(regenH);
+      window.electronAPI.resizeWindow(320);
       const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
       if (!genResult.success) {
         setState(STATES.ERROR, { message: genResult.error || 'Claude error' });
