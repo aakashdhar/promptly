@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Promptly</title>
+    <style>
+      :root {
+        --color-action: #007AFF;
+        --color-recording: #FF3B30;
+        --color-success: #34C759;
+        --bg-window: rgba(255, 255, 255, 0.85);
+        --radius-window: 14px;
+        --radius-inner: 8px;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+        background: var(--bg-window);
+        border-radius: var(--radius-window);
+        overflow: hidden;
+      }
+
+      #app {
+        width: 480px;
+        min-height: 56px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // State machine and UI logic will be added in later tasks.
+      });
+    </script>
+  </body>
+</html>

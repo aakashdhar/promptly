@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --universal",
-    "lint": "eslint main.js preload.js index.html"
+    "lint": "eslint main.js preload.js"
   },
   "devDependencies": {
     "electron": "41.2.1",
