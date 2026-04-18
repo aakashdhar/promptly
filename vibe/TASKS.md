@@ -56,6 +56,11 @@
    [x] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
+🔄 **D-004 — Traffic lights + visual waveform** (0/2)
+   Estimated: approx. 2-3 hours (S: 1, M: 1)
+   [ ] D004-001 · main.js — titleBarStyle: hiddenInset + trafficLightPosition: { x: 12, y: 10 }
+   [ ] D004-002 · index.html — left padding for traffic light area + 30-bar waveform (IDLE static grey, RECORDING animated red sine+noise)
+
 🔄 **F-CLAUDE — Claude CLI integration + 5 prompt modes** (0/4)
    Estimated: approx. 5-6 hours (S: 2, M: 2)
    [ ] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
@@ -104,8 +109,8 @@
 ---
 
 ## What just happened
-✅ F-CLAUDE feature kit created — FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md written; TASKS.md, CLAUDE.md, DECISIONS.md, PLAN.md updated. 4 tasks planned (FCL-001–FCL-004).
+🔄 Scope change D-004: traffic lights (titleBarStyle: hiddenInset + trafficLightPosition) and 30-bar visual waveform (IDLE static grey, RECORDING animated red) added to spec. 2 new tasks inserted before F-CLAUDE.
 
 ## What's next
-⬜ FCL-001 · generate-prompt IPC — replace stub in main.js with real spawn call, MODE_SYSTEM_PROMPTS, 30s timeout, all error cases.
+⬜ D004-001 · main.js — swap frame: false → titleBarStyle: hiddenInset, add trafficLightPosition: { x: 12, y: 10 }.
 Say "next" to begin.

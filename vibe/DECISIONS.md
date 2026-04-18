@@ -111,6 +111,22 @@ Key fixes applied:
 
 ---
 
+### D-004 — Traffic lights + 30-bar visual waveform
+- **Date**: 2026-04-18 · **Type**: scope-change
+- **Trigger**: change: command — user-initiated
+- **Build stage**: Between tasks (F-SPEECH complete, F-CLAUDE not started)
+- **What changed**: (1) Window title bar changed from `frame: false` to `titleBarStyle: 'hiddenInset'` with `trafficLightPosition: { x: 12, y: 10 }` — traffic lights now visible. (2) 30-bar animated waveform added to IDLE (static grey) and RECORDING (animated red, sine+noise setInterval) states.
+- **Why**: Traffic lights were in original BRIEF.md intent and omitted from SPEC.md F1 at planning time. Waveform was referenced in BRIEF.md files list ("state machine, waveform, mode system") but never specced.
+- **Before**: `frame: false` (no traffic lights); no waveform
+- **After**: `titleBarStyle: 'hiddenInset'` + `trafficLightPosition: { x: 12, y: 10 }`; 30-bar waveform in IDLE and RECORDING
+- **Tasks affected**: New: D004-001, D004-002 · Retrofit: none · Removed: none
+- **Folders affected**: none (no active feature folder for window config)
+- **Architecture impact**: Yes — window config pattern updated; waveform animation pattern added
+- **BRIEF.md updated**: Yes
+- **Approved by**: human
+
+---
+
 ## 2026-04-18 — Spec review: add-feature (F-CLAUDE)
 > P0: 0 · P1: 1 fixed · P2: 1 logged
 > Action: P1-001 fixed — claude --help verification step added to FCL-001; THINKING text mismatch logged for Phase 3
