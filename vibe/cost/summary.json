@@ -1,82 +1,86 @@
 {
   "project_name": "Promptly",
-  "build_progress_pct": 87,
-  "tasks_remaining": 6,
-  "total_cost_usd": 5.15,
-  "total_sessions": 9,
-  "at_a_glance": "You have spent $5.15 across 9 sessions, all in one day. Session 2 was the heavyweight \u2014 $1.30 covering all 11 Phase 1 foundation tasks with parallel subagent orchestration. This session was the second most expensive at $0.68, driven mostly by the splash screen feature which required rewriting main.js and creating a new file from scratch. Overall the project is 87% through its planned tasks with only Phase 3 polish remaining.",
+  "build_progress_pct": 88,
+  "tasks_remaining": 4,
+  "total_cost_usd": 5.92,
+  "total_sessions": 10,
   "phase_summary": [
+    {
+      "phase": "Planning",
+      "status": "complete",
+      "cost_usd": 0.606,
+      "sessions": 1
+    },
     {
       "phase": "Phase 1 \u2014 Foundation",
       "status": "complete",
-      "sessions": 2,
-      "cost_usd": 1.906
+      "cost_usd": 1.3,
+      "sessions": 1
     },
     {
       "phase": "Phase 2 \u2014 Core features",
-      "status": "active",
-      "sessions": 7,
-      "cost_usd": 3.244
+      "status": "complete",
+      "cost_usd": 3.244,
+      "sessions": 7
     },
     {
-      "phase": "Phase 3 \u2014 Polish and hardening",
-      "status": "not_started",
-      "sessions": 0,
-      "cost_usd": 0.0
+      "phase": "Phase 3 \u2014 Polish",
+      "status": "active",
+      "cost_usd": 0.77,
+      "sessions": 1
     }
   ],
   "feature_costs": [
     {
-      "label": "Planning and architecture",
-      "cost_usd": 1.076
+      "label": "Planning & architecture",
+      "cost_usd": 0.61
     },
     {
-      "label": "Core UI and state machine",
-      "cost_usd": 0.983
+      "label": "Phase 1 foundation",
+      "cost_usd": 1.3
     },
     {
-      "label": "Speech recording and Claude integration",
-      "cost_usd": 0.713
+      "label": "State machine + UI skeleton",
+      "cost_usd": 0.98
     },
     {
-      "label": "Bug fixes and visual polish",
-      "cost_usd": 1.234
+      "label": "First-run setup",
+      "cost_usd": 0.64
     },
     {
-      "label": "Splash screen and launch flow",
-      "cost_usd": 0.25
+      "label": "Design system + bug fixes",
+      "cost_usd": 0.94
     },
     {
-      "label": "Dev tooling (cost tracking)",
-      "cost_usd": 0.449
+      "label": "Splash + vibrancy + BUG-007",
+      "cost_usd": 0.68
+    },
+    {
+      "label": "Phase 2 review + Phase 3 polish",
+      "cost_usd": 0.77
     }
   ],
+  "at_a_glance": "You have spent $5.92 across 10 sessions building Promptly from scratch to a fully functional macOS app. Session 2 was the heaviest at $1.30 \u2014 all of Phase 1 in a single burst covering 11 tasks including the phase gate review. Costs have been climbing slightly in Phase 2 as the app grew complex, but at $0.19 per task this session the efficiency is healthy and the finish line is close.",
   "session_narratives": {
-    "2026-04-18-001": "The planning session \u2014 brainstorm, architect, and spec review for the full app. Expensive relative to output because spec work requires reading everything before writing anything.",
-    "2026-04-18-002": "The biggest session by far \u2014 all 9 Phase 1 tasks plus the phase gate review. Parallel subagent orchestration ran here, multiplying context costs.",
-    "2026-04-18-003": "Pure planning \u2014 F-STATE feature spec and spec review. No code shipped, but the spec shaped the entire Phase 2 build.",
-    "2026-04-18-004": "F-STATE build \u2014 all 5 state machine tasks. Steady cost at $0.10\u20130.13 per task, clean implementation session.",
-    "2026-04-18-005": "F-FIRST-RUN planning and spec review. The add-feature skill reads extensively before writing, driving most of the cost.",
-    "2026-04-18-006": "Short session \u2014 one task (FRN-004) and cost tracking. Lean at $0.20.",
-    "2026-04-18-007": "Design system implementation plus six visual bug fixes. The dark glass redesign was an L task requiring full CSS rewrite \u2014 $0.27 on its own.",
-    "2026-04-18-008": "DECISION-004 (recording state consolidation) plus BUG-004. Architectural change requiring careful main.js restructure.",
-    "2026-04-18-009": "Vibrancy diagnosis and fix (BUG-006), thinking state bugs (BUG-007), and the splash screen feature (FEATURE-001). Splash screen drove $0.25 \u2014 rewriting main.js and creating splash.html from scratch."
+    "2026-04-18-001": "Planning day \u2014 brainstorm, architect, and spec-review in one session. $0.61 for the full blueprint: BRIEF.md, ARCHITECTURE.md, SPEC.md, PLAN.md. The most expensive per-task session ($0.20/task) but sets up everything that follows.",
+    "2026-04-18-002": "The big foundation push \u2014 all 9 Phase 1 tasks plus the phase gate review in a single session. $1.30 and the most expensive session overall, but 11 tasks at $0.12 each is respectable given how much groundwork was laid.",
+    "2026-04-18-003": "F-STATE planning session \u2014 vibe-add-feature spec and spec-review for the state machine. No tasks committed, $0.47 spent on planning. A planning-heavy pattern that pushed cost up without committing code.",
+    "2026-04-18-004": "F-STATE build \u2014 all 5 FST tasks shipped. $0.51 for the full state machine, DOM structure, CSS, and IPC wiring. $0.10/task average, efficient for the complexity.",
+    "2026-04-18-005": "F-FIRST-RUN planning session \u2014 vibe-add-feature + spec-review. Again no committed tasks, $0.44 on planning. The pattern of heavy planning sessions before each feature is the main cost driver.",
+    "2026-04-18-006": "Short F-FIRST-RUN completion session \u2014 FRN-004 and the vibe-cost report. $0.20, the cheapest session. Focused scope kept costs low.",
+    "2026-04-18-007": "Design system overhaul + 6 bug fixes in one session. $0.52 to ship the dark glass aesthetic, BUG-002 visual fixes, and the mode dropdown native menu. High value for the spend.",
+    "2026-04-18-008": "DECISION-004 (recording moved to main window) + BUG-004 vibrancy fixes. $0.42 to eliminate the pill ghost race condition permanently \u2014 a complex architectural change that paid for itself by removing the most brittle part of the codebase.",
+    "2026-04-18-009": "The heaviest Phase 2 session \u2014 $0.68 covering vibrancy follow-up, BUG-007 (two sub-bugs), the FEATURE-001 splash screen, and opacity diagnostics. FEATURE-001 alone was $0.25. Cost spike was expected given the scope.",
+    "2026-04-18-010": "Phase 2 close-out \u2014 BUG-008 system prompt overhaul, the full phase gate review ($0.31 of this session), and all 11 review findings resolved in one pass. $0.77 and every known bug + doc debt cleared going into Phase 3."
   },
   "recommendations": [
     {
       "code": "CP-05",
-      "title": "Zero cache hits across all 9 sessions",
-      "body": "Every session shows cache_read_tokens: 0. CLAUDE.md is large (it now contains 3 active feature sections plus bug fix context) and appears to change frequently as features are added. Splitting CLAUDE.md into a stable core section and a dynamic active-work section would let the stable part cache across turns. Cache reads cost $0.30/MTok vs $3.00/MTok for standard input \u2014 a 10\u00d7 saving on cached content.",
-      "saving": "save ~$0.15\u20130.25/session",
-      "severity": "warn"
-    },
-    {
-      "code": "CP-02",
-      "title": "index.html read 5+ times in one session",
-      "body": "This session read index.html for BUG-006, BUG-007-A, BUG-007-B, the diagnostic investigation, and the opacity fix \u2014 5 separate reads of the same ~870-line file. Each full read costs roughly 4,000\u20135,000 tokens. Batching related fixes into a single session turn (or using targeted grep before full reads) would reduce repeated context loading.",
-      "saving": "save ~$0.05\u20130.10/session on bug-heavy sessions",
+      "title": "Prompt cache not firing \u2014 every turn loads cold",
+      "body": "All 10 sessions show zero cache_read_tokens. CLAUDE.md is modified frequently (active feature section changes every task), making the whole file ineligible for caching. Splitting CLAUDE.md into a stable core and a dynamic active-feature append-file would let the 6KB stable section cache across turns. At this stage of the project the saving is small ($0.15/session), but it is worth noting for any future project.",
+      "saving": "save ~$0.60 over remaining Phase 3",
       "severity": "ok"
     }
   ],
-  "forecast_narrative": "Phase 3 has 4 tasks remaining \u2014 error state audit, manual smoke test, build verification, and distribution prep \u2014 plus the two gate reviews (review: phase 2 and review: final). At the current average of $0.11/task, that is roughly $0.50\u20130.70 to finish. Fixing prompt caching before Phase 3 could trim $0.10\u20130.20 off that estimate. Total project looks to land around $5.65\u20135.85."
+  "forecast_narrative": "Four tasks remain in Phase 3: error state audit, manual smoke test, build verification (npm run dist universal .dmg), and distribution prep. All are S\u2013M sized with minimal file reads. Expect $0.30\u20130.45 to finish. Projected project total: $6.20\u20136.40."
 }

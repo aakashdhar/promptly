@@ -134,6 +134,9 @@
 ---
 
 ## What just happened
+💰 Cost tracked — Session #10: $0.77 est · Project total: $5.92 · Trend: ↑ +13% (review task drove spike — expected)
+   4 work items · $0.19/item avg · vibe/cost/report-2026-04-18-session10.md
+
 ✅ All phase-2 review findings resolved (BL-013 through BL-023):
    Code: renderPromptOutput regex fixed (plain-text labels), RAF loop leak fixed,
          URL validation added to splash-open-url, error truncation removed, onclick→addEventListener

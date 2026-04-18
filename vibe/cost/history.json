@@ -429,5 +429,49 @@
         "output_tokens": 4500
       }
     }
+  },
+  {
+    "session_id": "2026-04-18-010",
+    "date": "2026-04-18T23:59:59",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 4,
+    "phase": "Phase 2 review + Phase 3 polish",
+    "input_tokens": 180000,
+    "output_tokens": 15500,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.77,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "BUG-008": {
+        "size": "M",
+        "cost_usd": 0.14,
+        "input_tokens": 35000,
+        "output_tokens": 2500
+      },
+      "phase-2-review": {
+        "size": "L",
+        "cost_usd": 0.31,
+        "input_tokens": 80000,
+        "output_tokens": 4500
+      },
+      "fix-all-BL013-023": {
+        "size": "M",
+        "cost_usd": 0.25,
+        "input_tokens": 50000,
+        "output_tokens": 7000
+      },
+      "vibe-cost": {
+        "size": "S",
+        "cost_usd": 0.07,
+        "input_tokens": 15000,
+        "output_tokens": 1500
+      }
+    }
   }
 ]
