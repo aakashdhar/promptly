@@ -1,44 +1,39 @@
 {
-  "session_id": "2026-04-18-010",
+  "session_id": "2026-04-18-011",
   "date": "2026-04-18T23:59:59",
   "mode": "estimate",
   "trigger": "manual",
   "model": "claude-sonnet-4-6",
-  "tasks_completed": 4,
-  "phase": "Phase 2 review + Phase 3 polish",
-  "input_tokens": 180000,
-  "output_tokens": 15500,
+  "tasks_completed": 3,
+  "phase": "Phase 3 \u2014 Final review + ship",
+  "input_tokens": 90000,
+  "output_tokens": 7000,
   "cache_read_tokens": 0,
   "cache_write_tokens": 0,
-  "cost_usd": 0.77,
+  "cost_usd": 0.375,
   "is_estimate": true,
   "patterns_detected": [
+    "CP-01",
     "CP-05"
   ],
   "task_breakdown": {
-    "BUG-008": {
-      "size": "M",
-      "cost_usd": 0.14,
-      "input_tokens": 35000,
-      "output_tokens": 2500
-    },
-    "phase-2-review": {
+    "final-review": {
       "size": "L",
-      "cost_usd": 0.31,
-      "input_tokens": 80000,
-      "output_tokens": 4500
+      "cost_usd": 0.285,
+      "input_tokens": 75000,
+      "output_tokens": 5500
     },
-    "fix-all-BL013-023": {
-      "size": "M",
-      "cost_usd": 0.25,
-      "input_tokens": 50000,
-      "output_tokens": 7000
+    "RFX-001-console-cleanup": {
+      "size": "S",
+      "cost_usd": 0.055,
+      "input_tokens": 10000,
+      "output_tokens": 800
     },
     "vibe-cost": {
       "size": "S",
-      "cost_usd": 0.07,
-      "input_tokens": 15000,
-      "output_tokens": 1500
+      "cost_usd": 0.035,
+      "input_tokens": 5000,
+      "output_tokens": 700
     }
   }
 }

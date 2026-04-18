@@ -139,6 +139,10 @@
 ---
 
 ## What just happened
+💰 Cost tracked — Session #11: $0.38 est. | Project total: $6.30 | Trend: ↓ -31% (light final session)
+   vibe/cost/report-2026-04-18-session11.md
+
+
 ⚡ vibe-parallel Wave 1+2 — 3 tasks complete:
    PH3-ERR ✅ — regenerate error path fixed (specific error propagated); all error states audited; tap-to-dismiss confirmed
    PH3-DIST ✅ — vibe/distribution/slack-message.md created (5-line Slack message)
