@@ -40,7 +40,7 @@
 
 🔄 **F-FIRST-RUN — First-run setup checklist** (0/4)
    Estimated: approx. 3-4 hours (S: 3, M: 1)
-   [ ] FRN-001 · Boot gate + DOM ID fix — gate boot on firstRunComplete, add id to mic status span
+   [x] FRN-001 · Boot gate + DOM ID fix — gate boot on firstRunComplete, add id to mic status span
    [ ] FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
    [ ] FRN-003 · Mic grant button handler — getUserMedia, success/error status update
    [ ] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
@@ -99,11 +99,10 @@
 ---
 
 ## What just happened
-✅ F-FIRST-RUN feature kit created — FEATURE_SPEC.md · FEATURE_PLAN.md · FEATURE_TASKS.md written
-   4 tasks planned (S: 3, M: 1) · est. 3-4 hours
-   All scaffolding already exists from F-STATE — this feature wires up the logic only.
+✅ FRN-001 done — boot gate wired, DOM IDs added (firstrun-cli-status/label, firstrun-mic-status/label),
+   cliOk/micOk vars declared, .status-ok/.status-error CSS classes added, initFirstRun() stub in place.
 
 ## What's next
-⬜ FRN-001 · Boot gate + DOM ID fix
-   Add `id="firstrun-mic-status"` to mic row, gate boot on getFirstRunComplete(), add cliOk/micOk vars.
+⬜ FRN-002 · initFirstRun() — CLI check via IPC + mic pre-check via permissions API
+   Replace stub with full async implementation: checkClaudePath() → update CLI row, navigator.permissions.query → update mic row, call checkFirstRunCompletion() stub.
 Say "next" to begin.

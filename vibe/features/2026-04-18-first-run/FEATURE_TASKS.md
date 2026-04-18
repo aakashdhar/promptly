@@ -8,7 +8,7 @@
 ---
 
 ### FRN-001 · Boot gate + DOM ID fix
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (acceptance criteria 1, 10)
 - **Dependencies**: None
