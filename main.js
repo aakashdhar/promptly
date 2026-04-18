@@ -206,36 +206,47 @@ app.whenReady().then(() => {
     return { found: false, error: 'Claude CLI not found.' };
   });
 
-  // BUG-003-A/D: pill window lifecycle
+  // BUG-003-A/D/F: pill window lifecycle
   ipcMain.handle('show-pill', () => {
+    win.setOpacity(0); // Fix 3: invisible immediately even before OS composites the hide
     win.hide();
-    pillWin = new BrowserWindow({
-      width: 520,
-      height: 90,
-      transparent: true,
-      frame: false,
-      alwaysOnTop: true,
-      resizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-        contextIsolation: true,
-        nodeIntegration: false,
-      },
-    });
-    pillWin.center();
-    pillWin.loadFile('pill.html');
-    pillWin.on('closed', () => { pillWin = null; });
+    setTimeout(() => { // Fix 1: guarantee win is fully hidden before pill appears
+      pillWin = new BrowserWindow({
+        width: 480,
+        height: 90,
+        transparent: true,
+        frame: false,
+        alwaysOnTop: true,
+        resizable: false,
+        maximizable: false,
+        fullscreenable: false,
+        hasShadow: false,
+        vibrancy: 'under-window',
+        visualEffectState: 'active',
+        backgroundColor: '#00000000',
+        webPreferences: {
+          preload: path.join(__dirname, 'preload.js'),
+          contextIsolation: true,
+          nodeIntegration: false,
+        },
+      });
+      pillWin.center();
+      pillWin.loadFile('pill.html');
+      pillWin.on('closed', () => { pillWin = null; });
+    }, 50);
     return { ok: true };
   });
 
-  ipcMain.handle('switch-to-main', () => {
+  ipcMain.handle('hide-pill', () => { // Fix 2: hide pill FIRST, then restore win atomically
     if (pillWin) {
-      pillWin.destroy();
-      pillWin = null;
+      pillWin.hide();
+      setTimeout(() => {
+        if (pillWin) { pillWin.destroy(); pillWin = null; }
+        win.setOpacity(1); // Fix 3: restore opacity before showing
+        win.show();
+        win.focus();
+      }, 50);
     }
-    win.show();
     return { ok: true };
   });
 

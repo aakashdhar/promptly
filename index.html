@@ -541,7 +541,7 @@
         audioChunks = [];
         isProcessing = false;
         setState(STATES.IDLE);
-        await window.electronAPI.switchToMain();
+        await window.electronAPI.hidePill();
       }
     });
 
@@ -580,7 +580,7 @@
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const arrayBuffer = await blob.arrayBuffer();
         setState(STATES.THINKING); // DOM ready before win is shown
-        await window.electronAPI.switchToMain(); // destroy pill, show win in THINKING state
+        await window.electronAPI.hidePill(); // hide pill, restore win in THINKING state
         isProcessing = false;
         const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer);
         if (!transcribeResult.success) {

@@ -32,8 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showPill: () =>
     ipcRenderer.invoke('show-pill'),
 
-  switchToMain: () =>
-    ipcRenderer.invoke('switch-to-main'),
+  hidePill: () =>
+    ipcRenderer.invoke('hide-pill'),
 
   // pill.html → main (fire-and-forget from pill window)
   pillStop: () =>
