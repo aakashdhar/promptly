@@ -160,7 +160,7 @@ No other changes. The `onstop` handler is already `async`, already sets `setStat
 ---
 
 ### FCL-003 · Mode context menu — right-click to switch modes
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (mode system), SPEC.md#F4
 - **Dependencies**: None (parallel with FCL-001)

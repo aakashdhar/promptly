@@ -65,7 +65,7 @@
    Estimated: approx. 5-6 hours (S: 2, M: 2)
    [x] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
    [x] FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY
-   [ ] FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update
+   [x] FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update
    [ ] FCL-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md (agent use)
 
@@ -109,8 +109,8 @@
 ---
 
 ## What just happened
-✅ FCL-002 done — replaced F-CLAUDE setTimeout stub in mediaRecorder.onstop with real generatePrompt IPC call; transitions to ERROR on failure or PROMPT_READY on success with generatedPrompt set.
+✅ FCL-003 done — MODES constant (5 entries), #mode-menu DOM + CSS, right-click IDLE shows menu, click selects mode (setMode + label update + checkmark), click outside dismisses, persists across reloads.
 
 ## What's next
-⬜ FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update.
+⬜ FCL-004 · CODEBASE.md update — document MODE_SYSTEM_PROMPTS, MODES, generatedPrompt flow, generate-prompt IPC live status.
 Say "next" to begin.
