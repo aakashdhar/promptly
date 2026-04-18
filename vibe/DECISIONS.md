@@ -515,3 +515,19 @@ Key fixes applied:
 - **Impact on other tasks**: light-mode body.light overrides from tokens.css are not yet ported to Tailwind (no dark: variant wiring). body.light class is still toggled by App.jsx theme logic; light-mode visual overrides will need Tailwind variants in a follow-up if light mode support is required.
 - **Pseudo-elements**: bar ::before and ::after (top highlight, bottom accent) replaced with child divs in App.jsx. pulse-ring ::before and ::after pulse-expand rings replaced with child divs in IdleState.jsx.
 - **Approved by**: human
+
+---
+
+### D-BUG-009 — Layout, glass, and window height fixes across all 4 states
+- **Date**: 2026-04-19 · **Task**: BUG-009 · **Type**: blocker-resolution
+- **What was planned**: Bar renders correctly after Tailwind v4 migration
+- **What was done**: Fixed 9 sub-issues (A–I) across index.css, App.jsx, IdleState, MorphCanvas, main.js
+- **Why**:
+  - A (empty space above idle content): `h-7` spacer in IdleState was 28px of blank glass above the mic icon. Removed it — content row itself has `[-webkit-app-region:drag]`.
+  - A/D/F (window too tall): `min-h-screen` on bar + missing initial `resizeWindow(IDLE)` on mount. createWindow uses `height: 89` (recording height); without a mount resize call, IDLE window stayed at 89px while content tried to fill a larger bar. Fixed: `h-full flex flex-col` on bar + `height: 100%` on html/body/#root + `useEffect(() => resizeWindow(STATE_HEIGHTS.IDLE), [])` in App.jsx.
+  - E (morph canvas left-overflow): MorphCanvas had no style prop — rendered at its 476px `width` attribute without `display: block`. Added `style={{ width: '100%', height: '32px', display: 'block' }}`.
+  - I (flat dark, no frosted glass): `app.commandLine.appendSwitch('disable-gpu-compositing')` in main.js disabled backdrop-filter/blur and macOS vibrancy. Removed that flag.
+  - B/C/G/H: Already correctly coded (`px-5`, `px-4`, `px-[22px]`, `h-11`, `rounded-[10px]`) — now visible once bar container is correctly constrained.
+- **Alternatives considered**: Leave `min-h-screen` and add explicit heights per state — rejected (brittle, every state needs independent sizing logic). Use `overflow: hidden` on `#root` — not sufficient alone, window itself was growing.
+- **Impact on other tasks**: Bar container pattern now established for all future states — always `h-full flex flex-col` on the root glass div.
+- **Approved by**: human
