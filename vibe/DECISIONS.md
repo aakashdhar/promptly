@@ -289,3 +289,16 @@ Key fixes applied:
 - **Status**: FIXED 2026-04-18
 - **Smoke checklist**: pill floats with nothing behind it — just pill over raw desktop; win.hide() completes before pill renders; no ghost on dismiss/stop path
 - **Approved by**: human
+
+---
+
+### DECISION-004 — Recording state moved from pillWin to main win
+- **Date**: 2026-04-18 · **Type**: scope-change
+- **Trigger**: feature: command — user-initiated
+- **What was planned**: RECORDING state uses separate pillWin BrowserWindow (BUG-003-A fix)
+- **What was done**: pillWin eliminated entirely. RECORDING state renders inside main win as a new `#panel-recording`. `pill.html` deleted. All pill IPC channels removed (`show-pill`, `hide-pill`, `pill-stop`, `pill-dismiss`, `pill-action`). New `#panel-recording` HTML added to index.html with waveform canvas, timer, dismiss button, stop button. `stopRecTimer()` / `startRecTimer()` / `drawRecordingWave()` added to index.html.
+- **Why**: pillWin ghost race condition (BUG-003-F) proved intractable — three successive fixes (setTimeout, setOpacity, hide-pill ordering) still produced ghost artifacts. Root cause: macOS compositor always composites the main window during hide transition regardless of timing. Moving RECORDING into main win eliminates the race permanently.
+- **Files changed**: main.js (remove pillWin, show-pill, hide-pill, pill-stop, pill-dismiss), preload.js (remove showPill, hidePill, pillStop, pillDismiss, onPillAction), index.html (add panel-recording, CSS, canvas animation, timer, dismiss/stop handlers, remove onPillAction), pill.html (deleted)
+- **Alternatives considered**: (1) Continue fixing pill race with more aggressive setTimeout/opacity hacks — rejected, three iterations already failed. (2) Use a single NSPanel via native module — rejected, adds native build complexity. (3) Accepted: all UI in one window, no ghost possible.
+- **Impact**: BUG-003-A/E/F bugs become permanently irrelevant. ARCHITECTURE.md "all UI in index.html" rule restored. preload.js simplified.
+- **Approved by**: human

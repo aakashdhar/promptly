@@ -84,6 +84,14 @@
    [x] Ghost below prompt ready — #bar min-height:100vh fills window; pillWin lifecycle ensures clean transitions
    → Specs: vibe/bugs/2026-04-18-bug-003/ | DECISIONS.md BUG-003 entry
 
+✅ **DECISION-004 — Recording state moved into main win** (COMPLETE 2026-04-18)
+   [x] pillWin + all pill IPC channels removed from main.js
+   [x] showPill/hidePill/pillStop/pillDismiss/onPillAction removed from preload.js
+   [x] panel-recording added to index.html — traf, cr-rec (dismiss/waveform/timer/stop), transcript-wrap
+   [x] drawRecordingWave(), startRecTimer(), stopRecTimer() added to index.html
+   [x] pill.html deleted
+   → DECISIONS.md DECISION-004 entry
+
 ## Phase 2 gate
 ⬜ review: phase 2 — pending
 
@@ -118,15 +126,14 @@
 ---
 
 ## What just happened
-✅ BUG-003 fixed — 4 visual bugs resolved:
-   - Recording pill is now a separate BrowserWindow (pillWin) — no ghost behind it
-   - Traffic light dots centred with align-items:center
-   - Window resize now happens in requestAnimationFrame — no blank flash
-   - #bar fills window height — no vibrancy ghost below content
-   New file: pill.html (self-contained pill UI with waveform/timer/buttons)
-   New IPC channels: show-pill, switch-to-main, pill-stop, pill-dismiss, pill-action
+✅ DECISION-004 — pillWin eliminated; RECORDING state now inside main win:
+   - panel-recording HTML + CSS added to index.html (traf, cr-rec, waveform canvas, timer, dismiss/stop buttons)
+   - drawRecordingWave(), startRecTimer(), stopRecTimer() added to index.html
+   - pillWin + all pill IPC (show-pill, hide-pill, pill-stop, pill-dismiss, pill-action) removed
+   - pill.html deleted; preload.js simplified
+   - Ghost window problem solved permanently — no second BrowserWindow ever created
    Lint: 0 errors
 
 ## What's next
-⬜ Smoke test all 4 fixed states visually — then run `review: phase 2`.
+⬜ Smoke test RECORDING state in main win, then all other states — then run `review: phase 2`.
 Say "review: phase 2" to trigger the phase gate after smoke test passes.
