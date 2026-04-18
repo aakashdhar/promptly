@@ -299,7 +299,8 @@
       let generatedPrompt = '';
       let cliOk = false;
       let micOk = false;
-      let recognition = null;
+      let mediaRecorder = null;
+      let audioChunks = [];
       let isRecording = false;
 
       const STATE_HEIGHTS = {
@@ -409,47 +410,23 @@
         }
       }
 
-      function startRecording() {
-        if (typeof webkitSpeechRecognition === 'undefined') {
-          setState('ERROR', { message: 'Speech recognition not available' });
+      async function startRecording() {
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+          setState('ERROR', { message: 'Microphone access denied' });
           return;
         }
-        transcript = '';
-        document.getElementById('recording-transcript').textContent = 'Listening…';
-        recognition = new webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.onresult = (event) => {
-          let final = '';
-          let interim = '';
-          for (let i = 0; i < event.results.length; i++) {
-            if (event.results[i].isFinal) {
-              final += event.results[i][0].transcript;
-            } else {
-              interim += event.results[i][0].transcript;
-            }
-          }
-          transcript = final + interim;
-          document.getElementById('recording-transcript').textContent = transcript || 'Listening…';
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
         };
-        recognition.onerror = (event) => {
-          isRecording = false;
-          if (event.error === 'not-allowed') {
-            setState('ERROR', { message: 'Microphone access denied' });
-          } else if (event.error === 'no-speech') {
-            setState('ERROR', { message: 'No speech detected — try again' });
-          } else {
-            setState('ERROR', { message: 'Speech recognition error — try again' });
-          }
-        };
-        recognition.onend = () => {
-          if (isRecording) {
-            stopRecording();
-          }
-        };
-        recognition.start();
+        mediaRecorder.onstop = null;  // wired in FPH-002-R
+        mediaRecorder.start();
         isRecording = true;
+        document.getElementById('recording-transcript').textContent = 'Recording…';
         setState('RECORDING');
       }
 
