@@ -319,7 +319,7 @@
       }
 
       function setState(newState, payload = {}) {
-        if (!STATE_HEIGHTS[newState]) {
+        if (STATE_HEIGHTS[newState] === undefined) {
           console.error('setState: unknown state', newState);
           return;
         }
@@ -338,6 +338,9 @@
         }
         if (newState === 'PROMPT_READY' && payload.prompt) {
           document.getElementById('prompt-output').textContent = payload.prompt;
+        }
+        if (newState === 'IDLE') {
+          document.getElementById('idle-conflict-notice').hidden = !payload.conflictNotice;
         }
 
         console.log('setState →', newState, payload);
@@ -358,9 +361,9 @@
           }
         });
 
-        // Conflict notice
+        // Conflict notice — route through setState so re-entering IDLE resets visibility correctly
         window.electronAPI.onShortcutConflict(() => {
-          document.getElementById('idle-conflict-notice').hidden = false;
+          setState('IDLE', { conflictNotice: true });
         });
 
         // Error dismiss on click

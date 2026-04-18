@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('generate-prompt', { transcript, mode }),
 
   copyToClipboard: (text) =>
-    ipcRenderer.invoke('copy-to-clipboard', text),
+    ipcRenderer.invoke('copy-to-clipboard', { text }),
 
   checkClaudePath: () =>
     ipcRenderer.invoke('check-claude-path'),

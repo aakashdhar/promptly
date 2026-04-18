@@ -64,7 +64,7 @@ app.whenReady().then(() => {
     if (fallbackRegistered) {
       console.log('Shortcut registered (fallback):', SHORTCUT_FALLBACK);
       win.webContents.on('did-finish-load', () => {
-        win.webContents.send('shortcut-conflict');
+        win.webContents.send('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
       });
     } else {
       console.log('Shortcut registration failed for both', SHORTCUT_PRIMARY, 'and', SHORTCUT_FALLBACK);
@@ -77,9 +77,9 @@ app.whenReady().then(() => {
     return '[placeholder — Claude integration coming in F-CLAUDE]';
   });
 
-  ipcMain.handle('copy-to-clipboard', (_event, text) => {
+  ipcMain.handle('copy-to-clipboard', (_event, { text }) => {
     clipboard.writeText(text);
-    return { ok: true };
+    return { success: true };
   });
 
   ipcMain.handle('resize-window', (_event, { height }) => {
