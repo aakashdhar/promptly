@@ -114,8 +114,13 @@
 ✅ Build verification — dist/Promptly-1.0.0-universal.dmg produced (199 MB); human must install on Apple Silicon + verify on Intel
 ✅ Distribution prep — vibe/distribution/slack-message.md written (5-line Slack message ready)
 
+✅ Review fixes — Final gate (2/2)
+   [x] RFX-001 · Remove 6 console.log statements from main.js
+   [x] RFX-002 · Manual smoke test complete (human-confirmed 2026-04-18)
+
 ## Final gate
-⬜ review: final — pending
+✅ review: final — reviewed 2026-04-18 — Score 8.7/10 (B+) — 0 P0, 0 P1 — CLEARED FOR DISTRIBUTION
+   → Full report: vibe/reviews/final-review.md
 
 ---
 

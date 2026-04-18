@@ -83,6 +83,23 @@
 
 ---
 
+## From Final Review (2026-04-18)
+
+### Outstanding P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-025~~ | main.js | 71,74,86,92,97,138 | 6 console.log statements removed | ✅ resolved — RFX-001 |
+| ~~BL-026~~ | vibe/TASKS.md | 113 | Manual smoke test complete — human-confirmed 2026-04-18 | ✅ resolved — RFX-002 |
+
+### Outstanding P2 — Fix before deploy (lower priority)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-027 | index.html | 181, 188, 276 | CSS hardcoded hex values bypass token definitions — `#30D158`, `#0A84FF`, `#FF3B30` should use `var(--green)`, `var(--blue)`, `var(--red)` | ⬜ open |
+
+---
+
 ## Resolved Issues
 
 | ID | Finding | Resolved in |
