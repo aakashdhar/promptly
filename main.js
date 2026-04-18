@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -65,7 +65,23 @@ app.whenReady().then(() => {
     }
   }
 
-  // P1-008: IPC channel stubs added here
+  // P1-008: IPC channel stubs
+  ipcMain.handle('generate-prompt', (_event, { transcript, mode }) => {
+    console.log('generate-prompt called — transcript:', transcript, 'mode:', mode);
+    return '[placeholder — Claude integration coming in F-CLAUDE]';
+  });
+
+  ipcMain.handle('copy-to-clipboard', (_event, text) => {
+    clipboard.writeText(text);
+    return { ok: true };
+  });
+
+  ipcMain.handle('check-claude-path', () => {
+    if (claudePath) {
+      return { path: claudePath };
+    }
+    return { error: 'Claude CLI not found.' };
+  });
 });
 
 app.on('will-quit', () => {
