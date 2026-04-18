@@ -254,6 +254,35 @@
       .waveform-recording .waveform-bar {
         background: var(--color-recording);
       }
+      #mode-menu {
+        position: fixed;
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: var(--radius-inner);
+        padding: 4px 0;
+        min-width: 140px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+      }
+      .mode-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 13px;
+        color: #1a1a1a;
+        cursor: pointer;
+        user-select: none;
+      }
+      .mode-menu-item:hover {
+        background: rgba(0, 122, 255, 0.08);
+      }
+      .mode-check {
+        width: 12px;
+        color: var(--color-action);
+        font-size: 11px;
+      }
     </style>
   </head>
   <body>
@@ -311,6 +340,7 @@
         <span class="error-dismiss">Tap to dismiss</span>
       </div>
     </div>
+    <div id="mode-menu" hidden></div>
     <script>
       let currentState = null;
       let transcript = '';
@@ -331,6 +361,14 @@
         PROMPT_READY: 200,
         ERROR: 44,
       };
+
+      const MODES = [
+        { key: 'balanced', label: 'Balanced' },
+        { key: 'detailed', label: 'Detailed' },
+        { key: 'concise', label: 'Concise' },
+        { key: 'chain', label: 'Chain' },
+        { key: 'code', label: 'Code' },
+      ];
 
       function getMode() {
         try { return localStorage.getItem('mode') || 'balanced'; } catch { return 'balanced'; }
@@ -565,6 +603,47 @@
         const initialMode = getMode();
         document.getElementById('idle-mode-label').textContent =
           initialMode.charAt(0).toUpperCase() + initialMode.slice(1);
+
+        // Build mode menu items
+        const modeMenu = document.getElementById('mode-menu');
+        MODES.forEach(({ key, label }) => {
+          const item = document.createElement('div');
+          item.className = 'mode-menu-item';
+          item.dataset.mode = key;
+          const check = document.createElement('span');
+          check.className = 'mode-check';
+          check.textContent = getMode() === key ? '✓' : '';
+          const txt = document.createElement('span');
+          txt.textContent = label;
+          item.appendChild(check);
+          item.appendChild(txt);
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setMode(key);
+            document.getElementById('idle-mode-label').textContent = label;
+            document.querySelectorAll('.mode-check').forEach((el) => {
+              el.textContent = el.closest('.mode-menu-item').dataset.mode === key ? '✓' : '';
+            });
+            modeMenu.hidden = true;
+          });
+          modeMenu.appendChild(item);
+        });
+
+        // Show on right-click in IDLE only
+        window.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          if (currentState !== 'IDLE') return;
+          modeMenu.hidden = false;
+          const x = Math.min(e.clientX, window.innerWidth - 160);
+          const y = Math.max(0, e.clientY - modeMenu.offsetHeight - 4);
+          modeMenu.style.left = x + 'px';
+          modeMenu.style.top = y + 'px';
+        });
+
+        // Hide on any click outside menu
+        window.addEventListener('click', () => {
+          modeMenu.hidden = true;
+        });
 
         // Boot gate — first-run setup or direct IDLE
         if (getFirstRunComplete()) {
