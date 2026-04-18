@@ -126,6 +126,14 @@
 ---
 
 ## What just happened
+✅ BUG-007 — Thinking state two-bug fix:
+   A: YOU SAID div now scrollable (max-height 80px, overflow-y auto, thin scrollbar)
+      Window height now clamps to transcript length (220–320px) on both onstop + regenerate paths
+      Regenerate path was also missing transcript population — fixed
+   B: Morph wave animation now starts reliably — inline RAF with local morphT replaces
+      startMorphAnim() which was leaking RAF loops across repeated THINKING transitions
+   Lint: 0 errors
+
 ✅ BUG-006 (follow-up) — Vibrancy fix: confirmed two new root causes, applied 4 fixes:
    - .bar background removed (rgba blocks native vibrancy layer even at 0.04 opacity)
    - .bar::before repurposed as frosted tint layer (inset: 0, rgba white 0.06, z-index: 0)

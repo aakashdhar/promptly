@@ -365,3 +365,21 @@ Key fixes applied:
 **Files**: main.js, index.html
 - **Status**: FIXED 2026-04-18
 - **Approved by**: human
+
+---
+
+### BUG-007 — Thinking state: YOU SAID not scrollable, morph wave not animating
+- **Date**: 2026-04-18 · **Type**: drift
+
+**BUG-007-A — YOU SAID text overflow, no scroll, static window height**
+- **Root cause**: `.ys-text-s` had no `max-height` or `overflow-y`. `STATE_HEIGHTS.THINKING` fixed at 220px regardless of transcript length. Regenerate path called `setState(THINKING)` (which clears think-transcript) but never repopulated it.
+- **Fix**: Added `max-height: 80px; overflow-y: auto; scrollbar-width: thin` + webkit scrollbar styles to `.ys-text-s`. After setting `think-transcript` text (onstop path and regenerate path), measure `panel-thinking.scrollHeight` and call `resizeWindow(clamp(height, 220, 320))`. Regenerate handler now sets `think-transcript` to `originalTranscript` before resize.
+- **Files**: index.html
+
+**BUG-007-B — Morph wave RAF loop not starting**
+- **Root cause**: `startMorphAnim()` used module-level `morphT`/`morphAnimFrame`. On repeated THINKING transitions the old RAF loop kept running while a new one started — conflicting global state caused erratic or invisible animation. Replaced with inline RAF using local `morphT` and named `animMorph` function scoped to each setState call.
+- **Fix**: Replaced `startMorphAnim()` call in `setState(STATES.THINKING)` with inline `let morphT = 0` + `const animMorph = () => { drawMorphWave(morphCanvas, morphT++); requestAnimationFrame(animMorph); }; requestAnimationFrame(animMorph)`.
+- **Files**: index.html
+
+- **Status**: FIXED 2026-04-18
+- **Approved by**: human
