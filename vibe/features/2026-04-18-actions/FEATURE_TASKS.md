@@ -8,7 +8,7 @@
 ---
 
 ### FAC-001 · Copy button — green flash + clipboard IPC
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3 (Copy), SPEC.md#F5
 - **Dependencies**: None

@@ -71,7 +71,7 @@
 
 🔄 **F-ACTIONS — Copy, Edit, Regenerate** (0/4)
    Estimated: approx. 3-4 hours (S: 3, M: 1)
-   [ ] FAC-001 · Copy button — green flash 1.8s + clipboard IPC
+   [x] FAC-001 · Copy button — green flash 1.8s + clipboard IPC
    [ ] FAC-002 · Edit mode — contenteditable, Escape cancel, Done save
    [ ] FAC-003 · Regenerate — originalTranscript → THINKING → PROMPT_READY
    [ ] FAC-004 · CODEBASE.md update
@@ -111,8 +111,8 @@
 ---
 
 ## What just happened
-✅ F-ACTIONS feature kit created — FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md written; TASKS.md, DECISIONS.md, CLAUDE.md updated. 4 tasks planned (S: 3, M: 1, ~3-4 hours).
+✅ FAC-001 done — Copy button: `.btn-success` CSS rule added, click handler calls `copyToClipboard(generatedPrompt)`, flashes green + "Copied!" for 1.8s, then resets.
 
 ## What's next
-⬜ FAC-001 · Copy button — green flash 1.8s + clipboard IPC.
+⬜ FAC-002 · Edit mode — contenteditable, Escape cancel, Done save.
 Say "next" to begin.
