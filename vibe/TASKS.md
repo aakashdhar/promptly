@@ -50,7 +50,7 @@
    Estimated: approx. 5 hours (S: 3, M: 2)
    [~] FPH-001 · Module vars + startRecording() — webkitSpeechRecognition (superseded — retrofit pending)
    [~] FPH-002 · Handlers + stopRecording() — webkitSpeechRecognition (superseded — retrofit pending)
-   [ ] FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
+   [x] FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
    [ ] FPH-004 · transcribe-audio IPC — main.js + preload.js (Whisper CLI)
    [ ] FPH-002-R · Retrofit stopRecording() + onstop handler + shortcut wiring
    [ ] FPH-003 · CODEBASE.md update

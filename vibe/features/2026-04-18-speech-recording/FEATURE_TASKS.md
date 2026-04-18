@@ -15,7 +15,7 @@
 ---
 
 ### FPH-001-R · Retrofit module vars + `startRecording()` for MediaRecorder
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: SPEC.md#f3
 - **Dependencies**: None
