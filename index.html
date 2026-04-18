@@ -14,17 +14,224 @@
         --radius-inner: 8px;
       }
 
+      * { box-sizing: border-box; }
+
       body {
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
         background: var(--bg-window);
         border-radius: var(--radius-window);
         overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
       }
 
       #app {
         width: 480px;
-        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .state-panel {
+        width: 100%;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+      }
+
+      /* IDLE */
+      #state-idle {
+        height: 44px;
+        justify-content: center;
+        gap: 8px;
+        position: relative;
+      }
+      .mode-pill {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-action);
+        background: rgba(0, 122, 255, 0.08);
+        padding: 2px 8px;
+        border-radius: var(--radius-inner);
+      }
+      .shortcut-hint {
+        font-size: 13px;
+        color: rgba(0,0,0,0.4);
+      }
+      .conflict-notice {
+        font-size: 11px;
+        color: rgba(0,0,0,0.5);
+        position: absolute;
+        bottom: 4px;
+        left: 0; right: 0;
+        text-align: center;
+      }
+
+      /* RECORDING */
+      #state-recording {
+        height: 80px;
+        flex-direction: column;
+        padding: 8px 16px;
+        gap: 6px;
+      }
+      .recording-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .recording-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-recording);
+        flex-shrink: 0;
+        animation: blink 1s ease-in-out infinite;
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.2; }
+      }
+      .recording-transcript {
+        flex: 1;
+        font-size: 13px;
+        color: rgba(0,0,0,0.75);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .stop-hint {
+        font-size: 11px;
+        color: rgba(0,0,0,0.35);
+        flex-shrink: 0;
+      }
+
+      /* THINKING */
+      #state-thinking {
+        height: 44px;
+        gap: 8px;
+        justify-content: center;
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(0,0,0,0.15);
+        border-top-color: var(--color-action);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .thinking-text {
+        font-size: 13px;
+        color: rgba(0,0,0,0.5);
+      }
+
+      /* PROMPT_READY */
+      #state-prompt-ready {
+        height: 200px;
+        flex-direction: column;
+        padding: 12px 16px;
+        gap: 10px;
+        align-items: stretch;
+        justify-content: flex-start;
+      }
+      .prompt-output {
+        flex: 1;
+        font-size: 13px;
+        line-height: 1.5;
+        color: rgba(0,0,0,0.85);
+        overflow-y: auto;
+        border-radius: var(--radius-inner);
+        background: rgba(0,0,0,0.03);
+        padding: 8px 10px;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .prompt-output:focus {
+        outline: 2px solid var(--color-action);
+        outline-offset: -1px;
+      }
+      .action-row {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-start;
+      }
+      .btn-action {
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: var(--radius-inner);
+        border: none;
+        cursor: pointer;
+        background: var(--color-action);
+        color: #fff;
+        transition: opacity 150ms ease;
+      }
+      .btn-action:hover { opacity: 0.85; }
+      .btn-secondary {
+        font-family: inherit;
+        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: var(--radius-inner);
+        border: none;
+        cursor: pointer;
+        background: rgba(0,0,0,0.06);
+        color: rgba(0,0,0,0.6);
+        transition: opacity 150ms ease;
+        margin-left: auto;
+      }
+      .btn-secondary:hover { opacity: 0.75; }
+
+      /* ERROR */
+      #state-error {
+        height: 44px;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .error-icon {
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .error-message {
+        flex: 1;
+        font-size: 12px;
+        color: rgba(0,0,0,0.75);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .error-dismiss {
+        font-size: 11px;
+        color: rgba(0,0,0,0.35);
+        flex-shrink: 0;
+      }
+
+      /* FIRST_RUN */
+      #state-first-run {
+        height: 120px;
+        flex-direction: column;
+        padding: 12px 16px;
+        gap: 10px;
+        align-items: stretch;
+        justify-content: center;
+      }
+      .firstrun-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .firstrun-status {
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .firstrun-label {
+        flex: 1;
+        font-size: 13px;
+        color: rgba(0,0,0,0.75);
       }
     </style>
   </head>
