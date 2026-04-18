@@ -325,3 +325,24 @@ Key fixes applied:
 
 - **Status**: FIXED 2026-04-18
 - **Approved by**: human
+
+---
+
+### BUG-006 — Global vibrancy fix: frosted glass not rendering across all states
+- **Date**: 2026-04-18 · **Type**: drift
+
+**Root causes**:
+1. BrowserWindow missing `frame: false` — native title bar frame was composited over the transparent window, preventing the vibrancy layer from rendering correctly.
+2. BrowserWindow missing `show: false` + `ready-to-show` pattern — window shown before renderer had painted, causing a white flash that persisted as an opaque background on some macOS versions.
+3. `app.commandLine.appendSwitch('enable-transparent-visuals')` absent — required for Chromium compositing to honour `transparent: true` on all macOS GPU configurations.
+4. `html, body` CSS missing `background-color: transparent !important` — `background` shorthand does not always override `background-color` in Chromium's inherited style resolution.
+
+**Fixes applied**:
+- `main.js`: Added `app.commandLine.appendSwitch('enable-transparent-visuals')` before `app.whenReady()`. BrowserWindow config updated: `frame: false` added; `show: false` added; `height: 101 → 89`; `minWidth: 520` / `maxWidth: 520` added; `win.center()` removed; `win.loadFile()` and `win.once('ready-to-show', () => win.show())` added after constructor.
+- `index.html`: `html, body` rule updated to add `background-color: transparent !important` and `!important` on `overflow: hidden`. Defensive `#app, #root, .app, .container, .wrapper { background: transparent !important }` added.
+
+**Scope**: One-time global fix — applies to all states (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR) without per-state changes. No solid dark hex backgrounds found in CSS — all colours are rgba or #FF3B30 (stop button, not a window background).
+
+**Files**: main.js, index.html
+- **Status**: FIXED 2026-04-18
+- **Approved by**: human
