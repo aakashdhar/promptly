@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-blue: #0A84FF;
+  --color-red: #FF3B30;
+  --color-green: #30D158;
+  --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  --animate-pulse-expand: pulse-expand 1.8s ease-out infinite;
+  --animate-stop-glow: stop-glow 2s ease-in-out infinite;
+  --animate-cursor-blink: cursor-blink 1s step-end infinite;
+}
+
+@keyframes pulse-expand {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes stop-glow {
+  0%,100% { box-shadow: 0 0 14px rgba(255,59,48,0.5), 0 2px 8px rgba(0,0,0,0.4); }
+  50% { box-shadow: 0 0 28px rgba(255,59,48,0.9), 0 2px 8px rgba(0,0,0,0.4); }
+}
+@keyframes morph-wave-anim {
+  from { stroke-dashoffset: 0; }
+}
+@keyframes cursor-blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 3px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+}

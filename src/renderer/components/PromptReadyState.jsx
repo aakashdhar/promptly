@@ -19,7 +19,14 @@ function renderPromptOutput(text) {
     const m = line.trim().match(/^([A-Za-z][A-Za-z\s]*):\s*$/)
     if (m) {
       flush()
-      result.push(<span key={key++} className="pt-sl">{m[1].trim()}</span>)
+      result.push(
+        <span
+          key={key++}
+          className="block text-[8.5px] font-bold tracking-[0.14em] uppercase text-[rgba(100,170,255,0.42)] mb-[5px] mt-5 first:mt-0"
+        >
+          {m[1].trim()}
+        </span>
+      )
     } else {
       buf.push(line)
     }
@@ -58,7 +65,6 @@ export default function PromptReadyState({
     }
   }
 
-  // Focus prompt div when entering edit mode
   useEffect(() => {
     if (isEditing && promptRef.current) {
       promptRef.current.focus()
@@ -71,7 +77,6 @@ export default function PromptReadyState({
     }
   }, [isEditing])
 
-  // Escape to cancel edit, Cmd+C to copy
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape' && isEditing) {
@@ -89,27 +94,41 @@ export default function PromptReadyState({
   }, [isEditing, generatedPrompt])
 
   return (
-    <div id="panel-ready">
-      <div className="traf" />
-      <div className="top-row">
-        <div className="pr-status">
-          <span className="pr-check">✓</span>
+    <div id="panel-ready" className="relative z-[1]">
+      <div className="h-7 [-webkit-app-region:drag]" />
+      <div className="flex justify-between items-center px-[22px] pt-[26px] pb-5">
+        <div className="flex items-center gap-2 text-[13px] text-white/40 tracking-[0.01em]">
+          <span className="text-[#30D158] text-[15px] [text-shadow:0_0_8px_rgba(48,209,88,0.5)]">✓</span>
           <span>Prompt ready</span>
         </div>
-        <div className="pr-actions">
-          <button className="pr-btn" id="btn-regenerate" onClick={onRegenerate}>Regenerate</button>
-          <button className="pr-btn" id="btn-reset" onClick={onReset}>Reset</button>
+        <div className="flex gap-[18px]">
+          <button
+            className="text-[11px] text-white/20 bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            id="btn-regenerate"
+            onClick={onRegenerate}
+          >
+            Regenerate
+          </button>
+          <button
+            className="text-[11px] text-white/20 bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            id="btn-reset"
+            onClick={onReset}
+          >
+            Reset
+          </button>
         </div>
       </div>
-      <div className="div-line" />
-      <div className="you-said-block">
-        <div className="ys-label">You said</div>
-        <div className="ys-text" id="you-said-text">{originalTranscript}</div>
+      <div className="h-px mx-[18px] bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+      <div className="px-[22px] pt-7 pb-0">
+        <div className="block text-[9px] font-bold tracking-[0.14em] uppercase text-white/[0.14] mb-3">You said</div>
+        <div className="text-[13px] text-white/55 leading-[1.7] line-clamp-2 mb-1" id="you-said-text">
+          {originalTranscript}
+        </div>
       </div>
-      <div className="inner-div" />
+      <div className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent mx-[22px] my-[26px]" />
       <div
         ref={promptRef}
-        className="prompt-out"
+        className="px-[22px] text-[13.5px] leading-[1.9] text-white/[0.82] tracking-[0.01em] max-h-[200px] overflow-y-auto mb-4 whitespace-pre-wrap scrollbar-thin"
         id="prompt-output"
         contentEditable={isEditing}
         suppressContentEditableWarning
@@ -121,12 +140,20 @@ export default function PromptReadyState({
       >
         {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt)}
       </div>
-      <div className="btn-row">
-        <button className="btn-edit" id="btn-edit" onClick={handleEdit}>
+      <div className="flex gap-[10px] px-[22px] pt-[32px] pb-7">
+        <button
+          className="h-11 px-6 border border-white/[0.10] rounded-[10px] bg-white/[0.04] text-[13px] text-white/40 cursor-pointer tracking-[0.01em] hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-150"
+          id="btn-edit"
+          onClick={handleEdit}
+        >
           {isEditing ? 'Done' : 'Edit'}
         </button>
         <button
-          className={`btn-copy${isCopied ? ' copied' : ''}`}
+          className={`flex-1 h-11 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer tracking-[0.02em] border-t border-t-white/[0.18] transition-shadow duration-150 ${
+            isCopied
+              ? 'bg-gradient-to-br from-[#30D158]/90 to-[#1EA846]/90 shadow-[0_2px_20px_rgba(48,209,88,0.4)] text-white'
+              : 'bg-gradient-to-br from-[#0A84FF]/92 to-[#0064DC]/92 shadow-[0_2px_20px_rgba(10,132,255,0.4)] hover:shadow-[0_4px_28px_rgba(10,132,255,0.65)] text-white'
+          }`}
           id="btn-copy"
           onClick={handleCopy}
         >

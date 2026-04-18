@@ -6,9 +6,6 @@ import RecordingState from './components/RecordingState.jsx'
 import ThinkingState from './components/ThinkingState.jsx'
 import PromptReadyState from './components/PromptReadyState.jsx'
 import ErrorState from './components/ErrorState.jsx'
-import './styles/tokens.css'
-import './styles/bar.css'
-import './styles/states.css'
 
 const STATES = {
   IDLE: 'IDLE',
@@ -200,7 +197,12 @@ export default function App() {
   }
 
   return (
-    <div className="bar" id="bar" onContextMenu={handleContextMenu}>
+    <div
+      className="w-[520px] min-h-screen rounded-[18px] overflow-hidden relative bg-white/[0.04] border-t border-t-white/[0.18] border-l border-l-white/[0.10] border-r border-r-white/[0.06] border-b border-b-white/[0.04] backdrop-blur-[40px] shadow-[0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_32px_64px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4)]"
+      id="bar"
+      onContextMenu={handleContextMenu}
+    >
+      <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/[0.28] to-transparent pointer-events-none z-10" />
       {currentState === STATES.IDLE && (
         <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} />
       )}
@@ -223,6 +225,7 @@ export default function App() {
       {currentState === STATES.ERROR && (
         <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
       )}
+      <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[#FF3B30]/20 to-transparent pointer-events-none z-10" />
     </div>
   )
 }
