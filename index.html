@@ -31,8 +31,45 @@
   <body>
     <div id="app"></div>
     <script>
+      let currentState = null;
+      let transcript = '';
+      let originalTranscript = '';
+      let generatedPrompt = '';
+
+      const STATE_HEIGHTS = {
+        FIRST_RUN: 120,
+        IDLE: 44,
+        RECORDING: 80,
+        THINKING: 44,
+        PROMPT_READY: 200,
+        ERROR: 44,
+      };
+
+      function getMode() {
+        try { return localStorage.getItem('mode') || 'balanced'; } catch { return 'balanced'; }
+      }
+      function setMode(value) {
+        try { localStorage.setItem('mode', value); } catch { /* silent */ }
+      }
+      function getFirstRunComplete() {
+        try { return localStorage.getItem('firstRunComplete') === 'true'; } catch { return false; }
+      }
+      function setFirstRunComplete(value) {
+        try { localStorage.setItem('firstRunComplete', String(value)); } catch { /* silent */ }
+      }
+
+      function setState(newState, payload = {}) {
+        if (!STATE_HEIGHTS[newState]) {
+          console.error('setState: unknown state', newState);
+          return;
+        }
+        currentState = newState;
+        console.log('setState →', newState, payload);
+        // DOM switching and resize added in FST-002 and FST-004
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
-        // State machine and UI logic will be added in later tasks.
+        // Boot sequence and IPC wire-up added in FST-005
       });
     </script>
   </body>
