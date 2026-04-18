@@ -23,6 +23,15 @@
 
 ---
 
+### D-001 — index.html excluded from lint script
+- **Date**: 2026-04-18 · **Task**: P1-005/P1-009 · **Type**: tech-choice
+- **What was planned**: `eslint main.js preload.js index.html`
+- **What was done**: `eslint main.js preload.js` (index.html removed)
+- **Why**: ESLint 9 flat config cannot parse HTML files without `eslint-plugin-html` devDep. Adding that plugin would deviate from the "only electron + electron-builder" devDep constraint. index.html inline JS is reviewed manually as part of smoke test.
+- **Alternatives considered**: Add `eslint-plugin-html` as devDep — rejected (adds devDep complexity for minimal benefit at this project size)
+- **Impact on other tasks**: index.html JS correctness checked via manual smoke test only; no automatic lint gate
+- **Approved by**: agent-autonomous (logged retroactively after phase-1-review P2-003 finding)
+
 ---
 
 ## 2026-04-18 — Spec review: new-app

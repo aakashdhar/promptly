@@ -20,7 +20,7 @@
 - [x] P1-009 · Smoke test + CODEBASE.md — npm start opens window, shortcut fires console log, claudePath visible; populate CODEBASE.md
 
 ## Phase 1 gate
-⬜ review: phase 1 — pending
+✅ review: phase 1 — reviewed 2026-04-18 — Score 7.9/10 (B) — 0 P0, 3 P1 fixed inline, 3 P2 logged to backlog
 
 ---
 
@@ -96,10 +96,10 @@
 ---
 
 ## What just happened
-Phase 1 complete via vibe-parallel. Wave 1 (P1-002/003/004/005) ran in parallel; Waves 2-4 (P1-006/007/008) sequential due to main.js write conflicts; Wave 5 (P1-009) smoke test passed. claudePath resolved to /Users/aakash-anon/.local/bin/claude. Alt+Space shortcut registered.
+Phase 1 review complete. Score 7.9/10 (B). 3 P1 IPC contract bugs fixed inline (generate-prompt arg shape, check-claude-path missing `found`, window not positioned). 3 P2 findings logged to backlog. Phase 1 gate ✅ passed.
 
 ## What's next
-⬜ Run `review: phase 1` — all Phase 1 tasks complete
+⬜ Phase 2 begins — run `feature: state-machine` to plan F-STATE (no dependencies, start here)
 
 Read `CLAUDE.md`, then `vibe/CODEBASE.md`, then `vibe/ARCHITECTURE.md`, then `vibe/SPEC_INDEX.md`, then `vibe/TASKS.md`.
 Confirm the first task before writing any code. Say **"next"** after each task.
