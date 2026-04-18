@@ -287,7 +287,7 @@ window.addEventListener('click', () => {
 ---
 
 ### FCL-004 · CODEBASE.md update
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#10 (conformance: CODEBASE.md updated)
 - **Dependencies**: FCL-002, FCL-003

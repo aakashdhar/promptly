@@ -61,12 +61,12 @@
    [x] D004-001 · main.js — titleBarStyle: hiddenInset + trafficLightPosition: { x: 12, y: 10 }
    [x] D004-002 · index.html — left padding for traffic light area + 30-bar waveform (IDLE static grey, RECORDING animated red sine+noise)
 
-🔄 **F-CLAUDE — Claude CLI integration + 5 prompt modes** (0/4)
+✅ **F-CLAUDE — Claude CLI integration + 5 prompt modes** (4/4 — COMPLETE)
    Estimated: approx. 5-6 hours (S: 2, M: 2)
    [x] FCL-001 · generate-prompt IPC — replace stub with real spawn + MODE_SYSTEM_PROMPTS + 30s timeout
    [x] FCL-002 · Replace F-CLAUDE setTimeout stub in mediaRecorder.onstop — call generatePrompt IPC → PROMPT_READY
    [x] FCL-003 · Mode context menu — right-click IDLE bar, 5 modes, checkmark, setMode + label update
-   [ ] FCL-004 · CODEBASE.md update
+   [x] FCL-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md (agent use)
 
 ⬜ **F-ACTIONS — Copy, Edit, Regenerate**
@@ -109,8 +109,8 @@
 ---
 
 ## What just happened
-✅ FCL-003 done — MODES constant (5 entries), #mode-menu DOM + CSS, right-click IDLE shows menu, click selects mode (setMode + label update + checkmark), click outside dismisses, persists across reloads.
+✅ FCL-004 done — CODEBASE.md updated: last-updated line, phase status (F-CLAUDE ✅), MODES in index.html exports, MODE_SYSTEM_PROMPTS in main.js vars, generate-prompt IPC row updated to live spawn description, generatedPrompt flow note, #mode-menu DOM ID added. F-CLAUDE feature complete.
 
 ## What's next
-⬜ FCL-004 · CODEBASE.md update — document MODE_SYSTEM_PROMPTS, MODES, generatedPrompt flow, generate-prompt IPC live status.
-Say "next" to begin.
+⬜ F-ACTIONS — Copy, Edit, Regenerate (needs F-CLAUDE complete ✅).
+Run `feature: actions` to plan, or say "next" to confirm and begin.

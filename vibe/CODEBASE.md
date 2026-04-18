@@ -1,13 +1,13 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-18 (FPH-003 — F-SPEECH complete: startRecording, stopRecording, MediaRecorder + Whisper IPC)
+> Last updated: 2026-04-18 (FCL-004 — F-CLAUDE complete: generate-prompt IPC, mode menu, PROMPT_READY)
 
 ---
 
 ## Current state
 
-**Phase:** Phase 2 in progress — F-STATE complete (5/5) — F-FIRST-RUN complete (4/4) — F-SPEECH complete (5/5) — F-CLAUDE next
+**Phase:** Phase 2 in progress — F-STATE ✅ — F-FIRST-RUN ✅ — F-SPEECH ✅ — F-CLAUDE ✅ — F-ACTIONS next
 **Files written:** 6 source files + eslint.config.js
 
 ---
@@ -21,7 +21,7 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `main.js` | Electron main: window, IPC handlers, PATH resolution, global shortcut | `createWindow()`, `claudePath`, `win`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer | `window.electronAPI` |
-| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up | `setState()`, `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()`, `initFirstRun()`, `checkFirstRunCompletion()`, `startRecording()`, `stopRecording()`, `STATE_HEIGHTS`, `currentState`, `transcript`, `originalTranscript`, `generatedPrompt`, `cliOk`, `micOk`, `mediaRecorder`, `audioChunks`, `isRecording` |
+| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up | `setState()`, `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()`, `initFirstRun()`, `checkFirstRunCompletion()`, `startRecording()`, `stopRecording()`, `STATE_HEIGHTS`, `MODES`, `currentState`, `transcript`, `originalTranscript`, `generatedPrompt`, `cliOk`, `micOk`, `mediaRecorder`, `audioChunks`, `isRecording` |
 
 ---
 
@@ -29,7 +29,7 @@
 
 | Channel | Direction | Status |
 |---------|-----------|--------|
-| `generate-prompt` | renderer → main | ✅ stubbed — returns placeholder string |
+| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript via stdin, returns { success, prompt, error } |
 | `copy-to-clipboard` | renderer → main | ✅ stubbed — uses clipboard.writeText |
 | `check-claude-path` | renderer → main | ✅ stubbed — returns claudePath or error |
 | `resize-window` | renderer → main | ✅ registered — resizes BrowserWindow to given height |
@@ -68,7 +68,7 @@
 | `micOk` | boolean | `initFirstRun()`, mic btn handler | `checkFirstRunCompletion()` |
 | `transcript` | string | F-SPEECH (live updates) | F-CLAUDE |
 | `originalTranscript` | string | F-SPEECH (captured once on stop) | F-CLAUDE, F-ACTIONS |
-| `generatedPrompt` | string | F-CLAUDE | F-ACTIONS |
+| `generatedPrompt` | string | Written once per generation by `generate-prompt` IPC result in `mediaRecorder.onstop` | F-ACTIONS |
 | `mediaRecorder` | MediaRecorder\|null | `startRecording()` | `stopRecording()`, `onstop` handler |
 | `audioChunks` | Blob[] | `startRecording()`, `ondataavailable` | `onstop` handler |
 | `isRecording` | boolean | `startRecording()`, `stopRecording()` | `stopRecording()` guard |
@@ -82,6 +82,7 @@
 | `claudePath` | app-ready PATH resolution via `exec('zsh -lc "which claude"')` | resolved at runtime |
 | `whisperPath` | app-ready PATH resolution via `exec('zsh -lc "which whisper"')` | resolved at runtime |
 | `win` | createWindow() called in whenReady | BrowserWindow instance |
+| `MODE_SYSTEM_PROMPTS` | object constant | Declared at module scope | `generate-prompt` handler reads by mode key |
 
 ---
 
@@ -132,6 +133,7 @@
 | `firstrun-mic-status` | FIRST_RUN | F-FIRST-RUN |
 | `firstrun-mic-label` | FIRST_RUN | F-FIRST-RUN |
 | `firstrun-mic-btn` | FIRST_RUN | F-FIRST-RUN |
+| `mode-menu` | body (sibling of #app) | F-CLAUDE (mode context menu, built from MODES constant) |
 
 ---
 
