@@ -383,3 +383,24 @@ Key fixes applied:
 
 - **Status**: FIXED 2026-04-18
 - **Approved by**: human
+
+---
+
+### FEATURE-001 — Splash screen: launch-time CLI + mic checks before idle bar
+- **Date**: 2026-04-18 · **Type**: scope-change (feature addition)
+- **Trigger**: feature: command — user-initiated
+
+**What was built**: Separate `splashWin` BrowserWindow (`splash.html`) shown on app launch. Animated CLI check + mic permission check before showing the main idle bar. If CLI missing: red X + Install button (opens claude.ai/code). If mic denied: red X + error. On all-clear: "All checks passed — launching" → 600ms → `splash-done` IPC → splash hides, main win shows, shortcut registers.
+
+**Architecture changes**:
+- `resolveClaudePath()` extracted from callback into a Promise — `app.whenReady()` now `async`, awaits it before creating any window. `claudePath` guaranteed set before splash runs its check.
+- `registerShortcut()` extracted into standalone function — called from `splash-done` handler, not at app launch.
+- `createWindow()` auto-show removed (was `win.once('ready-to-show', () => win.show())`). Main win hidden until splash completes.
+- 4 new IPC channels: `splash-done`, `splash-check-cli`, `splash-open-url`, `request-mic`.
+- 4 new `electronAPI` methods in preload.js: `splashDone`, `splashCheckCLI`, `splashOpenURL`, `requestMic`.
+
+**New file**: `splash.html` — self-contained splash UI using same `preload.js`. Frosted glass vibrancy matching main bar aesthetic. Logo ring with pulse animation, app name + tagline fade-up, check items with spinner/✓/✗ states.
+
+**Files changed**: `main.js`, `preload.js`, `splash.html` (new)
+- **Status**: SHIPPED 2026-04-18
+- **Approved by**: human

@@ -126,6 +126,15 @@
 ---
 
 ## What just happened
+✅ FEATURE-001 — Splash screen shipped:
+   - splash.html: frosted glass BrowserWindow, logo ring + pulse, name/tagline fade-up,
+     CLI check (spinner → ✓/✗), mic check (getUserMedia → ✓/✗), install button on CLI fail
+   - main.js: resolveClaudePath() Promise, registerShortcut() extracted, splashWin lifecycle,
+     4 new IPC handlers (splash-done, splash-check-cli, splash-open-url, request-mic)
+   - preload.js: splashDone, splashCheckCLI, splashOpenURL, requestMic added to contextBridge
+   - createWindow() no longer auto-shows — main win hidden until splash-done fires
+   Lint: 0 errors
+
 ✅ BUG-007 — Thinking state two-bug fix:
    A: YOU SAID div now scrollable (max-height 80px, overflow-y auto, thin scrollbar)
       Window height now clamps to transcript length (220–320px) on both onstop + regenerate paths
