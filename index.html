@@ -29,7 +29,60 @@
     </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <!-- FIRST_RUN -->
+      <div id="state-first-run" class="state-panel" hidden>
+        <div class="firstrun-row" id="firstrun-cli-row">
+          <span id="firstrun-cli-status" class="firstrun-status"></span>
+          <span class="firstrun-label">Claude CLI installed</span>
+        </div>
+        <div class="firstrun-row" id="firstrun-mic-row">
+          <span class="firstrun-status">○</span>
+          <span class="firstrun-label">Microphone access granted</span>
+          <button id="firstrun-mic-btn" class="btn-action">Grant Access</button>
+        </div>
+      </div>
+
+      <!-- IDLE -->
+      <div id="state-idle" class="state-panel" hidden>
+        <span id="idle-mode-label" class="mode-pill">Balanced</span>
+        <span id="idle-shortcut-hint" class="shortcut-hint">⌥Space</span>
+        <span id="idle-conflict-notice" class="conflict-notice" hidden>Shortcut ⌥Space taken — using ⌃`</span>
+      </div>
+
+      <!-- RECORDING -->
+      <div id="state-recording" class="state-panel" hidden>
+        <div class="recording-row">
+          <span id="recording-dot" class="recording-dot"></span>
+          <span id="recording-transcript" class="recording-transcript">Listening…</span>
+          <span id="recording-stop-hint" class="stop-hint">⌥Space to stop</span>
+        </div>
+      </div>
+
+      <!-- THINKING -->
+      <div id="state-thinking" class="state-panel" hidden>
+        <div id="thinking-spinner" class="spinner"></div>
+        <span id="thinking-text" class="thinking-text">Generating prompt…</span>
+      </div>
+
+      <!-- PROMPT_READY -->
+      <div id="state-prompt-ready" class="state-panel" hidden>
+        <div id="prompt-output" class="prompt-output"></div>
+        <div class="action-row">
+          <button id="action-copy" class="btn-action">Copy</button>
+          <button id="action-edit" class="btn-action">Edit</button>
+          <button id="action-done" class="btn-action btn-done" hidden>Done</button>
+          <button id="action-regenerate" class="btn-secondary">Regenerate</button>
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div id="state-error" class="state-panel" hidden>
+        <span class="error-icon">⚠</span>
+        <span id="error-message" class="error-message">An error occurred.</span>
+        <span class="error-dismiss">Tap to dismiss</span>
+      </div>
+    </div>
     <script>
       let currentState = null;
       let transcript = '';
@@ -64,8 +117,24 @@
           return;
         }
         currentState = newState;
+
+        // Hide all panels; show active
+        const panels = ['FIRST_RUN', 'IDLE', 'RECORDING', 'THINKING', 'PROMPT_READY', 'ERROR'];
+        panels.forEach(s => {
+          const id = 'state-' + s.toLowerCase().replace('_', '-');
+          document.getElementById(id).hidden = (s !== newState);
+        });
+
+        // Payload handling
+        if (newState === 'ERROR' && payload.message) {
+          document.getElementById('error-message').textContent = payload.message;
+        }
+        if (newState === 'PROMPT_READY' && payload.prompt) {
+          document.getElementById('prompt-output').textContent = payload.prompt;
+        }
+
         console.log('setState →', newState, payload);
-        // DOM switching and resize added in FST-002 and FST-004
+        // Resize added in FST-004/FST-005
       }
 
       document.addEventListener('DOMContentLoaded', () => {

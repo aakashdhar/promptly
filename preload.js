@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkClaudePath: () =>
     ipcRenderer.invoke('check-claude-path'),
 
+  resizeWindow: (height) =>
+    ipcRenderer.invoke('resize-window', { height }),
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),

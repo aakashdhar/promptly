@@ -13,7 +13,7 @@ let win = null;
 function createWindow() {
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
   const windowWidth = 480;
-  const windowHeight = 80;
+  const windowHeight = 44;
 
   win = new BrowserWindow({
     width: windowWidth,
@@ -79,6 +79,13 @@ app.whenReady().then(() => {
 
   ipcMain.handle('copy-to-clipboard', (_event, text) => {
     clipboard.writeText(text);
+    return { ok: true };
+  });
+
+  ipcMain.handle('resize-window', (_event, { height }) => {
+    if (win) {
+      win.setContentSize(480, height);
+    }
     return { ok: true };
   });
 
