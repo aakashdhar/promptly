@@ -127,6 +127,14 @@
 ## Phase 4 — v2 Features
 > Run `next` to start the next task.
 
+✅ **FEATURE-002 — Design mode** (COMPLETE 2026-04-18)
+   [x] Add `design` key to `MODE_CONFIG` in main.js with standalone 12-section prompt
+   [x] Add `design` to `show-mode-menu` IPC handler in main.js
+   [x] Add `{ key: 'design', label: 'Design' }` to `MODES` in index.html
+   [x] Update `getModeLabel()` in index.html
+   [x] `standalone: true` flag on design config — bypasses PROMPT_TEMPLATE
+   → DECISIONS.md: FEATURE-002 entry logged
+
 ⬜ **F-HISTORY — Prompt history** (0/4)
    [ ] FHI-001 · History storage module — saveToHistory(), loadHistory(), capped at 20
    [ ] FHI-002 · HISTORY state panel + CSS — scrollable list, empty state

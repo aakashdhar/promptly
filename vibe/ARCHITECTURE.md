@@ -157,6 +157,7 @@ exec('zsh -lc "which claude"', (err, stdout) => {
 | Concise | `concise` | Minimal, direct prompt |
 | Chain | `chain` | Multi-step chain-of-thought prompt |
 | Code | `code` | Code-first with language/output format specified |
+| Design | `design` | Standalone 12-section design-director prompt; bypasses PROMPT_TEMPLATE |
 
 - Mode is selected via right-click context menu on the bar.
 - Active mode persisted in localStorage via `getMode()` / `setMode()`.

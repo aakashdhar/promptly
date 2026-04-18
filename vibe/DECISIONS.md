@@ -442,3 +442,24 @@ Key fixes applied:
 **Files changed**: `main.js`, `preload.js`, `splash.html` (new)
 - **Status**: SHIPPED 2026-04-18
 - **Approved by**: human
+
+---
+
+### FEATURE-002 — Design mode: designer-specific prompt generation
+- **Date**: 2026-04-18 · **Type**: scope-change (feature addition)
+- **Trigger**: feature: command — user-initiated
+
+**What was built**: A sixth prompt mode (`design`) targeting designers speaking their creative vision. The mode produces a 12-section structured prompt (Role → Output format) using vivid, specific design language — Visual personality, Colour direction, Typography direction, Motion and feel, What to avoid, etc. Unlike the five generic modes, the design instruction is self-contained and does not wrap inside PROMPT_TEMPLATE.
+
+**Architecture changes**:
+- `MODE_CONFIG.design` entry added to `main.js` with `standalone: true` flag and the full 12-section instruction as a template literal containing `{TRANSCRIPT}`.
+- `generate-prompt` IPC handler updated: when `modeConf.standalone === true`, system prompt is `modeConf.instruction.replace('{TRANSCRIPT}', transcript)` — PROMPT_TEMPLATE is bypassed entirely.
+- `MODES` array in `index.html` extended: `{ key: 'design', label: 'Design' }`.
+- `getModeLabel()` in `index.html` updated to include `design: 'Design'`.
+- `show-mode-menu` IPC handler in `main.js` updated to include `{ key: 'design', label: 'Design' }`.
+
+**Why standalone**: Design instruction defines its own section labels (Role, Design brief, Visual personality, etc.) and ends with its own `The user said: "{TRANSCRIPT}"`. Embedding it inside PROMPT_TEMPLATE would produce a duplicate transcript and conflicting section structure.
+
+**Files changed**: `main.js`, `index.html`
+- **Status**: SHIPPED 2026-04-18
+- **Approved by**: human
