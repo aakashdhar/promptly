@@ -1,73 +1,62 @@
 {
   "project_name": "Promptly",
-  "build_progress_pct": 50,
-  "tasks_remaining": 9,
-  "total_cost_usd": 1.906,
-  "total_sessions": 2,
+  "generated": "2026-04-18",
+  "model": "claude-sonnet-4-6",
+  "build_progress_pct": 23,
+  "tasks_remaining": 31,
+  "total_cost_usd": 2.38,
+  "total_sessions": 3,
+  "at_a_glance": "You have spent $2.38 across 3 sessions, all on the same day. Session 2 was the expensive one \u2014 $1.30 covering all 9 Phase 1 foundation tasks plus the review pass. Session 3 dropped sharply to $0.47 because it was planning-only (F-STATE feature kit + spec review, no code written). Costs are healthy for where the project is; the expensive Phase 2 code sessions are still ahead.",
   "phase_summary": [
     {
-      "phase": "Planning",
+      "name": "Phase 1 \u2014 Foundation",
       "status": "complete",
-      "sessions": 1,
-      "cost_usd": 0.606
-    },
-    {
-      "phase": "Phase 1 \u2014 Foundation",
-      "status": "complete",
-      "sessions": 1,
+      "tasks_done": 9,
+      "tasks_total": 9,
       "cost_usd": 1.3
     },
     {
-      "phase": "Phase 2 \u2014 Core features",
-      "status": "not_started",
-      "sessions": 0,
-      "cost_usd": 0.0
+      "name": "Phase 2 \u2014 Core features",
+      "status": "active",
+      "tasks_done": 0,
+      "tasks_total": 25,
+      "cost_usd": 0.47
     },
     {
-      "phase": "Phase 3 \u2014 Polish",
+      "name": "Phase 3 \u2014 Polish",
       "status": "not_started",
-      "sessions": 0,
+      "tasks_done": 0,
+      "tasks_total": 4,
       "cost_usd": 0.0
     }
   ],
   "feature_costs": [
     {
       "label": "Planning and architecture",
-      "cost_usd": 0.606
+      "cost_usd": 0.61
     },
     {
-      "label": "Electron shell and IPC (Phase 1)",
-      "cost_usd": 0.79
+      "label": "Phase 1 foundation build",
+      "cost_usd": 1.3
     },
     {
-      "label": "Code review and quality gate",
-      "cost_usd": 0.25
-    },
-    {
-      "label": "Dev tooling (parallel orchestration, lint setup)",
-      "cost_usd": 0.25
+      "label": "F-STATE feature planning",
+      "cost_usd": 0.47
     }
   ],
-  "at_a_glance": "You've spent .91 across 2 sessions on 2026-04-18. The planning session was /bin/zsh.61 and Phase 1 build was .30 \u2014 heavier than expected because 7 subagents were spun up via vibe-parallel, each carrying its own full context window. Phase 1 is complete with a clean gate (7.9/10 review score). Phase 2 features not yet started.",
   "session_narratives": {
-    "2026-04-18-001": "Full planning session covering architect:, new-app:, and spec-review: in sequence. Produced ARCHITECTURE.md, SPEC.md, PLAN.md, CLAUDE.md, TASKS.md, and the full vibe/ folder. One P0 spec gap (missing mode system prompts) was caught and fixed before the build begins \u2014 a cheap fix at planning time versus an expensive one mid-Phase 2.",
-    "2026-04-18-002": "Phase 1 complete in a single session using vibe-parallel. Wave 1 ran 4 subagents simultaneously (entitlements, main.js, preload.js, index.html). Waves 2\u20134 were sequential single-task agents (PATH resolution, global shortcut, IPC stubs). The phase-1-review caught 3 IPC contract bugs that were fixed inline \u2014 all 3 would have broken Phase 2 integrations if missed. The subagent approach was the dominant cost driver at ~/bin/zsh.64 of the session total."
+    "2026-04-18-001": "The project kickoff \u2014 brainstorm, architect, vibe-new-app, and spec review. Three planning tools in sequence, each reading all prior docs. $0.61 for the full spec and architecture foundation is reasonable; this context pays forward into every future session.",
+    "2026-04-18-002": "The heaviest session \u2014 9 Phase 1 foundation tasks (package.json through CODEBASE.md smoke test) plus the phase review pass and inline P1 fixes. At $1.30 and $0.12/task average this is in line with S-sized Electron scaffold work. The phase review and its parallel subagent orchestration added ~$0.35.",
+    "2026-04-18-003": "A planning-only session \u2014 F-STATE feature kit creation (FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md) plus spec review with 2 P1 fixes. No code written. At $0.47 this is the cheapest session so far and typical for a feature planning pass."
   },
   "recommendations": [
     {
-      "code": "CP-04",
-      "title": "Single-task waves do not benefit from subagents",
-      "body": "Waves 2, 3, and 4 each contained exactly one task \u2014 so vibe-parallel spun up 3 agents with zero parallelism benefit. Each agent carries ~12,000 tokens of context overhead (prompt, ARCHITECTURE.md, task briefing). Running those tasks directly in the main session would save that overhead. Reserve subagents for waves with 2+ truly parallel tasks.",
-      "saving": "save ~/bin/zsh.09/session on sequential single-task waves",
-      "severity": "warn"
-    },
-    {
       "code": "CP-05",
-      "title": "Prompt caching not yet measurable \u2014 monitor in Phase 2",
-      "body": "Phase 1 was a single session so there's no caching baseline yet. In Phase 2, CLAUDE.md (~5KB) and ARCHITECTURE.md (~10KB) will be read at the start of every session. If these files stabilise after F-STATE, Anthropic prompt caching will reduce re-read costs by 90%. Avoid editing CLAUDE.md between tasks \u2014 every change resets the 5-minute cache TTL.",
-      "saving": "save ~/bin/zsh.05\u20130.15/session once Phase 2 docs stabilise",
-      "severity": "ok"
+      "title": "Prompt caching not active after 3 sessions",
+      "body": "All three sessions show 0 cache_read_tokens. The active feature section in CLAUDE.md is updated each feature cycle, which resets caching. Splitting CLAUDE.md into a stable upper block and a dynamic active-feature block would let the stable portion cache across turns. At 0% vs a realistic 60% cache hit rate, the input cost difference on a large Phase 2 session could be $0.20-0.40.",
+      "saving": "save ~$0.20-0.40/session in Phase 2",
+      "severity": "warn"
     }
   ],
-  "forecast_narrative": "Phase 2 has 5 features remaining (F-STATE, F-FIRST-RUN, F-SPEECH, F-CLAUDE, F-ACTIONS). Each will generate 5\u20138 sub-tasks when planned. At the current rate of ~/bin/zsh.10/task, expect .50\u20132.50 to complete Phase 2, with F-CLAUDE (Claude CLI integration) likely the most expensive feature. Phase 3 polish adds another /bin/zsh.40\u20130.80. Total project estimate: .00\u20135.20. Fixing the single-task subagent pattern could trim /bin/zsh.30\u20130.50 from that total."
+  "forecast_narrative": "Phase 2 has 5 code features remaining (F-STATE build, F-FIRST-RUN, F-SPEECH, F-CLAUDE, F-ACTIONS) plus a review gate \u2014 estimate $3.70-5.20 to complete. Phase 3 polish (4 tasks + final review) is typically cheaper than the feature build phase \u2014 estimate $0.70-0.90. Total project spend is tracking toward $6-8 at current rates. Fixing caching before Phase 2 code sessions start could save $0.50-1.00 off the remaining estimate."
 }

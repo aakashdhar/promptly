@@ -123,5 +123,37 @@
         "output_tokens": 2000
       }
     }
+  },
+  {
+    "session_id": "2026-04-18-003",
+    "date": "2026-04-18T18:00:00",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 0,
+    "phase": "Phase 2 \u2014 F-STATE planning",
+    "input_tokens": 85000,
+    "output_tokens": 14000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.47,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "vibe-add-feature-state-machine": {
+        "size": "L",
+        "cost_usd": 0.33,
+        "input_tokens": 60000,
+        "output_tokens": 12000
+      },
+      "vibe-spec-review-state-machine": {
+        "size": "M",
+        "cost_usd": 0.14,
+        "input_tokens": 25000,
+        "output_tokens": 2000
+      }
+    }
   }
 ]

@@ -97,7 +97,8 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
   - `--radius-window: 14px`
   - `--radius-inner: 8px`
 - System font only: `-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif`
-- Transitions: opacity fade `150ms ease` only — no transforms, no bounces, no slides.
+- CSS `transition`: opacity `150ms ease` only — no transforms in transitions, no bounces, no slides.
+- CSS `@keyframes` animations may use `transform` for functional animations (spinner rotation, recording dot pulse). No transforms in `transition` declarations anywhere.
 - No hardcoded hex values outside the token definitions.
 
 **IPC pattern:**
