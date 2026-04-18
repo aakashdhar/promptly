@@ -124,17 +124,37 @@
 
 ---
 
-## Phase 4+ — Future (not in current build)
-> Planned so Phase 1-3 architecture doesn't foreclose these.
-> Run `brainstorm:` when ready to plan the next version.
+## Phase 4 — v2 Features
+> Run `next` to start the next task.
 
-⬜ Prompt history / library — persist and browse past generated prompts · planned for v2
-⬜ Menu bar / tray icon — always-visible quick access · planned for v2
-⬜ Auto-paste into active app — copy + switch + paste automation · evaluate after v1 stickiness confirmed
-⬜ Dark mode — follow macOS appearance setting · planned for v2
-⬜ Custom shortcuts — user-configurable hotkey · planned for v2
-⬜ Multi-language speech — non-English webkitSpeechRecognition · planned for v2
-⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page · if v1 stickiness confirmed
+⬜ **F-HISTORY — Prompt history** (0/4)
+   [ ] FHI-001 · History storage module — saveToHistory(), loadHistory(), capped at 20
+   [ ] FHI-002 · HISTORY state panel + CSS — scrollable list, empty state
+   [ ] FHI-003 · History trigger — pill in IDLE, button in PROMPT_READY, ⌥Space to close
+   [ ] FHI-004 · CODEBASE.md update
+   → Full spec: vibe/features/2026-04-18-prompt-history/FEATURE_TASKS.md
+
+⬜ **F-TRAY — Menu bar / tray icon** (0/3)
+   [ ] FTR-001 · Create tray icon in main.js — NativeImage, click to toggle show/hide
+   [ ] FTR-002 · Keep app alive when window closed + hide Dock icon
+   [ ] FTR-003 · CODEBASE.md update
+   → Full spec: vibe/features/2026-04-18-tray-icon/FEATURE_TASKS.md
+
+⬜ **F-DARKMODE — Dark / light mode** (0/3)
+   [ ] FDM-001 · Light mode CSS tokens + body.light overrides for all 5 states
+   [ ] FDM-002 · main.js nativeTheme listener → theme-changed IPC + get-theme handler
+   [ ] FDM-003 · Renderer theme wiring + CODEBASE.md + ARCHITECTURE.md
+   → Full spec: vibe/features/2026-04-18-dark-mode/FEATURE_TASKS.md
+
+⬜ **F-LANGUAGE — Multi-language speech** (0/3)
+   [ ] FLG-001 · Language storage module — LANGUAGES constant, getLanguage/setLanguage wrappers
+   [ ] FLG-002 · Wire language to Whisper CLI + language pill + native menu
+   [ ] FLG-003 · CODEBASE.md + ARCHITECTURE.md update
+   → Full spec: vibe/features/2026-04-18-multi-language/FEATURE_TASKS.md
+
+⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
+⬜ Custom shortcuts — user-configurable hotkey
+⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ---
 
