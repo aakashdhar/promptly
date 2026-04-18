@@ -152,6 +152,16 @@ Key fixes applied:
 
 ---
 
+## 2026-04-18 — Feature Start: F-ACTIONS — Copy, Edit, Regenerate
+> Folder: vibe/features/2026-04-18-actions/
+> Wires Copy (clipboard flash), Edit (contenteditable + Escape/Done), Regenerate (originalTranscript re-run).
+> Tasks: FAC-001, FAC-002, FAC-003, FAC-004 | Estimated: ~3-4 hours (S: 3, M: 1)
+> Dependencies met: F-CLAUDE ✅ (generatedPrompt in PROMPT_READY state)
+> All changes in index.html only — copy-to-clipboard IPC already live in main.js + preload.js.
+> Drift logged below.
+
+---
+
 ## 2026-04-18 — Spec review: add-feature (F-SPEECH)
 > P0: 0 · P1: 1 · P2: 1
 > Action: all fixed

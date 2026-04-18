@@ -252,6 +252,49 @@ Never: use innerHTML with dynamic content · access localStorage directly ·
 
 ---
 
+### Active Feature: F-ACTIONS (Copy, Edit, Regenerate)
+> Folder: vibe/features/2026-04-18-actions/ | Added: 2026-04-18
+
+**Feature summary**: Wire the three action buttons in PROMPT_READY: Copy (clipboard + green flash 1.8s), Edit (contenteditable + Escape/Done), Regenerate (originalTranscript re-run → THINKING → PROMPT_READY).
+**Files in scope**: `index.html` (only)
+**Files out of scope**: `main.js`, `preload.js` (copy-to-clipboard IPC already live), `package.json`, `entitlements.plist`
+
+**Conventions** (from vibe/ARCHITECTURE.md):
+- `setState()` for all state transitions (THINKING, PROMPT_READY, ERROR)
+- `textContent` for all dynamic text — never `innerHTML`
+- `getMode()` for all localStorage mode reads
+- `generatedPrompt` module-scope var — readable and writable (Edit/Done updates it)
+- `originalTranscript` — read-only in this feature, never mutated
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · manual smoke test after every change ·
+        keep changes additive · update CODEBASE.md (FAC-004)
+
+Ask first: adding any new IPC channel · adding localStorage keys
+
+Never: use innerHTML with dynamic content · access localStorage directly · touch main.js or preload.js ·
+       add runtime npm dependencies · mutate `originalTranscript`
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Manual smoke test: exercise Copy, Edit, Regenerate paths
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add index.html
+   git commit -m "feat(actions): [FAC-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-18-actions/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FAC-00X] done — actions"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
 ## Never list (P0 — block commit immediately)
 
 - Adding any runtime npm dependency

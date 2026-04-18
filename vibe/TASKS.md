@@ -69,11 +69,13 @@
    [x] FCL-004 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-claude-integration/FEATURE_TASKS.md (agent use)
 
-⬜ **F-ACTIONS — Copy, Edit, Regenerate**
-   Build order: 4 · Needs: F-CLAUDE (generatedPrompt in PROMPT_READY state) complete
-   What you can do when done: Copy flashes green 1.8s and writes to clipboard; Edit goes contenteditable with Escape/Done; Regenerate re-runs from originalTranscript
-   Shared data: reads generatedPrompt and originalTranscript; copy writes to system clipboard
-   Spec: run `feature: actions` to plan this feature in detail
+🔄 **F-ACTIONS — Copy, Edit, Regenerate** (0/4)
+   Estimated: approx. 3-4 hours (S: 3, M: 1)
+   [ ] FAC-001 · Copy button — green flash 1.8s + clipboard IPC
+   [ ] FAC-002 · Edit mode — contenteditable, Escape cancel, Done save
+   [ ] FAC-003 · Regenerate — originalTranscript → THINKING → PROMPT_READY
+   [ ] FAC-004 · CODEBASE.md update
+   → Full specs: vibe/features/2026-04-18-actions/FEATURE_TASKS.md (agent use)
 
 ## Phase 2 gate
 ⬜ review: phase 2 — pending
@@ -109,8 +111,8 @@
 ---
 
 ## What just happened
-✅ FCL-004 done — CODEBASE.md updated: last-updated line, phase status (F-CLAUDE ✅), MODES in index.html exports, MODE_SYSTEM_PROMPTS in main.js vars, generate-prompt IPC row updated to live spawn description, generatedPrompt flow note, #mode-menu DOM ID added. F-CLAUDE feature complete.
+✅ F-ACTIONS feature kit created — FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md written; TASKS.md, DECISIONS.md, CLAUDE.md updated. 4 tasks planned (S: 3, M: 1, ~3-4 hours).
 
 ## What's next
-⬜ F-ACTIONS — Copy, Edit, Regenerate (needs F-CLAUDE complete ✅).
-Run `feature: actions` to plan, or say "next" to confirm and begin.
+⬜ FAC-001 · Copy button — green flash 1.8s + clipboard IPC.
+Say "next" to begin.

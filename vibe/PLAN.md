@@ -160,7 +160,7 @@ Build order from Feature Map above:
 2. **F-FIRST-RUN** 🔄 — first-run checklist screen — spec in vibe/features/2026-04-18-first-run/
 3. **F-SPEECH** 🔄 (parallel with F-FIRST-RUN) — speech recording — spec in vibe/features/2026-04-18-speech-recording/
 4. **F-CLAUDE** 🔄 — Claude CLI integration, 5 prompt modes, mode persistence — spec in vibe/features/2026-04-18-claude-integration/
-5. **F-ACTIONS** — Copy, Edit, Regenerate actions
+5. **F-ACTIONS** 🔄 — Copy, Edit, Regenerate actions — spec in vibe/features/2026-04-18-actions/
 
 ### Phase 3 — Polish and hardening
 
