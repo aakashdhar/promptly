@@ -1,713 +1,563 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Promptly</title>
-    <style>
-      :root {
-        --color-action: #007AFF;
-        --color-recording: #FF3B30;
-        --color-success: #34C759;
-        --bg-window: rgba(255, 255, 255, 0.85);
-        --radius-window: 14px;
-        --radius-inner: 8px;
-      }
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-      * { box-sizing: border-box; }
+    :root {
+      --blue: #007AFF;
+      --red: #FF3B30;
+      --green: #34C759;
+      --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    }
 
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-        background: var(--bg-window);
-        border-radius: var(--radius-window);
-        overflow: hidden;
-        -webkit-user-select: none;
-        user-select: none;
-      }
+    body {
+      background: transparent;
+      overflow: hidden;
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
 
-      #app {
-        width: 480px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+    #bar {
+      width: 480px;
+      background: rgba(255,255,255,0.82);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 0.5px solid rgba(0,0,0,0.08);
+    }
 
-      .state-panel {
-        width: 100%;
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-      }
+    #drag-region {
+      height: 10px;
+      -webkit-app-region: drag;
+    }
 
-      /* IDLE */
-      #state-idle {
-        height: 44px;
-        padding: 0 16px 0 72px;
-        gap: 8px;
-        position: relative;
-      }
-      .mode-pill {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--color-action);
-        background: rgba(0, 122, 255, 0.08);
-        padding: 2px 8px;
-        border-radius: var(--radius-inner);
-      }
-      .shortcut-hint {
-        font-size: 13px;
-        color: rgba(0,0,0,0.4);
-      }
-      .conflict-notice {
-        font-size: 11px;
-        color: rgba(0,0,0,0.5);
-        position: absolute;
-        bottom: 4px;
-        left: 0; right: 0;
-        text-align: center;
-      }
+    #content-row {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px 0 76px;
+      -webkit-app-region: drag;
+    }
 
-      /* RECORDING */
-      #state-recording {
-        height: 80px;
-        padding: 0 16px 0 72px;
-        gap: 10px;
-      }
-      .recording-row {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .recording-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--color-recording);
-        flex-shrink: 0;
-        animation: blink 1s ease-in-out infinite;
-      }
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.2; }
-      }
-      .recording-transcript {
-        flex: 1;
-        font-size: 13px;
-        color: rgba(0,0,0,0.75);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .stop-hint {
-        font-size: 11px;
-        color: rgba(0,0,0,0.35);
-        flex-shrink: 0;
-      }
+    #waveform {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      height: 32px;
+      -webkit-app-region: no-drag;
+      cursor: pointer;
+    }
 
-      /* THINKING */
-      #state-thinking {
-        height: 44px;
-        gap: 8px;
-        justify-content: center;
-      }
-      .spinner {
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(0,0,0,0.15);
-        border-top-color: var(--color-action);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      .thinking-text {
-        font-size: 13px;
-        color: rgba(0,0,0,0.5);
-      }
+    .bar {
+      width: 2px;
+      border-radius: 2px;
+      background: #d0d0d0;
+      min-height: 3px;
+      transition: height 80ms ease, background 200ms ease;
+    }
 
-      /* PROMPT_READY */
-      #state-prompt-ready {
-        height: 200px;
-        flex-direction: column;
-        padding: 12px 16px;
-        gap: 10px;
-        align-items: stretch;
-        justify-content: flex-start;
-      }
-      .prompt-output {
-        flex: 1;
-        font-size: 13px;
-        line-height: 1.5;
-        color: rgba(0,0,0,0.85);
-        overflow-y: auto;
-        border-radius: var(--radius-inner);
-        background: rgba(0,0,0,0.03);
-        padding: 8px 10px;
-        -webkit-user-select: text;
-        user-select: text;
-      }
-      .prompt-output:focus {
-        outline: 2px solid var(--color-action);
-        outline-offset: -1px;
-      }
-      .action-row {
-        display: flex;
-        gap: 6px;
-        justify-content: flex-start;
-      }
-      .btn-action {
-        font-family: inherit;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 5px 12px;
-        border-radius: var(--radius-inner);
-        border: none;
-        cursor: pointer;
-        background: var(--color-action);
-        color: #fff;
-        transition: opacity 150ms ease;
-      }
-      .btn-action:hover { opacity: 0.85; }
-      .btn-action.btn-success {
-        background: var(--color-success);
-      }
-      .btn-secondary {
-        font-family: inherit;
-        font-size: 12px;
-        padding: 5px 12px;
-        border-radius: var(--radius-inner);
-        border: none;
-        cursor: pointer;
-        background: rgba(0,0,0,0.06);
-        color: rgba(0,0,0,0.6);
-        transition: opacity 150ms ease;
-        margin-left: auto;
-      }
-      .btn-secondary:hover { opacity: 0.75; }
+    #right-side {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: 12px;
+      -webkit-app-region: no-drag;
+      white-space: nowrap;
+    }
 
-      /* ERROR */
-      #state-error {
-        height: 44px;
-        gap: 8px;
-        cursor: pointer;
-      }
-      .error-icon {
-        font-size: 14px;
-        flex-shrink: 0;
-      }
-      .error-message {
-        flex: 1;
-        font-size: 12px;
-        color: rgba(0,0,0,0.75);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .error-dismiss {
-        font-size: 11px;
-        color: rgba(0,0,0,0.35);
-        flex-shrink: 0;
-      }
+    #right-side span {
+      font-size: 10px;
+      color: rgba(0,0,0,0.3);
+      letter-spacing: 0.02em;
+    }
 
-      /* FIRST_RUN */
-      #state-first-run {
-        height: 120px;
-        flex-direction: column;
-        padding: 12px 16px;
-        gap: 10px;
-        align-items: stretch;
-        justify-content: center;
-      }
-      .firstrun-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .firstrun-status {
-        font-size: 14px;
-        flex-shrink: 0;
-      }
-      .firstrun-label {
-        flex: 1;
-        font-size: 13px;
-        color: rgba(0,0,0,0.75);
-      }
-      .status-ok    { color: var(--color-success); }
-      .status-error { color: var(--color-recording); }
+    #transcript-section {
+      display: none;
+      padding: 0 16px 10px 76px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      font-size: 13px;
+      color: rgba(0,0,0,0.65);
+      line-height: 1.5;
+      max-height: 100px;
+      overflow: hidden;
+    }
 
-      /* Waveform */
-      .waveform {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        flex: 1;
-        justify-content: center;
-      }
-      .waveform-bar {
-        width: 3px;
-        border-radius: 2px;
-        flex-shrink: 0;
-      }
-      .waveform-idle .waveform-bar {
-        background: rgba(0, 0, 0, 0.18);
-      }
-      .waveform-recording .waveform-bar {
-        background: var(--color-recording);
-      }
-      #mode-menu {
-        position: fixed;
-        background: rgba(255, 255, 255, 0.97);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(0, 0, 0, 0.12);
-        border-radius: var(--radius-inner);
-        padding: 4px 0;
-        min-width: 140px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
-      }
-      .mode-menu-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        font-size: 13px;
-        color: #1a1a1a;
-        cursor: pointer;
-        user-select: none;
-      }
-      .mode-menu-item:hover {
-        background: rgba(0, 122, 255, 0.08);
-      }
-      .mode-check {
-        width: 12px;
-        color: var(--color-action);
-        font-size: 11px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="app">
-      <!-- FIRST_RUN -->
-      <div id="state-first-run" class="state-panel" hidden>
-        <div class="firstrun-row" id="firstrun-cli-row">
-          <span id="firstrun-cli-status" class="firstrun-status">○</span>
-          <span id="firstrun-cli-label" class="firstrun-label">Claude CLI installed</span>
-        </div>
-        <div class="firstrun-row" id="firstrun-mic-row">
-          <span id="firstrun-mic-status" class="firstrun-status">○</span>
-          <span id="firstrun-mic-label" class="firstrun-label">Microphone access granted</span>
-          <button id="firstrun-mic-btn" class="btn-action">Grant Access</button>
+    #prompt-section {
+      display: none;
+      padding: 0 16px 14px 16px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+
+    #you-said-label {
+      font-size: 10px;
+      letter-spacing: 0.07em;
+      color: rgba(0,0,0,0.3);
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+
+    #you-said-text {
+      font-size: 12px;
+      color: rgba(0,0,0,0.45);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      margin-bottom: 10px;
+    }
+
+    #prompt-output {
+      font-size: 13px;
+      line-height: 1.65;
+      color: rgba(0,0,0,0.85);
+      max-height: 160px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+
+    #prompt-output::-webkit-scrollbar { width: 3px; }
+    #prompt-output::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+    #button-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 0 0;
+      margin-bottom: 8px;
+    }
+
+    #status-left {
+      font-size: 13px;
+      color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #top-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .text-btn {
+      font-size: 12px;
+      font-family: var(--font);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(0,0,0,0.3);
+      padding: 0;
+    }
+
+    .text-btn:hover { color: var(--blue); }
+
+    #btn-edit {
+      height: 30px;
+      padding: 0 14px;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 8px;
+      background: transparent;
+      font-size: 13px;
+      font-family: var(--font);
+      cursor: pointer;
+      color: rgba(0,0,0,0.7);
+    }
+
+    #btn-copy {
+      flex: 1;
+      height: 30px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: background 200ms ease;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes thinking { 0%,100%{transform:scale(0.6);opacity:0.4} 50%{transform:scale(1);opacity:1} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .rec-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    .thinking-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--blue);
+      display: inline-block;
+      animation: thinking 1.2s ease infinite;
+    }
+
+    #mode-menu {
+      position: fixed;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 8px;
+      padding: 4px 0;
+      min-width: 140px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: none;
+    }
+
+    .mode-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: #1a1a1a;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .mode-menu-item:hover { background: rgba(0,122,255,0.08); }
+
+    .mode-check {
+      width: 12px;
+      color: var(--blue);
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div id="bar">
+    <div id="drag-region"></div>
+    <div id="content-row">
+      <div id="waveform"></div>
+      <div id="right-side"></div>
+    </div>
+    <div id="transcript-section"></div>
+    <div id="prompt-section">
+      <div id="top-row">
+        <div id="status-left"><span style="color:#34C759">✓</span> Prompt ready</div>
+        <div id="top-actions">
+          <button class="text-btn" id="btn-regenerate">Regenerate</button>
+          <button class="text-btn" id="btn-reset">Reset</button>
         </div>
       </div>
-
-      <!-- IDLE -->
-      <div id="state-idle" class="state-panel" hidden>
-        <span id="idle-mode-label" class="mode-pill">Balanced</span>
-        <div id="idle-waveform" class="waveform waveform-idle"></div>
-        <span id="idle-shortcut-hint" class="shortcut-hint">⌥Space</span>
-        <span id="idle-conflict-notice" class="conflict-notice" hidden>Shortcut ⌥Space taken — using ⌃`</span>
-      </div>
-
-      <!-- RECORDING -->
-      <div id="state-recording" class="state-panel" hidden>
-        <span id="recording-dot" class="recording-dot"></span>
-        <div id="recording-waveform" class="waveform waveform-recording"></div>
-        <span id="recording-stop-hint" class="stop-hint">⌥Space to stop</span>
-        <span id="recording-transcript" hidden></span>
-      </div>
-
-      <!-- THINKING -->
-      <div id="state-thinking" class="state-panel" hidden>
-        <div id="thinking-spinner" class="spinner"></div>
-        <span id="thinking-text" class="thinking-text">Generating prompt…</span>
-      </div>
-
-      <!-- PROMPT_READY -->
-      <div id="state-prompt-ready" class="state-panel" hidden>
-        <div id="prompt-output" class="prompt-output"></div>
-        <div class="action-row">
-          <button id="action-copy" class="btn-action">Copy</button>
-          <button id="action-edit" class="btn-action">Edit</button>
-          <button id="action-done" class="btn-action btn-done" hidden>Done</button>
-          <button id="action-regenerate" class="btn-secondary">Regenerate</button>
-        </div>
-      </div>
-
-      <!-- ERROR -->
-      <div id="state-error" class="state-panel" hidden>
-        <span class="error-icon">⚠</span>
-        <span id="error-message" class="error-message">An error occurred.</span>
-        <span class="error-dismiss">Tap to dismiss</span>
+      <p id="you-said-label">YOU SAID</p>
+      <p id="you-said-text"></p>
+      <div id="prompt-output"></div>
+      <div id="button-row">
+        <button id="btn-edit">Edit</button>
+        <button id="btn-copy">Copy prompt</button>
       </div>
     </div>
-    <div id="mode-menu" hidden></div>
-    <script>
-      let currentState = null;
-      let transcript = '';
-      let originalTranscript = '';
-      let generatedPrompt = '';
-      let cliOk = false;
-      let micOk = false;
-      let mediaRecorder = null;
-      let audioChunks = [];
-      let isRecording = false;
-      let waveformInterval = null;
+  </div>
+  <div id="mode-menu"></div>
+  <script>
+    const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR' };
+    const MODES = [
+      { key: 'balanced', label: 'Balanced' },
+      { key: 'detailed', label: 'Detailed' },
+      { key: 'concise', label: 'Concise' },
+      { key: 'chain', label: 'Chain' },
+      { key: 'code', label: 'Code' },
+    ];
 
-      const STATE_HEIGHTS = {
-        FIRST_RUN: 120,
-        IDLE: 44,
-        RECORDING: 80,
-        THINKING: 44,
-        PROMPT_READY: 200,
-        ERROR: 44,
-      };
+    let state = STATES.IDLE;
+    let originalTranscript = '';
+    let generatedPrompt = '';
+    let waveInterval = null;
+    let t = 0;
 
-      const MODES = [
-        { key: 'balanced', label: 'Balanced' },
-        { key: 'detailed', label: 'Detailed' },
-        { key: 'concise', label: 'Concise' },
-        { key: 'chain', label: 'Chain' },
-        { key: 'code', label: 'Code' },
-      ];
+    // Build 30 waveform bars on load
+    const waveform = document.getElementById('waveform');
+    for (let i = 0; i < 30; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = (Math.sin(i * 0.4) * 0.5 + 0.5) * 16 + 4 + 'px';
+      waveform.appendChild(bar);
+    }
+    const bars = waveform.querySelectorAll('.bar');
 
-      function getMode() {
-        try { return localStorage.getItem('mode') || 'balanced'; } catch { return 'balanced'; }
-      }
-      function setMode(value) {
-        try { localStorage.setItem('mode', value); } catch { /* silent */ }
-      }
-      function getFirstRunComplete() {
-        try { return localStorage.getItem('firstRunComplete') === 'true'; } catch { return false; }
-      }
-      function setFirstRunComplete(value) {
-        try { localStorage.setItem('firstRunComplete', String(value)); } catch { /* silent */ }
-      }
-
-      function setState(newState, payload = {}) {
-        if (STATE_HEIGHTS[newState] === undefined) {
-          console.error('setState: unknown state', newState);
-          return;
-        }
-        const prevState = currentState;
-        currentState = newState;
-        if (newState === 'RECORDING') startWaveform();
-        else if (prevState === 'RECORDING') stopWaveform();
-
-        // Hide all panels; show active
-        const panels = ['FIRST_RUN', 'IDLE', 'RECORDING', 'THINKING', 'PROMPT_READY', 'ERROR'];
-        panels.forEach(s => {
-          const id = 'state-' + s.toLowerCase().replace('_', '-');
-          document.getElementById(id).hidden = (s !== newState);
-        });
-
-        // Payload handling
-        if (newState === 'ERROR' && payload.message) {
-          document.getElementById('error-message').textContent = payload.message;
-        }
-        if (newState === 'PROMPT_READY' && payload.prompt) {
-          document.getElementById('prompt-output').textContent = payload.prompt;
-        }
-        if (newState === 'IDLE') {
-          document.getElementById('idle-conflict-notice').hidden = !payload.conflictNotice;
-        }
-
-        console.log('setState →', newState, payload);
-        if (window.electronAPI && window.electronAPI.resizeWindow) {
-          window.electronAPI.resizeWindow(STATE_HEIGHTS[newState]);
-        }
-      }
-
-      async function initFirstRun() {
-        setState('FIRST_RUN');
-
-        // CLI check
-        const cliStatus = document.getElementById('firstrun-cli-status');
-        const cliLabel = document.getElementById('firstrun-cli-label');
-        let cliResult;
-        try {
-          cliResult = await window.electronAPI.checkClaudePath();
-        } catch {
-          cliResult = { found: false, error: 'IPC unavailable' };
-        }
-        if (cliResult.found) {
-          cliOk = true;
-          cliStatus.textContent = '✓';
-          cliStatus.className = 'firstrun-status status-ok';
-        } else {
-          cliStatus.textContent = '✗';
-          cliStatus.className = 'firstrun-status status-error';
-          cliLabel.textContent = 'Install: npm i -g @anthropic-ai/claude-code';
-        }
-
-        // Mic pre-check
-        const micStatus = document.getElementById('firstrun-mic-status');
-        const micLabel = document.getElementById('firstrun-mic-label');
-        const micBtn = document.getElementById('firstrun-mic-btn');
-        try {
-          const permResult = await navigator.permissions.query({ name: 'microphone' });
-          if (permResult.state === 'granted') {
-            micOk = true;
-            micStatus.textContent = '✓';
-            micStatus.className = 'firstrun-status status-ok';
-            micBtn.hidden = true;
-          } else if (permResult.state === 'denied') {
-            micStatus.textContent = '✗';
-            micStatus.className = 'firstrun-status status-error';
-            micLabel.textContent = 'Enable in System Settings → Privacy';
-            micBtn.hidden = true;
-          }
-          // 'prompt' state: leave button visible, ○ stays
-        } catch {
-          // permissions API unsupported — leave button visible
-        }
-
-        checkFirstRunCompletion();
-      }
-
-      function checkFirstRunCompletion() {
-        if (cliOk && micOk) {
-          setFirstRunComplete(true);
-          setTimeout(() => setState('IDLE'), 600);
-        }
-      }
-
-      async function startRecording() {
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch {
-          setState('ERROR', { message: 'Microphone access denied' });
-          return;
-        }
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunks.push(e.data);
-        };
-        mediaRecorder.onstop = async () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const arrayBuffer = await blob.arrayBuffer();
-          setState('THINKING');
-          const result = await window.electronAPI.transcribeAudio(arrayBuffer);
-          if (!result.success) {
-            setState('ERROR', { message: result.error });
-            return;
-          }
-          originalTranscript = result.transcript.trim();
-          if (!originalTranscript) {
-            setState('ERROR', { message: 'No speech detected — try again' });
-            return;
-          }
-          const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
-          if (!genResult.success) {
-            setState('ERROR', { message: genResult.error });
-            return;
-          }
-          generatedPrompt = genResult.prompt;
-          setState('PROMPT_READY', { prompt: generatedPrompt });
-        };
-        mediaRecorder.start();
-        isRecording = true;
-        document.getElementById('recording-transcript').textContent = 'Recording…';
-        setState('RECORDING');
-      }
-
-      function stopRecording() {
-        if (!isRecording) return;
-        isRecording = false;
-        mediaRecorder.stop();
-        mediaRecorder.stream.getTracks().forEach(t => t.stop());
-      }
-
-      function buildWaveforms() {
-        const idleContainer = document.getElementById('idle-waveform');
-        for (let i = 0; i < 30; i++) {
-          const bar = document.createElement('div');
-          bar.className = 'waveform-bar';
-          bar.style.height = Math.round(3 + (Math.sin(i * 0.5) + 1) * 3) + 'px';
-          idleContainer.appendChild(bar);
-        }
-        const recContainer = document.getElementById('recording-waveform');
-        for (let i = 0; i < 30; i++) {
-          const bar = document.createElement('div');
-          bar.className = 'waveform-bar';
-          bar.style.height = '4px';
-          recContainer.appendChild(bar);
-        }
-      }
-
-      function startWaveform() {
-        const bars = document.querySelectorAll('#recording-waveform .waveform-bar');
-        let t = 0;
-        waveformInterval = setInterval(() => {
-          t += 0.12;
-          bars.forEach((bar, i) => {
-            const sine = (Math.sin(t + i * 0.35) + 1) / 2;
-            const noise = Math.random() * 0.25;
-            bar.style.height = Math.max(4, Math.round((sine * 0.75 + noise) * 32)) + 'px';
-          });
-        }, 50);
-      }
-
-      function stopWaveform() {
-        clearInterval(waveformInterval);
-        waveformInterval = null;
-        document.querySelectorAll('#recording-waveform .waveform-bar').forEach(bar => {
-          bar.style.height = '4px';
-        });
-      }
-
-      document.addEventListener('DOMContentLoaded', () => {
-        buildWaveforms();
-
-        // Shortcut listener — start/stop real speech recording
-        window.electronAPI.onShortcutTriggered(() => {
-          if (currentState === 'IDLE') {
-            startRecording();
-          } else if (currentState === 'RECORDING') {
-            stopRecording();
-          }
-        });
-
-        // Conflict notice — route through setState so re-entering IDLE resets visibility correctly
-        window.electronAPI.onShortcutConflict(() => {
-          setState('IDLE', { conflictNotice: true });
-        });
-
-        // Mic grant button handler
-        document.getElementById('firstrun-mic-btn').addEventListener('click', async () => {
-          const micStatus = document.getElementById('firstrun-mic-status');
-          const micLabel = document.getElementById('firstrun-mic-label');
-          const micBtn = document.getElementById('firstrun-mic-btn');
-          try {
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-            micOk = true;
-            micStatus.textContent = '✓';
-            micStatus.className = 'firstrun-status status-ok';
-            micBtn.hidden = true;
-            checkFirstRunCompletion();
-          } catch {
-            micStatus.textContent = '✗';
-            micStatus.className = 'firstrun-status status-error';
-            micLabel.textContent = 'Enable in System Settings → Privacy';
-            micBtn.hidden = true;
-          }
-        });
-
-        // Error dismiss on click
-        document.getElementById('state-error').addEventListener('click', () => {
-          setState('IDLE');
-        });
-
-        // Set mode label from localStorage
-        const initialMode = getMode();
-        document.getElementById('idle-mode-label').textContent =
-          initialMode.charAt(0).toUpperCase() + initialMode.slice(1);
-
-        // Build mode menu items
-        const modeMenu = document.getElementById('mode-menu');
-        MODES.forEach(({ key, label }) => {
-          const item = document.createElement('div');
-          item.className = 'mode-menu-item';
-          item.dataset.mode = key;
-          const check = document.createElement('span');
-          check.className = 'mode-check';
-          check.textContent = getMode() === key ? '✓' : '';
-          const txt = document.createElement('span');
-          txt.textContent = label;
-          item.appendChild(check);
-          item.appendChild(txt);
-          item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setMode(key);
-            document.getElementById('idle-mode-label').textContent = label;
-            document.querySelectorAll('.mode-check').forEach((el) => {
-              el.textContent = el.closest('.mode-menu-item').dataset.mode === key ? '✓' : '';
-            });
-            modeMenu.hidden = true;
-          });
-          modeMenu.appendChild(item);
-        });
-
-        // Show on right-click in IDLE only
-        window.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          if (currentState !== 'IDLE') return;
-          modeMenu.hidden = false;
-          const x = Math.min(e.clientX, window.innerWidth - 160);
-          const y = Math.max(0, e.clientY - modeMenu.offsetHeight - 4);
-          modeMenu.style.left = x + 'px';
-          modeMenu.style.top = y + 'px';
-        });
-
-        // Hide on any click outside menu
-        window.addEventListener('click', () => {
-          modeMenu.hidden = true;
-        });
-
-        // Copy
-        document.getElementById('action-copy').addEventListener('click', async () => {
-          await window.electronAPI.copyToClipboard(generatedPrompt);
-          const btn = document.getElementById('action-copy');
-          btn.textContent = 'Copied!';
-          btn.classList.add('btn-success');
-          setTimeout(() => {
-            btn.textContent = 'Copy';
-            btn.classList.remove('btn-success');
-          }, 1800);
-        });
-
-        // Edit
-        document.getElementById('action-edit').addEventListener('click', () => {
-          const output = document.getElementById('prompt-output');
-          output.contentEditable = 'true';
-          output.focus();
-          document.getElementById('action-edit').hidden = true;
-          document.getElementById('action-done').hidden = false;
-        });
-
-        // Done
-        document.getElementById('action-done').addEventListener('click', () => {
-          const output = document.getElementById('prompt-output');
-          generatedPrompt = output.textContent;
-          output.contentEditable = 'false';
-          document.getElementById('action-done').hidden = true;
-          document.getElementById('action-edit').hidden = false;
-        });
-
-        // Escape to cancel edit
-        document.getElementById('prompt-output').addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') {
-            const output = document.getElementById('prompt-output');
-            output.textContent = generatedPrompt;
-            output.contentEditable = 'false';
-            document.getElementById('action-done').hidden = true;
-            document.getElementById('action-edit').hidden = false;
-          }
-        });
-
-        // Regenerate
-        document.getElementById('action-regenerate').addEventListener('click', async () => {
-          setState('THINKING');
-          const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
-          if (!genResult.success) {
-            setState('ERROR', { message: genResult.error });
-            return;
-          }
-          generatedPrompt = genResult.prompt;
-          setState('PROMPT_READY', { prompt: generatedPrompt });
-        });
-
-        // Boot gate — first-run setup or direct IDLE
-        if (getFirstRunComplete()) {
-          setState('IDLE');
-        } else {
-          initFirstRun();
-        }
+    function setIdleWave() {
+      bars.forEach((b, i) => {
+        b.style.height = (Math.sin(i * 0.4) * 0.5 + 0.5) * 16 + 4 + 'px';
+        b.style.background = '#d0d0d0';
       });
-    </script>
-  </body>
+    }
+
+    function startWaveAnim() {
+      waveInterval = setInterval(() => {
+        t++;
+        bars.forEach((b, i) => {
+          b.style.height = (Math.sin(i * 0.3 + t * 0.08) * 0.5 + 0.5) * 20 + 3 + 'px';
+          b.style.background = '#FF3B30';
+        });
+      }, 60);
+    }
+
+    function stopWaveAnim() {
+      clearInterval(waveInterval);
+      waveInterval = null;
+      setIdleWave();
+    }
+
+    function getMode() { return localStorage.getItem('mode') || 'balanced'; }
+    function setMode(m) {
+      localStorage.setItem('mode', m);
+      if (state === STATES.IDLE) renderRightSide();
+    }
+
+    function getModeLabel() {
+      return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code' }[getMode()];
+    }
+
+    function resize(h) { window.electronAPI.resizeWindow(h); }
+
+    function setState(newState, payload = {}) {
+      state = newState;
+      const ts = document.getElementById('transcript-section');
+      const ps = document.getElementById('prompt-section');
+      ts.style.display = 'none';
+      ps.style.display = 'none';
+
+      if (newState === STATES.IDLE) {
+        stopWaveAnim();
+        setIdleWave();
+        renderRightSide();
+        resize(80);
+      }
+
+      if (newState === STATES.RECORDING) {
+        startWaveAnim();
+        renderRightSide();
+        ts.style.display = 'block';
+        ts.textContent = '';
+        resize(80);
+      }
+
+      if (newState === STATES.THINKING) {
+        stopWaveAnim();
+        renderRightSide();
+        ts.style.display = 'block';
+        ts.textContent = originalTranscript;
+      }
+
+      if (newState === STATES.PROMPT_READY) {
+        renderRightSide();
+        ps.style.display = 'block';
+        document.getElementById('you-said-text').textContent = originalTranscript;
+        document.getElementById('prompt-output').textContent = generatedPrompt;
+        resize(360);
+      }
+
+      if (newState === STATES.ERROR) {
+        stopWaveAnim();
+        renderRightSide(payload.message);
+        resize(80);
+      }
+    }
+
+    function renderRightSide(errorMsg) {
+      const rs = document.getElementById('right-side');
+      rs.innerHTML = '';
+
+      if (state === STATES.IDLE) {
+        rs.innerHTML = `<span>${getModeLabel()}</span><span>·</span><span>⌥ Space</span>`;
+      }
+      if (state === STATES.RECORDING) {
+        rs.innerHTML = `<span class="rec-dot"></span><span style="color:#FF3B30;font-weight:500;font-size:10px;letter-spacing:.05em">REC</span><span>·</span><span>tap to stop</span>`;
+      }
+      if (state === STATES.THINKING) {
+        rs.innerHTML = `<span class="thinking-dot" style="animation-delay:0s"></span><span class="thinking-dot" style="animation-delay:.2s"></span><span class="thinking-dot" style="animation-delay:.4s"></span><span style="font-size:12px;color:rgba(0,0,0,0.4);margin-left:8px">Building your prompt</span>`;
+      }
+      if (state === STATES.ERROR) {
+        rs.innerHTML = `<span style="color:#FF3B30;font-size:12px">${errorMsg || 'Something went wrong'} — tap to retry</span>`;
+      }
+    }
+
+    // Waveform click → toggle recording
+    waveform.addEventListener('click', () => {
+      if (state === STATES.IDLE) startRecording();
+      else if (state === STATES.RECORDING) stopRecording();
+    });
+
+    document.getElementById('content-row').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('content-row')) {
+        if (state === STATES.IDLE) startRecording();
+      }
+    });
+
+    // Error bar click → retry (back to IDLE)
+    document.getElementById('right-side').addEventListener('click', () => {
+      if (state === STATES.ERROR) setState(STATES.IDLE);
+    });
+
+    // Global shortcut signal from main process
+    window.electronAPI.onShortcutTriggered(() => {
+      if (state === STATES.IDLE) startRecording();
+      else if (state === STATES.RECORDING) stopRecording();
+    });
+
+    // Recording
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.start();
+        setState(STATES.RECORDING);
+      } catch(e) {
+        setState(STATES.ERROR, { message: 'Microphone access denied' });
+      }
+    }
+
+    async function stopRecording() {
+      if (!mediaRecorder) return;
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const arrayBuffer = await blob.arrayBuffer();
+        setState(STATES.THINKING);
+        const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer);
+        if (!transcribeResult.success) {
+          setState(STATES.ERROR, { message: transcribeResult.error });
+          return;
+        }
+        originalTranscript = transcribeResult.transcript.trim();
+        if (!originalTranscript) {
+          setState(STATES.IDLE);
+          return;
+        }
+        const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
+        if (!genResult.success) {
+          setState(STATES.ERROR, { message: genResult.error?.slice(0, 60) || 'Claude error' });
+          return;
+        }
+        generatedPrompt = genResult.prompt;
+        setState(STATES.PROMPT_READY);
+      };
+    }
+
+    // Copy
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      window.electronAPI.copyToClipboard(generatedPrompt);
+      const btn = document.getElementById('btn-copy');
+      btn.textContent = 'Copied ✓';
+      btn.style.background = '#34C759';
+      setTimeout(() => { btn.textContent = 'Copy prompt'; btn.style.background = '#007AFF'; }, 1800);
+    });
+
+    // Edit / Done toggle
+    document.getElementById('btn-edit').addEventListener('click', () => {
+      const out = document.getElementById('prompt-output');
+      const btn = document.getElementById('btn-edit');
+      if (btn.textContent === 'Edit') {
+        out.contentEditable = 'true';
+        out.style.outline = '1.5px solid #007AFF';
+        out.style.outlineOffset = '4px';
+        out.focus();
+        btn.textContent = 'Done';
+      } else {
+        generatedPrompt = out.textContent;
+        out.contentEditable = 'false';
+        out.style.outline = 'none';
+        btn.textContent = 'Edit';
+      }
+    });
+
+    // Escape: cancel edit or stop recording
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const out = document.getElementById('prompt-output');
+        if (out.contentEditable === 'true') {
+          out.textContent = generatedPrompt;
+          out.contentEditable = 'false';
+          out.style.outline = 'none';
+          document.getElementById('btn-edit').textContent = 'Edit';
+        } else if (state === STATES.RECORDING) {
+          stopRecording();
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && state === STATES.PROMPT_READY) {
+        const out = document.getElementById('prompt-output');
+        if (out.contentEditable !== 'true') {
+          window.electronAPI.copyToClipboard(generatedPrompt);
+        }
+      }
+    });
+
+    // Regenerate
+    document.getElementById('btn-regenerate').addEventListener('click', async () => {
+      setState(STATES.THINKING);
+      const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
+      if (!genResult.success) {
+        setState(STATES.ERROR, { message: 'Claude error' });
+        return;
+      }
+      generatedPrompt = genResult.prompt;
+      setState(STATES.PROMPT_READY);
+    });
+
+    // Reset
+    document.getElementById('btn-reset').addEventListener('click', () => setState(STATES.IDLE));
+
+    // Mode context menu
+    const modeMenu = document.getElementById('mode-menu');
+    MODES.forEach(({ key, label }) => {
+      const item = document.createElement('div');
+      item.className = 'mode-menu-item';
+      item.dataset.mode = key;
+      const check = document.createElement('span');
+      check.className = 'mode-check';
+      check.textContent = getMode() === key ? '✓' : '';
+      const txt = document.createElement('span');
+      txt.textContent = label;
+      item.appendChild(check);
+      item.appendChild(txt);
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setMode(key);
+        document.querySelectorAll('.mode-check').forEach((el) => {
+          el.textContent = el.closest('.mode-menu-item').dataset.mode === key ? '✓' : '';
+        });
+        modeMenu.style.display = 'none';
+      });
+      modeMenu.appendChild(item);
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (state !== STATES.IDLE) return;
+      modeMenu.style.display = 'block';
+      const x = Math.min(e.clientX, window.innerWidth - 160);
+      const y = Math.max(0, e.clientY - modeMenu.offsetHeight - 4);
+      modeMenu.style.left = x + 'px';
+      modeMenu.style.top = y + 'px';
+    });
+
+    window.addEventListener('click', () => { modeMenu.style.display = 'none'; });
+
+    // Init
+    setState(STATES.IDLE);
+  </script>
+</body>
 </html>
