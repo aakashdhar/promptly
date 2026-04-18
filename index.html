@@ -341,11 +341,39 @@
         }
 
         console.log('setState →', newState, payload);
-        // Resize added in FST-004/FST-005
+        if (window.electronAPI && window.electronAPI.resizeWindow) {
+          window.electronAPI.resizeWindow(STATE_HEIGHTS[newState]);
+        }
       }
 
       document.addEventListener('DOMContentLoaded', () => {
-        // Boot sequence and IPC wire-up added in FST-005
+        // Shortcut listener — stub cycle (F-SPEECH will replace this)
+        window.electronAPI.onShortcutTriggered(() => {
+          if (currentState === 'IDLE') {
+            setState('RECORDING');
+          } else if (currentState === 'RECORDING') {
+            setState('THINKING');
+            // F-SPEECH: replace stub
+            setTimeout(() => setState('IDLE'), 2000);
+          }
+        });
+
+        // Conflict notice
+        window.electronAPI.onShortcutConflict(() => {
+          document.getElementById('idle-conflict-notice').hidden = false;
+        });
+
+        // Error dismiss on click
+        document.getElementById('state-error').addEventListener('click', () => {
+          setState('IDLE');
+        });
+
+        // Set mode label from localStorage
+        document.getElementById('idle-mode-label').textContent =
+          getMode().charAt(0).toUpperCase() + getMode().slice(1);
+
+        // Boot into IDLE (F-FIRST-RUN will later decide FIRST_RUN vs IDLE)
+        setState('IDLE');
       });
     </script>
   </body>
