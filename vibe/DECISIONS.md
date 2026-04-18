@@ -302,3 +302,26 @@ Key fixes applied:
 - **Alternatives considered**: (1) Continue fixing pill race with more aggressive setTimeout/opacity hacks — rejected, three iterations already failed. (2) Use a single NSPanel via native module — rejected, adds native build complexity. (3) Accepted: all UI in one window, no ghost possible.
 - **Impact**: BUG-003-A/E/F bugs become permanently irrelevant. ARCHITECTURE.md "all UI in index.html" rule restored. preload.js simplified.
 - **Approved by**: human
+
+---
+
+### BUG-004 — IDLE state: vibrancy flat, traffic light halos, mode pill appearance
+- **Date**: 2026-04-18 · **Type**: drift
+
+**BUG-004-A — Vibrancy rendering flat (brown/opaque instead of frosted glass)**
+- **Root cause**: `vibrancy: 'sidebar'` does not composite correctly on all macOS versions; missing `backgroundColor: '#00000000'` meant the window had an implicit opaque background before first paint.
+- **Fix**: `vibrancy: 'sidebar'` → `'under-window'`; added `backgroundColor: '#00000000'` to BrowserWindow config; added `!important` to `body { background: transparent }` and `.bar { background: rgba(255,255,255,0.04) }` to prevent any inherited or default paint overriding transparency.
+- **Files**: main.js, index.html
+
+**BUG-004-B — Traffic light colored dot halos bleeding into bar surface**
+- **Root cause**: Custom HTML `.tl-r` / `.tl-y` dots had `box-shadow` glows that spread rgba color onto the frosted bar surface, visible as dirty tint against warm wallpapers.
+- **Fix**: Removed all `.tl` children from every `.traf` div. Removed `.tl`, `.tl-r`, `.tl-y`, `.tl-off` CSS rules. Changed `.traf` to a 28px drag-region spacer — native macOS traffic lights from `titleBarStyle: 'hiddenInset'` render over this area. `trafficLightPosition` updated to `{ x: 12, y: 12 }`.
+- **Files**: index.html, main.js
+
+**BUG-004-C — Mode pill rendered with macOS system button appearance**
+- **Root cause**: `<span>` element with no `-webkit-appearance: none` could inherit system button styling in WebKit-based renderers.
+- **Fix**: Added `-webkit-appearance: none` to `.mode-pill` CSS rule.
+- **Files**: index.html
+
+- **Status**: FIXED 2026-04-18
+- **Approved by**: human
