@@ -460,8 +460,13 @@
             setState('ERROR', { message: 'No speech detected — try again' });
             return;
           }
-          // F-CLAUDE will replace this stub
-          setTimeout(() => setState('IDLE'), 1500);
+          const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
+          if (!genResult.success) {
+            setState('ERROR', { message: genResult.error });
+            return;
+          }
+          generatedPrompt = genResult.prompt;
+          setState('PROMPT_READY', { prompt: generatedPrompt });
         };
         mediaRecorder.start();
         isRecording = true;
