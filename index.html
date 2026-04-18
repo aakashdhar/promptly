@@ -420,23 +420,59 @@
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
-        recognition.onresult = null;  // wired in FPH-002
-        recognition.onerror = null;   // wired in FPH-002
-        recognition.onend = null;     // wired in FPH-002
+        recognition.onresult = (event) => {
+          let final = '';
+          let interim = '';
+          for (let i = 0; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              final += event.results[i][0].transcript;
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+          transcript = final + interim;
+          document.getElementById('recording-transcript').textContent = transcript || 'Listening…';
+        };
+        recognition.onerror = (event) => {
+          isRecording = false;
+          if (event.error === 'not-allowed') {
+            setState('ERROR', { message: 'Microphone access denied' });
+          } else if (event.error === 'no-speech') {
+            setState('ERROR', { message: 'No speech detected — try again' });
+          } else {
+            setState('ERROR', { message: 'Speech recognition error — try again' });
+          }
+        };
+        recognition.onend = () => {
+          if (isRecording) {
+            stopRecording();
+          }
+        };
         recognition.start();
         isRecording = true;
         setState('RECORDING');
       }
 
+      function stopRecording() {
+        isRecording = false;
+        recognition.stop();
+        originalTranscript = transcript.trim();
+        if (!originalTranscript) {
+          setState('ERROR', { message: 'No speech detected — try again' });
+          return;
+        }
+        setState('THINKING');
+        // F-CLAUDE will replace this stub
+        setTimeout(() => setState('IDLE'), 1500);
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
-        // Shortcut listener — stub cycle (F-SPEECH will replace this)
+        // Shortcut listener — start/stop real speech recording
         window.electronAPI.onShortcutTriggered(() => {
           if (currentState === 'IDLE') {
-            setState('RECORDING');
+            startRecording();
           } else if (currentState === 'RECORDING') {
-            setState('THINKING');
-            // F-SPEECH: replace stub
-            setTimeout(() => setState('IDLE'), 2000);
+            stopRecording();
           }
         });
 
