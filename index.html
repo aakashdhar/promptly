@@ -170,7 +170,10 @@
       text-transform: uppercase; color: rgba(255,255,255,0.14);
       margin-bottom: 7px; padding: 0 20px; display: block;
     }
-    .ys-text-s { padding: 0 20px 16px; font-size: 12.5px; color: rgba(255,255,255,0.26); line-height: 1.6; letter-spacing: 0.01em; }
+    .ys-text-s { padding: 0 20px 16px; font-size: 12.5px; color: rgba(255,255,255,0.26); line-height: 1.6; letter-spacing: 0.01em; max-height: 80px; overflow-y: auto; scrollbar-width: thin; }
+    .ys-text-s::-webkit-scrollbar { width: 3px; }
+    .ys-text-s::-webkit-scrollbar-track { background: transparent; }
+    .ys-text-s::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
     /* === PROMPT READY === */
     .top-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 16px; }
@@ -670,7 +673,12 @@
         bar.style.display = '';
         document.getElementById('panel-thinking').style.display = '';
         document.getElementById('think-transcript').textContent = '';
-        startMorphAnim();
+        let morphT = 0;
+        const morphCanvas = document.getElementById('morph-canvas');
+        if (morphCanvas) {
+          const animMorph = () => { drawMorphWave(morphCanvas, morphT++); requestAnimationFrame(animMorph); };
+          requestAnimationFrame(animMorph);
+        }
         requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.THINKING));
       }
 
@@ -771,6 +779,9 @@
           return;
         }
         document.getElementById('think-transcript').textContent = originalTranscript;
+        const thinkingPanel = document.getElementById('panel-thinking');
+        const clampedH = Math.min(Math.max(thinkingPanel.scrollHeight, 220), 320);
+        window.electronAPI.resizeWindow(clampedH);
         const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
         if (!genResult.success) {
           setState(STATES.ERROR, { message: genResult.error?.slice(0, 60) || 'Claude error' });
@@ -836,6 +847,10 @@
     // Regenerate
     document.getElementById('btn-regenerate').addEventListener('click', async () => {
       setState(STATES.THINKING);
+      document.getElementById('think-transcript').textContent = originalTranscript;
+      const regenPanel = document.getElementById('panel-thinking');
+      const regenH = Math.min(Math.max(regenPanel.scrollHeight, 220), 320);
+      window.electronAPI.resizeWindow(regenH);
       const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
       if (!genResult.success) {
         setState(STATES.ERROR, { message: 'Claude error' });
