@@ -25,8 +25,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onModeSelected: (callback) =>
     ipcRenderer.on('mode-selected', (_event, key) => callback(key)),
 
-  transcribeAudio: (arrayBuffer) =>
-    ipcRenderer.invoke('transcribe-audio', arrayBuffer),
+  transcribeAudio: (arrayBuffer, language) =>
+    ipcRenderer.invoke('transcribe-audio', arrayBuffer, language),
+
+  showLanguageMenu: (currentLanguage, languages) =>
+    ipcRenderer.invoke('show-language-menu', { currentLanguage, languages }),
+
+  onLanguageSelected: (callback) =>
+    ipcRenderer.on('language-selected', (_event, code) => callback(code)),
 
   // splash → main
   splashDone: () =>

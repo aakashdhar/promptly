@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -193,6 +193,11 @@ function createWindow() {
     },
   });
   win.loadFile('index.html');
+  nativeTheme.on('updated', () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
+    }
+  });
   return win;
 }
 
@@ -349,32 +354,49 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
-  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
+  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer, language) => {
     if (!whisperPath) {
       return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
     }
     const tmpFile = path.join(os.tmpdir(), `promptly-${Date.now()}.webm`);
     const outDir = os.tmpdir();
     const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
+    const langFlag = (language && language !== 'auto' && /^[a-z]{2,3}$/.test(language)) ? `--language ${language}` : '';
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        exec(`"${whisperPath}" "${tmpFile}" --model tiny --output_format txt --output_dir "${outDir}"`, { timeout: 60000 }, (err, _stdout, stderr) => {
-          try {
-            const text = fs.readFileSync(txtFile, 'utf8').trim();
-            try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
-            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
-            resolve(text);
-          } catch {
-            reject(new Error(stderr || err?.message || 'Whisper output not found'));
-          }
-        });
+        exec(`"${whisperPath}" "${tmpFile}" --model tiny ${langFlag} --output_format txt --output_dir "${outDir}"`,
+          { timeout: 60000 }, (err, _stdout, stderr) => {
+            try {
+              const text = fs.readFileSync(txtFile, 'utf8').trim();
+              try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+              try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
+              resolve(text);
+            } catch {
+              reject(new Error(stderr || err?.message || 'Whisper output not found'));
+            }
+          });
       });
       return { success: true, transcript };
     } catch (err) {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
       return { success: false, error: err.message || 'Transcription failed' };
     }
+  });
+
+  ipcMain.handle('show-language-menu', (_event, { currentLanguage, languages }) => {
+    const menu = Menu.buildFromTemplate(languages.map(({ code, label }) => ({
+      label,
+      type: 'radio',
+      checked: currentLanguage === code,
+      click: () => { win.webContents.send('language-selected', code); },
+    })));
+    menu.popup({ window: win });
+    return { ok: true };
+  });
+
+  ipcMain.handle('get-theme', () => {
+    return { dark: nativeTheme.shouldUseDarkColors };
   });
 
   ipcMain.handle('check-claude-path', () => {

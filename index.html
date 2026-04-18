@@ -474,6 +474,7 @@
         </div>
         <span class="mode-pill" id="mode-pill">Balanced</span>
         <button class="mode-pill" id="history-btn" style="-webkit-app-region:no-drag">History</button>
+        <span class="mode-pill" id="language-pill" style="-webkit-app-region:no-drag">Auto</span>
       </div>
     </div>
 
@@ -853,6 +854,7 @@
         bar.style.display = '';
         document.getElementById('panel-idle').style.display = '';
         document.getElementById('mode-pill').textContent = getModeLabel();
+        document.getElementById('language-pill').textContent = getLanguageLabel();
         // BUG-003-C: resize after DOM paints
         requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.IDLE));
       }
@@ -926,6 +928,17 @@
     document.getElementById('history-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       setState(STATES.HISTORY);
+    });
+
+    // Language pill click → open native language menu
+    document.getElementById('language-pill').addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.electronAPI.showLanguageMenu(getLanguage(), LANGUAGES);
+    });
+
+    window.electronAPI.onLanguageSelected((code) => {
+      setLanguage(code);
+      document.getElementById('language-pill').textContent = getLanguageLabel();
     });
 
     // History button in PROMPT_READY
