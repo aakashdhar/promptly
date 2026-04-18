@@ -2,6 +2,9 @@
 
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { exec } = require('child_process');
+
+let claudePath = null;
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -24,7 +27,17 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
-  // P1-006: PATH resolution added here
+  // P1-006: PATH resolution
+  exec('zsh -lc "which claude"', (err, stdout) => {
+    claudePath = stdout.trim();
+    if (err || !claudePath) {
+      claudePath = null;
+      console.log('claudePath: not resolved —', err?.message);
+    } else {
+      console.log('claudePath:', claudePath);
+    }
+  });
+
   // P1-007: global shortcut registration added here
   // P1-008: IPC channel stubs added here
 });
