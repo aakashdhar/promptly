@@ -46,10 +46,13 @@
    [x] FRN-004 · checkFirstRunCompletion() + IDLE transition — 600ms delay, CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-first-run/FEATURE_TASKS.md (agent use)
 
-🔄 **F-SPEECH — Speech recording** (0/3)
-   Estimated: approx. 3 hours (S: 2, M: 1)
-   [x] FPH-001 · Module vars + `startRecording()` skeleton — availability guard + recognition init
-   [x] FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
+🔄 **F-SPEECH — Speech recording** (0/5 — retrofitting D-003)
+   Estimated: approx. 5 hours (S: 3, M: 2)
+   [~] FPH-001 · Module vars + startRecording() — webkitSpeechRecognition (superseded — retrofit pending)
+   [~] FPH-002 · Handlers + stopRecording() — webkitSpeechRecognition (superseded — retrofit pending)
+   [ ] FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
+   [ ] FPH-004 · transcribe-audio IPC — main.js + preload.js (Whisper CLI)
+   [ ] FPH-002-R · Retrofit stopRecording() + onstop handler + shortcut wiring
    [ ] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
 
@@ -99,9 +102,11 @@
 ---
 
 ## What just happened
-✅ FPH-002 done — onresult (final+interim transcript), onerror (3 cases), onend (guard), stopRecording() (originalTranscript capture, THINKING stub), shortcut wired to startRecording/stopRecording. Lint passes.
+🔄 Scope change D-003 — webkitSpeechRecognition fails in Electron (network error, no bundled Google API key).
+   Switched to MediaRecorder + Whisper CLI. FPH-001/002 marked partial (wrong code), retrofit tasks added.
+   New: FPH-001-R, FPH-002-R (index.html), FPH-004 (main.js + preload.js).
 
 ## What's next
-⬜ FPH-003 · CODEBASE.md update
-   Update last-updated line, current state, index.html key exports, and module-scope vars table.
+⬜ FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
+   Replace recognition var with mediaRecorder + audioChunks; rewrite startRecording() to use getUserMedia + MediaRecorder.
 Say "next" to begin.

@@ -91,6 +91,26 @@ Key fixes applied:
 
 ---
 
+---
+
+### D-003 — Speech engine replaced: webkitSpeechRecognition → MediaRecorder + Whisper CLI
+- **Date**: 2026-04-18 · **Type**: scope-change
+- **Trigger**: change: command — user-initiated
+- **Build stage**: Mid-phase (FPH-001, FPH-002 committed but wrong)
+- **What changed**: F-SPEECH speech-to-text engine replaced. webkitSpeechRecognition removed. New approach: getUserMedia + MediaRecorder records audio in renderer → transcribe-audio IPC sends ArrayBuffer to main → Whisper CLI transcribes → transcript returned.
+- **Why**: webkitSpeechRecognition in Electron fails with `error: network` — Electron does not bundle Google's API key required by the speech service. Confirmed via DevTools console test.
+- **Before**: webkitSpeechRecognition (Web Speech API), live transcript, no IPC needed
+- **After**: getUserMedia + MediaRecorder (renderer) + transcribe-audio IPC + Whisper CLI (main), no live transcript, post-processing only
+- **UX impact**: RECORDING state shows "Recording…" instead of live transcript text
+- **Prerequisite**: Whisper must be installed — `pip install openai-whisper`
+- **Tasks affected**: Retrofit: FPH-001, FPH-002 · New: FPH-001-R, FPH-002-R, FPH-004 · Unchanged: FPH-003
+- **Folders affected**: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md
+- **Architecture impact**: Yes — new IPC channel `transcribe-audio`, speech layer changes, main.js + preload.js now in scope for F-SPEECH
+- **BRIEF.md updated**: No — didn't check (not critical for internal tool)
+- **Approved by**: human
+
+---
+
 ## 2026-04-18 — Feature Start: F-SPEECH — Speech Recording
 > Folder: vibe/features/2026-04-18-speech-recording/
 > Implements webkitSpeechRecognition with live transcript, originalTranscript capture at stop, auto-stop on silence.
