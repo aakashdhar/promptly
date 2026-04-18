@@ -1,0 +1,53 @@
+{
+  "project_name": "Promptly",
+  "build_progress_pct": 0,
+  "tasks_remaining": 18,
+  "total_cost_usd": 0.606,
+  "total_sessions": 1,
+  "phase_summary": [
+    {
+      "phase": "Planning",
+      "status": "complete",
+      "sessions": 1,
+      "cost_usd": 0.606
+    },
+    {
+      "phase": "Phase 1 \u2014 Foundation",
+      "status": "not_started",
+      "sessions": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "phase": "Phase 2 \u2014 Core features",
+      "status": "not_started",
+      "sessions": 0,
+      "cost_usd": 0.0
+    },
+    {
+      "phase": "Phase 3 \u2014 Polish",
+      "status": "not_started",
+      "sessions": 0,
+      "cost_usd": 0.0
+    }
+  ],
+  "feature_costs": [
+    {
+      "label": "Planning and architecture",
+      "cost_usd": 0.606
+    }
+  ],
+  "at_a_glance": "You have spent $0.61 in 1 session covering the full planning stack: architecture, spec, plan, and spec review. The new-app: skill was the heaviest item at $0.30 \u2014 it generated 8 documents in a single pass. No code has been written yet; Phase 1 starts next.",
+  "session_narratives": {
+    "2026-04-18-001": "Full planning session covering architect:, new-app:, and spec-review: in sequence. Produced ARCHITECTURE.md, SPEC.md, PLAN.md, CLAUDE.md, TASKS.md, and the full vibe/ folder. One P0 spec gap (missing mode system prompts) was caught and fixed before the build begins \u2014 a cheap fix at planning time versus an expensive one mid-Phase 2."
+  },
+  "recommendations": [
+    {
+      "code": "CP-05",
+      "title": "Prompt caching not yet active \u2014 will save money in build sessions",
+      "body": "CLAUDE.md and vibe/ARCHITECTURE.md will be read at the start of every session. Once these files stabilise after Phase 1, Anthropic prompt caching will kick in automatically, reducing re-read costs by 90%. Avoid editing CLAUDE.md between tasks unnecessarily \u2014 every change resets the 5-minute cache TTL.",
+      "saving": "save ~$0.05\u20130.15/session once Phase 1 is stable",
+      "severity": "ok"
+    }
+  ],
+  "forecast_narrative": "Phase 1 has 9 foundation tasks (P1-001 through P1-009) \u2014 expect 1\u20132 sessions at $0.20\u20130.40 each. Phase 2 has 5 features of varying size; the Claude CLI integration and state machine will be the heaviest. Total project estimate: $1.50\u20132.50 for a clean v1 build at current session patterns."
+}
