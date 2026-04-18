@@ -386,6 +386,16 @@ Key fixes applied:
 
 ---
 
+### BUG-008 — Prompt output formatting: plain-text section labels + data/visual sections
+- **Date**: 2026-04-18 · **Task**: BUG-008 · **Type**: blocker-resolution
+- **Root cause**: `MODE_SYSTEM_PROMPTS` instructed Claude to use markdown bold headers (`**Role:**`) and lacked data model / visual style sections for technical and UI prompts.
+- **Fix**: Replaced 5 separate mode prompt strings with a single `PROMPT_TEMPLATE` constant + `MODE_CONFIG` object. Template embeds `{MODE_NAME}`, `{MODE_INSTRUCTION}`, and `{TRANSCRIPT}` placeholders filled at call time. Since transcript is now in the system prompt, stdin write removed (`child.stdin.end()` only). Section labels explicitly specified as plain text — no asterisks, no hashtags.
+- **Files**: `main.js`
+- **Status**: FIXED 2026-04-18
+- **Approved by**: human
+
+---
+
 ### FEATURE-001 — Splash screen: launch-time CLI + mic checks before idle bar
 - **Date**: 2026-04-18 · **Type**: scope-change (feature addition)
 - **Trigger**: feature: command — user-initiated
