@@ -423,7 +423,23 @@
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) audioChunks.push(e.data);
         };
-        mediaRecorder.onstop = null;  // wired in FPH-002-R
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const arrayBuffer = await blob.arrayBuffer();
+          setState('THINKING');
+          const result = await window.electronAPI.transcribeAudio(arrayBuffer);
+          if (!result.success) {
+            setState('ERROR', { message: result.error });
+            return;
+          }
+          originalTranscript = result.transcript.trim();
+          if (!originalTranscript) {
+            setState('ERROR', { message: 'No speech detected — try again' });
+            return;
+          }
+          // F-CLAUDE will replace this stub
+          setTimeout(() => setState('IDLE'), 1500);
+        };
         mediaRecorder.start();
         isRecording = true;
         document.getElementById('recording-transcript').textContent = 'Recording…';
@@ -431,16 +447,10 @@
       }
 
       function stopRecording() {
+        if (!isRecording) return;
         isRecording = false;
-        recognition.stop();
-        originalTranscript = transcript.trim();
-        if (!originalTranscript) {
-          setState('ERROR', { message: 'No speech detected — try again' });
-          return;
-        }
-        setState('THINKING');
-        // F-CLAUDE will replace this stub
-        setTimeout(() => setState('IDLE'), 1500);
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
       }
 
       document.addEventListener('DOMContentLoaded', () => {
