@@ -180,7 +180,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('splash-open-url', async (_event, url) => {
-    shell.openExternal(url);
+    if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url);
   });
 
   ipcMain.handle('request-mic', async () => {

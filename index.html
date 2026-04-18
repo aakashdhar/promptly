@@ -459,9 +459,8 @@
     let originalTranscript = '';
     let generatedPrompt = '';
 
-    // Animation frame handles
+    // Morph wave RAF handle — cancelled by stopMorphAnim() at every setState()
     let morphAnimFrame = null;
-    let morphT = 0;
 
     function getMode() { return localStorage.getItem('mode') || 'balanced'; }
     function setMode(m) {
@@ -509,17 +508,6 @@
         ctx.lineTo(x, mid + a);
       }
       ctx.stroke();
-    }
-
-    function startMorphAnim() {
-      const canvas = document.getElementById('morph-canvas');
-      morphT = 0;
-      function loop() {
-        morphT++;
-        drawMorphWave(canvas, morphT);
-        morphAnimFrame = requestAnimationFrame(loop);
-      }
-      morphAnimFrame = requestAnimationFrame(loop);
     }
 
     function stopMorphAnim() {
@@ -620,12 +608,12 @@
       }
 
       for (const line of lines) {
-        const m = line.trim().match(/^\*\*([^*]+)\*\*:?\s*$/);
+        const m = line.trim().match(/^([A-Za-z][A-Za-z\s]*):\s*$/);
         if (m) {
           flush();
           const h = document.createElement('span');
           h.className = 'pt-sl';
-          h.textContent = m[1].replace(/:$/, '').trim();
+          h.textContent = m[1].trim();
           el.appendChild(h);
         } else {
           buf.push(line);
@@ -676,8 +664,8 @@
         let morphT = 0;
         const morphCanvas = document.getElementById('morph-canvas');
         if (morphCanvas) {
-          const animMorph = () => { drawMorphWave(morphCanvas, morphT++); requestAnimationFrame(animMorph); };
-          requestAnimationFrame(animMorph);
+          const animMorph = () => { drawMorphWave(morphCanvas, morphT++); morphAnimFrame = requestAnimationFrame(animMorph); };
+          morphAnimFrame = requestAnimationFrame(animMorph);
         }
         requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.THINKING));
       }
@@ -784,7 +772,7 @@
         window.electronAPI.resizeWindow(clampedH);
         const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
         if (!genResult.success) {
-          setState(STATES.ERROR, { message: genResult.error?.slice(0, 60) || 'Claude error' });
+          setState(STATES.ERROR, { message: genResult.error || 'Claude error' });
           return;
         }
         generatedPrompt = genResult.prompt;
