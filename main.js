@@ -200,7 +200,7 @@ app.whenReady().then(async () => {
         .replace('{MODE_INSTRUCTION}', modeConf.instruction)
         .replace('{TRANSCRIPT}', transcript);
       const { spawn } = require('child_process');
-      const child = spawn(claudePath, ['-p', systemPrompt]);
+      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
       let stdout = '';
       let stderr = '';
       let resolved = false;
