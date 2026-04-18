@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 
-const PAD = { paddingLeft: 32, paddingRight: 32 }
-
 function renderPromptOutput(text) {
   if (!text) return null
   const lines = text.split('\n')
@@ -11,9 +9,7 @@ function renderPromptOutput(text) {
 
   function flush() {
     const t = buf.join('\n').trim()
-    if (t) {
-      result.push(<span key={key++}>{t}</span>)
-    }
+    if (t) result.push(<span key={key++} className="block">{t}</span>)
     buf = []
   }
 
@@ -24,7 +20,8 @@ function renderPromptOutput(text) {
       result.push(
         <span
           key={key++}
-          className="block text-[8.5px] font-bold tracking-[0.14em] uppercase text-[rgba(100,170,255,0.42)] mb-[5px] mt-5 first:mt-0"
+          className="block text-[8.5px] font-bold tracking-[0.14em] uppercase mb-[6px] mt-5 first:mt-0"
+          style={{ color: 'rgba(100,170,255,0.42)' }}
         >
           {m[1].trim()}
         </span>
@@ -40,8 +37,8 @@ function renderPromptOutput(text) {
 function Divider() {
   return (
     <div
-      className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent flex-shrink-0"
-      style={{ marginLeft: 16, marginRight: 16 }}
+      className="flex-shrink-0"
+      style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 22px' }}
     />
   )
 }
@@ -69,9 +66,7 @@ export default function PromptReadyState({
       preEditValue.current = generatedPrompt
       setIsEditing(true)
     } else {
-      if (promptRef.current) {
-        setGeneratedPrompt(promptRef.current.textContent)
-      }
+      if (promptRef.current) setGeneratedPrompt(promptRef.current.textContent)
       setIsEditing(false)
     }
   }
@@ -91,9 +86,7 @@ export default function PromptReadyState({
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape' && isEditing) {
-        if (promptRef.current) {
-          promptRef.current.textContent = preEditValue.current
-        }
+        if (promptRef.current) promptRef.current.textContent = preEditValue.current
         setIsEditing(false)
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isEditing) {
@@ -105,27 +98,38 @@ export default function PromptReadyState({
   }, [isEditing, generatedPrompt])
 
   return (
-    <div id="panel-ready" className="relative z-[1] flex-1 flex flex-col min-h-0">
+    <div
+      id="panel-ready"
+      className="relative z-[1] flex flex-col h-full"
+      style={{ WebkitAppRegion: 'drag' }}
+    >
+      {/* Traffic light breathing room */}
+      <div className="flex-shrink-0" style={{ height: '36px' }} />
 
-      {/* Drag area — tall enough for traffic-light buttons to breathe */}
-      <div className="h-10 [-webkit-app-region:drag] flex-shrink-0" />
-
-      {/* Header: Prompt ready + Regenerate / Reset */}
-      <div className="flex justify-between items-center pt-3 pb-5 flex-shrink-0" style={PAD}>
-        <div className="flex items-center gap-2 text-[13px] text-white/40 tracking-[0.01em]">
-          <span className="text-[#30D158] text-[15px] [text-shadow:0_0_8px_rgba(48,209,88,0.5)]">✓</span>
+      {/* TOP ROW — 20px top / 22px sides / 16px bottom */}
+      <div
+        className="flex justify-between items-center flex-shrink-0"
+        style={{ padding: '20px 22px 16px' }}
+      >
+        <div
+          className="flex items-center text-[13px] tracking-[0.01em]"
+          style={{ gap: '8px', color: 'rgba(255,255,255,0.4)', WebkitAppRegion: 'no-drag' }}
+        >
+          <span style={{ color: '#30D158', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
           <span>Prompt ready</span>
         </div>
-        <div className="flex gap-[18px]">
+        <div className="flex" style={{ gap: '16px', WebkitAppRegion: 'no-drag' }}>
           <button
-            className="text-[11px] text-white/20 bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            style={{ color: 'rgba(255,255,255,0.2)' }}
             id="btn-regenerate"
             onClick={onRegenerate}
           >
             Regenerate
           </button>
           <button
-            className="text-[11px] text-white/20 bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            style={{ color: 'rgba(255,255,255,0.2)' }}
             id="btn-reset"
             onClick={onReset}
           >
@@ -136,50 +140,101 @@ export default function PromptReadyState({
 
       <Divider />
 
-      {/* You said */}
-      <div className="pt-6 pb-6 flex-shrink-0" style={PAD}>
-        <div className="block text-[9px] font-bold tracking-[0.14em] uppercase text-white/[0.14] mb-3">You said</div>
-        <div className="text-[13px] text-white/55 leading-[1.7] line-clamp-2" id="you-said-text">
+      {/* YOU SAID — 22px sides / 20px top / 20px bottom */}
+      <div className="flex-shrink-0" style={{ padding: '20px 22px' }}>
+        <div
+          className="text-[9px] font-bold uppercase"
+          style={{ letterSpacing: '0.14em', color: 'rgba(255,255,255,0.16)', marginBottom: '10px' }}
+        >
+          YOU SAID
+        </div>
+        <div
+          className="text-[13px] overflow-hidden"
+          style={{
+            color: 'rgba(255,255,255,0.26)',
+            lineHeight: '1.65',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            WebkitAppRegion: 'no-drag',
+          }}
+          id="you-said-text"
+        >
           {originalTranscript}
         </div>
       </div>
 
       <Divider />
 
-      {/* Generated prompt — fills remaining space, scrollable */}
+      {/* PROMPT CONTENT — fills remaining space, scrollable, thin scrollbar on hover */}
       <div
         ref={promptRef}
-        className="flex-1 min-h-0 overflow-y-auto py-5 text-[13.5px] leading-[1.9] text-white/[0.82] tracking-[0.01em] whitespace-pre-wrap scrollbar-thin"
+        className="overflow-y-auto scrollbar-thin flex-1 min-h-0"
         id="prompt-output"
         contentEditable={isEditing}
         suppressContentEditableWarning
         style={isEditing ? {
-          ...PAD,
+          padding: '20px 22px',
+          fontSize: '13.5px',
+          lineHeight: '1.85',
+          color: 'rgba(255,255,255,0.82)',
+          letterSpacing: '0.01em',
+          whiteSpace: 'pre-wrap',
           outline: '1.5px solid rgba(10,132,255,0.6)',
           outlineOffset: '4px',
           borderRadius: '6px',
-        } : PAD}
+          WebkitAppRegion: 'no-drag',
+        } : {
+          padding: '20px 22px',
+          fontSize: '13.5px',
+          lineHeight: '1.85',
+          color: 'rgba(255,255,255,0.82)',
+          letterSpacing: '0.01em',
+          whiteSpace: 'pre-wrap',
+          WebkitAppRegion: 'no-drag',
+        }}
       >
         {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt)}
       </div>
 
-      {/* Action buttons — always pinned at bottom */}
-      <div className="flex gap-[10px] pt-4 pb-6 flex-shrink-0" style={PAD}>
+      {/* BUTTON ROW — 28px top / 22px sides / 24px bottom */}
+      <div
+        className="flex flex-shrink-0"
+        style={{ gap: '10px', padding: '12px 22px 24px', WebkitAppRegion: 'no-drag' }}
+      >
         <button
-          className="h-11 px-8 min-w-[80px] border border-white/[0.10] rounded-[10px] bg-white/[0.04] text-[13px] text-white/40 cursor-pointer tracking-[0.01em] hover:bg-white/[0.08] hover:border-white/[0.18] transition-all duration-150"
+          className="cursor-pointer text-[13px] tracking-[0.01em] rounded-[10px] hover:bg-white/[0.08] transition-all duration-150"
           id="btn-edit"
           onClick={handleEdit}
+          style={{
+            height: '44px',
+            padding: '0 24px',
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            background: 'rgba(255,255,255,0.04)',
+            color: 'rgba(255,255,255,0.4)',
+          }}
         >
           {isEditing ? 'Done' : 'Edit'}
         </button>
         <button
-          className={`flex-1 h-11 border-none rounded-[10px] text-[13px] font-semibold cursor-pointer tracking-[0.02em] border-t border-t-white/[0.18] transition-shadow duration-150 ${
+          className={`flex-1 cursor-pointer text-[13px] font-semibold tracking-[0.02em] rounded-[10px] text-white transition-shadow duration-150 ${
             isCopied
-              ? 'bg-gradient-to-br from-[#30D158]/90 to-[#1EA846]/90 shadow-[0_2px_20px_rgba(48,209,88,0.4)] text-white'
-              : 'bg-gradient-to-br from-[#0A84FF]/92 to-[#0064DC]/92 shadow-[0_2px_20px_rgba(10,132,255,0.4)] hover:shadow-[0_4px_28px_rgba(10,132,255,0.65)] text-white'
+              ? 'hover:shadow-[0_4px_28px_rgba(48,209,88,0.65)]'
+              : 'hover:shadow-[0_4px_28px_rgba(10,132,255,0.65)]'
           }`}
           id="btn-copy"
           onClick={handleCopy}
+          style={{
+            height: '44px',
+            border: 'none',
+            borderTop: '0.5px solid rgba(255,255,255,0.18)',
+            background: isCopied
+              ? 'linear-gradient(135deg, rgba(48,209,88,0.92), rgba(30,168,70,0.92))'
+              : 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
+            boxShadow: isCopied
+              ? '0 2px 20px rgba(48,209,88,0.4)'
+              : '0 2px 20px rgba(10,132,255,0.4)',
+          }}
         >
           {isCopied ? 'Copied ✓' : 'Copy prompt'}
         </button>

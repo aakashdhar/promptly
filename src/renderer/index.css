@@ -47,6 +47,9 @@ body {
 
 .scrollbar-thin::-webkit-scrollbar { width: 3px; }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
+  background: transparent;
   border-radius: 2px;
+}
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
 }
