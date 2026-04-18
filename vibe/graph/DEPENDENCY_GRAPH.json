@@ -1,0 +1,252 @@
+{
+  "_meta": {
+    "version": 2,
+    "built_from": "vibe/CODEBASE.md + source files",
+    "built_at": "2026-04-18T13:36:46Z",
+    "project": "promptly"
+  },
+
+  "package.json": {
+    "state": "built",
+    "type": "config",
+    "concept": "foundation",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.95,
+    "concept_evidence": "Core project manifest — no feature folder owns it",
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "entitlements.plist",
+        "source": "INFERRED",
+        "confidence": 0.85,
+        "evidence": "electron-builder config in package.json references entitlements.plist for hardened runtime"
+      }
+    ],
+    "rationale": []
+  },
+
+  "entitlements.plist": {
+    "state": "built",
+    "type": "config",
+    "concept": "foundation",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.95,
+    "concept_evidence": "macOS distribution entitlement — no feature folder owns it",
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "package.json",
+        "source": "INFERRED",
+        "confidence": 0.85,
+        "evidence": "electron-builder hardenedRuntime + entitlements config references this file"
+      }
+    ],
+    "rationale": []
+  },
+
+  "eslint.config.js": {
+    "state": "built",
+    "type": "config",
+    "concept": "foundation",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.90,
+    "concept_evidence": "ESLint 9 flat config — dev tooling, no feature ownership",
+    "imports": [],
+    "imported_by": [],
+    "rationale": []
+  },
+
+  "main.js": {
+    "state": "built",
+    "type": "electron-main",
+    "concept": "foundation",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.90,
+    "concept_evidence": "Electron main process — owns IPC hub, window lifecycle, PATH resolution; touched by multiple features but no single feature owns it",
+    "secondary_concepts": ["speech-recording", "claude-integration", "first-run"],
+    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run)",
+    "imports": [
+      {
+        "file": "preload.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 123: preload: path.join(__dirname, 'preload.js') in win webPreferences; line 155: same in splashWin webPreferences"
+      }
+    ],
+    "loads": [
+      {
+        "file": "index.html",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 126: win.loadFile('index.html')"
+      },
+      {
+        "file": "splash.html",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 160: splashWin.loadFile('splash.html')"
+      }
+    ],
+    "imported_by": [],
+    "ipc_handles": [
+      "generate-prompt", "copy-to-clipboard", "check-claude-path",
+      "resize-window", "transcribe-audio", "show-mode-menu",
+      "set-window-buttons-visible", "splash-done", "splash-check-cli",
+      "splash-open-url", "request-mic"
+    ],
+    "ipc_sends": ["shortcut-triggered", "shortcut-conflict", "mode-selected"],
+    "key_vars": ["claudePath", "whisperPath", "win", "splashWin", "PROMPT_TEMPLATE", "MODE_CONFIG"],
+    "key_functions": ["resolveClaudePath", "registerShortcut", "createWindow"],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "PATH resolution uses 'zsh -lc \"which claude\"' — claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment",
+        "line": 68,
+        "source": "EXTRACTED"
+      },
+      {
+        "type": "DECISION",
+        "text": "transcript passed via stdin to claude spawn (not shell arg) — avoids shell injection and arg length limits",
+        "line": 203,
+        "source": "INFERRED",
+        "evidence": "child.stdin.end() with systemPrompt containing transcript embedded via PROMPT_TEMPLATE"
+      }
+    ]
+  },
+
+  "preload.js": {
+    "state": "built",
+    "type": "electron-preload",
+    "concept": "foundation",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.95,
+    "concept_evidence": "contextBridge IPC bridge — shared by all renderer windows, no single feature owns it",
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "main.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 123 + line 155: webPreferences.preload for both win and splashWin"
+      },
+      {
+        "file": "index.html",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "window.electronAPI consumed throughout index.html — provided by contextBridge in preload.js"
+      },
+      {
+        "file": "splash.html",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "window.electronAPI.splashDone/splashCheckCLI/splashOpenURL/requestMic called from splash.html"
+      }
+    ],
+    "exposes": [
+      "generatePrompt", "copyToClipboard", "checkClaudePath", "resizeWindow",
+      "setWindowButtonsVisible", "showModeMenu", "onModeSelected",
+      "transcribeAudio", "splashDone", "splashCheckCLI", "splashOpenURL",
+      "requestMic", "onShortcutTriggered", "onShortcutConflict"
+    ],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "nodeIntegration: false + contextIsolation: true always — security boundary between renderer and Node.js; all IPC via window.electronAPI only",
+        "line": 5,
+        "source": "INFERRED",
+        "evidence": "contextBridge pattern enforces this; ARCHITECTURE.md rule #5"
+      }
+    ]
+  },
+
+  "splash.html": {
+    "state": "built",
+    "type": "renderer-html",
+    "concept": "first-run",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "D-007 decision: FIRST_RUN state removed from index.html, replaced by separate splashWin BrowserWindow loading splash.html",
+    "imports": [
+      {
+        "file": "preload.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "window.electronAPI consumed for splashDone, splashCheckCLI, splashOpenURL, requestMic IPC calls"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "main.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 160: splashWin.loadFile('splash.html')"
+      }
+    ],
+    "key_functions": ["runChecks", "setCheck", "showReady", "openInstall"],
+    "rationale": []
+  },
+
+  "index.html": {
+    "state": "built",
+    "type": "renderer-html",
+    "concept": "foundation",
+    "concept_source": "AMBIGUOUS",
+    "concept_confidence": 0.50,
+    "concept_evidence": "Every feature touches index.html — state-machine, speech-recording, claude-integration, actions, first-run (removed). Assigned to foundation; all feature concepts are secondary.",
+    "review_note": "index.html is the monolithic UI file. All features live here. Consider it shared infrastructure.",
+    "secondary_concepts": [
+      "state-machine", "speech-recording", "claude-integration", "actions"
+    ],
+    "imports": [
+      {
+        "file": "preload.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "window.electronAPI.* called throughout — generatePrompt, copyToClipboard, resizeWindow, showModeMenu, transcribeAudio, onShortcutTriggered, onModeSelected, setWindowButtonsVisible"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "main.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 126: win.loadFile('index.html')"
+      }
+    ],
+    "key_vars": [
+      "state", "originalTranscript", "generatedPrompt", "mediaRecorder",
+      "audioChunks", "isProcessing", "morphAnimFrame", "recSecs", "recTimer",
+      "waveT", "waveRAF"
+    ],
+    "key_functions": [
+      "setState", "getMode", "setMode", "getModeLabel",
+      "startRecording", "stopRecording", "renderPromptOutput",
+      "drawMorphWave", "stopMorphAnim", "drawRecordingWave",
+      "startRecTimer", "stopRecTimer", "setRecordingTranscript"
+    ],
+    "state_machine_states": ["IDLE", "RECORDING", "THINKING", "PROMPT_READY", "ERROR"],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "Single monolithic index.html — zero build step, zero bundler. All JS, CSS, and HTML in one file. Deliberate constraint from ARCHITECTURE.md: Vanilla JS, no framework, no runtime deps.",
+        "line": 1,
+        "source": "INFERRED",
+        "evidence": "ARCHITECTURE.md Tech Stack decision + BRIEF.md stack decisions"
+      },
+      {
+        "type": "DECISION",
+        "text": "innerHTML never used with dynamic content — all user/Claude text set via textContent to prevent XSS. HTML only for static structure.",
+        "line": 1,
+        "source": "INFERRED",
+        "evidence": "ARCHITECTURE.md critical rule #6; CLAUDE.md Never list"
+      },
+      {
+        "type": "DECISION",
+        "text": "originalTranscript captured once in stopRecording() onstop handler — never mutated after. Regenerate reads this directly, not the edited generatedPrompt.",
+        "line": 1,
+        "source": "INFERRED",
+        "evidence": "ARCHITECTURE.md critical rule #3; module-scope var pattern"
+      }
+    ]
+  }
+}

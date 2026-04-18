@@ -1,0 +1,110 @@
+{
+  "_meta": {
+    "version": 2,
+    "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
+    "built_at": "2026-04-18T13:36:46Z",
+    "project": "promptly"
+  },
+
+  "foundation": {
+    "state": "built",
+    "type": "infrastructure",
+    "description": "Core Electron shell, IPC wiring, PATH resolution, config, and shared renderer infrastructure",
+    "files": [
+      { "file": "package.json",      "state": "built", "source": "INFERRED", "confidence": 0.95 },
+      { "file": "entitlements.plist","state": "built", "source": "INFERRED", "confidence": 0.95 },
+      { "file": "eslint.config.js",  "state": "built", "source": "INFERRED", "confidence": 0.90 },
+      { "file": "main.js",           "state": "built", "source": "INFERRED", "confidence": 0.90 },
+      { "file": "preload.js",        "state": "built", "source": "INFERRED", "confidence": 0.95 },
+      { "file": "index.html",        "state": "built", "source": "AMBIGUOUS","confidence": 0.50 }
+    ],
+    "depends_on": [],
+    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run"],
+    "tasks_complete": 9,
+    "tasks_total": 9,
+    "phase": "Phase 1 — complete",
+    "review_score": "7.9/10 (B)"
+  },
+
+  "state-machine": {
+    "state": "built",
+    "type": "feature",
+    "description": "5-state UI state machine (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR), CSS tokens, DOM structure, window resize IPC",
+    "files": [
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "vibe/features/2026-04-18-state-machine/FEATURE_TASKS.md Touches field" },
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FST-004: resize-window IPC channel" }
+    ],
+    "depends_on": ["foundation"],
+    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run"],
+    "tasks_complete": 5,
+    "tasks_total": 5,
+    "phase": "Phase 2 — complete",
+    "feature_folder": "vibe/features/2026-04-18-state-machine"
+  },
+
+  "first-run": {
+    "state": "built",
+    "type": "feature",
+    "description": "Launch-time splash screen with CLI + mic checks before main bar shows; replaces in-bar FIRST_RUN state (D-007)",
+    "files": [
+      { "file": "splash.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "D-007: splash.html is the first-run screen, separate splashWin BrowserWindow" },
+      { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "splash-done, splash-check-cli, splash-open-url, request-mic IPC channels" },
+      { "file": "index.html",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FRN tasks touched index.html; FIRST_RUN state later removed (D-007)" }
+    ],
+    "depends_on": ["foundation", "state-machine"],
+    "depended_on_by": [],
+    "tasks_complete": 4,
+    "tasks_total": 4,
+    "phase": "Phase 2 — complete",
+    "feature_folder": "vibe/features/2026-04-18-first-run"
+  },
+
+  "speech-recording": {
+    "state": "built",
+    "type": "feature",
+    "description": "MediaRecorder audio capture → Whisper CLI transcription → originalTranscript captured once; transitions to THINKING",
+    "files": [
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md Touches" },
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FPH-004: transcribe-audio IPC channel in main.js" },
+      { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FPH-004: transcribeAudio exposed via contextBridge" }
+    ],
+    "depends_on": ["foundation", "state-machine"],
+    "depended_on_by": ["claude-integration", "actions"],
+    "tasks_complete": 5,
+    "tasks_total": 5,
+    "phase": "Phase 2 — complete",
+    "feature_folder": "vibe/features/2026-04-18-speech-recording",
+    "notes": "Originally built with webkitSpeechRecognition (FPH-001/002), retrofitted to MediaRecorder + Whisper (FPH-001-R/002-R)"
+  },
+
+  "claude-integration": {
+    "state": "built",
+    "type": "feature",
+    "description": "Claude CLI spawn via generate-prompt IPC; 5 prompt modes (balanced/detailed/concise/chain/code); right-click mode context menu",
+    "files": [
+      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FCL-001: generate-prompt + show-mode-menu IPC in main.js; MODE_CONFIG constant" },
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "FCL-002+003: generatePrompt call + mode menu handler in index.html" }
+    ],
+    "depends_on": ["foundation", "state-machine", "speech-recording"],
+    "depended_on_by": ["actions"],
+    "tasks_complete": 4,
+    "tasks_total": 4,
+    "phase": "Phase 2 — complete",
+    "feature_folder": "vibe/features/2026-04-18-claude-integration"
+  },
+
+  "actions": {
+    "state": "built",
+    "type": "feature",
+    "description": "PROMPT_READY action buttons: Copy (clipboard + green flash 1.8s), Edit (contenteditable + Escape/Done), Regenerate (originalTranscript re-run)",
+    "files": [
+      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "vibe/features/2026-04-18-actions/FEATURE_TASKS.md Touches — index.html only" }
+    ],
+    "depends_on": ["foundation", "state-machine", "claude-integration"],
+    "depended_on_by": [],
+    "tasks_complete": 4,
+    "tasks_total": 4,
+    "phase": "Phase 2 — complete",
+    "feature_folder": "vibe/features/2026-04-18-actions"
+  }
+}

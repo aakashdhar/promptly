@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "created": "2026-04-18T13:36:46Z",
+  "last_updated": "2026-04-18T13:36:46Z",
+  "update_count": 0,
+  "mode": "build",
+  "nodes_planned": 0,
+  "nodes_built": 7,
+  "project": "promptly",
+  "god_nodes": [
+    {
+      "file": "preload.js",
+      "connections": 3,
+      "concept": "foundation",
+      "type": "electron-preload",
+      "risk": "LOW",
+      "note": "Used as preload for both win and splashWin; exposes all IPC to both renderers"
+    },
+    {
+      "file": "main.js",
+      "connections": 3,
+      "concept": "foundation",
+      "type": "electron-main",
+      "risk": "LOW",
+      "note": "Loads preload.js, index.html, splash.html; handles all IPC"
+    },
+    {
+      "file": "index.html",
+      "connections": 2,
+      "concept": "foundation",
+      "type": "renderer-html",
+      "risk": "LOW",
+      "note": "Loaded by main.js; consumes preload.js via window.electronAPI"
+    }
+  ],
+  "god_nodes_computed_at": "2026-04-18T13:36:46Z",
+  "ambiguous_count": 1,
+  "ambiguous_files": [
+    {
+      "file": "index.html",
+      "issue": "Concept ownership unclear — all 4 UI features (state-machine, speech-recording, claude-integration, actions) write to this file",
+      "action": "Assigned to foundation as shared UI infrastructure; secondary_concepts lists all features"
+    }
+  ],
+  "extracted_edges": 11,
+  "inferred_edges": 8,
+  "ambiguous_edges": 1,
+  "rationale_nodes": 5
+}

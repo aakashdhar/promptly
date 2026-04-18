@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promptly — Dependency Graph</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; overflow: hidden; }
+
+    #canvas { width: 100vw; height: 100vh; display: block; }
+
+    #controls {
+      position: fixed; top: 16px; left: 16px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 10;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    #controls h2 { font-size: 13px; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; margin-right: 4px; }
+    #search {
+      background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+      color: #e2e8f0; padding: 5px 10px; font-size: 12px; width: 180px; outline: none;
+    }
+    #search:focus { border-color: #6366f1; }
+    button {
+      background: #334155; border: none; border-radius: 6px;
+      color: #e2e8f0; padding: 5px 12px; font-size: 12px; cursor: pointer;
+    }
+    button:hover { background: #475569; }
+    button.active { background: #6366f1; }
+    select {
+      background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+      color: #e2e8f0; padding: 5px 8px; font-size: 12px; outline: none;
+    }
+    #stats { font-size: 11px; color: #64748b; white-space: nowrap; }
+
+    #sidebar {
+      position: fixed; right: 0; top: 0; bottom: 0; width: 340px;
+      background: #1e293b; border-left: 1px solid #334155; padding: 20px;
+      overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease;
+      z-index: 20;
+    }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar-close {
+      position: absolute; top: 14px; right: 14px;
+      background: #334155; border: none; border-radius: 50%; width: 24px; height: 24px;
+      color: #94a3b8; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+    }
+    #sidebar-close:hover { background: #475569; }
+    #node-name { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; word-break: break-all; }
+    .node-type-badge {
+      display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+      padding: 2px 8px; border-radius: 10px; margin-bottom: 14px; text-transform: uppercase;
+    }
+    .section-title { font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase; margin: 14px 0 6px; }
+    .detail-row { font-size: 12px; color: #94a3b8; margin: 3px 0; display: flex; gap: 6px; }
+    .detail-row strong { color: #cbd5e1; min-width: 80px; }
+    .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin: 2px 2px 2px 0; }
+    .tag-extracted { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+    .tag-inferred  { background: #1e1b4b; color: #a5b4fc; border: 1px solid #3730a3; }
+    .tag-ambiguous { background: #431407; color: #fb923c; border: 1px solid #9a3412; }
+    .conn-list { list-style: none; }
+    .conn-list li { font-size: 12px; color: #94a3b8; padding: 4px 0; border-bottom: 1px solid #1e293b; display: flex; gap: 6px; align-items: center; }
+    .conn-list li .arrow { color: #475569; }
+    .conn-list li .fname { color: #e2e8f0; font-family: monospace; font-size: 11px; }
+    .rationale-block { font-size: 11px; color: #94a3b8; padding: 8px; background: #0f172a; border-radius: 6px; margin: 4px 0; border-left: 3px solid #334155; }
+    .rationale-block .r-type { font-weight: 700; color: #6366f1; font-size: 10px; text-transform: uppercase; margin-bottom: 3px; }
+    .concept-pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; margin: 2px; }
+    .ambiguous-warning { background: #431407; border: 1px solid #9a3412; border-radius: 6px; padding: 8px; font-size: 11px; color: #fb923c; margin: 8px 0; }
+
+    /* Legend */
+    #legend {
+      position: fixed; bottom: 16px; left: 16px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+      padding: 10px 14px; z-index: 10;
+    }
+    #legend-title { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 11px; color: #94a3b8; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .legend-edge-solid { width: 20px; height: 2px; flex-shrink: 0; }
+    .legend-edge-dashed { width: 20px; height: 2px; flex-shrink: 0; border-top: 2px dashed; }
+
+    .tooltip {
+      position: fixed; background: #1e293b; border: 1px solid #334155; border-radius: 6px;
+      padding: 6px 10px; font-size: 11px; color: #e2e8f0; pointer-events: none;
+      z-index: 100; white-space: nowrap; display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <h2>PROMPTLY</h2>
+  <input type="text" id="search" placeholder="Search files…" />
+  <button id="toggle-view">Concept view</button>
+  <select id="filter-concept">
+    <option value="all">All concepts</option>
+    <option value="foundation">foundation</option>
+    <option value="state-machine">state-machine</option>
+    <option value="speech-recording">speech-recording</option>
+    <option value="claude-integration">claude-integration</option>
+    <option value="actions">actions</option>
+    <option value="first-run">first-run</option>
+  </select>
+  <span id="stats"></span>
+</div>
+
+<svg id="canvas">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-inferred" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#334155" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+</svg>
+
+<div id="sidebar">
+  <button id="sidebar-close">×</button>
+  <div id="node-name"></div>
+  <div id="node-type-badge-wrap"></div>
+  <div id="node-details"></div>
+</div>
+
+<div id="legend">
+  <div id="legend-title">Legend</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#94a3b8"></div> config</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#6366f1"></div> electron-main</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div> electron-preload</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#f97316"></div> renderer-html</div>
+  <div class="legend-row"><div class="legend-edge-solid" style="background:#475569"></div> EXTRACTED</div>
+  <div class="legend-row"><div class="legend-edge-dashed" style="border-color:#334155"></div> INFERRED</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DEPENDENCY_GRAPH = {
+  "package.json": {
+    "state": "built", "type": "config", "concept": "foundation",
+    "concept_source": "INFERRED", "concept_confidence": 0.95,
+    "imports": [],
+    "imported_by": [{"file":"entitlements.plist","source":"INFERRED","confidence":0.85,"evidence":"electron-builder config references entitlements.plist"}],
+    "rationale": []
+  },
+  "entitlements.plist": {
+    "state": "built", "type": "config", "concept": "foundation",
+    "concept_source": "INFERRED", "concept_confidence": 0.95,
+    "imports": [],
+    "imported_by": [{"file":"package.json","source":"INFERRED","confidence":0.85,"evidence":"electron-builder hardenedRuntime references this file"}],
+    "rationale": []
+  },
+  "eslint.config.js": {
+    "state": "built", "type": "config", "concept": "foundation",
+    "concept_source": "INFERRED", "concept_confidence": 0.90,
+    "imports": [], "imported_by": [], "rationale": []
+  },
+  "main.js": {
+    "state": "built", "type": "electron-main", "concept": "foundation",
+    "concept_source": "INFERRED", "concept_confidence": 0.90,
+    "secondary_concepts": ["speech-recording","claude-integration","first-run"],
+    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 123+155: webPreferences.preload for win and splashWin"}],
+    "loads": [
+      {"file":"index.html","source":"EXTRACTED","confidence":1.0,"evidence":"line 126: win.loadFile('index.html')"},
+      {"file":"splash.html","source":"EXTRACTED","confidence":1.0,"evidence":"line 160: splashWin.loadFile('splash.html')"}
+    ],
+    "imported_by": [],
+    "ipc_handles": ["generate-prompt","copy-to-clipboard","check-claude-path","resize-window","transcribe-audio","show-mode-menu","set-window-buttons-visible","splash-done","splash-check-cli","splash-open-url","request-mic"],
+    "ipc_sends": ["shortcut-triggered","shortcut-conflict","mode-selected"],
+    "key_vars": ["claudePath","whisperPath","win","splashWin","PROMPT_TEMPLATE","MODE_CONFIG"],
+    "key_functions": ["resolveClaudePath","registerShortcut","createWindow"],
+    "rationale": [
+      {"type":"DECISION","text":"PATH resolution uses 'zsh -lc \"which claude\"' — claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment","line":68,"source":"EXTRACTED"},
+      {"type":"DECISION","text":"transcript passed via stdin to claude spawn (not shell arg) — avoids shell injection and arg length limits","line":203,"source":"INFERRED"}
+    ]
+  },
+  "preload.js": {
+    "state": "built", "type": "electron-preload", "concept": "foundation",
+    "concept_source": "INFERRED", "concept_confidence": 0.95,
+    "imports": [],
+    "imported_by": [
+      {"file":"main.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 123+155: webPreferences.preload"},
+      {"file":"index.html","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI consumed throughout index.html"},
+      {"file":"splash.html","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.splashDone/splashCheckCLI/requestMic called from splash.html"}
+    ],
+    "exposes": ["generatePrompt","copyToClipboard","checkClaudePath","resizeWindow","setWindowButtonsVisible","showModeMenu","onModeSelected","transcribeAudio","splashDone","splashCheckCLI","splashOpenURL","requestMic","onShortcutTriggered","onShortcutConflict"],
+    "rationale": [
+      {"type":"DECISION","text":"nodeIntegration:false + contextIsolation:true always — security boundary; all IPC via window.electronAPI only","line":5,"source":"INFERRED"}
+    ]
+  },
+  "splash.html": {
+    "state": "built", "type": "renderer-html", "concept": "first-run",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "concept_evidence": "D-007: FIRST_RUN removed from index.html, replaced by separate splashWin loading splash.html",
+    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI consumed for splash IPC calls"}],
+    "imported_by": [{"file":"main.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 160: splashWin.loadFile('splash.html')"}],
+    "key_functions": ["runChecks","setCheck","showReady","openInstall"],
+    "rationale": []
+  },
+  "index.html": {
+    "state": "built", "type": "renderer-html", "concept": "foundation",
+    "concept_source": "AMBIGUOUS", "concept_confidence": 0.50,
+    "concept_evidence": "Every feature touches index.html — assigned to foundation",
+    "secondary_concepts": ["state-machine","speech-recording","claude-integration","actions"],
+    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.* called throughout — all IPC methods"}],
+    "imported_by": [{"file":"main.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 126: win.loadFile('index.html')"}],
+    "key_vars": ["state","originalTranscript","generatedPrompt","mediaRecorder","audioChunks","isProcessing","morphAnimFrame","recSecs","recTimer","waveT","waveRAF"],
+    "key_functions": ["setState","getMode","setMode","getModeLabel","startRecording","stopRecording","renderPromptOutput","drawMorphWave","stopMorphAnim","drawRecordingWave","startRecTimer","stopRecTimer","setRecordingTranscript"],
+    "state_machine_states": ["IDLE","RECORDING","THINKING","PROMPT_READY","ERROR"],
+    "rationale": [
+      {"type":"DECISION","text":"Single monolithic index.html — zero build step, zero bundler. Deliberate constraint from ARCHITECTURE.md.","line":1,"source":"INFERRED"},
+      {"type":"DECISION","text":"innerHTML never used with dynamic content — all user/Claude text set via textContent to prevent XSS.","line":1,"source":"INFERRED"},
+      {"type":"DECISION","text":"originalTranscript captured once in stopRecording() — never mutated after. Regenerate reads this, not the edited generatedPrompt.","line":1,"source":"INFERRED"}
+    ]
+  }
+};
+
+const CONCEPT_GRAPH = {
+  "foundation":         { "state":"built","files":["package.json","entitlements.plist","eslint.config.js","main.js","preload.js","index.html"],"depends_on":[],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","first-run"],"tasks_complete":9,"tasks_total":9 },
+  "state-machine":      { "state":"built","files":["index.html","main.js"],"depends_on":["foundation"],"depended_on_by":["speech-recording","claude-integration","actions","first-run"],"tasks_complete":5,"tasks_total":5 },
+  "first-run":          { "state":"built","files":["splash.html","main.js","index.html"],"depends_on":["foundation","state-machine"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
+  "speech-recording":   { "state":"built","files":["index.html","main.js","preload.js"],"depends_on":["foundation","state-machine"],"depended_on_by":["claude-integration","actions"],"tasks_complete":5,"tasks_total":5 },
+  "claude-integration": { "state":"built","files":["main.js","index.html"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":["actions"],"tasks_complete":4,"tasks_total":4 },
+  "actions":            { "state":"built","files":["index.html"],"depends_on":["foundation","state-machine","claude-integration"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 }
+};
+
+// ── Colour map ──────────────────────────────────────────────────────────────
+const TYPE_COLOURS = {
+  "config":           "#94a3b8",
+  "electron-main":    "#6366f1",
+  "electron-preload": "#22c55e",
+  "renderer-html":    "#f97316",
+  "feature":          "#3b82f6",
+  "infrastructure":   "#64748b"
+};
+const CONCEPT_COLOURS = {
+  "foundation":         "#64748b",
+  "state-machine":      "#6366f1",
+  "first-run":          "#a855f7",
+  "speech-recording":   "#3b82f6",
+  "claude-integration": "#06b6d4",
+  "actions":            "#22c55e"
+};
+
+// ── State ───────────────────────────────────────────────────────────────────
+let currentView = 'file';
+let selectedNode = null;
+let filterConcept = 'all';
+let searchQuery = '';
+
+const svg = document.getElementById('canvas');
+let W = window.innerWidth, H = window.innerHeight;
+
+// ── Force simulation ─────────────────────────────────────────────────────────
+function buildFileGraph() {
+  const nodes = Object.entries(DEPENDENCY_GRAPH).map(([id, d]) => ({
+    id, ...d,
+    x: W/2 + (Math.random()-0.5)*300,
+    y: H/2 + (Math.random()-0.5)*300,
+    vx: 0, vy: 0,
+    r: degreeOf(id) >= 3 ? 22 : degreeOf(id) >= 1 ? 16 : 12
+  }));
+  const edges = [];
+  for (const [src, d] of Object.entries(DEPENDENCY_GRAPH)) {
+    for (const imp of (d.imports||[])) edges.push({ source:src, target:imp.file, source_tag:imp.source });
+    for (const ld of (d.loads||[]))   edges.push({ source:src, target:ld.file,  source_tag:ld.source });
+  }
+  return { nodes, edges };
+}
+
+function buildConceptGraph() {
+  const nodes = Object.entries(CONCEPT_GRAPH).map(([id, d]) => ({
+    id, type: d.state === 'built' ? 'feature' : 'feature',
+    concept: id, state: d.state,
+    files: d.files, tasks_complete: d.tasks_complete, tasks_total: d.tasks_total,
+    x: W/2 + (Math.random()-0.5)*350,
+    y: H/2 + (Math.random()-0.5)*350,
+    vx: 0, vy: 0,
+    r: 14 + (d.files||[]).length * 3
+  }));
+  const edges = [];
+  for (const [id, d] of Object.entries(CONCEPT_GRAPH)) {
+    for (const dep of (d.depends_on||[])) edges.push({ source:id, target:dep, source_tag:'EXTRACTED' });
+  }
+  return { nodes, edges };
+}
+
+function degreeOf(id) {
+  const d = DEPENDENCY_GRAPH[id] || {};
+  return (d.imports||[]).length + (d.imported_by||[]).length + (d.loads||[]).length;
+}
+
+function simulate(nodes, edges, iters=400) {
+  const REPEL = 9000, SPRING = 130, SPRING_K = 0.04, DAMP = 0.88, ALPHA_DECAY = 0.997;
+  let alpha = 1;
+  for (let t = 0; t < iters; t++) {
+    alpha *= ALPHA_DECAY;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i+1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const dx = b.x-a.x, dy = b.y-a.y;
+        const d2 = dx*dx+dy*dy || 1;
+        const f = REPEL / d2;
+        const nx = f*dx/Math.sqrt(d2), ny = f*dy/Math.sqrt(d2);
+        a.vx -= nx; a.vy -= ny; b.vx += nx; b.vy += ny;
+      }
+    }
+    for (const e of edges) {
+      const a = nodes.find(n=>n.id===e.source), b = nodes.find(n=>n.id===e.target);
+      if (!a||!b) continue;
+      const dx=b.x-a.x, dy=b.y-a.y, dist=Math.sqrt(dx*dx+dy*dy)||1;
+      const f=(dist-SPRING)*SPRING_K;
+      const nx=f*dx/dist, ny=f*dy/dist;
+      a.vx+=nx; a.vy+=ny; b.vx-=nx; b.vy-=ny;
+    }
+    // Centre gravity
+    for (const n of nodes) {
+      n.vx += (W/2 - n.x) * 0.003;
+      n.vy += (H/2 - n.y) * 0.003;
+      n.x += n.vx * alpha;
+      n.y += n.vy * alpha;
+      n.vx *= DAMP; n.vy *= DAMP;
+      n.x = Math.max(50, Math.min(W-50, n.x));
+      n.y = Math.max(50, Math.min(H-50, n.y));
+    }
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function render() {
+  W = window.innerWidth; H = window.innerHeight;
+  svg.innerHTML = `<defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/></marker>
+    <marker id="arrow-inferred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="#334155" stroke-width="1.5" stroke-linecap="round"/></marker>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  const { nodes, edges } = currentView === 'file' ? buildFileGraph() : buildConceptGraph();
+  simulate(nodes, edges);
+
+  // Apply filters
+  const visible = nodes.filter(n => {
+    if (filterConcept !== 'all') {
+      const c = n.concept || n.id;
+      const sec = DEPENDENCY_GRAPH[n.id]?.secondary_concepts || [];
+      if (c !== filterConcept && !sec.includes(filterConcept)) return false;
+    }
+    if (searchQuery && !n.id.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+  const visibleIds = new Set(visible.map(n=>n.id));
+
+  // Edge layer
+  const edgeG = svgEl('g', { class:'edges' });
+  svg.appendChild(edgeG);
+  for (const e of edges) {
+    if (!visibleIds.has(e.source) || !visibleIds.has(e.target)) continue;
+    const a = nodes.find(n=>n.id===e.source), b = nodes.find(n=>n.id===e.target);
+    if (!a||!b) continue;
+    const dx=b.x-a.x, dy=b.y-a.y, dist=Math.sqrt(dx*dx+dy*dy)||1;
+    const mx=a.x+dx/2, my=a.y+dy/2;
+    const path = svgEl('path', {
+      d: `M${a.x},${a.y} Q${mx+(dy*0.15)},${my-(dx*0.15)} ${b.x},${b.y}`,
+      fill: 'none',
+      stroke: e.source_tag==='EXTRACTED' ? '#475569' : '#2d3748',
+      'stroke-width': e.source_tag==='EXTRACTED' ? '1.5' : '1',
+      'stroke-dasharray': e.source_tag==='EXTRACTED' ? 'none' : '5 3',
+      'marker-end': `url(#${e.source_tag==='EXTRACTED' ? 'arrow' : 'arrow-inferred'})`,
+      opacity: '0.7'
+    });
+    edgeG.appendChild(path);
+  }
+
+  // Node layer
+  const nodeG = svgEl('g', { class:'nodes' });
+  svg.appendChild(nodeG);
+  for (const n of visible) {
+    const colour = currentView === 'file'
+      ? (TYPE_COLOURS[n.type] || '#64748b')
+      : (CONCEPT_COLOURS[n.id] || '#6366f1');
+
+    const g = svgEl('g', { transform:`translate(${n.x},${n.y})`, style:'cursor:pointer' });
+    g.dataset.id = n.id;
+
+    // Outer glow for selected
+    if (selectedNode === n.id) {
+      const glow = svgEl('circle', { r: n.r+6, fill: colour, opacity: '0.25' });
+      g.appendChild(glow);
+    }
+
+    const circle = svgEl('circle', {
+      r: n.r,
+      fill: colour,
+      opacity: n.state==='built' ? '1' : '0.5',
+      stroke: n.concept_source==='AMBIGUOUS' ? '#fb923c' : (selectedNode===n.id ? '#fff' : 'rgba(255,255,255,0.15)'),
+      'stroke-width': selectedNode===n.id ? '2' : '1',
+      'stroke-dasharray': n.state==='planned' ? '4 2' : 'none'
+    });
+    g.appendChild(circle);
+
+    // Label
+    const fname = n.id.split('/').pop();
+    const label = svgEl('text', {
+      y: n.r + 14, 'text-anchor': 'middle',
+      fill: '#cbd5e1', 'font-size': '11', 'font-family': 'monospace',
+      'pointer-events': 'none'
+    });
+    label.textContent = fname;
+    g.appendChild(label);
+
+    // Concept badge for file view
+    if (currentView === 'file') {
+      const badgeC = CONCEPT_COLOURS[n.concept] || '#64748b';
+      const badge = svgEl('circle', { r: 5, cx: n.r-3, cy: -(n.r-3), fill: badgeC, stroke: '#0f172a', 'stroke-width': '1.5' });
+      g.appendChild(badge);
+    }
+
+    // IPC count for main.js
+    if (n.ipc_handles) {
+      const txt = svgEl('text', {
+        y: 4, 'text-anchor': 'middle', fill: '#e2e8f0', 'font-size': '10',
+        'font-weight': '700', 'pointer-events': 'none'
+      });
+      txt.textContent = n.ipc_handles.length;
+      g.appendChild(txt);
+    }
+
+    // Tasks badge for concept view
+    if (currentView === 'concept' && n.tasks_total) {
+      const pct = Math.round((n.tasks_complete/n.tasks_total)*100);
+      const txt = svgEl('text', { y:4, 'text-anchor':'middle', fill:'#fff', 'font-size':'10', 'font-weight':'700', 'pointer-events':'none' });
+      txt.textContent = `${pct}%`;
+      g.appendChild(txt);
+    }
+
+    g.addEventListener('click', () => showSidebar(n.id));
+    g.addEventListener('mouseenter', (e) => {
+      showTooltip(e, n.id);
+      highlightConnected(n.id, nodes, edges, nodeG, edgeG);
+    });
+    g.addEventListener('mouseleave', () => {
+      hideTooltip();
+      clearHighlight(nodeG, edgeG);
+    });
+
+    nodeG.appendChild(g);
+  }
+
+  // Stats
+  document.getElementById('stats').textContent = `${visible.length} nodes · ${edges.filter(e=>visibleIds.has(e.source)&&visibleIds.has(e.target)).length} edges`;
+}
+
+function highlightConnected(id, nodes, edges, nodeG, edgeG) {
+  const connected = new Set([id]);
+  for (const e of edges) {
+    if (e.source===id) connected.add(e.target);
+    if (e.target===id) connected.add(e.source);
+  }
+  for (const g of nodeG.children) {
+    g.style.opacity = connected.has(g.dataset.id) ? '1' : '0.15';
+  }
+  for (const p of edgeG.children) {
+    p.style.opacity = '0.15';
+  }
+}
+function clearHighlight(nodeG, edgeG) {
+  for (const g of nodeG.children) g.style.opacity = '1';
+  for (const p of edgeG.children) p.style.opacity = '0.7';
+}
+
+// ── Tooltip ──────────────────────────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, id) {
+  const d = DEPENDENCY_GRAPH[id] || CONCEPT_GRAPH[id];
+  if (!d) return;
+  const lines = [id];
+  if (d.type) lines.push(`type: ${d.type}`);
+  if (d.concept) lines.push(`concept: ${d.concept}`);
+  if (d.concept_source) lines.push(`source: ${d.concept_source} (${d.concept_confidence||'?'})`);
+  tooltip.textContent = lines.join(' · ');
+  tooltip.style.display = 'block';
+  tooltip.style.left = (e.clientX+14)+'px';
+  tooltip.style.top  = (e.clientY-8)+'px';
+}
+function hideTooltip() { tooltip.style.display = 'none'; }
+svg.addEventListener('mousemove', e => { if (tooltip.style.display==='block') { tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY-8)+'px'; } });
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+function showSidebar(id) {
+  selectedNode = id;
+  const d = DEPENDENCY_GRAPH[id] || CONCEPT_GRAPH[id];
+  if (!d) return;
+
+  document.getElementById('node-name').textContent = id;
+
+  const colour = TYPE_COLOURS[d.type] || CONCEPT_COLOURS[id] || '#64748b';
+  const badgeWrap = document.getElementById('node-type-badge-wrap');
+  badgeWrap.innerHTML = '';
+  const badge = document.createElement('span');
+  badge.className = 'node-type-badge';
+  badge.style.background = colour + '20';
+  badge.style.color = colour;
+  badge.style.border = `1px solid ${colour}40`;
+  badge.textContent = d.type || 'concept';
+  badgeWrap.appendChild(badge);
+
+  const details = document.getElementById('node-details');
+  details.innerHTML = '';
+
+  const addSection = (title, html) => {
+    const h = document.createElement('div');
+    h.className = 'section-title';
+    h.textContent = title;
+    details.appendChild(h);
+    const c = document.createElement('div');
+    c.innerHTML = html;
+    details.appendChild(c);
+  };
+
+  // Concept
+  if (d.concept) {
+    const src = d.concept_source || 'INFERRED';
+    const tagClass = src==='EXTRACTED' ? 'tag-extracted' : src==='AMBIGUOUS' ? 'tag-ambiguous' : 'tag-inferred';
+    const conf = d.concept_confidence ? ` · ${d.concept_confidence}` : '';
+    addSection('Concept', `<span class="concept-pill" style="border-color:${CONCEPT_COLOURS[d.concept]||'#334155'}">${d.concept}</span> <span class="tag ${tagClass}">${src}${conf}</span>`);
+  }
+
+  // Ambiguous warning
+  if (d.concept_source === 'AMBIGUOUS') {
+    const w = document.createElement('div');
+    w.className = 'ambiguous-warning';
+    w.textContent = `⚠️ Ambiguous: ${d.concept_evidence||'Multiple features own this file'}`;
+    details.appendChild(w);
+  }
+
+  // Secondary concepts
+  if (d.secondary_concepts?.length) {
+    addSection('Also used by', d.secondary_concepts.map(c => `<span class="concept-pill" style="border-color:${CONCEPT_COLOURS[c]||'#334155'}">${c}</span>`).join(' '));
+  }
+
+  // State
+  addSection('State', `<div class="detail-row"><strong>state</strong><span style="color:${d.state==='built'?'#4ade80':'#94a3b8'}">${d.state}</span></div>`);
+
+  // Connections
+  const allConns = [
+    ...(d.imports||[]).map(i=>({dir:'→',file:i.file,src:i.source,conf:i.confidence,ev:i.evidence})),
+    ...(d.loads||[]).map(i=>({dir:'loads',file:i.file,src:i.source,conf:i.confidence,ev:i.evidence})),
+    ...(d.imported_by||[]).map(i=>({dir:'←',file:i.file,src:i.source,conf:i.confidence,ev:i.evidence}))
+  ];
+  if (allConns.length) {
+    const tagClass = s => s==='EXTRACTED'?'tag-extracted':s==='AMBIGUOUS'?'tag-ambiguous':'tag-inferred';
+    addSection('Connections', '<ul class="conn-list">' + allConns.map(c =>
+      `<li><span class="arrow">${c.dir}</span><span class="fname">${c.file}</span><span class="tag ${tagClass(c.src)}">${c.src}</span></li>`
+    ).join('') + '</ul>');
+  }
+
+  // IPC
+  if (d.ipc_handles?.length) {
+    addSection('IPC handles', d.ipc_handles.map(ch=>`<code style="font-size:10px;color:#94a3b8;display:block;padding:1px 0">${ch}</code>`).join(''));
+  }
+  if (d.ipc_sends?.length) {
+    addSection('IPC sends', d.ipc_sends.map(ch=>`<code style="font-size:10px;color:#94a3b8;display:block;padding:1px 0">${ch}</code>`).join(''));
+  }
+
+  // Key functions
+  if (d.key_functions?.length) {
+    addSection('Key functions', d.key_functions.map(f=>`<code style="font-size:10px;color:#a5b4fc;display:inline-block;padding:1px 4px;background:#1e1b4b;border-radius:3px;margin:1px">${f}()</code>`).join(' '));
+  }
+
+  // Rationale
+  if (d.rationale?.length) {
+    addSection('Rationale', d.rationale.map(r => `<div class="rationale-block"><div class="r-type">${r.type} ${r.source ? `· ${r.source}` : ''}</div>${r.text}</div>`).join(''));
+  }
+
+  // Concept view: files list
+  if (d.files?.length && currentView==='concept') {
+    addSection(`Files (${d.files.length})`, d.files.map(f=>`<code style="font-size:10px;color:#94a3b8;display:block;padding:1px 0">${f}</code>`).join(''));
+    if (d.tasks_total) {
+      const pct = Math.round((d.tasks_complete/d.tasks_total)*100);
+      details.appendChild(Object.assign(document.createElement('div'), {
+        className:'detail-row', style:'margin-top:8px',
+        innerHTML:`<strong>Tasks</strong><span style="color:#4ade80">${d.tasks_complete}/${d.tasks_total} (${pct}%)</span>`
+      }));
+    }
+  }
+
+  document.getElementById('sidebar').classList.add('open');
+  render();
+}
+
+document.getElementById('sidebar-close').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  selectedNode = null;
+  render();
+});
+
+// ── Controls ─────────────────────────────────────────────────────────────────
+document.getElementById('toggle-view').addEventListener('click', function() {
+  currentView = currentView==='file' ? 'concept' : 'file';
+  this.textContent = currentView==='file' ? 'Concept view' : 'File view';
+  this.classList.toggle('active', currentView==='concept');
+  render();
+});
+
+document.getElementById('filter-concept').addEventListener('change', function() {
+  filterConcept = this.value;
+  render();
+});
+
+document.getElementById('search').addEventListener('input', function() {
+  searchQuery = this.value.toLowerCase();
+  render();
+});
+
+window.addEventListener('resize', render);
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
