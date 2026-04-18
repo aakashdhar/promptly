@@ -1,13 +1,17 @@
 'use strict';
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, globalShortcut } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
+const SHORTCUT_PRIMARY = 'Alt+Space';
+const SHORTCUT_FALLBACK = 'Control+`';
+
 let claudePath = null;
+let win = null;
 
 function createWindow() {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 480,
     height: 80,
     frame: false,
@@ -22,6 +26,7 @@ function createWindow() {
   });
 
   win.loadFile('index.html');
+  return win;
 }
 
 app.whenReady().then(() => {
@@ -38,8 +43,33 @@ app.whenReady().then(() => {
     }
   });
 
-  // P1-007: global shortcut registration added here
+  // P1-007: global shortcut registration
+  const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
+    win.webContents.send('shortcut-triggered');
+  });
+
+  if (primaryRegistered) {
+    console.log('Shortcut registered:', SHORTCUT_PRIMARY);
+  } else {
+    const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
+      win.webContents.send('shortcut-triggered');
+    });
+
+    if (fallbackRegistered) {
+      console.log('Shortcut registered (fallback):', SHORTCUT_FALLBACK);
+      win.webContents.on('did-finish-load', () => {
+        win.webContents.send('shortcut-conflict');
+      });
+    } else {
+      console.log('Shortcut registration failed for both', SHORTCUT_PRIMARY, 'and', SHORTCUT_FALLBACK);
+    }
+  }
+
   // P1-008: IPC channel stubs added here
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });
 
 app.on('window-all-closed', () => {
