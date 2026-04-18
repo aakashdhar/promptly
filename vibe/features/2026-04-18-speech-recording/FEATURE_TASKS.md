@@ -1,65 +1,71 @@
 # FEATURE_TASKS.md — F-SPEECH: Speech Recording
-> Feature: Speech recording with live transcript
+> Feature: Speech recording via MediaRecorder + Whisper CLI
 > Folder: vibe/features/2026-04-18-speech-recording/
 > Created: 2026-04-18
+> ⚠️ Scope change D-003 (2026-04-18): webkitSpeechRecognition → MediaRecorder + Whisper CLI. FPH-001/002 retrofitted, FPH-004 added.
 
-> **Estimated effort:** 3 tasks — S: 2, M: 1 — approx. 3 hours total
+> **Estimated effort:** 5 tasks — S: 3, M: 2 — approx. 5 hours total
 
 ---
 
-### FPH-001 · Module vars + `startRecording()`
-- **Status**: `[x]`
+### ~~FPH-001 · Module vars + `startRecording()` (webkitSpeechRecognition)~~
+> ⚠️ Superseded by D-003. Code committed but wrong — replaced by FPH-001-R retrofit.
+- **Status**: `[~]` (partial — retrofitted by FPH-001-R)
+
+---
+
+### FPH-001-R · Retrofit module vars + `startRecording()` for MediaRecorder
+- **Status**: `[ ]`
 - **Size**: S
-- **Spec ref**: FEATURE_SPEC.md#3 (criteria 1–6), FEATURE_SPEC.md#6
+- **Spec ref**: SPEC.md#f3
 - **Dependencies**: None
 - **Touches**: `index.html`
 
-**What to do**:
+**What to do** (retrofit — replaces webkitSpeechRecognition vars and startRecording):
 
-1. Add two module-scope vars directly after `let micOk = false;`:
+1. Replace module-scope vars after `let micOk = false;`:
    ```js
-   let recognition = null;
+   let mediaRecorder = null;
+   let audioChunks = [];
    let isRecording = false;
    ```
+   Remove `let recognition = null;` — no longer used.
 
-2. Add `startRecording()` immediately after `checkFirstRunCompletion()` (before DOMContentLoaded):
+2. Replace entire `startRecording()` function:
    ```js
-   function startRecording() {
-     if (typeof webkitSpeechRecognition === 'undefined') {
-       setState('ERROR', { message: 'Speech recognition not available' });
+   async function startRecording() {
+     let stream;
+     try {
+       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+     } catch {
+       setState('ERROR', { message: 'Microphone access denied' });
        return;
      }
-     transcript = '';
-     document.getElementById('recording-transcript').textContent = 'Listening…';
-     recognition = new webkitSpeechRecognition();
-     recognition.continuous = true;
-     recognition.interimResults = true;
-     recognition.lang = 'en-US';
-     recognition.onresult = null;  // wired in FPH-002
-     recognition.onerror = null;   // wired in FPH-002
-     recognition.onend = null;     // wired in FPH-002
-     recognition.start();
+     audioChunks = [];
+     mediaRecorder = new MediaRecorder(stream);
+     mediaRecorder.ondataavailable = (e) => {
+       if (e.data.size > 0) audioChunks.push(e.data);
+     };
+     mediaRecorder.onstop = null;  // wired in FPH-002-R
+     mediaRecorder.start();
      isRecording = true;
+     document.getElementById('recording-transcript').textContent = 'Recording…';
      setState('RECORDING');
    }
    ```
 
-   Note: handlers are stubbed `null` here — FPH-002 fills them in.
-
 **Acceptance criteria**:
-- [x] `recognition` and `isRecording` declared as module-scope vars (after `micOk`)
-- [x] `startRecording()` calls availability guard — returns early with ERROR if `webkitSpeechRecognition` undefined
-- [x] `transcript` reset to `''` at start of `startRecording()`
-- [x] `#recording-transcript` textContent set to `'Listening…'` at recording start
-- [x] `recognition` created fresh: `continuous: true`, `interimResults: true`, `lang: 'en-US'`
-- [x] `recognition.start()` called, `isRecording = true`, `setState('RECORDING')` called
-- [x] `npm run lint` passes
+- [ ] `mediaRecorder`, `audioChunks`, `isRecording` declared as module-scope vars (after `micOk`)
+- [ ] `recognition` var removed
+- [ ] `startRecording()` is `async`, calls `getUserMedia` — goes to ERROR "Microphone access denied" on catch
+- [ ] `audioChunks` reset to `[]` at start of each recording
+- [ ] `MediaRecorder` created from stream; `ondataavailable` pushes chunks
+- [ ] `#recording-transcript` textContent set to `'Recording…'`
+- [ ] `setState('RECORDING')` called; `isRecording = true`
+- [ ] `npm run lint` passes
 
-**Self-verify**: Re-read FEATURE_SPEC.md#3 criteria 1-6. From DevTools console: call `startRecording()` → bar should show RECORDING state with "Listening…". Shortcut still uses old stub — that's expected; replaced in FPH-002.
-**Test requirement**: Console call `startRecording()` shows RECORDING state. `webkitSpeechRecognition` guard: temporarily shadow `window.webkitSpeechRecognition = undefined` in console, call `startRecording()` → ERROR shown.
-**⚠️ Boundaries**: `recognition.onresult/onerror/onend = null` is intentional — FPH-002 fills these in. Do not add handler logic here.
+**Self-verify**: DevTools console: `startRecording()` → bar shows RECORDING with "Recording…" dot.
 **CODEBASE.md update?**: No — wait for FPH-003.
-**Architecture compliance**: Module vars follow existing pattern (after `micOk`). setState for all state changes. textContent for DOM text.
 
 **Decisions**:
 > Filled in by agent after completing.
@@ -67,120 +73,152 @@
 
 ---
 
-### FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring
-- **Status**: `[x]`
+### ~~FPH-002 · `onresult` + `onerror` + `onend` + `stopRecording()` + shortcut wiring (webkitSpeechRecognition)~~
+> ⚠️ Superseded by D-003. Code committed but wrong — replaced by FPH-002-R retrofit.
+- **Status**: `[~]` (partial — retrofitted by FPH-002-R)
+
+---
+
+### FPH-002-R · Retrofit `stopRecording()` + `onstop` handler + shortcut wiring for MediaRecorder
+- **Status**: `[ ]`
 - **Size**: M
-- **Spec ref**: FEATURE_SPEC.md#3 (criteria 6–14), FEATURE_SPEC.md#8
-- **Dependencies**: FPH-001
+- **Spec ref**: SPEC.md#f3
+- **Dependencies**: FPH-001-R, FPH-004
 - **Touches**: `index.html`
 
-**What to do**:
+**What to do** (retrofit — replaces webkitSpeechRecognition handlers and stopRecording):
 
-1. Inside `startRecording()`, replace the three `null` handler stubs with real implementations:
-
-   **`recognition.onresult`:**
+1. Inside `startRecording()`, replace `mediaRecorder.onstop = null` stub with real handler:
    ```js
-   recognition.onresult = (event) => {
-     let final = '';
-     let interim = '';
-     for (let i = 0; i < event.results.length; i++) {
-       if (event.results[i].isFinal) {
-         final += event.results[i][0].transcript;
-       } else {
-         interim += event.results[i][0].transcript;
-       }
+   mediaRecorder.onstop = async () => {
+     const blob = new Blob(audioChunks, { type: 'audio/webm' });
+     const arrayBuffer = await blob.arrayBuffer();
+     setState('THINKING');
+     const result = await window.electronAPI.transcribeAudio(arrayBuffer);
+     if (!result.success) {
+       setState('ERROR', { message: result.error });
+       return;
      }
-     transcript = final + interim;
-     document.getElementById('recording-transcript').textContent = transcript || 'Listening…';
-   };
-   ```
-
-   **`recognition.onerror`:**
-   ```js
-   recognition.onerror = (event) => {
-     isRecording = false;
-     if (event.error === 'not-allowed') {
-       setState('ERROR', { message: 'Microphone access denied' });
-     } else if (event.error === 'no-speech') {
-       setState('ERROR', { message: 'No speech detected — try again' });
-     } else {
-       setState('ERROR', { message: 'Speech recognition error — try again' });
-     }
-   };
-   ```
-
-   **`recognition.onend`:**
-   ```js
-   recognition.onend = () => {
-     if (isRecording) {
-       stopRecording();
-     }
-   };
-   ```
-
-2. Add `stopRecording()` immediately after `startRecording()`:
-   ```js
-   function stopRecording() {
-     isRecording = false;
-     recognition.stop();
-     originalTranscript = transcript.trim();
+     originalTranscript = result.transcript.trim();
      if (!originalTranscript) {
        setState('ERROR', { message: 'No speech detected — try again' });
        return;
      }
-     setState('THINKING');
      // F-CLAUDE will replace this stub
      setTimeout(() => setState('IDLE'), 1500);
+   };
+   ```
+
+2. Replace entire `stopRecording()` function:
+   ```js
+   function stopRecording() {
+     if (!isRecording) return;
+     isRecording = false;
+     mediaRecorder.stop();
+     mediaRecorder.stream.getTracks().forEach(t => t.stop());
    }
    ```
 
-3. Replace the existing shortcut stub inside DOMContentLoaded:
-
-   **Find and replace this block:**
+3. Shortcut wiring in DOMContentLoaded stays the same (already correct from FPH-002):
    ```js
    window.electronAPI.onShortcutTriggered(() => {
-     if (currentState === 'IDLE') {
-       setState('RECORDING');
-     } else if (currentState === 'RECORDING') {
-       setState('THINKING');
-       // F-SPEECH: replace stub
-       setTimeout(() => setState('IDLE'), 2000);
-     }
-   });
-   ```
-
-   **With:**
-   ```js
-   window.electronAPI.onShortcutTriggered(() => {
-     if (currentState === 'IDLE') {
-       startRecording();
-     } else if (currentState === 'RECORDING') {
-       stopRecording();
-     }
+     if (currentState === 'IDLE') startRecording();
+     else if (currentState === 'RECORDING') stopRecording();
    });
    ```
 
 **Acceptance criteria**:
-- [x] `onresult`: `transcript` updated with combined final + interim text on every event
-- [x] `onresult`: `#recording-transcript` textContent updated — falls back to `'Listening…'` if empty
-- [x] `onerror('not-allowed')`: sets `isRecording = false`, shows ERROR "Microphone access denied"
-- [x] `onerror('no-speech')`: sets `isRecording = false`, shows ERROR "No speech detected — try again"
-- [x] `onerror(other)`: sets `isRecording = false`, shows ERROR "Speech recognition error — try again"
-- [x] `onend`: calls `stopRecording()` only if `isRecording` is true — no-op if already false
-- [x] `stopRecording()`: sets `isRecording = false`, calls `recognition.stop()`
-- [x] `stopRecording()`: captures `originalTranscript = transcript.trim()`
-- [x] `stopRecording()`: empty transcript → ERROR "No speech detected — try again"
-- [x] `stopRecording()`: non-empty transcript → `setState('THINKING')` then `setTimeout → setState('IDLE') 1500ms`
-- [x] Shortcut from IDLE → `startRecording()` (not `setState('RECORDING')` directly)
-- [x] Shortcut from RECORDING → `stopRecording()` (not `setState('THINKING')` directly)
-- [x] Error messages match FEATURE_SPEC.md§8 exactly (em dash `—`, correct capitalisation)
-- [x] `npm run lint` passes
+- [ ] `mediaRecorder.onstop` collects chunks into Blob, converts to ArrayBuffer, calls `transcribeAudio` IPC
+- [ ] On IPC error → ERROR state with message from `result.error`
+- [ ] On empty transcript → ERROR "No speech detected — try again"
+- [ ] On success → `originalTranscript` set, `setState('THINKING')`, 1500ms stub → IDLE
+- [ ] `stopRecording()` guards against double-stop with `if (!isRecording) return`
+- [ ] `stopRecording()` stops MediaRecorder and releases all mic tracks
+- [ ] `originalTranscript` captured once — never mutated after
+- [ ] Shortcut IDLE → `startRecording()`, RECORDING → `stopRecording()` (unchanged)
+- [ ] `npm run lint` passes
 
-**Self-verify**: Re-read FEATURE_SPEC.md#3 criteria 6-14 and #8. Full happy path: ⌥Space → speak → ⌥Space → THINKING → (1.5s) IDLE. Auto-stop: ⌥Space → speak → silence → THINKING → IDLE. No-speech: ⌥Space → say nothing → silence → ERROR. Tap error → IDLE.
-**Test requirement**: Manual smoke — all 4 paths from §8 exercised before commit.
-**⚠️ Boundaries**: Do not add any `innerHTML`. Do not modify `originalTranscript` anywhere other than `stopRecording()`. The `setTimeout 1500ms` is a stub — do not make it permanent or configurable.
+**Self-verify**: DevTools console: `startRecording()` → speak → `stopRecording()` → THINKING → IDLE. Check terminal for Whisper output.
+**⚠️ Boundaries**: Do not mutate `originalTranscript` after it is set. The 1500ms setTimeout is a stub for F-CLAUDE.
 **CODEBASE.md update?**: No — wait for FPH-003.
-**Architecture compliance**: `textContent` only. `setState()` for all transitions. `originalTranscript` captured once and never mutated again.
+**Architecture compliance**: `textContent` only. `setState()` for all transitions. `originalTranscript` captured once.
+
+**Decisions**:
+> Filled in by agent after completing.
+- None yet.
+
+---
+
+### FPH-004 · `transcribe-audio` IPC — main.js + preload.js
+- **Status**: `[ ]`
+- **Size**: M
+- **Spec ref**: SPEC.md#f3, SPEC.md#ipc-surface
+- **Dependencies**: None (can run in parallel with FPH-001-R)
+- **Touches**: `main.js`, `preload.js`
+
+**What to do**:
+
+1. In `main.js`, resolve Whisper path at startup (same pattern as claudePath):
+   ```js
+   let whisperPath = null;
+   // inside app.whenReady():
+   exec('zsh -lc "which whisper"', (err, stdout) => {
+     whisperPath = stdout.trim() || null;
+     console.log('whisperPath:', whisperPath || 'not found');
+   });
+   ```
+
+2. Add `transcribe-audio` IPC handler in `main.js`:
+   ```js
+   ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
+     if (!whisperPath) {
+       return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+     }
+     const os = require('os');
+     const fs = require('fs');
+     const tmpFile = path.join(os.tmpdir(), `promptly-${Date.now()}.webm`);
+     const outDir = os.tmpdir();
+     try {
+       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
+       const transcript = await new Promise((resolve, reject) => {
+         exec(`"${whisperPath}" "${tmpFile}" --model tiny --output_format txt --output_dir "${outDir}"`, (err, stdout, stderr) => {
+           const txtFile = tmpFile.replace('.webm', '.txt');
+           try {
+             const text = fs.readFileSync(txtFile, 'utf8').trim();
+             fs.unlinkSync(tmpFile);
+             fs.unlinkSync(txtFile);
+             resolve(text);
+           } catch {
+             reject(new Error(stderr || 'Whisper output not found'));
+           }
+         });
+       });
+       return { success: true, transcript };
+     } catch (err) {
+       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+       return { success: false, error: err.message || 'Transcription failed' };
+     }
+   });
+   ```
+
+3. In `preload.js`, expose `transcribeAudio`:
+   ```js
+   transcribeAudio: (arrayBuffer) => ipcRenderer.invoke('transcribe-audio', arrayBuffer),
+   ```
+
+**Acceptance criteria**:
+- [ ] `whisperPath` resolved at startup via `zsh -lc "which whisper"`, logged to console
+- [ ] `transcribe-audio` IPC handler registered in `main.js`
+- [ ] If `whisperPath` null → returns `{ success: false, error: 'Whisper not found — install via pip install openai-whisper' }`
+- [ ] Audio written to temp file in `os.tmpdir()`
+- [ ] Whisper runs with `--model tiny --output_format txt`
+- [ ] Transcript read from output `.txt` file, both temp files cleaned up
+- [ ] On failure → returns `{ success: false, error: message }`
+- [ ] `transcribeAudio` exposed on `window.electronAPI` via preload
+- [ ] `npm run lint` passes
+
+**Self-verify**: In terminal after `npm start`: `whisperPath:` line should appear. In DevTools: `window.electronAPI.transcribeAudio` should be a function.
+**CODEBASE.md update?**: No — wait for FPH-003.
 
 **Decisions**:
 > Filled in by agent after completing.
