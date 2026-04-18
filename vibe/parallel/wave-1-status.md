@@ -1,21 +1,11 @@
-# Wave 1 — Phase 3 polish
-Started: 2026-04-18T13:43:37Z · Completed: 2026-04-18T13:44:07Z · Duration: ~30s
+# Wave 1 — Phase 4 features (F-DARKMODE bootstrap)
+Started: 2026-04-19 · Completed: 2026-04-19 · Duration: ~90s
 
 ## Tasks
-| ID | Size | Status | Started | Completed | Duration |
-|----|------|--------|---------|-----------|----------|
-| PH3-ERR | S | ✅ complete | 13:43:37 | 13:44:07 | 30s |
-| PH3-DIST | S | ✅ complete | 13:43:37 | 13:43:57 | 20s |
+| ID | Size | Status | Commit |
+|----|------|--------|--------|
+| FDM-001 | M | ✅ complete | 501a470 |
+| FDM-002 | S | ✅ complete | 501a470 |
 
 ## Summary
-Total tasks: 2 · Complete: 2 · Partial: 0 · Failed: 0
-
-## Files modified this wave
-  index.html (error messages fixed — regenerate path now propagates specific error)
-  vibe/distribution/slack-message.md (created)
-
-## Cost
-Subagent input tokens: ~59,062
-Subagent output tokens: ~800 (estimated)
-Wave cost: ~$0.19
-Context mode: graph-aware slicing
+Total tasks: 2 · Complete: 2 · Failed: 0 · Partial: 0

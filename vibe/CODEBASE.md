@@ -22,7 +22,7 @@
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
-| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations, history panel | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `loadHistory()`, `saveToHistory()`, `clearHistory()`, `renderHistoryList()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `HISTORY_KEY`, `HISTORY_MAX`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
+| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations, history panel, language selection | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `getLanguage()`, `setLanguage()`, `getLanguageLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `loadHistory()`, `saveToHistory()`, `clearHistory()`, `renderHistoryList()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `LANGUAGES`, `LANGUAGE_KEY`, `HISTORY_KEY`, `HISTORY_MAX`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
 
 ---
 
@@ -46,6 +46,8 @@
 | `mode-selected` | main → renderer | ✅ registered — sent from show-mode-menu click handler with mode key |
 | `get-theme` | renderer → main | ✅ registered — returns { dark: boolean } for current macOS appearance |
 | `theme-changed` | main → renderer | ✅ registered — sent by nativeTheme.on('updated') with { dark: boolean } |
+| `show-language-menu` | renderer → main | ✅ registered — builds native radio menu from passed languages array, sends `language-selected` to renderer on click |
+| `language-selected` | main → renderer | ✅ sent from show-language-menu click handler with language code |
 
 ---
 
@@ -85,6 +87,8 @@
 | `recTimer` | interval | `startRecTimer()` | `stopRecTimer()` |
 | `waveT` | number | `startRecTimer()` animateWave | wave animation |
 | `waveRAF` | number | `startRecTimer()` animateWave | `stopRecTimer()` |
+| `LANGUAGES` | array constant | module top | `getLanguageLabel()`, language pill |
+| `LANGUAGE_KEY` | string constant | module top | `getLanguage()`, `setLanguage()` |
 
 ---
 
@@ -129,6 +133,7 @@
 |-----|-----------|---------|-------|
 | `mode` | `setMode()` | `getMode()` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
 | `promptHistory` | `saveToHistory()` | `loadHistory()` | JSON array of up to 20 history entries `{ id, transcript, prompt, mode, date }` |
+| `promptLanguage` | `setLanguage()` | `getLanguage()` — passed to `transcribeAudio` on stop | Default: `'auto'` |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 
@@ -169,6 +174,7 @@
 | `btn-history-clear` | HISTORY | click → `clearHistory()` + re-render |
 | `history-btn` | IDLE | click → HISTORY state |
 | `btn-history` | PROMPT_READY | click → HISTORY state |
+| `language-pill` | IDLE | click → `showLanguageMenu`; label updated by `onLanguageSelected` |
 
 ---
 

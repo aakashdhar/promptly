@@ -129,6 +129,8 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | main → renderer | `mode-selected` | Mode key chosen from native menu — sent after show-mode-menu (BUG-002-D) |
 | renderer → main | `get-theme` | Returns `{ dark: boolean }` — current macOS appearance |
 | main → renderer | `theme-changed` | Sent when macOS appearance changes; payload `{ dark: boolean }` |
+| renderer → main | `show-language-menu` | Open native Electron radio menu from passed languages array; sends `language-selected` to renderer on click |
+| main → renderer | `language-selected` | Sent from show-language-menu click handler with selected language code |
 
 ---
 
