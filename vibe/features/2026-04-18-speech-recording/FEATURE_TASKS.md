@@ -150,7 +150,7 @@
 ---
 
 ### FPH-004 · `transcribe-audio` IPC — main.js + preload.js
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: SPEC.md#f3, SPEC.md#ipc-surface
 - **Dependencies**: None (can run in parallel with FPH-001-R)

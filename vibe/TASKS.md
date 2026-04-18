@@ -51,7 +51,7 @@
    [~] FPH-001 · Module vars + startRecording() — webkitSpeechRecognition (superseded — retrofit pending)
    [~] FPH-002 · Handlers + stopRecording() — webkitSpeechRecognition (superseded — retrofit pending)
    [x] FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
-   [ ] FPH-004 · transcribe-audio IPC — main.js + preload.js (Whisper CLI)
+   [x] FPH-004 · transcribe-audio IPC — main.js + preload.js (Whisper CLI)
    [ ] FPH-002-R · Retrofit stopRecording() + onstop handler + shortcut wiring
    [ ] FPH-003 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-18-speech-recording/FEATURE_TASKS.md (agent use)
@@ -102,11 +102,9 @@
 ---
 
 ## What just happened
-🔄 Scope change D-003 — webkitSpeechRecognition fails in Electron (network error, no bundled Google API key).
-   Switched to MediaRecorder + Whisper CLI. FPH-001/002 marked partial (wrong code), retrofit tasks added.
-   New: FPH-001-R, FPH-002-R (index.html), FPH-004 (main.js + preload.js).
+✅ FPH-004 done — transcribe-audio IPC registered in main.js: whisperPath resolved via zsh login shell, audio written to tmpdir, Whisper CLI runs with --model tiny, transcript read from output txt file, temp files cleaned up. transcribeAudio exposed via preload. Buffer added to ESLint globals.
 
 ## What's next
-⬜ FPH-001-R · Retrofit module vars + startRecording() for MediaRecorder
-   Replace recognition var with mediaRecorder + audioChunks; rewrite startRecording() to use getUserMedia + MediaRecorder.
+⬜ FPH-002-R · Retrofit stopRecording() + onstop handler for MediaRecorder
+   Wire mediaRecorder.onstop to collect blob → ArrayBuffer → transcribeAudio IPC → originalTranscript. Rewrite stopRecording() to stop MediaRecorder and release mic tracks.
 Say "next" to begin.
