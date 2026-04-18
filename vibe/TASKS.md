@@ -96,7 +96,9 @@
 ---
 
 ## What just happened
-Phase 1 review complete. Score 7.9/10 (B). 3 P1 IPC contract bugs fixed inline (generate-prompt arg shape, check-claude-path missing `found`, window not positioned). 3 P2 findings logged to backlog. Phase 1 gate ✅ passed.
+Phase 1 review complete. Score 7.9/10 (B). 3 P1 IPC contract bugs fixed inline. Phase 1 gate ✅ passed.
+💰 Cost tracked — Session #2: ~$1.30 (est. ±25%) · Project total: ~$1.91 · Sessions: 2
+   vibe/cost/report-2026-04-18-phase1.md
 
 ## What's next
 ⬜ Phase 2 begins — run `feature: state-machine` to plan F-STATE (no dependencies, start here)

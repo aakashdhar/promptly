@@ -1,9 +1,9 @@
 {
   "project_name": "Promptly",
-  "build_progress_pct": 0,
-  "tasks_remaining": 18,
-  "total_cost_usd": 0.606,
-  "total_sessions": 1,
+  "build_progress_pct": 50,
+  "tasks_remaining": 9,
+  "total_cost_usd": 1.906,
+  "total_sessions": 2,
   "phase_summary": [
     {
       "phase": "Planning",
@@ -13,9 +13,9 @@
     },
     {
       "phase": "Phase 1 \u2014 Foundation",
-      "status": "not_started",
-      "sessions": 0,
-      "cost_usd": 0.0
+      "status": "complete",
+      "sessions": 1,
+      "cost_usd": 1.3
     },
     {
       "phase": "Phase 2 \u2014 Core features",
@@ -34,20 +34,40 @@
     {
       "label": "Planning and architecture",
       "cost_usd": 0.606
+    },
+    {
+      "label": "Electron shell and IPC (Phase 1)",
+      "cost_usd": 0.79
+    },
+    {
+      "label": "Code review and quality gate",
+      "cost_usd": 0.25
+    },
+    {
+      "label": "Dev tooling (parallel orchestration, lint setup)",
+      "cost_usd": 0.25
     }
   ],
-  "at_a_glance": "You have spent $0.61 in 1 session covering the full planning stack: architecture, spec, plan, and spec review. The new-app: skill was the heaviest item at $0.30 \u2014 it generated 8 documents in a single pass. No code has been written yet; Phase 1 starts next.",
+  "at_a_glance": "You've spent .91 across 2 sessions on 2026-04-18. The planning session was /bin/zsh.61 and Phase 1 build was .30 \u2014 heavier than expected because 7 subagents were spun up via vibe-parallel, each carrying its own full context window. Phase 1 is complete with a clean gate (7.9/10 review score). Phase 2 features not yet started.",
   "session_narratives": {
-    "2026-04-18-001": "Full planning session covering architect:, new-app:, and spec-review: in sequence. Produced ARCHITECTURE.md, SPEC.md, PLAN.md, CLAUDE.md, TASKS.md, and the full vibe/ folder. One P0 spec gap (missing mode system prompts) was caught and fixed before the build begins \u2014 a cheap fix at planning time versus an expensive one mid-Phase 2."
+    "2026-04-18-001": "Full planning session covering architect:, new-app:, and spec-review: in sequence. Produced ARCHITECTURE.md, SPEC.md, PLAN.md, CLAUDE.md, TASKS.md, and the full vibe/ folder. One P0 spec gap (missing mode system prompts) was caught and fixed before the build begins \u2014 a cheap fix at planning time versus an expensive one mid-Phase 2.",
+    "2026-04-18-002": "Phase 1 complete in a single session using vibe-parallel. Wave 1 ran 4 subagents simultaneously (entitlements, main.js, preload.js, index.html). Waves 2\u20134 were sequential single-task agents (PATH resolution, global shortcut, IPC stubs). The phase-1-review caught 3 IPC contract bugs that were fixed inline \u2014 all 3 would have broken Phase 2 integrations if missed. The subagent approach was the dominant cost driver at ~/bin/zsh.64 of the session total."
   },
   "recommendations": [
     {
+      "code": "CP-04",
+      "title": "Single-task waves do not benefit from subagents",
+      "body": "Waves 2, 3, and 4 each contained exactly one task \u2014 so vibe-parallel spun up 3 agents with zero parallelism benefit. Each agent carries ~12,000 tokens of context overhead (prompt, ARCHITECTURE.md, task briefing). Running those tasks directly in the main session would save that overhead. Reserve subagents for waves with 2+ truly parallel tasks.",
+      "saving": "save ~/bin/zsh.09/session on sequential single-task waves",
+      "severity": "warn"
+    },
+    {
       "code": "CP-05",
-      "title": "Prompt caching not yet active \u2014 will save money in build sessions",
-      "body": "CLAUDE.md and vibe/ARCHITECTURE.md will be read at the start of every session. Once these files stabilise after Phase 1, Anthropic prompt caching will kick in automatically, reducing re-read costs by 90%. Avoid editing CLAUDE.md between tasks unnecessarily \u2014 every change resets the 5-minute cache TTL.",
-      "saving": "save ~$0.05\u20130.15/session once Phase 1 is stable",
+      "title": "Prompt caching not yet measurable \u2014 monitor in Phase 2",
+      "body": "Phase 1 was a single session so there's no caching baseline yet. In Phase 2, CLAUDE.md (~5KB) and ARCHITECTURE.md (~10KB) will be read at the start of every session. If these files stabilise after F-STATE, Anthropic prompt caching will reduce re-read costs by 90%. Avoid editing CLAUDE.md between tasks \u2014 every change resets the 5-minute cache TTL.",
+      "saving": "save ~/bin/zsh.05\u20130.15/session once Phase 2 docs stabilise",
       "severity": "ok"
     }
   ],
-  "forecast_narrative": "Phase 1 has 9 foundation tasks (P1-001 through P1-009) \u2014 expect 1\u20132 sessions at $0.20\u20130.40 each. Phase 2 has 5 features of varying size; the Claude CLI integration and state machine will be the heaviest. Total project estimate: $1.50\u20132.50 for a clean v1 build at current session patterns."
+  "forecast_narrative": "Phase 2 has 5 features remaining (F-STATE, F-FIRST-RUN, F-SPEECH, F-CLAUDE, F-ACTIONS). Each will generate 5\u20138 sub-tasks when planned. At the current rate of ~/bin/zsh.10/task, expect .50\u20132.50 to complete Phase 2, with F-CLAUDE (Claude CLI integration) likely the most expensive feature. Phase 3 polish adds another /bin/zsh.40\u20130.80. Total project estimate: .00\u20135.20. Fixing the single-task subagent pattern could trim /bin/zsh.30\u20130.50 from that total."
 }
