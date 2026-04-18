@@ -7,8 +7,8 @@
 
 ## Current state
 
-**Phase:** Phase 3 in progress — Phase 2 complete (reviewed 2026-04-18, score 6.4/10, 0 P0)
-**Files written:** 7 source files + eslint.config.js
+**Phase:** Phase 4 in progress — FEATURE-004 React migration active on branch `feat/react-migration`
+**Files written:** 7 source files + eslint.config.js + 19 React renderer files
 
 ---
 
@@ -16,13 +16,30 @@
 
 | File | Purpose | Key exports / functions |
 |------|---------|------------------------|
-| `package.json` | Electron + electron-builder config, npm scripts, devDeps only | scripts: start, dist, lint |
+| `package.json` | Electron + electron-builder config, npm scripts (start, dev, build:renderer, start:react, dist, lint), devDeps only | — |
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
-| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
+| `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './' | — |
+| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html) | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged` |
-| `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
-| `index.html` | Full UI: CSS tokens, all 6 state panels, state machine, boot sequence, IPC wire-up, action handlers (Copy flash, Edit/Done contenteditable, Regenerate), waveform animations, history panel, language selection | `setState()`, `getMode()`, `setMode()`, `getModeLabel()`, `getLanguage()`, `setLanguage()`, `getLanguageLabel()`, `startRecording()`, `stopRecording()`, `renderPromptOutput()`, `drawMorphWave()`, `stopMorphAnim()`, `drawRecordingWave()`, `startRecTimer()`, `stopRecTimer()`, `setRecordingTranscript()`, `loadHistory()`, `saveToHistory()`, `clearHistory()`, `renderHistoryList()`, `STATE_HEIGHTS`, `STATES`, `MODES`, `LANGUAGES`, `LANGUAGE_KEY`, `HISTORY_KEY`, `HISTORY_MAX`, `state`, `originalTranscript`, `generatedPrompt`, `mediaRecorder`, `audioChunks`, `isProcessing`, `morphAnimFrame` |
+| `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React) | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
+| `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
+| `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
+| `src/renderer/main.jsx` | React root — `ReactDOM.createRoot().render(<App />)` | — |
+| `src/renderer/App.jsx` | State machine root — all 5 states, IPC wiring, theme, recording flow, history | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `handleDismiss()`, `handleRegenerate()` |
+| `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
+| `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
+| `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
+| `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, stop | — |
+| `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup | — |
+| `src/renderer/components/ThinkingState.jsx` | THINKING panel — status badge, morph wave, YOU SAID | — |
+| `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
+| `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, renderPromptOutput | `renderPromptOutput()` |
+| `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
+| `src/renderer/styles/tokens.css` | CSS custom properties (:root) + body.light overrides | — |
+| `src/renderer/styles/bar.css` | .bar glass container + ::before tint + ::after accent | — |
+| `src/renderer/styles/states.css` | All per-state layout CSS + @keyframes | — |
+| `dist-renderer/` | Built React renderer output — loaded by Electron in production | — |
 
 ---
 
@@ -72,7 +89,21 @@
 
 ---
 
-## Module-scope variables (in index.html)
+## React state + refs (in App.jsx) — FEATURE-004
+
+| Variable | Type | Set by | Read by |
+|----------|------|--------|---------|
+| `currentState` | useState string | `transition()` | all components (conditional render) |
+| `generatedPrompt` | useState string | stopRecording onstop, handleRegenerate | PromptReadyState |
+| `errorMessage` | useState string | `transition(ERROR, {message})` | ErrorState |
+| `thinkTranscript` | useState string | stopRecording, handleRegenerate | ThinkingState |
+| `originalTranscript` | useRef string | stopRecording onstop — set ONCE, never mutated | PromptReadyState, handleRegenerate |
+| `stateRef` | useRef string | mirrors currentState — stale-closure-safe for IPC handlers | onShortcutTriggered callback |
+| `mediaRecorderRef` | useRef MediaRecorder\|null | startRecording, handleDismiss | stopRecording, handleDismiss |
+| `audioChunksRef` | useRef Blob[] | startRecording ondataavailable | stopRecording onstop |
+| `isProcessingRef` | useRef boolean | stopRecording start/end guard | stopRecording early-exit guard |
+
+## Module-scope variables (in index.html — legacy, main branch only)
 
 | Variable | Type | Set by | Read by |
 |----------|------|--------|---------|
@@ -131,11 +162,12 @@
 
 | Key | Written by | Read by | Notes |
 |-----|-----------|---------|-------|
-| `mode` | `setMode()` | `getMode()` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
-| `promptHistory` | `saveToHistory()` | `loadHistory()` | JSON array of up to 20 history entries `{ id, transcript, prompt, mode, date }` |
-| `promptLanguage` | `setLanguage()` | `getLanguage()` — passed to `transcribeAudio` on stop | Default: `'auto'` |
+| `mode` | `useMode.setMode()` | `useMode.mode` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
+| `promptly_history` | `saveToHistory()` in App.jsx | Future history UI | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp }` |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
+> `promptHistory` (old key, 20-entry cap) — replaced by `promptly_history` (100-entry cap) in FEATURE-004
+> `promptLanguage` removed — F-LANGUAGE removed (D-LANGUAGE-REMOVE)
 
 ---
 

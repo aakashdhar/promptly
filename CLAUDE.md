@@ -295,6 +295,55 @@ Never: use innerHTML with dynamic content · access localStorage directly · tou
 
 ---
 
+---
+
+### Active Feature: FEATURE-004 (React Migration)
+> Folder: vibe/features/2026-04-19-react-migration/ | Added: 2026-04-19
+> Branch: feat/react-migration — all work on this branch, never touch main
+
+**Feature summary**: Migrate renderer from vanilla JS/HTML/CSS (index.html) to React + Vite. Electron main process, preload.js, and splash.html are unchanged. All IPC channels preserved exactly.
+**Files in scope**: `src/renderer/**` (new), `vite.config.js` (new), `main.js` (loadFile only), `package.json` (devDeps + scripts)
+**Files out of scope**: `preload.js`, `splash.html`, `entitlements.plist`, `index.html` (stays on main branch)
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `window.electronAPI.*` calls identical to vanilla JS version — same method names, same args
+- `textContent` equivalent in React = JSX text nodes — never dangerouslySetInnerHTML
+- `originalTranscript` is a `useRef` — `.current` set ONCE in stopRecording, never again
+- `useMode` hook wraps localStorage (same `'mode'` key, same default `'balanced'`)
+- RAF loops in canvas components: always cancel in useEffect cleanup (`return () => cancelAnimationFrame(raf)`)
+- IPC listeners: registered in useEffect with empty dep array — mount once, never re-register
+- `stateRef` (useRef) mirrors currentState for stale-closure-safe IPC callbacks
+- `transition(newState, payload)` replaces `setState(newState, payload)` — same role
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · useEffect cleanup for RAF + timers · textContent via JSX nodes ·
+        update CODEBASE.md for new files (FCR-014) · run `npm run build:renderer` to verify builds
+
+Ask first: adding any new IPC channel · adding new localStorage keys · changing canvas animation math
+
+Never: dangerouslySetInnerHTML with user/Claude content · access localStorage directly outside hooks ·
+       mutate originalTranscript.current after stopRecording · add runtime npm dependencies ·
+       touch preload.js or splash.html · use nodeIntegration: true anywhere
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Run `npm run build:renderer` — must succeed
+3. Commit code changes:
+   ```
+   git add src/renderer/ vite.config.js main.js package.json
+   git commit -m "feat(react): [FCR-00X] — description"
+   ```
+4. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-19-react-migration/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [FCR-00X] done — react"
+   ```
+5. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
 ## Never list (P0 — block commit immediately)
 
 - Adding any runtime npm dependency
