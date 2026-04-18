@@ -203,7 +203,7 @@ function setState(newState, payload = {}) {
 ---
 
 ### FST-003 · CSS: all 6 states fully styled
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3 (CSS/visual criteria) + SPEC.md#ui-specification
 - **Dependencies**: FST-002
