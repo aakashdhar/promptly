@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import ExportPanel from './ExportPanel.jsx'
 
 function renderPromptOutput(text) {
   if (!text) return null
@@ -54,9 +53,14 @@ export default function PromptReadyState({
 }) {
   const [isCopied, setIsCopied] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [showExport, setShowExport] = useState(false)
   const promptRef = useRef(null)
   const preEditValue = useRef('')
+
+  async function handleExport() {
+    const content = `# Generated Prompt\n\n${generatedPrompt}\n\n---\n\n**You said:** ${originalTranscript}\n\n**Mode:** ${mode}\n\n**Generated:** ${new Date().toISOString()}`
+    const filename = `prompt-${Date.now()}.md`
+    if (window.electronAPI) await window.electronAPI.saveFile({ content, filename, format: 'md' })
+  }
 
   function handleCopy() {
     if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPrompt)
@@ -100,19 +104,11 @@ export default function PromptReadyState({
     return () => document.removeEventListener('keydown', onKey)
   }, [isEditing, generatedPrompt])
 
-  // Resize window when export panel opens/closes
+  // ⌘E dispatched by App.jsx keydown handler — direct export, no toggle
   useEffect(() => {
-    if (window.electronAPI) {
-      window.electronAPI.resizeWindow(showExport ? 650 : 560)
-    }
-  }, [showExport])
-
-  // Listen for ⌘E export-prompt custom event dispatched by App.jsx keydown handler
-  useEffect(() => {
-    function onExportPrompt() { setShowExport(s => !s) }
-    document.addEventListener('export-prompt', onExportPrompt)
-    return () => document.removeEventListener('export-prompt', onExportPrompt)
-  }, [])
+    document.addEventListener('export-prompt', handleExport)
+    return () => document.removeEventListener('export-prompt', handleExport)
+  }, [generatedPrompt, originalTranscript, mode])
 
   return (
     <div
@@ -123,7 +119,7 @@ export default function PromptReadyState({
       {/* Traffic light breathing room */}
       <div className="flex-shrink-0" style={{ height: '36px' }} />
 
-      {/* TOP ROW — 20px top / 22px sides / 16px bottom */}
+      {/* TOP ROW */}
       <div
         className="flex justify-between items-center flex-shrink-0"
         style={{ padding: '20px 22px 16px' }}
@@ -145,9 +141,9 @@ export default function PromptReadyState({
             Regenerate
           </button>
           <button
-            className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] transition-colors duration-150"
-            style={{ color: showExport ? 'rgba(100,180,255,0.85)' : 'rgba(255,255,255,0.2)' }}
-            onClick={() => setShowExport(s => !s)}
+            className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
+            style={{ color: 'rgba(255,255,255,0.2)' }}
+            onClick={handleExport}
           >
             Export
           </button>
@@ -164,7 +160,7 @@ export default function PromptReadyState({
 
       <Divider />
 
-      {/* YOU SAID — 22px sides / 20px top / 20px bottom */}
+      {/* YOU SAID */}
       <div className="flex-shrink-0" style={{ padding: '20px 22px' }}>
         <div
           className="text-[9px] font-bold uppercase"
@@ -190,7 +186,7 @@ export default function PromptReadyState({
 
       <Divider />
 
-      {/* PROMPT CONTENT — fills remaining space, scrollable */}
+      {/* PROMPT CONTENT */}
       <div
         ref={promptRef}
         className="overflow-y-auto scrollbar-thin flex-1 min-h-0"
@@ -221,17 +217,7 @@ export default function PromptReadyState({
         {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt)}
       </div>
 
-      {/* EXPORT PANEL — shown above button row when showExport=true */}
-      {showExport && (
-        <ExportPanel
-          prompt={generatedPrompt}
-          transcript={originalTranscript}
-          mode={mode}
-          onExportDone={() => setShowExport(false)}
-        />
-      )}
-
-      {/* BUTTON ROW — 12px top / 22px sides / 24px bottom */}
+      {/* BUTTON ROW */}
       <div
         className="flex flex-shrink-0"
         style={{ gap: '10px', padding: '12px 22px 24px', WebkitAppRegion: 'no-drag' }}
@@ -249,17 +235,6 @@ export default function PromptReadyState({
           }}
         >
           {isEditing ? 'Done' : 'Edit'}
-        </button>
-        <button
-          onClick={() => setShowExport(true)}
-          className="h-[44px] px-[16px] rounded-[10px] flex items-center gap-[6px] text-[12px] font-medium cursor-pointer"
-          style={{
-            border: '0.5px solid rgba(10,132,255,0.25)',
-            background: 'rgba(10,132,255,0.08)',
-            color: 'rgba(100,180,255,0.85)',
-          }}
-        >
-          ↓ Export
         </button>
         <button
           className={`flex-1 cursor-pointer text-[13px] font-semibold tracking-[0.02em] rounded-[10px] text-white transition-shadow duration-150 ${
