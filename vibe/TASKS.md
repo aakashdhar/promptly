@@ -209,6 +209,11 @@
    - Build: ✓ 27 modules, lint: ✓ 0 errors
 
 ## What's next
+✅ **FEATURE-008 — Export simplification** — single-click .md export, format picker removed (2/2 — COMPLETE 2026-04-19)
+   [x] EXPS-001 · Delete ExportPanel, simplify PromptReadyState to direct .md export
+   [x] EXPS-002 · Docs — CODEBASE.md + DECISIONS.md
+   → Full specs: vibe/features/2026-04-19-export-md-only/FEATURE_TASKS.md (agent use)
+
 ✅ **FEATURE-007 — Export formats** — save prompt as .txt / .md / .json from PROMPT_READY (4/4 — COMPLETE 2026-04-19)
    [x] EXP-001 · ExportPanel.jsx — format picker component (txt/md/json tiles + formatContent)
    [x] EXP-002 · save-file IPC — main.js dialog.showSaveDialog + fs.writeFileSync + preload.js saveFile
