@@ -389,6 +389,51 @@ Never: use dangerouslySetInnerHTML with dynamic content · access localStorage d
 
 ---
 
+---
+
+### Active Feature: FEATURE-009 (History Panel — Split View)
+> Folder: vibe/features/2026-04-19-history-panel/ | Added: 2026-04-19
+
+**Feature summary**: Split-panel history UI — ⌘H trigger, 680px wide window, left scrollable list with search + per-entry delete, right full prompt detail, copy + reuse actions.
+**Files in scope**: `src/renderer/utils/history.js` (new), `src/renderer/components/HistoryPanel.jsx` (new), `src/renderer/App.jsx`, `main.js`, `preload.js`
+**Files out of scope**: All other components, `splash.html`, `entitlements.plist`, `vite.config.js`
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `window.electronAPI.resizeWindowWidth(w)` for width changes — new IPC channel
+- `prevStateRef.current = stateRef.current` before transition(STATES.HISTORY) — same pattern as SHORTCUTS
+- All localStorage via `utils/history.js` exports only — never `localStorage.*` directly
+- JSX text nodes only — no `dangerouslySetInnerHTML`
+- No new hooks needed — useState/useEffect in HistoryPanel directly
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run `npm run build:renderer` after HIST-003 ·
+        keep changes additive · update CODEBASE.md (HIST-005) · run lint before commit
+
+Ask first: adding any IPC channel beyond resize-window-width/show-history · new localStorage keys
+
+Never: dangerouslySetInnerHTML with dynamic content · localStorage direct access outside utils/history.js ·
+       mutate originalTranscript.current except in onReuse callback · touch files not in scope list
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Manual smoke test: exercise affected interactions
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add src/renderer/utils/history.js src/renderer/components/HistoryPanel.jsx src/renderer/App.jsx main.js preload.js
+   git commit -m "feat(history): [HIST-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-19-history-panel/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [HIST-00X] done — history"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
 ## Never list (P0 — block commit immediately)
 
 - Adding any runtime npm dependency

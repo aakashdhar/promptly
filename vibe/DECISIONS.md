@@ -651,3 +651,27 @@ Key fixes applied:
 - **Root cause**: `panel-ready` root div has `WebkitAppRegion: 'drag'`; ExportPanel wrapper never overrode it to `'no-drag'`, so all tile button clicks were swallowed by Electron's window drag handler
 - **Fix**: Added `style={{ WebkitAppRegion: 'no-drag' }}` to ExportPanel wrapper div (`src/renderer/components/ExportPanel.jsx`)
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-009 (History Panel — Split View) — 2026-04-19
+> Folder: vibe/features/2026-04-19-history-panel/
+> Split-panel history UI: left scrollable list with search + per-entry delete, right full prompt detail, ⌘H trigger, 680px wide window while active.
+> Tasks: HIST-001 · HIST-002 · HIST-003 · HIST-004 · HIST-005 | Estimated: 7–9 hours
+> Drift logged below.
+
+### D-HIST-001 — New IPC channel: resize-window-width
+- **Date**: 2026-04-19 · **Task**: HIST-004 · **Type**: tech-choice
+- **What was planned**: Window always 520px wide (minWidth/maxWidth locked in createWindow)
+- **What was done**: Added `resize-window-width` IPC channel — renderer → main, sets width while preserving current height, uses setResizable(true/false) guard identical to resize-window pattern
+- **Why**: HISTORY panel needs 680px to display split left-list + right-detail layout. Single-axis resize IPC keeps concerns separate (height managed by existing resize-window, width managed by this new channel).
+- **Alternatives considered**: (1) Always 680px wide — wastes space in all other states. (2) Combined resize-window-both IPC — would require updating all existing callers. (3) Accepted: thin new channel, called only on HISTORY entry/exit.
+- **Impact on other tasks**: preload.js must expose resizeWindowWidth; App.jsx calls it on openHistory/closeHistory.
+- **Approved by**: human
+
+---
+
+## 2026-04-19 — Spec review: add-feature (FEATURE-009)
+> P0: 1 · P1: 1 · P2: 1
+> Action: all fixed inline before build began
+> Report: vibe/spec-reviews/2026-04-19-add-feature-009.md

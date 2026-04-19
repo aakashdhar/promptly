@@ -195,6 +195,15 @@
 
 ✅ **BUG-SC-001 — ShortcutsPanel three fixes** — Escape returns to prevState, ⌥Space starts recording, Done visible + padding (FIXED 2026-04-19, smoke tested ✅)
 
+🔄 **FEATURE-009 — History Panel (Split View)** — browse, search, delete, reuse past prompts (0/5)
+   Estimated: approx. 7–9 hours (S: 3, M: 2)
+   [ ] HIST-001 · history.js utility — extract + extend saveToHistory, getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime
+   [ ] HIST-002 · HistoryPanel.jsx — split-panel UI: left list + search + per-entry delete, right detail + copy/reuse
+   [ ] HIST-003 · App.jsx wiring — HISTORY state, ⌘H keydown, onShowHistory IPC, openHistory/closeHistory helpers, render HistoryPanel
+   [ ] HIST-004 · main.js + preload.js — resize-window-width IPC, "History ⌘H" context menu item, show-history push
+   [ ] HIST-005 · CODEBASE.md update
+   → Full specs: vibe/features/2026-04-19-history-panel/FEATURE_TASKS.md (agent use)
+
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
@@ -202,14 +211,12 @@
 ---
 
 ## What just happened
-✅ Session complete — smoke tested and pushed 2026-04-19
-   - FEATURE-007: save-file IPC (main.js + preload.js), Export button in PROMPT_READY top row, direct .md export
-   - FEATURE-008: Simplified to single-click — ExportPanel deleted, ↓ Export removed, direct .md on click
-   - BUG-SC-001: ShortcutsPanel — Escape → prevState, ⌥Space starts recording, Done opacity raised, padding 22→28px
-   - All changes smoke tested by human ✅
+✅ FEATURE-009 spec kit created — 2026-04-19
+   - FEATURE_SPEC.md · FEATURE_PLAN.md · FEATURE_TASKS.md written
+   - TASKS.md · DECISIONS.md · CLAUDE.md updated
+   - 5 tasks · S: 3, M: 2 · ~7–9 hours estimated
 
 ## What's next
-Say "feature: [name]" to plan the next feature, or run `review: final` for a fresh gate check.
-⬜ Custom shortcuts — user-configurable hotkey
-⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
-Say "next" to begin EXP-001.
+⬜ HIST-001 · history.js utility — new file, 6 exports, pure JS, no React
+   Start here: create src/renderer/utils/history.js with saveToHistory, getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime.
+Say "next" to begin HIST-001.
