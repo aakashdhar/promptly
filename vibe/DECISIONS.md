@@ -675,3 +675,14 @@ Key fixes applied:
 > P0: 1 · P1: 1 · P2: 1
 > Action: all fixed inline before build began
 > Report: vibe/spec-reviews/2026-04-19-add-feature-009.md
+
+---
+
+### D-BUG-011 — HistoryPanel inline styles + atomic window resize
+- **Date**: 2026-04-19 · **Task**: BUG-011 · **Type**: blocker-resolution
+- **What was planned**: HistoryPanel.jsx using Tailwind utility classes for layout
+- **What was done**: Full rewrite of HistoryPanel.jsx with inline styles only; App.jsx root div `w-[520px]` className replaced with `style={{width:'100%'}}` inline; added `set-window-size` IPC channel that sets width + height atomically (also calls setMinimumSize/setMaximumSize before setSize); openHistory/closeHistory now call setWindowSize(746,720) / setWindowSize(520,118) directly
+- **Why**: (1) Tailwind layout classes were not applying in HISTORY panel — classes generated at build time but not matching runtime output. (2) Separate width + height IPC calls had a race condition: resize-window (RAF-deferred) read win.getSize() before resize-window-width had applied, resetting width back to 520. (3) BrowserWindow had hardcoded minWidth:520, maxWidth:520 — setSize() was silently clamped; must update min/max constraints before calling setSize.
+- **Alternatives considered**: (1) Debug Tailwind JIT — not worth it; inline styles are reliable and explicit. (2) Delay RAF in resize-window to let width settle — fragile, timing-dependent. (3) Accepted: single atomic IPC call is the correct pattern for multi-axis resize.
+- **Impact on other tasks**: Any future state that requires a non-standard window width must use setWindowSize; resize-window alone is only safe when width stays at 520.
+- **Approved by**: human

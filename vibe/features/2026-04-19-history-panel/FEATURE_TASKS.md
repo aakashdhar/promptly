@@ -7,7 +7,7 @@
 ---
 
 ### HIST-001 · history.js utility
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#new-data
 - **Dependencies**: None
@@ -88,7 +88,7 @@ export function formatTime(iso) {
 ---
 
 ### HIST-002 · HistoryPanel.jsx component
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria
 - **Dependencies**: HIST-001
@@ -197,7 +197,7 @@ Full styling follows the dark glass aesthetic (rgba whites, blue accents for sel
 ---
 
 ### HIST-003 · App.jsx wiring
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#integration-points
 - **Dependencies**: HIST-001, HIST-002
@@ -312,7 +312,7 @@ window.electronAPI.onShowHistory(() => {
 ---
 
 ### HIST-004 · main.js + preload.js
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#new-ipc-channel-resize-window-width
 - **Dependencies**: None (can run in parallel with HIST-001)
@@ -387,7 +387,7 @@ onShowHistory: (callback) =>
 ---
 
 ### HIST-005 · CODEBASE.md update
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#conformance-checklist
 - **Dependencies**: HIST-001, HIST-002, HIST-003, HIST-004

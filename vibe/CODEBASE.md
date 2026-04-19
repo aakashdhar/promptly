@@ -21,7 +21,7 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html) | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React) | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
@@ -38,6 +38,8 @@
 | `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, direct .md export (handleExport), ⌘E via export-prompt event | `renderPromptOutput()`, `handleExport()` |
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
 | `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button (returns to prevState). px-[28px] padding, WebkitAppRegion: no-drag | — |
+| `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime` |
+| `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px scrollable list with search + per-entry delete, right flex:1 scrollable prompt detail with copy + reuse actions | props: `onClose`, `onReuse` |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/bar.css`~~ | ~~.bar glass container + ::before tint + ::after accent~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/states.css`~~ | ~~All per-state layout CSS + @keyframes~~ | deleted — FEATURE-005 |
@@ -70,6 +72,9 @@
 | `show-shortcuts` | main → renderer | ✅ registered — sent by CommandOrControl+Shift+/ global shortcut or "Keyboard shortcuts ⌘?" context menu item |
 | `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut (Phase 2 pause/resume — stub) |
 | `save-file` | renderer → main | ✅ registered — dialog.showSaveDialog + fs.writeFileSync; returns `{ ok, filePath }` or `{ ok: false }` |
+| `resize-window-width` | renderer → main | ✅ registered — win.setSize(width, h, true) with setResizable guards |
+| `set-window-size` | renderer → main | ✅ registered — win.setMinimumSize + setMaximumSize + setSize(width, height) atomically; used by openHistory/closeHistory to avoid race condition between separate width/height calls |
+| `show-history` | main → renderer | ✅ registered — sent by "History ⌘H" context menu item |
 
 ---
 
@@ -88,7 +93,7 @@
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
-| `HISTORY` | `panel-history` | 420px | Scrollable list of past prompts; Clear + Close buttons; click entry → PROMPT_READY |
+| `HISTORY` | HistoryPanel | 720px | Split-panel history; window width 746px; setWindowSize(746,720) called atomically in openHistory; closeHistory → setWindowSize(520, IDLE height) → IDLE |
 | `SHORTCUTS` | ShortcutsPanel | 380px | 8 shortcuts with key chips; Done → previous state; triggered via ⌘? or context menu |
 
 > Note: FIRST_RUN state removed from index.html — replaced by splash.html (D-007, FEATURE-001)
@@ -105,7 +110,7 @@
 | `thinkTranscript` | useState string | stopRecording, handleRegenerate | ThinkingState |
 | `originalTranscript` | useRef string | stopRecording onstop — set ONCE, never mutated | PromptReadyState, handleRegenerate |
 | `stateRef` | useRef string | mirrors currentState — stale-closure-safe for IPC handlers | onShortcutTriggered callback, onShowShortcuts callback, keydown listener |
-| `prevStateRef` | useRef string | state before SHORTCUTS transition — for Done button return | ShortcutsPanel onClose handler |
+| `prevStateRef` | useRef string | state before SHORTCUTS or HISTORY transition — for Done/Close button return | ShortcutsPanel onClose handler, HistoryPanel onClose handler |
 | `generatedPromptRef` | useRef string | mirrors generatedPrompt — stale-closure-safe for keydown listener | ⌘C handler |
 | `mediaRecorderRef` | useRef MediaRecorder\|null | startRecording, handleDismiss | stopRecording, handleDismiss |
 | `audioChunksRef` | useRef Blob[] | startRecording ondataavailable | stopRecording onstop |
@@ -171,7 +176,7 @@
 | Key | Written by | Read by | Notes |
 |-----|-----------|---------|-------|
 | `mode` | `useMode.setMode()` | `useMode.mode` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
-| `promptly_history` | `saveToHistory()` in App.jsx | Future history UI | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp }` |
+| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 > `promptHistory` (old key, 20-entry cap) — replaced by `promptly_history` (100-entry cap) in FEATURE-004

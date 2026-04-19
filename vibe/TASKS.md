@@ -195,14 +195,20 @@
 
 ✅ **BUG-SC-001 — ShortcutsPanel three fixes** — Escape returns to prevState, ⌥Space starts recording, Done visible + padding (FIXED 2026-04-19, smoke tested ✅)
 
-🔄 **FEATURE-009 — History Panel (Split View)** — browse, search, delete, reuse past prompts (0/5)
-   Estimated: approx. 7–9 hours (S: 3, M: 2)
-   [ ] HIST-001 · history.js utility — extract + extend saveToHistory, getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime
-   [ ] HIST-002 · HistoryPanel.jsx — split-panel UI: left list + search + per-entry delete, right detail + copy/reuse
-   [ ] HIST-003 · App.jsx wiring — HISTORY state, ⌘H keydown, onShowHistory IPC, openHistory/closeHistory helpers, render HistoryPanel
-   [ ] HIST-004 · main.js + preload.js — resize-window-width IPC, "History ⌘H" context menu item, show-history push
-   [ ] HIST-005 · CODEBASE.md update
+✅ **FEATURE-009 — History Panel (Split View)** — browse, search, delete, reuse past prompts (5/5 — COMPLETE 2026-04-19)
+   [x] HIST-001 · history.js utility — extract + extend saveToHistory, getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime
+   [x] HIST-002 · HistoryPanel.jsx — split-panel UI: left list + search + per-entry delete, right detail + copy/reuse
+   [x] HIST-003 · App.jsx wiring — HISTORY state, ⌘H keydown, onShowHistory IPC, openHistory/closeHistory helpers, render HistoryPanel
+   [x] HIST-004 · main.js + preload.js — resize-window-width IPC, "History ⌘H" context menu item, show-history push
+   [x] HIST-005 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-19-history-panel/FEATURE_TASKS.md (agent use)
+
+✅ **BUG-011 — HistoryPanel layout broken** (FIXED 2026-04-19)
+   - HistoryPanel.jsx: full rewrite with inline styles only — Tailwind layout classes were not applying
+   - App.jsx root div: switched from `w-[520px]` Tailwind className to `width:100%` inline style
+   - Added `set-window-size` IPC (main.js + preload.js) — sets width + height atomically with min/max constraints updated; fixes race condition between separate resize calls
+   - openHistory/closeHistory: now use setWindowSize(746, 720) / setWindowSize(520, IDLE) directly
+   - Discovered: BrowserWindow had `minWidth:520, maxWidth:520` — must call setMinimumSize/setMaximumSize before setSize to change width
 
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
@@ -211,12 +217,12 @@
 ---
 
 ## What just happened
-✅ FEATURE-009 spec kit created — 2026-04-19
-   - FEATURE_SPEC.md · FEATURE_PLAN.md · FEATURE_TASKS.md written
-   - TASKS.md · DECISIONS.md · CLAUDE.md updated
-   - 5 tasks · S: 3, M: 2 · ~7–9 hours estimated
+✅ BUG-011 fixed — 2026-04-19
+   - HistoryPanel.jsx fully rewritten with inline styles
+   - App.jsx root container switched to inline width:100%
+   - set-window-size IPC added (atomic width+height, min/max constraints)
+   - BrowserWindow minWidth/maxWidth constraint discovered and handled
 
 ## What's next
-⬜ HIST-001 · history.js utility — new file, 6 exports, pure JS, no React
-   Start here: create src/renderer/utils/history.js with saveToHistory, getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime.
-Say "next" to begin HIST-001.
+⬜ Manual smoke test — exercise ⌘H, history list, search, delete, reuse, clear all
+   Then run `review:` to gate FEATURE-009 before distribution.
