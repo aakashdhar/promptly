@@ -166,6 +166,12 @@ function registerShortcut() {
       });
     }
   }
+  globalShortcut.register('CommandOrControl+Shift+/', () => {
+    win.webContents.send('show-shortcuts');
+  });
+  globalShortcut.register('Alt+P', () => {
+    win.webContents.send('shortcut-pause');
+  });
 }
 
 function createWindow() {
@@ -344,12 +350,19 @@ app.whenReady().then(async () => {
       { key: 'code', label: 'Code' },
       { key: 'design', label: 'Design' },
     ];
-    const menu = Menu.buildFromTemplate(modes.map(({ key, label }) => ({
-      label,
-      type: 'radio',
-      checked: currentMode === key,
-      click: () => { win.webContents.send('mode-selected', key); },
-    })));
+    const menu = Menu.buildFromTemplate([
+      ...modes.map(({ key, label }) => ({
+        label,
+        type: 'radio',
+        checked: currentMode === key,
+        click: () => { win.webContents.send('mode-selected', key); },
+      })),
+      { type: 'separator' },
+      {
+        label: 'Keyboard shortcuts ⌘?',
+        click: () => { win.webContents.send('show-shortcuts'); },
+      },
+    ]);
     menu.popup({ window: win });
     return { ok: true };
   });

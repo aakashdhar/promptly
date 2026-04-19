@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import useMode from './hooks/useMode.js'
 import useWindowResize from './hooks/useWindowResize.js'
 import IdleState from './components/IdleState.jsx'
+import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import RecordingState from './components/RecordingState.jsx'
 import ThinkingState from './components/ThinkingState.jsx'
 import PromptReadyState from './components/PromptReadyState.jsx'
@@ -13,6 +14,7 @@ const STATES = {
   THINKING: 'THINKING',
   PROMPT_READY: 'PROMPT_READY',
   ERROR: 'ERROR',
+  SHORTCUTS: 'SHORTCUTS',
 }
 
 const STATE_HEIGHTS = {
@@ -21,6 +23,7 @@ const STATE_HEIGHTS = {
   THINKING: 320,
   PROMPT_READY: 560,
   ERROR: 101,
+  SHORTCUTS: 380,
 }
 
 function saveToHistory(transcript, prompt, mode) {
@@ -44,9 +47,11 @@ export default function App() {
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
+  const prevStateRef = useRef(STATES.IDLE)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
   const isProcessingRef = useRef(false)
+  const generatedPromptRef = useRef('')
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -61,6 +66,11 @@ export default function App() {
   useEffect(() => {
     stateRef.current = currentState
   }, [currentState])
+
+  // Keep generatedPromptRef in sync for stale-closure-safe access in keydown listener
+  useEffect(() => {
+    generatedPromptRef.current = generatedPrompt
+  }, [generatedPrompt])
 
   function transition(newState, payload = {}) {
     stateRef.current = newState
@@ -193,6 +203,37 @@ export default function App() {
     window.electronAPI.onModeSelected((key) => {
       setMode(key)
     })
+
+    window.electronAPI.onShowShortcuts(() => {
+      prevStateRef.current = stateRef.current
+      transition(STATES.SHORTCUTS)
+    })
+  }, [])
+
+  // Window-focused keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e) {
+      const meta = e.metaKey || e.ctrlKey
+      if (e.key === 'Escape') {
+        if (stateRef.current === STATES.RECORDING) {
+          stopRecordingRef.current()
+        } else if (stateRef.current !== STATES.IDLE) {
+          transition(STATES.IDLE)
+        }
+        return
+      }
+      if (meta && e.key === 'c' && stateRef.current === STATES.PROMPT_READY) {
+        e.preventDefault()
+        if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPromptRef.current)
+        return
+      }
+      if (meta && e.key === 'e' && stateRef.current === STATES.PROMPT_READY) {
+        e.preventDefault()
+        document.dispatchEvent(new CustomEvent('export-prompt'))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   // Right-click context menu on bar (mode menu)
@@ -230,6 +271,12 @@ export default function App() {
       )}
       {currentState === STATES.ERROR && (
         <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
+      )}
+      {currentState === STATES.SHORTCUTS && (
+        <>
+          <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+          <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
+        </>
       )}
       <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[#FF3B30]/20 to-transparent pointer-events-none z-10" />
     </div>

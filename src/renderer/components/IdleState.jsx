@@ -31,6 +31,7 @@ export default function IdleState({ mode, modeLabel, onStart }) {
         <div className="text-center" style={{WebkitAppRegion:'no-drag'}}>
           <div className="text-[13px] font-medium tracking-[0.01em] mb-[3px]" style={{color:'rgba(255,255,255,0.5)'}}>Promptly is ready</div>
           <div className="text-[11px] tracking-[0.01em]" style={{color:'rgba(255,255,255,0.18)'}}>Press ⌥ Space or click to speak your prompt</div>
+          <span className="text-[9px] mt-[4px] block" style={{color:'rgba(255,255,255,0.1)'}}>⌘? for shortcuts</span>
         </div>
 
         {/* Mode pill — anchored right */}

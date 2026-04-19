@@ -48,6 +48,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),
 
+  onShowShortcuts: (callback) =>
+    ipcRenderer.on('show-shortcuts', () => callback()),
+
   onShortcutConflict: (callback) =>
     ipcRenderer.on('shortcut-conflict', callback),
 
