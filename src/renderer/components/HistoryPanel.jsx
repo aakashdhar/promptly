@@ -1,0 +1,339 @@
+import { useState, useEffect } from 'react'
+import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime } from '../utils/history'
+
+function renderPromptSections(prompt) {
+  if (!prompt) return null
+  const lines = prompt.split('\n')
+  const elements = []
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i].trim()
+    if (!line) { i++; continue }
+    const isLabel = /^[A-Z][A-Z\s\/]+:/.test(line)
+    if (isLabel) {
+      elements.push(
+        <div key={`label-${i}`} style={{
+          fontSize:'10px', fontWeight:700, letterSpacing:'.12em',
+          textTransform:'uppercase', color:'rgba(100,170,255,0.7)',
+          marginBottom:'6px', marginTop: elements.length ? '18px' : 0,
+          display:'block'
+        }}>
+          {line.replace(':','').trim()}
+        </div>
+      )
+    } else {
+      elements.push(
+        <div key={`text-${i}`} style={{
+          fontSize:'13.5px', color:'rgba(255,255,255,0.88)',
+          lineHeight:1.75, marginBottom:'4px'
+        }}>
+          {line}
+        </div>
+      )
+    }
+    i++
+  }
+  return elements
+}
+
+export default function HistoryPanel({ onClose, onReuse }) {
+  const [entries, setEntries] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    const h = getHistory()
+    setEntries(h)
+    if (h.length > 0) setSelected(h[0])
+  }, [])
+
+  function handleSearch(e) {
+    setQuery(e.target.value)
+    setEntries(searchHistory(e.target.value))
+  }
+
+  function handleClearSearch() {
+    setQuery('')
+    setSearchOpen(false)
+    setEntries(getHistory())
+  }
+
+  function handleDelete(id, e) {
+    e.stopPropagation()
+    deleteHistoryItem(id)
+    const updated = getHistory()
+    setEntries(query ? searchHistory(query) : updated)
+    if (selected?.id === id) setSelected(updated[0] || null)
+  }
+
+  function handleClearAll() {
+    clearHistory()
+    setEntries([])
+    setSelected(null)
+  }
+
+  function handleCopy() {
+    if (!selected) return
+    navigator.clipboard.writeText(selected.prompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
+  return (
+    <div style={{
+      position:'relative', zIndex:1,
+      display:'flex', flexDirection:'column',
+      height:'100%', overflow:'hidden'
+    }}>
+
+      {/* SPLIT BODY */}
+      <div style={{display:'flex', flex:1, overflow:'hidden', minHeight:0}}>
+
+        {/* LEFT PANEL */}
+        <div style={{
+          width:'240px', flexShrink:0,
+          borderRight:'0.5px solid rgba(255,255,255,0.07)',
+          display:'flex', flexDirection:'column',
+          overflow:'hidden'
+        }}>
+
+          {/* Left header */}
+          <div style={{padding:'16px 16px 12px', flexShrink:0}}>
+            {searchOpen ? (
+              <div style={{
+                display:'flex', alignItems:'center', gap:'8px',
+                height:'34px', background:'rgba(255,255,255,0.07)',
+                border:'0.5px solid rgba(10,132,255,0.35)',
+                borderRadius:'9px', padding:'0 12px'
+              }}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <circle cx="5" cy="5" r="4" stroke="rgba(100,180,255,0.6)" strokeWidth="1.2"/>
+                  <path d="M8.5 8.5L11 11" stroke="rgba(100,180,255,0.6)" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={handleSearch}
+                  placeholder="Search prompts..."
+                  style={{
+                    flex:1, background:'transparent', border:'none',
+                    outline:'none', fontSize:'12px',
+                    color:'rgba(255,255,255,0.8)', fontFamily:'inherit'
+                  }}
+                />
+                <button onClick={handleClearSearch} style={{
+                  fontSize:'11px', color:'rgba(255,255,255,0.3)',
+                  background:'none', border:'none', cursor:'pointer', padding:0
+                }}>✕</button>
+              </div>
+            ) : (
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <span style={{fontSize:'12px', fontWeight:500, color:'rgba(255,255,255,0.55)'}}>
+                  Recent
+                </span>
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  style={{
+                    width:'28px', height:'28px', borderRadius:'7px',
+                    background:'rgba(255,255,255,0.06)',
+                    border:'0.5px solid rgba(255,255,255,0.1)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    cursor:'pointer'
+                  }}>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <circle cx="5" cy="5" r="4" stroke="rgba(255,255,255,0.4)" strokeWidth="1.2"/>
+                    <path d="M8.5 8.5L11 11" stroke="rgba(255,255,255,0.4)" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Entry list */}
+          <div style={{flex:1, overflowY:'auto', minHeight:0}}>
+            {entries.length === 0 && (
+              <div style={{
+                padding:'40px 20px', textAlign:'center',
+                fontSize:'12px', color:'rgba(255,255,255,0.25)'
+              }}>
+                {query ? 'No results found' : 'No history yet'}
+              </div>
+            )}
+            {entries.map(entry => {
+              const isSelected = selected?.id === entry.id
+              return (
+                <div
+                  key={entry.id}
+                  onClick={() => setSelected(entry)}
+                  style={{
+                    padding:'12px 16px',
+                    borderBottom:'0.5px solid rgba(255,255,255,0.05)',
+                    borderLeft: isSelected ? '2px solid rgba(10,132,255,0.6)' : '2px solid transparent',
+                    background: isSelected ? 'rgba(10,132,255,0.09)' : 'transparent',
+                    cursor:'pointer',
+                    transition:'all 150ms',
+                    position:'relative'
+                  }}>
+                  {/* Title */}
+                  <div style={{
+                    fontSize:'12px',
+                    fontWeight: isSelected ? 500 : 400,
+                    color: isSelected ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)',
+                    marginBottom:'6px',
+                    whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                    paddingRight:'20px'
+                  }}>
+                    {entry.title || entry.transcript?.split(' ').slice(0,6).join(' ')}
+                  </div>
+                  {/* Meta row */}
+                  <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                    <span style={{
+                      fontSize:'10px', fontWeight:600, letterSpacing:'.06em',
+                      textTransform:'uppercase', padding:'2px 7px',
+                      borderRadius:'20px',
+                      background: isSelected ? 'rgba(10,132,255,0.15)' : 'rgba(255,255,255,0.07)',
+                      color: isSelected ? 'rgba(100,180,255,0.85)' : 'rgba(255,255,255,0.4)'
+                    }}>
+                      {entry.mode}
+                    </span>
+                    <span style={{fontSize:'10px', color:'rgba(255,255,255,0.28)'}}>
+                      {formatTime(entry.timestamp)}
+                    </span>
+                  </div>
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => handleDelete(entry.id, e)}
+                    style={{
+                      position:'absolute', top:'12px', right:'12px',
+                      fontSize:'11px', color:'rgba(255,255,255,0.2)',
+                      background:'none', border:'none', cursor:'pointer', padding:0,
+                      lineHeight:1
+                    }}>
+                    ✕
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Count footer */}
+          <div style={{
+            padding:'12px 16px',
+            borderTop:'0.5px solid rgba(255,255,255,0.06)',
+            flexShrink:0
+          }}>
+            <span style={{fontSize:'11px', color:'rgba(255,255,255,0.25)'}}>
+              {entries.length} prompt{entries.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div style={{
+          flex:1, display:'flex', flexDirection:'column',
+          overflow:'hidden', minWidth:0, minHeight:0
+        }}>
+          {!selected ? (
+            <div style={{
+              flex:1, display:'flex', alignItems:'center',
+              justifyContent:'center', fontSize:'13px',
+              color:'rgba(255,255,255,0.25)'
+            }}>
+              Select a prompt to view
+            </div>
+          ) : (
+            <>
+              {/* You said */}
+              <div style={{padding:'20px 24px 16px', flexShrink:0}}>
+                <div style={{
+                  fontSize:'10px', fontWeight:700, letterSpacing:'.12em',
+                  textTransform:'uppercase', color:'rgba(255,255,255,0.3)',
+                  marginBottom:'8px'
+                }}>
+                  You said
+                </div>
+                <div style={{
+                  fontSize:'13px', color:'rgba(255,255,255,0.6)',
+                  lineHeight:1.65
+                }}>
+                  {selected.transcript}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{
+                height:'0.5px',
+                background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)',
+                margin:'0 24px 16px', flexShrink:0
+              }}/>
+
+              {/* Prompt content */}
+              <div style={{
+                flex:1, overflowY:'auto', padding:'0 24px',
+                minHeight:0
+              }}>
+                {renderPromptSections(selected.prompt)}
+              </div>
+
+              {/* Action buttons */}
+              <div style={{
+                display:'flex', gap:'10px',
+                padding:'16px 24px 20px',
+                borderTop:'0.5px solid rgba(255,255,255,0.06)',
+                marginTop:'8px', flexShrink:0
+              }}>
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    flex:1, height:'38px', borderRadius:'10px',
+                    fontSize:'13px', fontFamily:'inherit', cursor:'pointer',
+                    background: copied ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.06)',
+                    border: copied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(255,255,255,0.12)',
+                    color: copied ? 'rgba(48,209,88,0.9)' : 'rgba(255,255,255,0.6)',
+                    transition:'all 200ms'
+                  }}>
+                  {copied ? 'Copied ✓' : 'Copy prompt'}
+                </button>
+                <button
+                  onClick={() => onReuse(selected)}
+                  style={{
+                    flex:1, height:'38px', borderRadius:'10px',
+                    fontSize:'13px', fontWeight:600, fontFamily:'inherit',
+                    cursor:'pointer',
+                    background:'linear-gradient(135deg,rgba(10,132,255,0.92),rgba(10,100,220,0.92))',
+                    border:'none', color:'white',
+                    boxShadow:'0 2px 14px rgba(10,132,255,0.35)'
+                  }}>
+                  Reuse
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* BOTTOM BAR */}
+      <div style={{
+        display:'flex', justifyContent:'space-between', alignItems:'center',
+        padding:'12px 20px',
+        borderTop:'0.5px solid rgba(255,255,255,0.06)',
+        flexShrink:0
+      }}>
+        <button onClick={handleClearAll} style={{
+          fontSize:'12px', color:'rgba(255,59,48,0.55)',
+          background:'none', border:'none', cursor:'pointer', fontFamily:'inherit'
+        }}>
+          Clear all
+        </button>
+        <button onClick={onClose} style={{
+          fontSize:'12px', color:'rgba(255,255,255,0.4)',
+          background:'none', border:'none', cursor:'pointer', fontFamily:'inherit'
+        }}>
+          Done
+        </button>
+      </div>
+    </div>
+  )
+}

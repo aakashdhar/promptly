@@ -31,6 +31,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveFile: (opts) =>
     ipcRenderer.invoke('save-file', opts),
 
+  resizeWindowWidth: (width) =>
+    ipcRenderer.invoke('resize-window-width', { width }),
+
+  setWindowSize: (width, height) =>
+    ipcRenderer.invoke('set-window-size', { width, height }),
+
+  onShowHistory: (callback) =>
+    ipcRenderer.on('show-history', () => callback()),
+
   // splash → main
   splashDone: () =>
     ipcRenderer.invoke('splash-done'),

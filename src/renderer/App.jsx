@@ -3,10 +3,12 @@ import useMode from './hooks/useMode.js'
 import useWindowResize from './hooks/useWindowResize.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
+import HistoryPanel from './components/HistoryPanel.jsx'
 import RecordingState from './components/RecordingState.jsx'
 import ThinkingState from './components/ThinkingState.jsx'
 import PromptReadyState from './components/PromptReadyState.jsx'
 import ErrorState from './components/ErrorState.jsx'
+import { saveToHistory } from './utils/history.js'
 
 const STATES = {
   IDLE: 'IDLE',
@@ -15,6 +17,7 @@ const STATES = {
   PROMPT_READY: 'PROMPT_READY',
   ERROR: 'ERROR',
   SHORTCUTS: 'SHORTCUTS',
+  HISTORY: 'HISTORY',
 }
 
 const STATE_HEIGHTS = {
@@ -24,19 +27,7 @@ const STATE_HEIGHTS = {
   PROMPT_READY: 560,
   ERROR: 101,
   SHORTCUTS: 380,
-}
-
-function saveToHistory(transcript, prompt, mode) {
-  const history = JSON.parse(localStorage.getItem('promptly_history') || '[]')
-  history.unshift({
-    id: Date.now(),
-    transcript,
-    prompt,
-    mode,
-    timestamp: new Date().toISOString(),
-  })
-  if (history.length > 100) history.splice(100)
-  localStorage.setItem('promptly_history', JSON.stringify(history))
+  HISTORY: 720,
 }
 
 export default function App() {
@@ -140,7 +131,7 @@ export default function App() {
       }
 
       setGeneratedPrompt(genResult.prompt)
-      saveToHistory(text, genResult.prompt, mode)
+      saveToHistory({ transcript: text, prompt: genResult.prompt, mode })
       transition(STATES.PROMPT_READY)
     }
   }, [mode])
@@ -155,6 +146,20 @@ export default function App() {
     isProcessingRef.current = false
     transition(STATES.IDLE)
   }, [])
+
+  function openHistory() {
+    prevStateRef.current = stateRef.current
+    if (window.electronAPI) window.electronAPI.setWindowSize(746, STATE_HEIGHTS.HISTORY)
+    setCurrentState(STATES.HISTORY)
+    stateRef.current = STATES.HISTORY
+    if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
+  }
+  function closeHistory() {
+    if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
+    setCurrentState(STATES.IDLE)
+    stateRef.current = STATES.IDLE
+    if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
+  }
 
   const handleRegenerate = useCallback(async () => {
     transition(STATES.THINKING)
@@ -173,7 +178,7 @@ export default function App() {
     }
 
     setGeneratedPrompt(genResult.prompt)
-    saveToHistory(originalTranscript.current, genResult.prompt, mode)
+    saveToHistory({ transcript: originalTranscript.current, prompt: genResult.prompt, mode })
     transition(STATES.PROMPT_READY)
   }, [mode])
 
@@ -209,6 +214,10 @@ export default function App() {
       prevStateRef.current = stateRef.current
       transition(STATES.SHORTCUTS)
     })
+
+    window.electronAPI.onShowHistory(() => {
+      openHistory()
+    })
   }, [])
 
   // Window-focused keyboard shortcuts
@@ -220,9 +229,18 @@ export default function App() {
           stopRecordingRef.current()
         } else if (stateRef.current === STATES.SHORTCUTS) {
           transition(prevStateRef.current || STATES.IDLE)
+        } else if (stateRef.current === STATES.HISTORY) {
+          closeHistory()
         } else if (stateRef.current !== STATES.IDLE) {
           transition(STATES.IDLE)
         }
+        return
+      }
+      if (meta && e.key === 'h' &&
+          stateRef.current !== STATES.RECORDING &&
+          stateRef.current !== STATES.HISTORY) {
+        e.preventDefault()
+        openHistory()
         return
       }
       if (meta && e.key === 'c' && stateRef.current === STATES.PROMPT_READY) {
@@ -248,7 +266,7 @@ export default function App() {
 
   return (
     <div
-      className="w-[520px] h-screen flex flex-col rounded-[18px] overflow-hidden relative bg-white/[0.04] border-t border-t-white/[0.18] border-l border-l-white/[0.10] border-r border-r-white/[0.06] border-b border-b-white/[0.04] backdrop-blur-[40px] shadow-[0_0_0_0.5px_rgba(255,255,255,0.06)_inset,0_32px_64px_rgba(0,0,0,0.6),0_8px_24px_rgba(0,0,0,0.4)]"
+      style={{width:'100%', height:'100vh', display:'flex', flexDirection:'column', borderRadius:'18px', overflow:'hidden', position:'relative', background:'rgba(255,255,255,0.04)', borderTop:'1px solid rgba(255,255,255,0.18)', borderLeft:'1px solid rgba(255,255,255,0.10)', borderRight:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.04)', backdropFilter:'blur(40px)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)'}}
       id="bar"
       onContextMenu={handleContextMenu}
     >
@@ -279,6 +297,20 @@ export default function App() {
         <>
           <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
           <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
+        </>
+      )}
+      {currentState === STATES.HISTORY && (
+        <>
+          <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+          <HistoryPanel
+            onClose={closeHistory}
+            onReuse={(entry) => {
+              originalTranscript.current = entry.transcript
+              setGeneratedPrompt(entry.prompt)
+              if (window.electronAPI) window.electronAPI.resizeWindowWidth(520)
+              transition(STATES.PROMPT_READY)
+            }}
+          />
         </>
       )}
       <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[#FF3B30]/20 to-transparent pointer-events-none z-10" />

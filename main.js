@@ -330,7 +330,29 @@ app.whenReady().then(async () => {
   ipcMain.handle('resize-window', (_event, { height }) => {
     if (win) {
       win.setResizable(true);
-      win.setSize(520, height, true);
+      const [currentWidth] = win.getSize();
+      win.setSize(currentWidth, height, true);
+      win.setResizable(false);
+    }
+    return { ok: true };
+  });
+
+  ipcMain.handle('resize-window-width', (_event, { width }) => {
+    if (win) {
+      win.setResizable(true);
+      const [, h] = win.getSize();
+      win.setSize(width, h, true);
+      win.setResizable(false);
+    }
+    return { ok: true };
+  });
+
+  ipcMain.handle('set-window-size', (_event, { width, height }) => {
+    if (win) {
+      win.setResizable(true);
+      win.setMinimumSize(width, 50);
+      win.setMaximumSize(width, 2000);
+      win.setSize(width, height, true);
       win.setResizable(false);
     }
     return { ok: true };
@@ -361,6 +383,11 @@ app.whenReady().then(async () => {
       {
         label: 'Keyboard shortcuts ⌘?',
         click: () => { win.webContents.send('show-shortcuts'); },
+      },
+      { type: 'separator' },
+      {
+        label: 'History ⌘H',
+        click: () => { win.webContents.send('show-history'); },
       },
     ]);
     menu.popup({ window: win });
