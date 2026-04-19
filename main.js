@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -393,6 +393,24 @@ app.whenReady().then(async () => {
     } catch (err) {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
       return { success: false, error: err.message || 'Transcription failed' };
+    }
+  });
+
+  ipcMain.handle('save-file', async (_event, { content, filename }) => {
+    const { filePath, canceled } = await dialog.showSaveDialog(win, {
+      defaultPath: filename,
+      filters: [
+        { name: 'Text',     extensions: ['txt'] },
+        { name: 'Markdown', extensions: ['md']  },
+        { name: 'JSON',     extensions: ['json'] },
+      ],
+    });
+    if (canceled || !filePath) return { ok: false };
+    try {
+      fs.writeFileSync(filePath, content, 'utf8');
+      return { ok: true, filePath };
+    } catch (err) {
+      return { ok: false, error: err.message };
     }
   });
 

@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   transcribeAudio: (arrayBuffer) =>
     ipcRenderer.invoke('transcribe-audio', arrayBuffer),
 
+  saveFile: (opts) =>
+    ipcRenderer.invoke('save-file', opts),
+
   // splash → main
   splashDone: () =>
     ipcRenderer.invoke('splash-done'),
