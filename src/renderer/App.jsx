@@ -50,7 +50,6 @@ export default function App() {
   // Resize window to IDLE height on initial mount
   useEffect(() => {
     resizeWindow(STATE_HEIGHTS.IDLE)
-    console.log('window resized to', STATE_HEIGHTS.IDLE)
   }, [])
 
   // Keep stateRef in sync with currentState

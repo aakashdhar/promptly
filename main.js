@@ -179,7 +179,7 @@ function createWindow() {
     width: 520,
     height: 89,
     minWidth: 520,
-    maxWidth: 520,
+    maxWidth: 520, // overridden at runtime by set-window-size IPC (calls setMinimumSize/setMaximumSize before setSize)
     show: false,
     frame: false,
     transparent: true,
