@@ -32,7 +32,7 @@ export default function ExportPanel({ prompt, transcript, mode, onExportDone }) 
   }
 
   return (
-    <div className="px-[22px] pt-[14px] pb-0">
+    <div className="px-[22px] pt-[14px] pb-0" style={{ WebkitAppRegion: 'no-drag' }}>
       <div
         className="text-[9px] font-bold tracking-[0.12em] uppercase mb-[10px]"
         style={{ color: 'rgba(255,255,255,0.16)' }}
