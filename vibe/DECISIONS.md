@@ -616,3 +616,11 @@ Key fixes applied:
 - **Window height**: PROMPT_READY closed = 560px; open with export panel = 650px (+90px)
 - **Status**: SHIPPED 2026-04-19
 - **Approved by**: human
+
+---
+
+### D-BUG-007A — Trivial fix: ExportPanel tiles unclickable
+- **Date**: 2026-04-19 · **Type**: drift (trivial bug)
+- **Root cause**: `panel-ready` root div has `WebkitAppRegion: 'drag'`; ExportPanel wrapper never overrode it to `'no-drag'`, so all tile button clicks were swallowed by Electron's window drag handler
+- **Fix**: Added `style={{ WebkitAppRegion: 'no-drag' }}` to ExportPanel wrapper div (`src/renderer/components/ExportPanel.jsx`)
+- **Approved by**: human
