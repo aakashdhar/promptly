@@ -603,4 +603,16 @@ Key fixes applied:
 > Folder: vibe/features/2026-04-19-export-formats/
 > Save generated prompt as .txt / .md / .json from PROMPT_READY state via macOS save dialog
 > Tasks: EXP-001 · EXP-002 · EXP-003 · EXP-004 | Estimated: ~4-5 hours
+> Status: COMPLETE 2026-04-19
 > Drift logged below.
+
+### FEATURE-007 — Export formats in PROMPT_READY state
+- **Date**: 2026-04-19 · **Type**: scope-change (feature addition)
+- **Trigger**: feature: command — user-initiated with full implementation spec
+- **What was built**: ExportPanel.jsx (format picker — txt/md/json tiles, formatContent pure function, handleExport via saveFile IPC), save-file IPC (dialog.showSaveDialog + fs.writeFileSync in main.js, saveFile in preload.js), PromptReadyState integration (Export toggle in top row, ExportPanel above button row, ↓ Export in button row, useEffect resize 560↔650px, export-prompt custom event listener for ⌘E)
+- **New IPC channels**: `save-file` (renderer → main)
+- **New preload method**: `saveFile`
+- **Files changed**: `src/renderer/components/ExportPanel.jsx` (new), `src/renderer/components/PromptReadyState.jsx`, `main.js`, `preload.js`
+- **Window height**: PROMPT_READY closed = 560px; open with export panel = 650px (+90px)
+- **Status**: SHIPPED 2026-04-19
+- **Approved by**: human

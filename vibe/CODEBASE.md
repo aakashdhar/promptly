@@ -21,7 +21,7 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html) | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React) | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
@@ -35,7 +35,8 @@
 | `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup | — |
 | `src/renderer/components/ThinkingState.jsx` | THINKING panel — status badge, morph wave, YOU SAID | — |
 | `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
-| `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, renderPromptOutput | `renderPromptOutput()` |
+| `src/renderer/components/ExportPanel.jsx` | Export format picker — txt/md/json tiles, formatContent(), handleExport() | `formatContent()` |
+| `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, export toggle, ExportPanel render, window resize on showExport, ⌘E via export-prompt event | `renderPromptOutput()` |
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
 | `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button | — |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
@@ -69,6 +70,7 @@
 | `language-selected` | main → renderer | ✅ sent from show-language-menu click handler with language code |
 | `show-shortcuts` | main → renderer | ✅ registered — sent by CommandOrControl+Shift+/ global shortcut or "Keyboard shortcuts ⌘?" context menu item |
 | `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut (Phase 2 pause/resume — stub) |
+| `save-file` | renderer → main | ✅ registered — dialog.showSaveDialog + fs.writeFileSync; returns `{ ok, filePath }` or `{ ok: false }` |
 
 ---
 

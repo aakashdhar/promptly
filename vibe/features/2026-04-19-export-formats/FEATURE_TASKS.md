@@ -127,7 +127,7 @@ saveFile: (opts) => ipcRenderer.invoke('save-file', opts),
 ---
 
 ### EXP-003 · PromptReadyState.jsx integration
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria + FEATURE_PLAN.md#5-frontend-changes
 - **Dependencies**: EXP-001, EXP-002
@@ -231,7 +231,7 @@ useEffect(() => {
 ---
 
 ### EXP-004 · Docs: CODEBASE.md + DECISIONS.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#conformance-checklist
 - **Dependencies**: EXP-003
