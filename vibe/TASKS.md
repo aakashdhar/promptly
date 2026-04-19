@@ -179,6 +179,14 @@
    [x] FCR-014 · Manual smoke test (18 items) — human-confirmed 2026-04-19, all items pass
    → Full specs: vibe/features/2026-04-19-react-migration/FEATURE_TASKS.md (agent use)
 
+✅ **FEATURE-006 — Keyboard shortcuts panel + global shortcuts** (5/5 — COMPLETE 2026-04-19)
+   [x] FSC-001 · ShortcutsPanel.jsx — 8 shortcut rows, key chips, Done button
+   [x] FSC-002 · App.jsx SHORTCUTS state — STATE_HEIGHTS 380px, prevStateRef, render
+   [x] FSC-003 · App.jsx keyboard listener — Escape, ⌘C, ⌘E + onShowShortcuts IPC
+   [x] FSC-004 · main.js + preload.js — context menu item, ⌘? global shortcut, Alt+P
+   [x] FSC-005 · IdleState ⌘? hint + feature docs
+   → Full specs: vibe/features/2026-04-19-keyboard-shortcuts/FEATURE_TASKS.md
+
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
@@ -186,10 +194,14 @@
 ---
 
 ## What just happened
-✅ FCR-014 · Manual smoke test complete — human-confirmed 2026-04-19, all 18 items pass
-✅ FEATURE-004 React migration complete — feat/react-migration merged to main
-   - All 14 tasks done: Vite + React renderer, 6 components, 2 hooks, 3 CSS files, history foundation
-   - Renderer is now React + Vite; main.js, preload.js, splash.html unchanged
+✅ FEATURE-006 — Keyboard shortcuts panel + global shortcuts complete (2026-04-19)
+   - ShortcutsPanel.jsx: 8 shortcuts, key chips, Done → returns to previous state
+   - SHORTCUTS state: 380px window resize, traffic lights spacer, prevStateRef tracking
+   - Keyboard shortcuts: Escape, ⌘C (copy), ⌘E (export-prompt event)
+   - Global shortcuts: ⌘? (show-shortcuts), Alt+P (shortcut-pause stub)
+   - Context menu: "Keyboard shortcuts ⌘?" separator item in mode menu
+   - IdleState: ⌘? hint below subtitle text
+   - Build: ✓ 27 modules, lint: ✓ 0 errors
 
 ## What's next
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed

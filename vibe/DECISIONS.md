@@ -577,3 +577,22 @@ Key fixes applied:
 
 - **Status**: FIXED 2026-04-19
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-006 (Keyboard Shortcuts Panel + Global Shortcuts) — 2026-04-19
+> Folder: vibe/features/2026-04-19-keyboard-shortcuts/
+> SHORTCUTS state with ShortcutsPanel, ⌘? global shortcut, Escape/⌘C/⌘E keydown handlers, Alt+P global shortcut, ⌘? hint in IDLE
+> Tasks: FSC-001 · FSC-002 · FSC-003 · FSC-004 · FSC-005 | Estimated: ~3 hours
+> Status: COMPLETE 2026-04-19
+> Drift logged below.
+
+### FEATURE-006 — Keyboard shortcuts panel and global shortcuts
+- **Date**: 2026-04-19 · **Type**: scope-change (feature addition)
+- **Trigger**: feature: command — user-initiated with full implementation spec
+- **What was built**: SHORTCUTS state (380px) with ShortcutsPanel component showing 8 shortcuts with key chips. Triggered via right-click context menu ("Keyboard shortcuts ⌘?") and global CommandOrControl+Shift+/ shortcut. Window-focused keydown listener: Escape (stop recording or → IDLE), ⌘C (copy prompt in PROMPT_READY), ⌘E (dispatch export-prompt event). Alt+P global shortcut registered (→ shortcut-pause, for Phase 2). ⌘? hint in IdleState below subtitle.
+- **New IPC channels**: `show-shortcuts` (main → renderer), `shortcut-pause` (main → renderer)
+- **New preload method**: `onShowShortcuts`
+- **Files changed**: `src/renderer/components/ShortcutsPanel.jsx` (new), `src/renderer/App.jsx`, `src/renderer/components/IdleState.jsx`, `main.js`, `preload.js`
+- **Status**: SHIPPED 2026-04-19
+- **Approved by**: human

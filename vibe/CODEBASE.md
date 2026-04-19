@@ -21,7 +21,7 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html) | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React) | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
@@ -37,6 +37,7 @@
 | `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
 | `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, renderPromptOutput | `renderPromptOutput()` |
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
+| `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button | — |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/bar.css`~~ | ~~.bar glass container + ::before tint + ::after accent~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/states.css`~~ | ~~All per-state layout CSS + @keyframes~~ | deleted — FEATURE-005 |
@@ -66,6 +67,8 @@
 | `theme-changed` | main → renderer | ✅ registered — sent by nativeTheme.on('updated') with { dark: boolean } |
 | `show-language-menu` | renderer → main | ✅ registered — builds native radio menu from passed languages array, sends `language-selected` to renderer on click |
 | `language-selected` | main → renderer | ✅ sent from show-language-menu click handler with language code |
+| `show-shortcuts` | main → renderer | ✅ registered — sent by CommandOrControl+Shift+/ global shortcut or "Keyboard shortcuts ⌘?" context menu item |
+| `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut (Phase 2 pause/resume — stub) |
 
 ---
 
@@ -79,12 +82,13 @@
 
 | State | Panel ID | Height | Notes |
 |-------|----------|--------|-------|
-| `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint |
+| `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint, ⌘? hint |
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/stop buttons; traffic lights hidden |
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 480px | Prompt output + action buttons |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
 | `HISTORY` | `panel-history` | 420px | Scrollable list of past prompts; Clear + Close buttons; click entry → PROMPT_READY |
+| `SHORTCUTS` | ShortcutsPanel | 380px | 8 shortcuts with key chips; Done → previous state; triggered via ⌘? or context menu |
 
 > Note: FIRST_RUN state removed from index.html — replaced by splash.html (D-007, FEATURE-001)
 
@@ -99,7 +103,9 @@
 | `errorMessage` | useState string | `transition(ERROR, {message})` | ErrorState |
 | `thinkTranscript` | useState string | stopRecording, handleRegenerate | ThinkingState |
 | `originalTranscript` | useRef string | stopRecording onstop — set ONCE, never mutated | PromptReadyState, handleRegenerate |
-| `stateRef` | useRef string | mirrors currentState — stale-closure-safe for IPC handlers | onShortcutTriggered callback |
+| `stateRef` | useRef string | mirrors currentState — stale-closure-safe for IPC handlers | onShortcutTriggered callback, onShowShortcuts callback, keydown listener |
+| `prevStateRef` | useRef string | state before SHORTCUTS transition — for Done button return | ShortcutsPanel onClose handler |
+| `generatedPromptRef` | useRef string | mirrors generatedPrompt — stale-closure-safe for keydown listener | ⌘C handler |
 | `mediaRecorderRef` | useRef MediaRecorder\|null | startRecording, handleDismiss | stopRecording, handleDismiss |
 | `audioChunksRef` | useRef Blob[] | startRecording ondataavailable | stopRecording onstop |
 | `isProcessingRef` | useRef boolean | stopRecording start/end guard | stopRecording early-exit guard |
