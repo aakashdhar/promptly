@@ -1,11 +1,11 @@
 {
   "project_name": "Promptly",
   "generated": "2026-04-19",
-  "total_cost_usd": 7.055,
-  "total_sessions": 12,
-  "build_progress_pct": 100,
-  "tasks_remaining": 0,
-  "at_a_glance": "Promptly has cost $7.06 across 12 sessions over two days. The app shipped at $6.30 after session 11, with session 12 adding Phase 4 v2 features and then pruning two of them (F-HISTORY and F-LANGUAGE) before they shipped \u2014 keeping the codebase lean for an upcoming React migration. Costs are healthy and stable: no session exceeded $1.30, and the project is complete.",
+  "total_cost_usd": 11.87,
+  "total_sessions": 20,
+  "build_progress_pct": 98,
+  "tasks_remaining": 2,
+  "at_a_glance": "Promptly has cost an estimated $11.87 across ~20 sessions over two days. The project is 98% complete \u2014 only broader distribution work (notarisation, landing page) remains. The most expensive phase was Phase 4 React migration at ~$5.58 total, driven by the 14-task FEATURE-004 renderer rewrite and the History panel. Note: 7 sessions of Phase 4 work were not recorded in history.json \u2014 the gap (~$4.65) is estimated here. All other costs are healthy: no single session exceeded $1.30.",
   "phase_summary": [
     {
       "phase": "Planning & Architecture",
@@ -23,7 +23,7 @@
       "phase": "Phase 2 \u2014 Core Features",
       "status": "complete",
       "sessions": 7,
-      "cost_usd": 3.044
+      "cost_usd": 3.244
     },
     {
       "phase": "Phase 3 \u2014 Polish & Ship",
@@ -34,79 +34,101 @@
     {
       "phase": "Phase 4 \u2014 v2 Features",
       "status": "complete",
-      "sessions": 1,
-      "cost_usd": 0.76
+      "sessions": 9,
+      "cost_usd": 5.575
     }
   ],
   "feature_costs": [
     {
       "label": "Planning & architecture",
-      "cost_usd": 0.606
+      "cost_usd": 0.61
     },
     {
-      "label": "Foundation shell (Electron setup)",
+      "label": "Electron shell (Phase 1)",
       "cost_usd": 1.3
     },
     {
       "label": "State machine & UI",
-      "cost_usd": 0.983
+      "cost_usd": 0.98
     },
     {
       "label": "First-run & splash screen",
-      "cost_usd": 0.644
+      "cost_usd": 0.64
     },
     {
       "label": "Dark glass design & bug fixes",
-      "cost_usd": 0.517
+      "cost_usd": 0.94
     },
     {
-      "label": "Recording refactor (pill \u2192 main win)",
-      "cost_usd": 0.42
-    },
-    {
-      "label": "Vibrancy & splash (FEATURE-001)",
+      "label": "Vibrancy + morph + splash (FEATURE-001)",
       "cost_usd": 0.68
     },
     {
-      "label": "Quality review, polish & ship",
-      "cost_usd": 1.145
+      "label": "Reviews, polish & ship (Phase 3)",
+      "cost_usd": 1.15
     },
     {
-      "label": "Phase 4: dark mode + tray + history/language (removed)",
-      "cost_usd": 0.76
+      "label": "React migration (FEATURE-004)",
+      "cost_usd": 2.2
+    },
+    {
+      "label": "Shortcuts panel (FEATURE-006)",
+      "cost_usd": 0.45
+    },
+    {
+      "label": "Export formats (FEATURE-007/008)",
+      "cost_usd": 0.55
+    },
+    {
+      "label": "History panel (FEATURE-009)",
+      "cost_usd": 0.65
+    },
+    {
+      "label": "BUG-011 + reviews + RFX fixes",
+      "cost_usd": 0.8
+    },
+    {
+      "label": "Session overhead & vibe-cost",
+      "cost_usd": 0.27
     }
   ],
   "session_narratives": {
     "2026-04-18-001": "Planning day \u2014 brainstorm, architect, and spec review. Three heavy reading tasks establishing BRIEF.md, ARCHITECTURE.md, and full SPEC. Expected spend for a planning session.",
-    "2026-04-18-002": "Most expensive session \u2014 all 9 Phase 1 tasks plus phase-1-review in one run. 11 tasks at $0.12 average is efficient; cost driven by volume and a 55K-token review.",
+    "2026-04-18-002": "Most expensive tracked session \u2014 all 9 Phase 1 tasks plus phase-1-review in one run. 11 tasks at $0.12 average is efficient; cost driven by volume and a 55K-token review.",
     "2026-04-18-003": "Spec and planning session for F-STATE. No code committed \u2014 pure spec writing and review. Lighter than the build sessions that followed.",
     "2026-04-18-004": "F-STATE build \u2014 5 tasks completing the full state machine, CSS, and IPC wiring. Efficient at $0.10/task average.",
     "2026-04-18-005": "F-FIRST-RUN planning and spec. Large spec write (88K input) for the first-run feature. No build tasks yet.",
-    "2026-04-18-006": "Lightest session of the project \u2014 finished one F-FIRST-RUN task and ran vibe-cost. $0.20 for a half-session of cleanup.",
+    "2026-04-18-006": "Lightest tracked session \u2014 finished one F-FIRST-RUN task and ran vibe-cost. $0.20 for a half-session of cleanup.",
     "2026-04-18-007": "Dark glass design implementation plus 6 BUG-002 visual fixes. The large design output (10K tokens) drove the output cost up.",
     "2026-04-18-008": "DECISION-004 (recording refactor from pillWin to main window) plus BUG-004 vibrancy fixes. Architecture-level refactor required deep reading.",
     "2026-04-18-009": "Heaviest Phase 2 session \u2014 vibrancy fixes across two rounds, BUG-007 RAF loop, and the full FEATURE-001 splash screen. $0.68 for 6 tasks is reasonable given the scope.",
     "2026-04-18-010": "Phase 2 review (L task, 80K input tokens) plus all BL-013\u2013023 fixes. The phase-2-review alone was $0.31 \u2014 expected for a full codebase audit.",
-    "2026-04-18-011": "Final review reading 9 source files, writing the gate report, RFX-001 console cleanup, and vibe-cost. Light session at $0.38 \u2014 the project is shipped.",
-    "2026-04-19-012": "Phase 4 v2 features session: completed the parallel build (dark mode, tray, history, language), then removed F-HISTORY and F-LANGUAGE before shipping to keep the codebase clean for the planned React migration. Session cost slightly elevated by continuation overhead from a compacted prior session."
+    "2026-04-18-011": "Final review reading 9 source files, writing the gate report, RFX-001 console cleanup, and vibe-cost. Light session at $0.38 \u2014 v1 shipped.",
+    "2026-04-19-012": "Phase 4 session: parallel build (dark mode, tray), then removed F-HISTORY and F-LANGUAGE from vanilla JS before React migration. Session elevated by continuation overhead.",
+    "untracked-013-015": "FEATURE-004 React migration across ~3 sessions \u2014 branch setup, Vite config, 11 React components, hooks, main.js electron loading, and smoke test (14 tasks total, ~$2.20 est.). Most expensive feature of the project.",
+    "untracked-016": "FEATURE-006 Shortcuts panel (5 tasks) \u2014 ShortcutsPanel.jsx, App.jsx SHORTCUTS state, keyboard listener, global shortcut in main.js. ~$0.60 est.",
+    "untracked-017": "FEATURE-007 export + FEATURE-008 simplification (6 tasks) \u2014 ExportPanel.jsx, save-file IPC, then simplified to direct .md export. ~$0.55 est.",
+    "untracked-018": "FEATURE-009 History panel (5 tasks) \u2014 history.js utility, split-panel HistoryPanel.jsx, App.jsx wiring, IPC channels. ~$0.65 est.",
+    "untracked-019": "BUG-011 full rewrite + BUG-SC-001 + review:FEATURE-009 + RFX-F009 fixes + vibe-graph \u00d7 2. ~$1.25 est. across ~2 sessions.",
+    "2026-04-19-013": "Session startup only \u2014 read 4 context files, ran vibe-cost. No tasks completed. $0.17."
   },
   "recommendations": [
     {
       "code": "CP-05",
-      "title": "Prompt caching never activated across all sessions",
-      "body": "Cache hit rate was 0% throughout the entire project \u2014 every session loaded CLAUDE.md and CODEBASE.md from scratch. For a next project, keeping CLAUDE.md stable would let Anthropic cache the large static context. Cache reads cost 90% less than fresh reads.",
-      "saving": "save ~$0.15\u20130.25/session on future projects",
+      "title": "Prompt caching never activated \u2014 0% cache hit rate",
+      "body": "Every session loaded CLAUDE.md and CODEBASE.md from scratch. CLAUDE.md is 15KB and changes every session (Active Feature sections appended inline), which disables caching eligibility. On a next project, keep CLAUDE.md structurally stable \u2014 move the Active Feature block to a separate file. Cache reads cost 90% less than fresh reads.",
+      "saving": "save ~$0.12\u20130.20/session",
       "severity": "warn"
     },
     {
       "code": "CP-01",
-      "title": "Session continuation adds ~40K token overhead",
-      "body": "Sessions that start from a compacted prior session load a large summary upfront (~40K tokens). Keeping sessions shorter (under ~80K tokens total) avoids compaction entirely and eliminates this overhead. Session 12 paid ~$0.12 just for the continuation context.",
-      "saving": "save ~$0.10\u20130.15 per session started from compaction",
+      "title": "DECISIONS.md at 54KB \u2014 context pressure growing",
+      "body": "DECISIONS.md has grown to 54KB (~13,500 tokens). Any skill that reads it in full (vibe-review, vibe-graph, vibe-changelog) pays ~$0.04 per read just for this file. Archive decisions older than Phase 2 to DECISIONS_ARCHIVE.md before the next major feature cycle.",
+      "saving": "save ~$0.04\u20130.08 per review session",
       "severity": "warn"
     }
   ],
-  "forecast_narrative": "Project is complete at $7.06. The React migration is the next major investment \u2014 expect $8\u201314 total based on the current rate of ~$0.15/task average. A typical migration of this scope (15\u201325 M-sized React component tasks) would run $2.70\u2013$4.50 in build cost alone, plus planning.",
+  "forecast_narrative": "Only 2 tasks remain: broader distribution (notarisation, Sparkle auto-update, public landing page). Expect $0.30\u20130.60 for the remaining work \u2014 lightweight research and config tasks. Total project cost at completion: ~$12.20\u201312.50. If DECISIONS.md is trimmed before the next feature cycle, expect ~$0.15 savings per review session going forward.",
   "sessions": [
     {
       "session_id": "2026-04-18-001",
@@ -180,7 +202,7 @@
     {
       "session_id": "2026-04-18-007",
       "date": "2026-04-18T23:59:59",
-      "phase": "Phase 2 \u2014 Design system + bug fixes",
+      "phase": "Phase 2 \u2014 Design + bug fixes",
       "tasks_completed": 3,
       "cost_usd": 0.517,
       "is_estimate": true,
@@ -203,7 +225,7 @@
     {
       "session_id": "2026-04-18-009",
       "date": "2026-04-18T23:59:59",
-      "phase": "Phase 2 \u2014 vibrancy, BUG-007, FEATURE-001 splash",
+      "phase": "Phase 2 \u2014 vibrancy, BUG-007, FEATURE-001",
       "tasks_completed": 6,
       "cost_usd": 0.68,
       "is_estimate": true,
@@ -245,6 +267,102 @@
       "patterns_detected": [
         "CP-01",
         "CP-02"
+      ]
+    },
+    {
+      "session_id": "untracked-013",
+      "date": "2026-04-19T06:00:00",
+      "phase": "Phase 4 \u2014 FEATURE-004 setup (FCR-001 to 004)",
+      "tasks_completed": 4,
+      "cost_usd": 0.6,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "untracked-014",
+      "date": "2026-04-19T08:00:00",
+      "phase": "Phase 4 \u2014 FEATURE-004 core (FCR-005 to 008)",
+      "tasks_completed": 4,
+      "cost_usd": 0.7,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "untracked-015",
+      "date": "2026-04-19T10:00:00",
+      "phase": "Phase 4 \u2014 FEATURE-004 complete + FEATURE-006",
+      "tasks_completed": 9,
+      "cost_usd": 0.9,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "untracked-016",
+      "date": "2026-04-19T12:00:00",
+      "phase": "Phase 4 \u2014 FEATURE-007 + FEATURE-008 export",
+      "tasks_completed": 6,
+      "cost_usd": 0.55,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "untracked-017",
+      "date": "2026-04-19T14:00:00",
+      "phase": "Phase 4 \u2014 FEATURE-009 history panel",
+      "tasks_completed": 5,
+      "cost_usd": 0.65,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "untracked-018",
+      "date": "2026-04-19T16:00:00",
+      "phase": "Phase 4 \u2014 BUG-011 + BUG-SC-001 + review",
+      "tasks_completed": 5,
+      "cost_usd": 0.8,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-01",
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "untracked-019",
+      "date": "2026-04-19T18:00:00",
+      "phase": "Phase 4 \u2014 RFX fixes + vibe-graph",
+      "tasks_completed": 6,
+      "cost_usd": 0.45,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
+      ],
+      "note": "UNTRACKED \u2014 estimated retroactively"
+    },
+    {
+      "session_id": "2026-04-19-013",
+      "date": "2026-04-19T20:00:00",
+      "phase": "Phase 4 \u2014 session startup + vibe-cost",
+      "tasks_completed": 0,
+      "cost_usd": 0.165,
+      "is_estimate": true,
+      "patterns_detected": [
+        "CP-05"
       ]
     }
   ]

@@ -230,5 +230,10 @@
    [x] BL-028 · Document closeHistory→IDLE in DECISIONS.md (D-BUG-011-B)
    [x] BL-029 · Comment minWidth/maxWidth in createWindow explaining set-window-size override
 
+💰 Cost tracked — Session #13: ~$0.17 est. (startup + vibe-cost only)
+   Project total: ~$11.87 est. (7 Phase 4 sessions untracked, retroactively estimated)
+   Tracked sessions: 13 | Untracked gap: ~$4.65 (FEATURE-004 through BUG-011)
+   vibe/cost/report-2026-04-19-session13.md
+
 ## What's next
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
