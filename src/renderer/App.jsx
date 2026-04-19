@@ -198,6 +198,7 @@ export default function App() {
     window.electronAPI.onShortcutTriggered(() => {
       if (stateRef.current === STATES.IDLE) startRecordingRef.current()
       else if (stateRef.current === STATES.RECORDING) stopRecordingRef.current()
+      else if (stateRef.current === STATES.SHORTCUTS) startRecordingRef.current()
     })
 
     window.electronAPI.onModeSelected((key) => {
@@ -217,6 +218,8 @@ export default function App() {
       if (e.key === 'Escape') {
         if (stateRef.current === STATES.RECORDING) {
           stopRecordingRef.current()
+        } else if (stateRef.current === STATES.SHORTCUTS) {
+          transition(prevStateRef.current || STATES.IDLE)
         } else if (stateRef.current !== STATES.IDLE) {
           transition(STATES.IDLE)
         }

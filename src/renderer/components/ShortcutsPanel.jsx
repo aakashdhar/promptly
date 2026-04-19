@@ -11,7 +11,7 @@ export default function ShortcutsPanel({ onClose }) {
   ]
 
   return (
-    <div className="relative z-[1] px-[22px] pt-[16px] pb-[20px]">
+    <div className="relative z-[1] px-[28px] pt-[16px] pb-[24px]" style={{ WebkitAppRegion: 'no-drag' }}>
       <div className="flex justify-between items-center mb-[14px]">
         <span className="text-[10px] font-bold tracking-[0.12em] uppercase"
           style={{color:'rgba(255,255,255,0.2)'}}>
@@ -19,8 +19,8 @@ export default function ShortcutsPanel({ onClose }) {
         </span>
         <button
           onClick={onClose}
-          className="text-[11px] cursor-pointer bg-transparent border-none p-0"
-          style={{color:'rgba(255,255,255,0.25)'}}>
+          className="text-[11px] cursor-pointer bg-transparent border-none p-0 hover:text-[#0A84FF] transition-colors duration-150"
+          style={{color:'rgba(255,255,255,0.5)'}}>
           Done
         </button>
       </div>
