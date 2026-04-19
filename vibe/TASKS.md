@@ -187,6 +187,14 @@
    [x] FSC-005 · IdleState ⌘? hint + feature docs
    → Full specs: vibe/features/2026-04-19-keyboard-shortcuts/FEATURE_TASKS.md
 
+✅ **FEATURE-007 — Export formats** — save-file IPC + .md export from PROMPT_READY (4/4 — COMPLETE 2026-04-19)
+   → Full specs: vibe/features/2026-04-19-export-formats/FEATURE_TASKS.md (agent use)
+
+✅ **FEATURE-008 — Export simplification** — single-click .md export, format picker removed (2/2 — COMPLETE 2026-04-19)
+   → Full specs: vibe/features/2026-04-19-export-md-only/FEATURE_TASKS.md (agent use)
+
+✅ **BUG-SC-001 — ShortcutsPanel three fixes** — Escape returns to prevState, ⌥Space starts recording, Done visible + padding (FIXED 2026-04-19, smoke tested ✅)
+
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
@@ -194,34 +202,14 @@
 ---
 
 ## What just happened
-✅ FEATURE-007 — Export formats complete (2026-04-19)
-   - ExportPanel.jsx: txt/md/json format picker tiles, formatContent pure fn, handleExport via saveFile IPC
-   - save-file IPC: dialog.showSaveDialog + fs.writeFileSync in main.js; saveFile in preload.js
-   - PromptReadyState: Export toggle (top row), ExportPanel above button row, ↓ Export in button row
-   - Window resize: 560px closed ↔ 650px open; ⌘E toggles via export-prompt custom event
-   - Build: ✓ 28 modules, lint: ✓ 0 errors
-   - ShortcutsPanel.jsx: 8 shortcuts, key chips, Done → returns to previous state
-   - SHORTCUTS state: 380px window resize, traffic lights spacer, prevStateRef tracking
-   - Keyboard shortcuts: Escape, ⌘C (copy), ⌘E (export-prompt event)
-   - Global shortcuts: ⌘? (show-shortcuts), Alt+P (shortcut-pause stub)
-   - Context menu: "Keyboard shortcuts ⌘?" separator item in mode menu
-   - IdleState: ⌘? hint below subtitle text
-   - Build: ✓ 27 modules, lint: ✓ 0 errors
+✅ Session complete — smoke tested and pushed 2026-04-19
+   - FEATURE-007: save-file IPC (main.js + preload.js), Export button in PROMPT_READY top row, direct .md export
+   - FEATURE-008: Simplified to single-click — ExportPanel deleted, ↓ Export removed, direct .md on click
+   - BUG-SC-001: ShortcutsPanel — Escape → prevState, ⌥Space starts recording, Done opacity raised, padding 22→28px
+   - All changes smoke tested by human ✅
 
 ## What's next
-✅ **FEATURE-008 — Export simplification** — single-click .md export, format picker removed (2/2 — COMPLETE 2026-04-19)
-   [x] EXPS-001 · Delete ExportPanel, simplify PromptReadyState to direct .md export
-   [x] EXPS-002 · Docs — CODEBASE.md + DECISIONS.md
-   → Full specs: vibe/features/2026-04-19-export-md-only/FEATURE_TASKS.md (agent use)
-
-✅ **FEATURE-007 — Export formats** — save prompt as .txt / .md / .json from PROMPT_READY (4/4 — COMPLETE 2026-04-19)
-   [x] EXP-001 · ExportPanel.jsx — format picker component (txt/md/json tiles + formatContent)
-   [x] EXP-002 · save-file IPC — main.js dialog.showSaveDialog + fs.writeFileSync + preload.js saveFile
-   [x] EXP-003 · PromptReadyState integration — Export toggle, panel render, ↓ Export button, resize, ⌘E
-   [x] EXP-004 · Docs — CODEBASE.md + DECISIONS.md update
-   → Full specs: vibe/features/2026-04-19-export-formats/FEATURE_TASKS.md (agent use)
-
-⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
+Say "feature: [name]" to plan the next feature, or run `review: final` for a fresh gate check.
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 Say "next" to begin EXP-001.

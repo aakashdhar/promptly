@@ -27,7 +27,7 @@
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset, scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all 5 states, IPC wiring, theme, recording flow, history | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `handleDismiss()`, `handleRegenerate()` |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `handleDismiss()`, `handleRegenerate()`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
@@ -37,7 +37,7 @@
 | `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
 | `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, direct .md export (handleExport), ⌘E via export-prompt event | `renderPromptOutput()`, `handleExport()` |
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
-| `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button | — |
+| `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button (returns to prevState). px-[28px] padding, WebkitAppRegion: no-drag | — |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/bar.css`~~ | ~~.bar glass container + ::before tint + ::after accent~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/states.css`~~ | ~~All per-state layout CSS + @keyframes~~ | deleted — FEATURE-005 |
@@ -86,7 +86,7 @@
 | `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint, ⌘? hint |
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/stop buttons; traffic lights hidden |
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
-| `PROMPT_READY` | `panel-ready` | 480px | Prompt output + action buttons |
+| `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
 | `HISTORY` | `panel-history` | 420px | Scrollable list of past prompts; Clear + Close buttons; click entry → PROMPT_READY |
 | `SHORTCUTS` | ShortcutsPanel | 380px | 8 shortcuts with key chips; Done → previous state; triggered via ⌘? or context menu |
