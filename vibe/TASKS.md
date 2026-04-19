@@ -221,6 +221,14 @@
    - set-window-size IPC added (atomic width+height, min/max constraints)
    - BrowserWindow minWidth/maxWidth constraint discovered and handled
 
-## What's next
 ✅ Manual smoke test — ⌘H, history list, search, delete, reuse, clear all (human-confirmed 2026-04-19)
-⬜ Run `review:` to gate FEATURE-009 before distribution.
+✅ review: FEATURE-009 — Score 8.6/10 (B+) — 0 P0, 2 P1 logged
+
+✅ Review fixes — FEATURE-009 gate (2/2 ✅)
+   [x] RFX-F009-001 · Remove console.log from App.jsx line 53
+   [x] RFX-F009-002 · Update ARCHITECTURE.md — 4 IPC channels added + stack section updated to React/Vite
+   [x] BL-028 · Document closeHistory→IDLE in DECISIONS.md (D-BUG-011-B)
+   [x] BL-029 · Comment minWidth/maxWidth in createWindow explaining set-window-size override
+
+## What's next
+⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

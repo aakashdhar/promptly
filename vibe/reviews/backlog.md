@@ -100,6 +100,19 @@
 
 ---
 
+---
+
+## From FEATURE-009 Review (2026-04-19)
+
+### Outstanding P2 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-028~~ | vibe/DECISIONS.md | — | closeHistory → IDLE undocumented | ✅ resolved — D-BUG-011-B added |
+| ~~BL-029~~ | main.js | 181–182 | minWidth/maxWidth pattern undocumented | ✅ resolved — comment added |
+
+---
+
 ## Resolved Issues
 
 | ID | Finding | Resolved in |

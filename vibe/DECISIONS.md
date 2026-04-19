@@ -686,3 +686,12 @@ Key fixes applied:
 - **Alternatives considered**: (1) Debug Tailwind JIT — not worth it; inline styles are reliable and explicit. (2) Delay RAF in resize-window to let width settle — fragile, timing-dependent. (3) Accepted: single atomic IPC call is the correct pattern for multi-axis resize.
 - **Impact on other tasks**: Any future state that requires a non-standard window width must use setWindowSize; resize-window alone is only safe when width stays at 520.
 - **Approved by**: human
+
+---
+
+### D-BUG-011-B — closeHistory always transitions to IDLE (not prevState)
+- **Date**: 2026-04-19 · **Task**: BUG-011 · **Type**: scope-change
+- **What was planned**: HIST-003 spec — closeHistory returns to prevStateRef (same pattern as ShortcutsPanel)
+- **What was done**: closeHistory calls setWindowSize(520, STATE_HEIGHTS.IDLE) and always transitions to IDLE
+- **Why**: User explicitly requested "On HISTORY close: resizeWindow(STATE_HEIGHTS.IDLE)" during BUG-011 fix session — IDLE is the correct home state after reviewing history
+- **Approved by**: human

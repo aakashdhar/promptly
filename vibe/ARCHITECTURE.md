@@ -9,21 +9,21 @@
 
 **Type:** Desktop app (Electron)
 **Platform:** macOS only — always-on-top floating bar
-**Stack (locked):**
+**Stack (as-built — FEATURE-004 migrated renderer to React + Vite):**
   Shell:    Electron v31+, universal binary (arm64 + x64)
-  Frontend: Vanilla HTML + CSS + JS — single index.html, zero build step
+  Frontend: React 18 + Vite — `src/renderer/` → built to `dist-renderer/` (devDeps only)
+  Styling:  Tailwind v4 for static classes; inline styles for dynamic/stateful layout
   Speech:   getUserMedia + MediaRecorder (renderer) → transcribe-audio IPC → Whisper CLI (main)
   CLI:      `claude -p` via child_process — PATH resolved via login shell at startup
   IPC:      Electron ipcMain + preload.js contextBridge
-  Storage:  localStorage — mode only, nothing sensitive
+  Storage:  localStorage — mode + history, nothing sensitive
   Dist:     electron-builder → .dmg (arm64 + x64)
   Backend:  None — Claude CLI is the AI layer
   Database: None — no persistence beyond localStorage
 
-> This stack is locked. Do NOT introduce frameworks (React, Vue, Svelte, Next.js),
-> build tools (Vite, Webpack, esbuild), or TypeScript. The constraint is intentional:
-> zero build step, zero runtime npm dependencies. Any deviation requires a change:
-> command and a DECISIONS.md entry.
+> Runtime npm dependencies: zero — React/Vite/Tailwind are devDeps only, not in .dmg.
+> Any new runtime dependency requires a DECISIONS.md entry.
+> 📝 2026-04-19 · Stack updated — FEATURE-004 React migration (see D-FCR in DECISIONS.md)
 
 ---
 
@@ -131,6 +131,10 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | main → renderer | `theme-changed` | Sent when macOS appearance changes; payload `{ dark: boolean }` |
 | renderer → main | `show-language-menu` | Open native Electron radio menu from passed languages array; sends `language-selected` to renderer on click |
 | main → renderer | `language-selected` | Sent from show-language-menu click handler with selected language code |
+| renderer → main | `save-file` | Show native save dialog + write file; returns `{ ok, filePath }` — added FEATURE-007 |
+| renderer → main | `resize-window-width` | Resize BrowserWindow width only, preserving height — added FEATURE-009 |
+| main → renderer | `show-history` | Sent by "History ⌘H" context menu item — added FEATURE-009 |
+| renderer → main | `set-window-size` | Set both width and height atomically; updates setMinimumSize/setMaximumSize first — added BUG-011 |
 
 ---
 
