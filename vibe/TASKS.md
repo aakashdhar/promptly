@@ -224,5 +224,5 @@
    - BrowserWindow minWidth/maxWidth constraint discovered and handled
 
 ## What's next
-⬜ Manual smoke test — exercise ⌘H, history list, search, delete, reuse, clear all
-   Then run `review:` to gate FEATURE-009 before distribution.
+✅ Manual smoke test — ⌘H, history list, search, delete, reuse, clear all (human-confirmed 2026-04-19)
+⬜ Run `review:` to gate FEATURE-009 before distribution.
