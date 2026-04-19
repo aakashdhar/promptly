@@ -210,7 +210,6 @@
    - openHistory/closeHistory: now use setWindowSize(746, 720) / setWindowSize(520, IDLE) directly
    - Discovered: BrowserWindow had `minWidth:520, maxWidth:520` — must call setMinimumSize/setMaximumSize before setSize to change width
 
-⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
