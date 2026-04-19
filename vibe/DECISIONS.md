@@ -635,6 +635,17 @@ Key fixes applied:
 
 ---
 
+### D-BUG-SC-001 — ShortcutsPanel: three bugs fixed
+- **Date**: 2026-04-19 · **Type**: drift (bug fix)
+- **Bugs**:
+  1. Escape went to IDLE for all non-IDLE states — fixed to return to prevStateRef when in SHORTCUTS
+  2. ⌥Space silently ignored in SHORTCUTS state — added SHORTCUTS case to onShortcutTriggered handler
+  3. Done button opacity 25% (invisible) — raised to 50% with hover; padding increased 22px→28px; added WebkitAppRegion: 'no-drag'
+- **Files changed**: `src/renderer/App.jsx`, `src/renderer/components/ShortcutsPanel.jsx`
+- **Approved by**: human
+
+---
+
 ### D-BUG-007A — Trivial fix: ExportPanel tiles unclickable
 - **Date**: 2026-04-19 · **Type**: drift (trivial bug)
 - **Root cause**: `panel-ready` root div has `WebkitAppRegion: 'drag'`; ExportPanel wrapper never overrode it to `'no-drag'`, so all tile button clicks were swallowed by Electron's window drag handler
