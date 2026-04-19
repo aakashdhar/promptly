@@ -1,85 +1,58 @@
 {
   "version": 2,
-  "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-19T00:00:00Z",
-  "update_count": 1,
-  "mode": "incremental",
-  "files_updated_this_run": 3,
-  "nodes_planned": 0,
-  "nodes_built": 7,
-  "nodes_deleted": 2,
   "project": "promptly",
-  "inferred_to_extracted_this_run": 5,
-  "rationale_nodes_added": 5,
-  "concepts_built": 7,
-  "concepts_deleted": [
-    "history",
-    "language"
-  ],
+  "created": "2026-04-18T13:36:46Z",
+  "last_updated": "2026-04-19T12:30:00Z",
+  "update_count": 3,
+  "mode": "full-rebuild",
+  "coverage": {
+    "files_indexed": 22,
+    "concepts_mapped": 11,
+    "extracted_edges": 24,
+    "inferred_edges": 12,
+    "ambiguous_edges": 1,
+    "rationale_nodes": 14
+  },
   "god_nodes": [
     {
-      "file": "preload.js",
-      "connections": 3,
-      "concept": "foundation",
-      "type": "electron-preload",
-      "risk": "LOW",
-      "note": "Exposes all IPC to both renderers; any new IPC channel requires a preload.js change"
+      "file": "src/renderer/App.jsx",
+      "connections": 11,
+      "concept": "state-machine",
+      "type": "component",
+      "risk": "HIGH",
+      "srp_flag": true,
+      "srp_note": "11 connections — root orchestrator, expected for this architecture"
     },
     {
       "file": "main.js",
-      "connections": 3,
+      "connections": 7,
       "concept": "foundation",
-      "type": "electron-main",
-      "risk": "LOW",
-      "note": "Loads preload.js, index.html, splash.html; handles all IPC \u2014 13 handle channels + 4 send channels"
+      "type": "entry",
+      "risk": "MEDIUM"
     },
     {
-      "file": "index.html",
-      "connections": 2,
+      "file": "preload.js",
+      "connections": 4,
       "concept": "foundation",
-      "type": "renderer-html",
-      "risk": "LOW",
-      "note": "Loaded by main.js; consumes preload.js via window.electronAPI; all 5 UI states live here"
+      "type": "bridge",
+      "risk": "LOW"
     }
   ],
-  "god_nodes_computed_at": "2026-04-19T00:00:00Z",
-  "extracted_edges": 16,
-  "inferred_edges": 8,
-  "ambiguous_count": 1,
-  "ambiguous_edges": 1,
-  "ambiguous_files": [
+  "ambiguous_edges": [
     {
-      "file": "index.html",
-      "issue": "Concept ownership ambiguous \u2014 all UI features write to this file",
-      "action": "Assigned to foundation as shared UI infrastructure; secondary_concepts lists active features"
+      "id": "AMB-001",
+      "file": "src/renderer/components/PromptReadyState.jsx",
+      "imports": "window.electronAPI.saveFile",
+      "issue": "saveFile called via window.electronAPI — not a static import, so edge cannot be EXTRACTED from source",
+      "action": "Treat as INFERRED — PromptReadyState depends on preload.js saveFile bridge"
     }
   ],
-  "rationale_nodes": 10,
-  "changes_this_update": {
-    "main.js": [
-      "nativeTheme added",
-      "createTray/updateTrayMenu added",
-      "get-theme IPC handle added",
-      "theme-changed IPC send added",
-      "language param removed from transcribe-audio",
-      "tray var added"
-    ],
-    "preload.js": [
-      "getTheme/onThemeChanged added",
-      "showLanguageMenu/onLanguageSelected removed",
-      "transcribeAudio signature simplified"
-    ],
-    "index.html": [
-      "body.light CSS block added",
-      "getTheme/onThemeChanged wired at boot",
-      "STATES.HISTORY removed",
-      "F-HISTORY JS removed",
-      "F-LANGUAGE JS removed",
-      "language-pill removed"
-    ]
-  },
-  "concepts_added": [
-    "dark-mode",
-    "tray"
+  "inferred_edges_list": [
+    { "from": "src/renderer/components/RecordingState.jsx", "to": "src/renderer/components/WaveformCanvas.jsx", "confidence": 0.90 },
+    { "from": "src/renderer/components/ThinkingState.jsx", "to": "src/renderer/components/MorphCanvas.jsx", "confidence": 0.85 },
+    { "from": "src/renderer/components/IdleState.jsx", "to": "src/renderer/hooks/useMode.js", "confidence": 0.85 },
+    { "from": "src/renderer/components/PromptReadyState.jsx", "to": "preload.js", "confidence": 0.80 },
+    { "from": "src/renderer/App.jsx", "to": "src/renderer/hooks/useWindowResize.js", "confidence": 0.90 },
+    { "from": "src/renderer/components/HistoryPanel.jsx", "to": "src/renderer/utils/history.js", "confidence": 0.95 }
   ]
 }

@@ -96,11 +96,17 @@
   <select id="filter-concept">
     <option value="all">All concepts</option>
     <option value="foundation">foundation</option>
+    <option value="react-migration">react-migration</option>
     <option value="state-machine">state-machine</option>
     <option value="speech-recording">speech-recording</option>
     <option value="claude-integration">claude-integration</option>
     <option value="actions">actions</option>
     <option value="first-run">first-run</option>
+    <option value="dark-mode">dark-mode</option>
+    <option value="tray">tray</option>
+    <option value="shortcuts">shortcuts</option>
+    <option value="export">export</option>
+    <option value="history-panel">history-panel</option>
   </select>
   <span id="stats"></span>
 </div>
@@ -131,6 +137,9 @@
   <div class="legend-row"><div class="legend-dot" style="background:#6366f1"></div> electron-main</div>
   <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div> electron-preload</div>
   <div class="legend-row"><div class="legend-dot" style="background:#f97316"></div> renderer-html</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div> react-component</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#06b6d4"></div> react-hook</div>
+  <div class="legend-row"><div class="legend-dot" style="background:#a78bfa"></div> utility</div>
   <div class="legend-row"><div class="legend-edge-solid" style="background:#475569"></div> EXTRACTED</div>
   <div class="legend-row"><div class="legend-edge-dashed" style="border-color:#334155"></div> INFERRED</div>
 </div>
@@ -143,14 +152,14 @@ const DEPENDENCY_GRAPH = {
     "state": "built", "type": "config", "concept": "foundation",
     "concept_source": "INFERRED", "concept_confidence": 0.95,
     "imports": [],
-    "imported_by": [{"file":"entitlements.plist","source":"INFERRED","confidence":0.85,"evidence":"electron-builder config references entitlements.plist"}],
+    "imported_by": [{"file":"entitlements.plist","source":"INFERRED","confidence":0.85}],
     "rationale": []
   },
   "entitlements.plist": {
     "state": "built", "type": "config", "concept": "foundation",
     "concept_source": "INFERRED", "concept_confidence": 0.95,
     "imports": [],
-    "imported_by": [{"file":"package.json","source":"INFERRED","confidence":0.85,"evidence":"electron-builder hardenedRuntime references this file"}],
+    "imported_by": [{"file":"package.json","source":"INFERRED","confidence":0.85}],
     "rationale": []
   },
   "eslint.config.js": {
@@ -158,23 +167,30 @@ const DEPENDENCY_GRAPH = {
     "concept_source": "INFERRED", "concept_confidence": 0.90,
     "imports": [], "imported_by": [], "rationale": []
   },
+  "vite.config.js": {
+    "state": "built", "type": "config", "concept": "react-migration",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "imports": [], "imported_by": [],
+    "rationale": [{"type":"DECISION","text":"base: './' — dist-renderer loaded via file:// protocol by Electron; absolute paths would break asset loading","source":"INFERRED"}]
+  },
   "main.js": {
     "state": "built", "type": "electron-main", "concept": "foundation",
     "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "secondary_concepts": ["speech-recording","claude-integration","first-run"],
-    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 123+155: webPreferences.preload for win and splashWin"}],
+    "secondary_concepts": ["speech-recording","claude-integration","first-run","dark-mode","tray","history-panel","export"],
+    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"webPreferences.preload for both win and splashWin"}],
     "loads": [
-      {"file":"index.html","source":"EXTRACTED","confidence":1.0,"evidence":"line 126: win.loadFile('index.html')"},
-      {"file":"splash.html","source":"EXTRACTED","confidence":1.0,"evidence":"line 160: splashWin.loadFile('splash.html')"}
+      {"file":"dist-renderer/index.html","source":"EXTRACTED","confidence":1.0},
+      {"file":"splash.html","source":"EXTRACTED","confidence":1.0}
     ],
     "imported_by": [],
-    "ipc_handles": ["generate-prompt","copy-to-clipboard","check-claude-path","resize-window","transcribe-audio","show-mode-menu","set-window-buttons-visible","splash-done","splash-check-cli","splash-open-url","request-mic"],
-    "ipc_sends": ["shortcut-triggered","shortcut-conflict","mode-selected"],
-    "key_vars": ["claudePath","whisperPath","win","splashWin","PROMPT_TEMPLATE","MODE_CONFIG"],
-    "key_functions": ["resolveClaudePath","registerShortcut","createWindow"],
+    "ipc_handles": ["generate-prompt","copy-to-clipboard","check-claude-path","resize-window","transcribe-audio","show-mode-menu","set-window-buttons-visible","splash-done","splash-check-cli","splash-check-whisper","splash-open-url","request-mic","get-theme","save-file","resize-window-width","set-window-size"],
+    "ipc_sends": ["shortcut-triggered","shortcut-conflict","mode-selected","theme-changed","show-history","show-shortcuts"],
+    "key_vars": ["claudePath","whisperPath","win","splashWin","tray","PROMPT_TEMPLATE","MODE_CONFIG"],
+    "key_functions": ["resolveClaudePath","registerShortcut","createWindow","createTray","updateTrayMenu"],
     "rationale": [
-      {"type":"DECISION","text":"PATH resolution uses 'zsh -lc \"which claude\"' — claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment","line":68,"source":"EXTRACTED"},
-      {"type":"DECISION","text":"transcript passed via stdin to claude spawn (not shell arg) — avoids shell injection and arg length limits","line":203,"source":"INFERRED"}
+      {"type":"DECISION","text":"PATH resolution uses 'zsh -lc \"which claude\"' — claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment","source":"EXTRACTED"},
+      {"type":"DECISION","text":"BrowserWindow has minWidth:520, maxWidth:520 — overridden at runtime by set-window-size IPC which calls setMinimumSize/setMaximumSize before setSize","source":"EXTRACTED"},
+      {"type":"DECISION","text":"set-window-size IPC added (BUG-011) — separate width+height calls had a race condition: RAF-deferred resize-window read stale width before resize-window-width applied","source":"EXTRACTED"}
     ]
   },
   "preload.js": {
@@ -182,49 +198,183 @@ const DEPENDENCY_GRAPH = {
     "concept_source": "INFERRED", "concept_confidence": 0.95,
     "imports": [],
     "imported_by": [
-      {"file":"main.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 123+155: webPreferences.preload"},
-      {"file":"index.html","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI consumed throughout index.html"},
-      {"file":"splash.html","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.splashDone/splashCheckCLI/requestMic called from splash.html"}
+      {"file":"main.js","source":"EXTRACTED","confidence":1.0},
+      {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.* consumed throughout"},
+      {"file":"splash.html","source":"EXTRACTED","confidence":1.0}
     ],
-    "exposes": ["generatePrompt","copyToClipboard","checkClaudePath","resizeWindow","setWindowButtonsVisible","showModeMenu","onModeSelected","transcribeAudio","splashDone","splashCheckCLI","splashOpenURL","requestMic","onShortcutTriggered","onShortcutConflict"],
+    "exposes": ["generatePrompt","copyToClipboard","checkClaudePath","resizeWindow","setWindowButtonsVisible","showModeMenu","onModeSelected","transcribeAudio","splashDone","splashCheckCLI","splashCheckWhisper","splashOpenURL","requestMic","onShortcutTriggered","onShortcutConflict","getTheme","onThemeChanged","onShowShortcuts","saveFile","resizeWindowWidth","setWindowSize","onShowHistory"],
     "rationale": [
-      {"type":"DECISION","text":"nodeIntegration:false + contextIsolation:true always — security boundary; all IPC via window.electronAPI only","line":5,"source":"INFERRED"}
+      {"type":"DECISION","text":"nodeIntegration:false + contextIsolation:true always — security boundary; all IPC via window.electronAPI only","source":"INFERRED"}
     ]
   },
   "splash.html": {
     "state": "built", "type": "renderer-html", "concept": "first-run",
     "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "concept_evidence": "D-007: FIRST_RUN removed from index.html, replaced by separate splashWin loading splash.html",
-    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI consumed for splash IPC calls"}],
-    "imported_by": [{"file":"main.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 160: splashWin.loadFile('splash.html')"}],
+    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0}],
+    "imported_by": [{"file":"main.js","source":"EXTRACTED","confidence":1.0}],
     "key_functions": ["runChecks","setCheck","showReady","openInstall"],
     "rationale": []
   },
   "index.html": {
     "state": "built", "type": "renderer-html", "concept": "foundation",
     "concept_source": "AMBIGUOUS", "concept_confidence": 0.50,
-    "concept_evidence": "Every feature touches index.html — assigned to foundation",
+    "concept_evidence": "Legacy vanilla JS renderer — stays on main branch as reference; replaced by React build in production",
     "secondary_concepts": ["state-machine","speech-recording","claude-integration","actions"],
-    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.* called throughout — all IPC methods"}],
-    "imported_by": [{"file":"main.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 126: win.loadFile('index.html')"}],
-    "key_vars": ["state","originalTranscript","generatedPrompt","mediaRecorder","audioChunks","isProcessing","morphAnimFrame","recSecs","recTimer","waveT","waveRAF"],
-    "key_functions": ["setState","getMode","setMode","getModeLabel","startRecording","stopRecording","renderPromptOutput","drawMorphWave","stopMorphAnim","drawRecordingWave","startRecTimer","stopRecTimer","setRecordingTranscript"],
-    "state_machine_states": ["IDLE","RECORDING","THINKING","PROMPT_READY","ERROR"],
+    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0}],
+    "imported_by": [],
+    "rationale": [{"type":"DECISION","text":"Legacy file — retained after React migration (FEATURE-004). Not loaded by Electron in production.","source":"EXTRACTED"}]
+  },
+  "src/renderer/main.jsx": {
+    "state": "built", "type": "react-entry", "concept": "react-migration",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "imports": [
+      {"file":"src/renderer/index.css","source":"EXTRACTED","confidence":1.0},
+      {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}
+    ],
+    "imported_by": [], "rationale": []
+  },
+  "src/renderer/index.css": {
+    "state": "built", "type": "stylesheet", "concept": "react-migration",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/main.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/App.jsx": {
+    "state": "built", "type": "react-component", "concept": "foundation",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "secondary_concepts": ["speech-recording","claude-integration","dark-mode","history-panel","shortcuts","export"],
+    "imports": [
+      {"file":"src/renderer/hooks/useMode.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 2"},
+      {"file":"src/renderer/hooks/useWindowResize.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 3"},
+      {"file":"src/renderer/components/IdleState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 4"},
+      {"file":"src/renderer/components/ShortcutsPanel.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 5"},
+      {"file":"src/renderer/components/HistoryPanel.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 6"},
+      {"file":"src/renderer/components/RecordingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 7"},
+      {"file":"src/renderer/components/ThinkingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 8"},
+      {"file":"src/renderer/components/PromptReadyState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 9"},
+      {"file":"src/renderer/components/ErrorState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 10"},
+      {"file":"src/renderer/utils/history.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 11"}
+    ],
+    "imported_by": [{"file":"src/renderer/main.jsx","source":"EXTRACTED","confidence":1.0}],
+    "key_vars": ["STATES","STATE_HEIGHTS"],
+    "key_functions": ["transition","startRecording","stopRecording","handleDismiss","handleRegenerate","openHistory","closeHistory"],
     "rationale": [
-      {"type":"DECISION","text":"Single monolithic index.html — zero build step, zero bundler. Deliberate constraint from ARCHITECTURE.md.","line":1,"source":"INFERRED"},
-      {"type":"DECISION","text":"innerHTML never used with dynamic content — all user/Claude text set via textContent to prevent XSS.","line":1,"source":"INFERRED"},
-      {"type":"DECISION","text":"originalTranscript captured once in stopRecording() — never mutated after. Regenerate reads this, not the edited generatedPrompt.","line":1,"source":"INFERRED"}
+      {"type":"DECISION","text":"openHistory/closeHistory use setWindowSize (atomic) instead of separate calls — avoids RAF race condition where resize-window reads stale width","source":"EXTRACTED"},
+      {"type":"DECISION","text":"closeHistory always transitions to IDLE (not prevState) — HISTORY is a browsing mode, not a temporary overlay","source":"EXTRACTED"},
+      {"type":"DECISION","text":"Root div uses inline style width:100% instead of Tailwind w-[520px] — Tailwind JIT/purge was not generating the dynamic width class","source":"EXTRACTED"}
     ]
+  },
+  "src/renderer/utils/history.js": {
+    "state": "built", "type": "utility", "concept": "history-panel",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [
+      {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0},
+      {"file":"src/renderer/components/HistoryPanel.jsx","source":"EXTRACTED","confidence":1.0}
+    ],
+    "exports": ["saveToHistory","getHistory","deleteHistoryItem","clearHistory","searchHistory","formatTime"],
+    "rationale": [
+      {"type":"DECISION","text":"All localStorage history access gated through this module — no direct localStorage.* calls elsewhere","source":"EXTRACTED"}
+    ]
+  },
+  "src/renderer/components/HistoryPanel.jsx": {
+    "state": "built", "type": "react-component", "concept": "history-panel",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "imports": [{"file":"src/renderer/utils/history.js","source":"EXTRACTED","confidence":1.0}],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "props": ["onClose","onReuse"],
+    "rationale": [
+      {"type":"DECISION","text":"Full inline styles — Tailwind layout classes not applying in HISTORY state (purge/JIT issue). Inline styles are immune and explicit.","source":"EXTRACTED"},
+      {"type":"DECISION","text":"Right panel has minHeight:0 on flex container — without it overflowY:auto on inner prompt div never activates","source":"EXTRACTED"}
+    ]
+  },
+  "src/renderer/hooks/useMode.js": {
+    "state": "built", "type": "react-hook", "concept": "claude-integration",
+    "concept_source": "INFERRED", "concept_confidence": 0.85,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/hooks/useWindowResize.js": {
+    "state": "built", "type": "react-hook", "concept": "foundation",
+    "concept_source": "INFERRED", "concept_confidence": 0.90,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": [{"type":"DECISION","text":"resizeWindow wrapped in requestAnimationFrame — defers IPC call until after React render to avoid visual flash","source":"EXTRACTED"}]
+  },
+  "src/renderer/components/IdleState.jsx": {
+    "state": "built", "type": "react-component", "concept": "state-machine",
+    "concept_source": "INFERRED", "concept_confidence": 0.85,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/components/RecordingState.jsx": {
+    "state": "built", "type": "react-component", "concept": "speech-recording",
+    "concept_source": "INFERRED", "concept_confidence": 0.90,
+    "imports": [{"file":"src/renderer/components/WaveformCanvas.jsx","source":"INFERRED","confidence":0.90}],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/components/WaveformCanvas.jsx": {
+    "state": "built", "type": "react-component", "concept": "speech-recording",
+    "concept_source": "INFERRED", "concept_confidence": 0.85,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/components/RecordingState.jsx","source":"INFERRED","confidence":0.90}],
+    "rationale": []
+  },
+  "src/renderer/components/ThinkingState.jsx": {
+    "state": "built", "type": "react-component", "concept": "claude-integration",
+    "concept_source": "INFERRED", "concept_confidence": 0.85,
+    "imports": [{"file":"src/renderer/components/MorphCanvas.jsx","source":"INFERRED","confidence":0.90}],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/components/MorphCanvas.jsx": {
+    "state": "built", "type": "react-component", "concept": "claude-integration",
+    "concept_source": "INFERRED", "concept_confidence": 0.80,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/components/ThinkingState.jsx","source":"INFERRED","confidence":0.90}],
+    "rationale": []
+  },
+  "src/renderer/components/PromptReadyState.jsx": {
+    "state": "built", "type": "react-component", "concept": "actions",
+    "concept_source": "INFERRED", "concept_confidence": 0.90,
+    "secondary_concepts": ["export"],
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/components/ErrorState.jsx": {
+    "state": "built", "type": "react-component", "concept": "state-machine",
+    "concept_source": "INFERRED", "concept_confidence": 0.85,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
+  },
+  "src/renderer/components/ShortcutsPanel.jsx": {
+    "state": "built", "type": "react-component", "concept": "shortcuts",
+    "concept_source": "INFERRED", "concept_confidence": 0.90,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
+    "rationale": []
   }
 };
 
 const CONCEPT_GRAPH = {
-  "foundation":         { "state":"built","files":["package.json","entitlements.plist","eslint.config.js","main.js","preload.js","index.html"],"depends_on":[],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","first-run"],"tasks_complete":9,"tasks_total":9 },
-  "state-machine":      { "state":"built","files":["index.html","main.js"],"depends_on":["foundation"],"depended_on_by":["speech-recording","claude-integration","actions","first-run"],"tasks_complete":5,"tasks_total":5 },
-  "first-run":          { "state":"built","files":["splash.html","main.js","index.html"],"depends_on":["foundation","state-machine"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
-  "speech-recording":   { "state":"built","files":["index.html","main.js","preload.js"],"depends_on":["foundation","state-machine"],"depended_on_by":["claude-integration","actions"],"tasks_complete":5,"tasks_total":5 },
-  "claude-integration": { "state":"built","files":["main.js","index.html"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":["actions"],"tasks_complete":4,"tasks_total":4 },
-  "actions":            { "state":"built","files":["index.html"],"depends_on":["foundation","state-machine","claude-integration"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 }
+  "foundation":         { "state":"built","files":["package.json","entitlements.plist","eslint.config.js","main.js","preload.js","index.html","src/renderer/App.jsx","src/renderer/main.jsx","src/renderer/hooks/useWindowResize.js"],"depends_on":[],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","first-run","dark-mode","tray","react-migration","history-panel","shortcuts","export"],"tasks_complete":9,"tasks_total":9 },
+  "react-migration":    { "state":"built","files":["vite.config.js","src/renderer/main.jsx","src/renderer/index.css","src/renderer/App.jsx"],"depends_on":["foundation"],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","dark-mode","history-panel","shortcuts","export"],"tasks_complete":14,"tasks_total":14 },
+  "state-machine":      { "state":"built","files":["src/renderer/App.jsx","main.js","src/renderer/components/IdleState.jsx","src/renderer/components/ErrorState.jsx"],"depends_on":["foundation","react-migration"],"depended_on_by":["speech-recording","claude-integration","actions","first-run","history-panel","shortcuts"],"tasks_complete":5,"tasks_total":5 },
+  "first-run":          { "state":"built","files":["splash.html","main.js"],"depends_on":["foundation","state-machine"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
+  "speech-recording":   { "state":"built","files":["src/renderer/App.jsx","main.js","preload.js","src/renderer/components/RecordingState.jsx","src/renderer/components/WaveformCanvas.jsx"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":["claude-integration","actions"],"tasks_complete":5,"tasks_total":5 },
+  "claude-integration": { "state":"built","files":["main.js","src/renderer/App.jsx","src/renderer/components/ThinkingState.jsx","src/renderer/components/MorphCanvas.jsx","src/renderer/hooks/useMode.js"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":["actions"],"tasks_complete":4,"tasks_total":4 },
+  "actions":            { "state":"built","files":["src/renderer/components/PromptReadyState.jsx","src/renderer/App.jsx"],"depends_on":["foundation","state-machine","claude-integration"],"depended_on_by":["export"],"tasks_complete":4,"tasks_total":4 },
+  "dark-mode":          { "state":"built","files":["main.js","preload.js","src/renderer/App.jsx"],"depends_on":["foundation"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 },
+  "tray":               { "state":"built","files":["main.js"],"depends_on":["foundation"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 },
+  "shortcuts":          { "state":"built","files":["src/renderer/components/ShortcutsPanel.jsx","src/renderer/App.jsx","main.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 },
+  "export":             { "state":"built","files":["src/renderer/components/PromptReadyState.jsx","main.js","preload.js"],"depends_on":["foundation","actions"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
+  "history-panel":      { "state":"built","files":["src/renderer/utils/history.js","src/renderer/components/HistoryPanel.jsx","src/renderer/App.jsx","main.js","preload.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 }
 };
 
 // ── Colour map ──────────────────────────────────────────────────────────────
@@ -233,16 +383,27 @@ const TYPE_COLOURS = {
   "electron-main":    "#6366f1",
   "electron-preload": "#22c55e",
   "renderer-html":    "#f97316",
+  "react-entry":      "#fb923c",
+  "react-component":  "#3b82f6",
+  "react-hook":       "#06b6d4",
+  "utility":          "#a78bfa",
+  "stylesheet":       "#f472b6",
   "feature":          "#3b82f6",
   "infrastructure":   "#64748b"
 };
 const CONCEPT_COLOURS = {
   "foundation":         "#64748b",
+  "react-migration":    "#fb923c",
   "state-machine":      "#6366f1",
   "first-run":          "#a855f7",
   "speech-recording":   "#3b82f6",
   "claude-integration": "#06b6d4",
-  "actions":            "#22c55e"
+  "actions":            "#22c55e",
+  "dark-mode":          "#475569",
+  "tray":               "#78716c",
+  "shortcuts":          "#eab308",
+  "export":             "#10b981",
+  "history-panel":      "#f43f5e"
 };
 
 // ── State ───────────────────────────────────────────────────────────────────
