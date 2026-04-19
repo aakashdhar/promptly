@@ -344,6 +344,51 @@ Never: dangerouslySetInnerHTML with user/Claude content · access localStorage d
 
 ---
 
+---
+
+### Active Feature: FEATURE-007 (Export Formats)
+> Folder: vibe/features/2026-04-19-export-formats/ | Added: 2026-04-19
+
+**Feature summary**: Add export panel to PROMPT_READY — save generated prompt as .txt, .md, or .json via macOS save dialog. Triggered by Export button in top row, ↓ Export in button row, or ⌘E shortcut.
+**Files in scope**: `src/renderer/components/ExportPanel.jsx` (new), `src/renderer/components/PromptReadyState.jsx`, `main.js`, `preload.js`
+**Files out of scope**: `App.jsx` (⌘E already wired), `preload.js` existing methods, `splash.html`, `entitlements.plist`
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `window.electronAPI.saveFile(opts)` — new IPC method, same contextBridge pattern
+- `dialog.showSaveDialog(win, opts)` in main.js — `dialog` added to electron destructure
+- `useEffect` with cleanup for `export-prompt` custom event listener
+- `resizeWindow(showExport ? 650 : 560)` in useEffect watching `showExport`
+- JSX text nodes only — no `dangerouslySetInnerHTML`
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · manual smoke test after every change ·
+        keep changes additive · update CODEBASE.md (EXP-004)
+
+Ask first: adding any new IPC channel beyond save-file · adding localStorage keys
+
+Never: use dangerouslySetInnerHTML with dynamic content · access localStorage directly ·
+       add runtime npm dependencies · touch App.jsx shortcut wiring
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Manual smoke test: exercise affected interactions
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add src/renderer/components/ExportPanel.jsx src/renderer/components/PromptReadyState.jsx main.js preload.js
+   git commit -m "feat(export): [EXP-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-19-export-formats/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [EXP-00X] done — export"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
 ## Never list (P0 — block commit immediately)
 
 - Adding any runtime npm dependency
@@ -354,3 +399,4 @@ Never: dangerouslySetInnerHTML with user/Claude content · access localStorage d
 - `localStorage.*` outside the wrapper functions
 - Introducing a framework, bundler, or build step
 - Mutating `originalTranscript` after recording stops
+
