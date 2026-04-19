@@ -596,3 +596,11 @@ Key fixes applied:
 - **Files changed**: `src/renderer/components/ShortcutsPanel.jsx` (new), `src/renderer/App.jsx`, `src/renderer/components/IdleState.jsx`, `main.js`, `preload.js`
 - **Status**: SHIPPED 2026-04-19
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-007 (Export Formats) — 2026-04-19
+> Folder: vibe/features/2026-04-19-export-formats/
+> Save generated prompt as .txt / .md / .json from PROMPT_READY state via macOS save dialog
+> Tasks: EXP-001 · EXP-002 · EXP-003 · EXP-004 | Estimated: ~4-5 hours
+> Drift logged below.

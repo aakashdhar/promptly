@@ -204,7 +204,15 @@
    - Build: ✓ 27 modules, lint: ✓ 0 errors
 
 ## What's next
+🔄 **FEATURE-007 — Export formats** — save prompt as .txt / .md / .json from PROMPT_READY (2/4)
+   Estimated: approx. 4-5 hours (S: 3, M: 1)
+   [x] EXP-001 · ExportPanel.jsx — format picker component (txt/md/json tiles + formatContent)
+   [x] EXP-002 · save-file IPC — main.js dialog.showSaveDialog + fs.writeFileSync + preload.js saveFile
+   [ ] EXP-003 · PromptReadyState integration — Export toggle, panel render, ↓ Export button, resize, ⌘E
+   [ ] EXP-004 · Docs — CODEBASE.md + DECISIONS.md update
+   → Full specs: vibe/features/2026-04-19-export-formats/FEATURE_TASKS.md (agent use)
+
 ⬜ Auto-paste into active app — evaluate after v1 stickiness confirmed
 ⬜ Custom shortcuts — user-configurable hotkey
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
-Say "feature: [name]" to plan the next feature, or run `review: final` for a fresh gate check.
+Say "next" to begin EXP-001.
