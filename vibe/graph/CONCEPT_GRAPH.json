@@ -3,40 +3,65 @@
     "version": 2,
     "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-19T00:00:00Z",
-    "project": "promptly"
+    "last_updated": "2026-04-19T12:00:00Z",
+    "update_count": 2,
+    "project": "promptly",
+    "update_note": "Added react-migration, shortcuts, export, history-panel concepts; restored history concept from deleted→built (FEATURE-009)"
   },
 
   "foundation": {
     "state": "built",
     "type": "infrastructure",
-    "description": "Core Electron shell, IPC wiring, PATH resolution, config, and shared renderer infrastructure",
+    "description": "Core Electron shell, IPC wiring, PATH resolution, config, React renderer entry, shared hooks",
     "files": [
-      { "file": "package.json",      "state": "built", "source": "INFERRED", "confidence": 0.95 },
-      { "file": "entitlements.plist","state": "built", "source": "INFERRED", "confidence": 0.95 },
-      { "file": "eslint.config.js",  "state": "built", "source": "INFERRED", "confidence": 0.90 },
-      { "file": "main.js",           "state": "built", "source": "INFERRED", "confidence": 0.90 },
-      { "file": "preload.js",        "state": "built", "source": "INFERRED", "confidence": 0.95 },
-      { "file": "index.html",        "state": "built", "source": "AMBIGUOUS","confidence": 0.50 }
+      { "file": "package.json",                      "state": "built", "source": "INFERRED", "confidence": 0.95 },
+      { "file": "entitlements.plist",                "state": "built", "source": "INFERRED", "confidence": 0.95 },
+      { "file": "eslint.config.js",                  "state": "built", "source": "INFERRED", "confidence": 0.90 },
+      { "file": "main.js",                           "state": "built", "source": "INFERRED", "confidence": 0.90 },
+      { "file": "preload.js",                        "state": "built", "source": "INFERRED", "confidence": 0.95 },
+      { "file": "index.html",                        "state": "built", "source": "AMBIGUOUS", "confidence": 0.50, "note": "legacy vanilla JS renderer — not loaded in production" },
+      { "file": "src/renderer/App.jsx",              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/main.jsx",             "state": "built", "source": "INFERRED",  "confidence": 0.95 },
+      { "file": "src/renderer/hooks/useWindowResize.js", "state": "built", "source": "INFERRED", "confidence": 0.90 }
     ],
     "depends_on": [],
-    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray"],
+    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray", "react-migration", "history-panel", "shortcuts", "export"],
     "tasks_complete": 9,
     "tasks_total": 9,
     "phase": "Phase 1 — complete",
     "review_score": "7.9/10 (B)"
   },
 
+  "react-migration": {
+    "state": "built",
+    "type": "feature",
+    "description": "Renderer migrated from vanilla index.html to React 18 + Vite. All IPC channels preserved. Component-per-state architecture. Tailwind v4 for static classes; inline styles for dynamic layout.",
+    "files": [
+      { "file": "vite.config.js",                "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/main.jsx",         "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/index.css",        "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",          "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation"],
+    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "dark-mode", "history-panel", "shortcuts", "export"],
+    "tasks_complete": 14,
+    "tasks_total": 14,
+    "phase": "Phase 4 — complete 2026-04-19",
+    "feature_folder": "vibe/features/2026-04-19-react-migration"
+  },
+
   "state-machine": {
     "state": "built",
     "type": "feature",
-    "description": "5-state UI state machine (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR), CSS tokens, DOM structure, window resize IPC. HISTORY state was added (F-HISTORY) then removed (deferred to React migration).",
+    "description": "7-state UI state machine (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR, SHORTCUTS, HISTORY), window resize IPC. React implementation in App.jsx via transition() function.",
     "files": [
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "resize-window IPC channel" }
+      { "file": "src/renderer/App.jsx",          "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/components/IdleState.jsx",    "state": "built", "source": "INFERRED", "confidence": 0.85 },
+      { "file": "src/renderer/components/ErrorState.jsx",   "state": "built", "source": "INFERRED", "confidence": 0.85 },
+      { "file": "main.js",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "resize-window IPC channel" }
     ],
-    "depends_on": ["foundation"],
-    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run"],
+    "depends_on": ["foundation", "react-migration"],
+    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run", "history-panel", "shortcuts"],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 2 — complete",
@@ -49,8 +74,7 @@
     "description": "Launch-time splash screen with CLI + mic checks before main bar shows; replaces in-bar FIRST_RUN state (D-007)",
     "files": [
       { "file": "splash.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "index.html",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation", "state-machine"],
     "depended_on_by": [],
@@ -63,28 +87,32 @@
   "speech-recording": {
     "state": "built",
     "type": "feature",
-    "description": "MediaRecorder audio capture → Whisper CLI transcription (--language en hardcoded) → originalTranscript captured once; transitions to THINKING",
+    "description": "MediaRecorder audio capture → Whisper CLI transcription (--language en hardcoded) → originalTranscript captured once in stopRecording(); transitions to THINKING",
     "files": [
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "startRecording, stopRecording, mediaRecorderRef, audioChunksRef" },
+      { "file": "src/renderer/components/RecordingState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/components/WaveformCanvas.jsx",  "state": "built", "source": "INFERRED",  "confidence": 0.90 },
       { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribe-audio IPC channel" },
       { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribeAudio(arrayBuffer) exposed via contextBridge" }
     ],
-    "depends_on": ["foundation", "state-machine"],
+    "depends_on": ["foundation", "state-machine", "react-migration"],
     "depended_on_by": ["claude-integration", "actions"],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 2 — complete",
-    "feature_folder": "vibe/features/2026-04-18-speech-recording",
-    "notes": "Originally built with webkitSpeechRecognition, retrofitted to MediaRecorder + Whisper. Language flag removed 2026-04-19 — hardcoded to en."
+    "feature_folder": "vibe/features/2026-04-18-speech-recording"
   },
 
   "claude-integration": {
     "state": "built",
     "type": "feature",
-    "description": "Claude CLI spawn via generate-prompt IPC; 6 prompt modes (balanced/detailed/concise/chain/code/design); right-click mode context menu",
+    "description": "Claude CLI spawn via generate-prompt IPC; 6 prompt modes (balanced/detailed/concise/chain/code/design); right-click mode context menu; MODE_CONFIG in main.js",
     "files": [
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      { "file": "main.js",                               "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",                  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/components/ThinkingState.jsx", "state": "built", "source": "INFERRED", "confidence": 0.85 },
+      { "file": "src/renderer/components/MorphCanvas.jsx",   "state": "built", "source": "INFERRED", "confidence": 0.80 },
+      { "file": "src/renderer/hooks/useMode.js",             "state": "built", "source": "INFERRED", "confidence": 0.85 }
     ],
     "depends_on": ["foundation", "state-machine", "speech-recording"],
     "depended_on_by": ["actions"],
@@ -99,10 +127,11 @@
     "type": "feature",
     "description": "PROMPT_READY action buttons: Copy (clipboard + green flash 1.8s), Edit (contenteditable + Escape/Done), Regenerate (originalTranscript re-run)",
     "files": [
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      { "file": "src/renderer/components/PromptReadyState.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",                         "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "handleRegenerate" }
     ],
     "depends_on": ["foundation", "state-machine", "claude-integration"],
-    "depended_on_by": [],
+    "depended_on_by": ["export"],
     "tasks_complete": 4,
     "tasks_total": 4,
     "phase": "Phase 2 — complete",
@@ -112,26 +141,11 @@
   "dark-mode": {
     "state": "built",
     "type": "feature",
-    "description": "macOS dark/light mode support: body.light CSS token overrides for all states, nativeTheme IPC (get-theme + theme-changed), applied at boot and on system change",
+    "description": "macOS dark/light mode: body.light CSS class, nativeTheme IPC (get-theme + theme-changed), applied at boot and on system change",
     "files": [
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "nativeTheme import, get-theme IPC handler, nativeTheme.on('updated') → theme-changed send" },
-      { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "getTheme() and onThemeChanged() exposed via contextBridge" },
-      { "file": "index.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "body.light CSS block + getTheme().then() at boot + onThemeChanged listener" }
-    ],
-    "depends_on": ["foundation"],
-    "depended_on_by": [],
-    "tasks_complete": 3,
-    "tasks_total": 3,
-    "phase": "Phase 4 — complete 2026-04-19",
-    "notes": "body.light toggled orthogonally to app state — never routed through setState()"
-  },
-
-  "tray": {
-    "state": "built",
-    "type": "feature",
-    "description": "macOS menu bar tray icon: Show/Hide + Quit menu, app stays alive when window closed, Dock icon hidden",
-    "files": [
-      { "file": "main.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "createTray(), updateTrayMenu(), tray var, app.dock.hide(), window-all-closed updated" }
+      { "file": "main.js",              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "preload.js",           "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation"],
     "depended_on_by": [],
@@ -140,32 +154,102 @@
     "phase": "Phase 4 — complete 2026-04-19"
   },
 
+  "tray": {
+    "state": "built",
+    "type": "feature",
+    "description": "macOS menu bar tray icon: Show/Hide + Quit, app alive when window closed, Dock icon hidden",
+    "files": [
+      { "file": "main.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation"],
+    "depended_on_by": [],
+    "tasks_complete": 3,
+    "tasks_total": 3,
+    "phase": "Phase 4 — complete 2026-04-19"
+  },
+
+  "shortcuts": {
+    "state": "built",
+    "type": "feature",
+    "description": "Keyboard shortcuts panel (⌘?) with 8 shortcut rows + key chips; global shortcuts via main.js; Escape, ⌘C, ⌘E, ⌘H, ⌘? handlers in App.jsx",
+    "files": [
+      { "file": "src/renderer/components/ShortcutsPanel.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",                                    "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation", "state-machine", "react-migration"],
+    "depended_on_by": [],
+    "tasks_complete": 5,
+    "tasks_total": 5,
+    "phase": "Phase 4 — complete 2026-04-19",
+    "feature_folder": "vibe/features/2026-04-19-keyboard-shortcuts"
+  },
+
+  "export": {
+    "state": "built",
+    "type": "feature",
+    "description": "Single-click .md export from PROMPT_READY via save-file IPC; ⌘E shortcut; native macOS save dialog",
+    "files": [
+      { "file": "src/renderer/components/PromptReadyState.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",   "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "preload.js","state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation", "actions"],
+    "depended_on_by": [],
+    "tasks_complete": 4,
+    "tasks_total": 4,
+    "phase": "Phase 4 — complete 2026-04-19",
+    "feature_folder": "vibe/features/2026-04-19-export-formats"
+  },
+
+  "history-panel": {
+    "state": "built",
+    "type": "feature",
+    "description": "Split-panel history UI: ⌘H trigger, 746×720px window, left scrollable list with search + per-entry delete, right full prompt detail with copy + reuse. localStorage via utils/history.js.",
+    "files": [
+      { "file": "src/renderer/utils/history.js",               "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/components/HistoryPanel.jsx",    "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "main.js",                                     "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "preload.js",                                  "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation", "state-machine", "react-migration"],
+    "depended_on_by": [],
+    "tasks_complete": 5,
+    "tasks_total": 5,
+    "phase": "Phase 4 — complete 2026-04-19",
+    "feature_folder": "vibe/features/2026-04-19-history-panel",
+    "review_score": "8.6/10 (B+)",
+    "notes": "BUG-011 fixed layout — full inline styles, atomic setWindowSize IPC, minWidth/maxWidth constraint discovered and handled"
+  },
+
   "history": {
     "state": "deleted",
     "type": "feature",
-    "description": "Prompt history: saveToHistory/loadHistory (capped at 20), HISTORY state panel, history pill in IDLE, btn in PROMPT_READY. REMOVED 2026-04-19.",
-    "deletion_reason": "Deferred to React migration — localStorage history schema would create backwards-compatibility debt in new stack",
+    "description": "Original F-HISTORY (vanilla JS) — saveToHistory/loadHistory in index.html, capped at 20, HISTORY state panel. REMOVED before React migration; superseded by history-panel concept (FEATURE-009).",
+    "deletion_reason": "Deferred to React migration — re-implemented as history-panel (FEATURE-009) with split-panel UI, 100-entry cap, search, and utils/history.js module",
     "deletion_date": "2026-04-19",
+    "superseded_by": "history-panel",
     "files": [
-      { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0, "evidence": "All history CSS, DOM, JS removed in feat(history): remove F-HISTORY commit" }
+      { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation", "state-machine"],
     "depended_on_by": [],
     "tasks_complete": 4,
     "tasks_total": 4,
-    "phase": "Phase 4 — removed before shipping"
+    "phase": "Phase 4 — removed, superseded by history-panel"
   },
 
   "language": {
     "state": "deleted",
     "type": "feature",
-    "description": "Multi-language speech: LANGUAGES constant (12 entries), language pill in IDLE, Whisper --language flag, show-language-menu IPC. REMOVED 2026-04-19.",
-    "deletion_reason": "Whisper tiny model non-English transcription quality was unusable — output bore no resemblance to spoken input",
+    "description": "Multi-language speech (12 languages, language pill, Whisper --language flag). REMOVED 2026-04-19.",
+    "deletion_reason": "Whisper tiny model non-English transcription quality was unusable",
     "deletion_date": "2026-04-19",
     "files": [
       { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",    "state": "deleted", "source": "EXTRACTED", "confidence": 1.0, "evidence": "show-language-menu IPC removed; transcribe-audio language param removed" },
-      { "file": "preload.js", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0, "evidence": "showLanguageMenu + onLanguageSelected removed" }
+      { "file": "main.js",    "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "preload.js", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 }
     ],
     "depends_on": ["foundation", "speech-recording"],
     "depended_on_by": [],
