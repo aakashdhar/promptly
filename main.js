@@ -347,14 +347,13 @@ app.whenReady().then(async () => {
   createWindow();
 
   ipcMain.handle('splash-done', async () => {
-    if (splashWin) splashWin.hide();
+    if (splashWin && !splashWin.isDestroyed()) splashWin.hide();
     setTimeout(() => {
-      if (splashWin) { splashWin.destroy(); splashWin = null; }
-      win.show();
-      win.center();
+      if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
+      if (win && !win.isDestroyed()) { win.show(); win.center(); }
       registerShortcut();
       createTray();
-    }, 400);
+    }, 1200);
   });
 
   ipcMain.handle('splash-check-cli', async () => {

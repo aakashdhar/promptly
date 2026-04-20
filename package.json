@@ -34,7 +34,11 @@
     "icon": "build/icon",
     "mac": {
       "category": "public.app-category.productivity",
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.plist",
+      "entitlementsInherit": "entitlements.plist",
+      "minimumSystemVersion": "12.0",
       "target": [
         {
           "target": "dmg",
