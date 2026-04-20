@@ -816,3 +816,15 @@ Key fixes applied:
 ### POLISH-009 — Global text brightness pass
 - **Date**: 2026-04-20 · **Type**: tech-choice
 - **Why**: All text colors below rgba(255,255,255,0.5) were too dim on the dark glass background. Applied brightness map across all component files: white 0.14–0.45 → 0.45–0.75 range. Blue accent 0.42–0.55 → 0.70–0.80. Purple refine 0.7–0.9 → 0.85–1.0. Exceptions: borders, box shadows, backgrounds, ambient glows — unchanged.
+
+
+---
+
+### D-BUG-012 — PATH resolution expanded: common paths + zsh/bash fallback
+- **Date**: 2026-04-20 · **Task**: BUG-012 · **Type**: blocker-fix
+- **Root cause**: In packaged .app/.dmg builds, `exec('zsh -lc "which claude"')` silently fails because the process environment does not load the user's shell profile. `whisperPath` had an additional race condition — resolved via fire-and-forget callback, so `splash-check-whisper` could run before it was set.
+- **Files in scope**: `main.js`
+- **Fix approach**: `resolveClaudePath()` and new `resolveWhisperPath()` — both check a list of common installation paths via `fs.existsSync` first (no shell needed), then fall back to zsh login shell, then bash login shell. Whisper also tries `python3 -m whisper`. Both are `async` and `await`ed in `app.whenReady()` before any window is created.
+- **CODEBASE.md update**: Yes — `whisperPath` row + `resolveWhisperPath()` added to main.js exports
+- **ARCHITECTURE.md update**: Yes — PATH resolution section updated with expanded search pattern
+- **Deviations from BUG_PLAN.md**: None

@@ -145,15 +145,31 @@ IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 
 ## PATH resolution (critical — most common failure point)
 
-**Rule:** The `claude` binary MUST be resolved via the user's login shell at startup.
+**Rule:** Both `claude` and `whisper` binaries MUST be resolved via expanded search at startup, then cached. In packaged `.app` / `.dmg` builds the process environment does not load the user's shell PATH, so a direct `which` call is unreliable.
 
+**Pattern (BUG-012 — 2026-04-20):**
 ```js
-// main.js — run once at app ready, cache result
-exec('zsh -lc "which claude"', (err, stdout) => {
-  claudePath = stdout.trim(); // cache globally
-});
+// 1. Check common installation directories first (fs.existsSync — no shell needed)
+// 2. Fall back to zsh login shell (loads .zshrc/.zprofile)
+// 3. Fall back to bash login shell
+// 4. For whisper only: fall back to python3 -m whisper
+async function resolveXPath() {
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch {}
+  }
+  return new Promise((resolve) => {
+    exec('zsh -lc "which X"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which X"', (err2, stdout2) => {
+        resolve(stdout2?.trim() || null);
+      });
+    });
+  });
+}
 ```
 
+- Both `resolveClaudePath()` and `resolveWhisperPath()` are `async` functions — `await`ed in `app.whenReady()` before any window is created.
+- `whisperPath` may be the string `'python3 -m whisper'` — `transcribe-audio` constructs the exec command accordingly.
 - Never use bare `exec('claude ...')` — it will fail for most users.
 - If resolution fails → send `check-claude-path` error to renderer → transition to ERROR state.
 - All subsequent `claude -p` calls use the cached `claudePath`.

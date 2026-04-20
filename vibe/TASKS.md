@@ -234,23 +234,24 @@
    [x] ITR-006 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
    → Full specs: vibe/features/2026-04-20-iteration-mode/FEATURE_TASKS.md (agent use)
 
+✅ **BUG-012 — PATH resolution fails in packaged DMG** (FIXED 2026-04-20)
+   [x] BUG-012-001 · main.js — resolveClaudePath() expanded + resolveWhisperPath() added + await both + whisper exec cmd fix
+   [x] BUG-012-002 · Lint clean + dev boot verified
+   [x] BUG-012-003 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
+   → Full specs: vibe/bugs/2026-04-20-bug-012/ | DECISIONS.md D-BUG-012
+
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ---
 
 ## What just happened
-✅ FEATURE-012 — Iteration Mode — complete 2026-04-20
-   All 6 tasks built in parallel via vibe-parallel (Wave 1: 3 parallel, Waves 2-4: sequential)
-   - main.js: generate-raw IPC handler added
-   - preload.js: generateRaw exposed on window.electronAPI
-   - index.css: @keyframes iterGlow added
-   - IteratingState.jsx: new — blue banner + blue waveform + timer + iterGlow stop
-   - App.jsx: ITERATING state + STATE_HEIGHTS.ITERATING=200, 5 new refs, handleIterate/stopIterating/dismissIterating
-   - PromptReadyState.jsx: ↻ Iterate button (blue, leftmost) + ↻ iterated badge
-   - history.js: saveToHistory extended with isIteration + basedOn fields
-   - HistoryPanel.jsx: ↻ indicator on iteration entries
-   - CODEBASE.md + ARCHITECTURE.md: updated
+✅ BUG-012 — PATH resolution fixed — 2026-04-20
+   - resolveClaudePath(): common paths checked first (fs.existsSync), then zsh → bash fallback
+   - resolveWhisperPath(): new function, same pattern + python3 -m whisper fallback
+   - Both awaited in app.whenReady() before window creation — race condition eliminated
+   - transcribe-audio: whisperCmd handles 'python3 -m whisper' multi-word case
+   - CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
 
 ## What's next
-⬜ Manual smoke test — run app, exercise FEATURE-012 smoke checklist (11 items)
+⬜ Smoke checklist — build dist:unsigned, install from DMG, verify both splash checks pass
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
