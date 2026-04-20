@@ -1,57 +1,32 @@
 {
-  "session_id": "2026-04-20-014",
+  "session_id": "2026-04-20-015",
   "date": "2026-04-20",
   "mode": "estimate",
   "trigger": "manual",
   "model": "claude-sonnet-4-6",
-  "tasks_completed": 4,
-  "phase": "Phase 4 \u2014 FEATURE-011 pause/resume",
-  "input_tokens": 147000,
-  "output_tokens": 15500,
+  "tasks_completed": 1,
+  "phase": "Phase 4 \u2014 DESIGN-001 vibrancy + ambient glow",
+  "input_tokens": 75000,
+  "output_tokens": 7500,
   "cache_read_tokens": 0,
   "cache_write_tokens": 0,
-  "cost_usd": 0.674,
+  "cost_usd": 0.35,
   "is_estimate": true,
   "patterns_detected": [
-    "CP-05",
-    "CP-06"
+    "CP-05"
   ],
   "task_breakdown": {
-    "vibe-add-feature": {
-      "size": "L",
-      "cost_usd": 0.225,
-      "input_tokens": 45000,
-      "output_tokens": 6000
-    },
-    "PAUZ-001": {
-      "size": "M",
-      "cost_usd": 0.12,
-      "input_tokens": 25000,
-      "output_tokens": 3000
-    },
-    "PAUZ-002": {
-      "size": "M",
-      "cost_usd": 0.104,
-      "input_tokens": 22000,
-      "output_tokens": 2500
-    },
-    "PAUZ-003": {
+    "DESIGN-001": {
       "size": "S",
-      "cost_usd": 0.082,
-      "input_tokens": 20000,
-      "output_tokens": 1500
-    },
-    "context-overhead": {
-      "size": "S",
-      "cost_usd": 0.045,
-      "input_tokens": 15000,
-      "output_tokens": 0
+      "cost_usd": 0.194,
+      "input_tokens": 42000,
+      "output_tokens": 4500
     },
     "vibe-cost": {
       "size": "S",
-      "cost_usd": 0.098,
-      "input_tokens": 20000,
-      "output_tokens": 2500
+      "cost_usd": 0.156,
+      "input_tokens": 33000,
+      "output_tokens": 3000
     }
   }
 }

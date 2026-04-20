@@ -658,5 +658,37 @@
         "output_tokens": 2500
       }
     }
+  },
+  {
+    "session_id": "2026-04-20-015",
+    "date": "2026-04-20",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 1,
+    "phase": "Phase 4 \u2014 DESIGN-001 vibrancy + ambient glow",
+    "input_tokens": 75000,
+    "output_tokens": 7500,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.35,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "DESIGN-001": {
+        "size": "S",
+        "cost_usd": 0.194,
+        "input_tokens": 42000,
+        "output_tokens": 4500
+      },
+      "vibe-cost": {
+        "size": "S",
+        "cost_usd": 0.156,
+        "input_tokens": 33000,
+        "output_tokens": 3000
+      }
+    }
   }
 ]
