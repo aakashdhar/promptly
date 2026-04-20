@@ -177,6 +177,38 @@ async function resolveXPath() {
 
 ---
 
+## Microphone permission (critical — two separate layers)
+
+**Rule:** Microphone access in Electron on macOS goes through TWO independent layers. Both must be configured. Missing either one causes repeated permission dialogs.
+
+### Layer 1 — macOS TCC (system level)
+`systemPreferences.askForMediaAccess('microphone')` — native macOS API. Creates a persistent TCC entry for the app. Returns `true` immediately if already granted (safe to call before every recording).
+- Called in **splash** (`check-mic-status` IPC) — user sees the dialog once at a controlled time.
+- Called in **`request-mic` IPC** — `startRecording()` and `handleIterate()` in App.jsx call this before every `getUserMedia` to ensure TCC is current.
+
+### Layer 2 — Electron/Chromium (renderer level)
+`getUserMedia` in the renderer goes through Chromium's own permission system before reaching macOS. Two handlers must BOTH be set in `app.whenReady()`:
+
+```js
+// Step 1 — check: "do I already have this?" — must return true to skip re-prompting
+session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+  return permission === 'media';
+});
+// Step 2 — request: handles any fresh request that still comes through
+session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+  callback(permission === 'media');
+});
+```
+
+**If only `setPermissionRequestHandler` is set** (without the check handler), Chromium treats every `getUserMedia` call as a new request and re-prompts — even in the same session.
+
+### Unsigned build rule
+`dist:unsigned` must pass `--config.mac.hardenedRuntime=false`. Hardened runtime entitlements (`com.apple.security.device.audio-input`) only apply to signed builds. An unsigned build with `hardenedRuntime: true` runs under hardened runtime restrictions *without* the entitlements that would lift them — causing TCC entries to not persist between launches.
+
+> See DECISIONS.md D-BUG-013 for full diagnosis.
+
+---
+
 ## Prompt modes
 
 | Mode | Key | Behaviour |

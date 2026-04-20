@@ -828,3 +828,30 @@ Key fixes applied:
 - **CODEBASE.md update**: Yes — `whisperPath` row + `resolveWhisperPath()` added to main.js exports
 - **ARCHITECTURE.md update**: Yes — PATH resolution section updated with expanded search pattern
 - **Deviations from BUG_PLAN.md**: None
+
+---
+
+### D-BUG-013 — Microphone permission dialog repeating: three root causes
+
+- **Date**: 2026-04-20 · **Type**: discovery + blocker-fix
+
+**Root cause A — `setPermissionCheckHandler` missing (critical)**
+Electron/Chromium has a two-step permission system for `getUserMedia`:
+1. **Check** (`setPermissionCheckHandler`): Chromium asks "do I already have this permission?" *before* opening the stream. If this returns `false` (or no handler is set), Chromium treats every call as a fresh request and re-prompts.
+2. **Request** (`setPermissionRequestHandler`): handles an incoming request when the check fails.
+We had only set the request handler. Without the check handler returning `true` for `'media'`, Chromium re-prompted on every single `getUserMedia` call — splash, recording start, iteration start — even in the same session.
+**Fix**: `session.defaultSession.setPermissionCheckHandler((_wc, p) => p === 'media')` — both handlers must be set together.
+
+**Root cause B — `request-mic` IPC was a no-op**
+The `request-mic` IPC handler returned `{ ok: true }` without calling `systemPreferences.askForMediaAccess`. This meant macOS TCC was only touched in splash, not refreshed before recording. On relaunches where TCC expired, `getUserMedia` hit an un-granted TCC entry.
+**Fix**: `request-mic` now calls `askForMediaAccess('microphone')`. `startRecording()` and `handleIterate()` in App.jsx call `requestMic()` before every `getUserMedia`.
+
+**Root cause C — `dist:unsigned` with `hardenedRuntime: true` and no signature**
+Hardened runtime entitlements (`com.apple.security.device.audio-input`) only apply to *signed* builds. An unsigned build with `hardenedRuntime: true` runs under hardened runtime restrictions without the entitlements that would bypass them — causing TCC to not persist between launches.
+**Fix**: `dist:unsigned` script now passes `--config.mac.hardenedRuntime=false`.
+
+**Key learnings for future Electron mic work:**
+- Always set BOTH `setPermissionCheckHandler` AND `setPermissionRequestHandler` — one without the other causes repeated prompts.
+- `systemPreferences.askForMediaAccess` (main process, macOS TCC) and `getUserMedia` (renderer, Chromium) are two separate layers. Both must agree.
+- `askForMediaAccess` returns `true` silently if TCC is already granted — safe to call before every recording start.
+- For unsigned DMG distribution: always set `hardenedRuntime: false` or the entitlements won't apply and TCC won't persist.
