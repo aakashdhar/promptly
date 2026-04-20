@@ -191,17 +191,9 @@ async function resolveClaudePath() {
   });
 }
 
-function resolveShimToReal(shimPath) {
-  // pyenv/conda shims require the tool to be initialized at runtime — follow to the actual binary
-  return new Promise((resolve) => {
-    exec('zsh -lc "pyenv which whisper 2>/dev/null"', (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      resolve(shimPath); // fall back to shim if pyenv resolution fails
-    });
-  });
-}
-
 async function resolveWhisperPath() {
+  // Purpose: detect whether whisper is installed (for splash check).
+  // Execution always goes through zsh login shell — handles pyenv/conda/pipx/etc.
   const commonPaths = [
     '/usr/local/bin/whisper',
     '/usr/bin/whisper',
@@ -216,30 +208,20 @@ async function resolveWhisperPath() {
     '/opt/local/bin/whisper',
   ];
   for (const p of commonPaths) {
-    try {
-      if (fs.existsSync(p)) {
-        // pyenv shims need resolving to the real binary — exec without login shell breaks them
-        if (p.includes('.pyenv/shims/')) return resolveShimToReal(p);
-        return p;
-      }
-    } catch { /* ignore */ }
+    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
   }
-  const shellResolved = await new Promise((resolve) => {
+  return new Promise((resolve) => {
     exec('zsh -lc "which whisper"', (err, stdout) => {
       if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
       exec('bash -lc "which whisper"', (err2, stdout2) => {
         if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
-        exec('zsh -lc "python3 -m whisper --help > /dev/null 2>&1 && echo python3"', (err3, stdout3) => {
+        exec('zsh -lc "python3 -m whisper --help > /dev/null 2>&1 && echo found"', (err3, stdout3) => {
           if (!err3 && stdout3.trim()) { resolve('python3 -m whisper'); return; }
           resolve(null);
         });
       });
     });
   });
-  if (shellResolved && shellResolved.includes('.pyenv/shims/')) {
-    return resolveShimToReal(shellResolved);
-  }
-  return shellResolved;
 }
 
 function registerShortcut() {
@@ -519,9 +501,9 @@ app.whenReady().then(async () => {
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        const whisperCmd = whisperPath === 'python3 -m whisper'
-          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
-          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
+        // Always run via zsh login shell so pyenv/conda/pipx/etc. are initialized
+        const whisperInvoke = whisperPath === 'python3 -m whisper' ? 'python3 -m whisper' : 'whisper';
+        const whisperCmd = `zsh -lc "${whisperInvoke} '${tmpFile}' --model tiny --language en --output_format txt --output_dir '${outDir}'"`;
         exec(whisperCmd,
           { timeout: 60000 }, (err, _stdout, stderr) => {
             try {
