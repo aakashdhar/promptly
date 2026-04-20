@@ -59,6 +59,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   requestMic: () =>
     ipcRenderer.invoke('request-mic'),
 
+  checkMicStatus: () =>
+    ipcRenderer.invoke('check-mic-status'),
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),

@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -333,6 +333,10 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('request-mic', async () => {
     return { ok: true };
+  });
+
+  ipcMain.handle('check-mic-status', async () => {
+    return { status: systemPreferences.getMediaAccessStatus('microphone') };
   });
 
   // P1-008: IPC handlers
