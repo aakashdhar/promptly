@@ -1,11 +1,15 @@
-# Wave 1 — Phase 4 features (F-DARKMODE bootstrap)
-Started: 2026-04-19 · Completed: 2026-04-19 · Duration: ~90s
+# Wave 1 — FEATURE-012 Iteration Mode
+Started: 2026-04-20
 
 ## Tasks
-| ID | Size | Status | Commit |
-|----|------|--------|--------|
-| FDM-001 | M | ✅ complete | 501a470 |
-| FDM-002 | S | ✅ complete | 501a470 |
+| ID | Size | Status | Started | Completed | Duration |
+|----|------|--------|---------|-----------|----------|
+| ITR-001 | S | 🔄 running | now | — | — |
+| ITR-002 | M | 🔄 running | now | — | — |
+| ITR-005 | S | 🔄 running | now | — | — |
 
 ## Summary
-Total tasks: 2 · Complete: 2 · Failed: 0 · Partial: 0
+Total tasks: 3 · Complete: 0 · Failed: 0 · Partial: 0
+
+## Next wave
+Wave 2 — ITR-003 (App.jsx) — waiting on Wave 1 completion
