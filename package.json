@@ -2,6 +2,10 @@
   "name": "promptly",
   "version": "1.0.0",
   "description": "macOS floating bar that turns speech into structured Claude prompts",
+  "author": {
+    "name": "Aakash Dhar",
+    "email": "aakash.dhar@sorigin.com"
+  },
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -9,11 +13,13 @@
     "build:renderer": "vite build",
     "start:react": "npm run build:renderer && electron .",
     "dist": "electron-builder --universal",
-    "lint": "eslint main.js preload.js"
+    "lint": "eslint main.js preload.js",
+    "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "@vitejs/plugin-react": "^6.0.1",
+    "canvas": "^3.2.3",
     "electron": "41.2.1",
     "electron-builder": "26.8.1",
     "eslint": "9.24.0",
@@ -25,6 +31,7 @@
   "build": {
     "appId": "io.betacraft.promptly",
     "productName": "Promptly",
+    "icon": "build/icon",
     "mac": {
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
