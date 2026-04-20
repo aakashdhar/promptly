@@ -272,7 +272,6 @@ app.whenReady().then(async () => {
     setTimeout(() => {
       if (splashWin) { splashWin.destroy(); splashWin = null; }
       win.show();
-      win.webContents.openDevTools({ mode: 'detach' });
       win.center();
       registerShortcut();
       createTray();
