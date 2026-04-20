@@ -547,13 +547,27 @@ app.whenReady().then(async () => {
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        // Use full resolved path directly — avoids shell env issues in packaged DMG
         const whisperCmd = whisperPath === 'python3 -m whisper'
           ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
           : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
 
-        exec(whisperCmd,
-          { timeout: 60000 }, (err, _stdout, stderr) => {
+        // Whisper internally calls ffmpeg to decode audio. Inject common binary dirs
+        // into PATH so ffmpeg is found even in a stripped DMG environment.
+        const whisperEnv = {
+          ...process.env,
+          PATH: [
+            '/usr/local/bin',
+            '/opt/homebrew/bin',
+            '/usr/bin',
+            '/bin',
+            path.join(os.homedir(), '.pyenv/shims'),
+            path.join(os.homedir(), '.pyenv/bin'),
+            path.join(os.homedir(), '.local/bin'),
+            process.env.PATH || '',
+          ].filter(Boolean).join(':'),
+        };
+
+        exec(whisperCmd, { timeout: 60000, env: whisperEnv }, (err, _stdout, stderr) => {
             try {
               const text = fs.readFileSync(txtFile, 'utf8').trim();
               try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
