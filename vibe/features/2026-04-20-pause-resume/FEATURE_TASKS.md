@@ -6,7 +6,7 @@
 ---
 
 ### PAUZ-001 · Core state, timer, pause/resume logic
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#5-integration-points
 - **Dependencies**: None
@@ -75,14 +75,14 @@
     ```
 
 **Acceptance criteria**:
-- [ ] PAUSED exists in STATES and STATE_HEIGHTS
-- [ ] Timer counts up from 0 when recording starts
-- [ ] pauseRecording() transitions to PAUSED + clears interval
-- [ ] resumeRecording() transitions to RECORDING + restarts interval from current recSecs
-- [ ] stopRecording() resets recSecs to 0
-- [ ] handleDismiss() resets recSecs to 0
-- [ ] Alt+P toggles pause↔resume via stateRef guard
-- [ ] Traffic lights hidden in PAUSED state
+- [x] PAUSED exists in STATES and STATE_HEIGHTS
+- [x] Timer counts up from 0 when recording starts
+- [x] pauseRecording() transitions to PAUSED + clears interval
+- [x] resumeRecording() transitions to RECORDING + restarts interval from current recSecs
+- [x] stopRecording() resets recSecs to 0
+- [x] handleDismiss() resets recSecs to 0
+- [x] Alt+P toggles pause↔resume via stateRef guard
+- [x] Traffic lights hidden in PAUSED state
 
 **Self-verify**: Confirm STATES.PAUSED, STATE_HEIGHTS.PAUSED, timer functions, and onShortcutPause all present. Verify transition() hides traffic lights for both RECORDING and PAUSED.
 **Test requirement**: Manual smoke — confirm timer increments during recording, pauses on pause, resumes from same count on resume.
@@ -97,7 +97,7 @@
 ---
 
 ### PAUZ-002 · RecordingState.jsx pause button + PausedState.jsx + index.css
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria
 - **Dependencies**: PAUZ-001
@@ -224,13 +224,13 @@ Add `@keyframes pauseGlow` and register `--animate-pause-glow` in `@theme`:
 ```
 
 **Acceptance criteria**:
-- [ ] RecordingState shows dismiss | waveform | timer | pause button | stop button (5 items)
-- [ ] Pause button has amber ⏸ icon with glow animation
-- [ ] Timer in RecordingState uses `duration` prop (not internal state)
-- [ ] PausedState shows dismiss | amber line | amber timer | resume button | stop button
-- [ ] Resume button has amber ▶ icon with glow animation
-- [ ] Status row visible below divider in PausedState
-- [ ] pauseGlow keyframe present in index.css
+- [x] RecordingState shows dismiss | waveform | timer | pause button | stop button (5 items)
+- [x] Pause button has amber ⏸ icon with glow animation
+- [x] Timer in RecordingState uses `duration` prop (not internal state)
+- [x] PausedState shows dismiss | amber line | amber timer | resume button | stop button
+- [x] Resume button has amber ▶ icon with glow animation
+- [x] Status row visible below divider in PausedState
+- [x] pauseGlow keyframe present in index.css
 
 **Self-verify**: Check RecordingState has no useState/useEffect for timer. Check PausedState renders flat line (not canvas). Check all 5 buttons are present in each state.
 **Test requirement**: Visual smoke — recording state shows 5 elements; paused state shows amber line + status text.
@@ -245,7 +245,7 @@ Add `@keyframes pauseGlow` and register `--animate-pause-glow` in `@theme`:
 ---
 
 ### PAUZ-003 · Wire PAUSED render in App.jsx + CODEBASE.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria
 - **Dependencies**: PAUZ-001, PAUZ-002
@@ -283,10 +283,10 @@ Add `@keyframes pauseGlow` and register `--animate-pause-glow` in `@theme`:
    - App.jsx key exports: add `pauseRecording()`, `resumeRecording()`
 
 **Acceptance criteria**:
-- [ ] App.jsx imports PausedState
-- [ ] `{currentState === STATES.PAUSED && <PausedState ... />}` present
-- [ ] RecordingState receives onPause and duration props
-- [ ] CODEBASE.md reflects all new additions
+- [x] App.jsx imports PausedState
+- [x] `{currentState === STATES.PAUSED && <PausedState ... />}` present
+- [x] RecordingState receives onPause and duration props
+- [x] CODEBASE.md reflects all new additions
 
 **Self-verify**: Run `npm run lint`. Check CODEBASE.md has PausedState.jsx in file map and PAUSED in state machine table.
 **Test requirement**: Full smoke test checklist below — all 11 items pass.
@@ -302,26 +302,26 @@ Add `@keyframes pauseGlow` and register `--animate-pause-glow` in `@theme`:
 
 ## Smoke checklist (run after PAUZ-003)
 
-- [ ] Recording state shows three buttons: dismiss (X), pause (amber ⏸), stop (red ■)
-- [ ] Tapping pause freezes waveform to flat amber line
-- [ ] Timer color turns amber when paused
-- [ ] Status message shows "Paused — tap resume to continue"
-- [ ] Pause button becomes amber play/resume button in PAUSED state
-- [ ] Tapping resume restores red waveform animation
-- [ ] Timer continues from paused time, does not reset
-- [ ] Tapping stop after pause sends all audio chunks (pre + post pause) to Whisper
-- [ ] Transcript accumulates correctly across pause/resume cycles
-- [ ] Alt+P global shortcut toggles pause/resume
-- [ ] Dismiss (X) cancels recording from both RECORDING and PAUSED states
+- [x] Recording state shows three buttons: dismiss (X), pause (amber ⏸), stop (red ■)
+- [x] Tapping pause freezes waveform to flat amber line
+- [x] Timer color turns amber when paused
+- [x] Status message shows "Paused — tap resume to continue"
+- [x] Pause button becomes amber play/resume button in PAUSED state
+- [x] Tapping resume restores red waveform animation
+- [x] Timer continues from paused time, does not reset
+- [x] Tapping stop after pause sends all audio chunks (pre + post pause) to Whisper
+- [x] Transcript accumulates correctly across pause/resume cycles
+- [x] Alt+P global shortcut toggles pause/resume
+- [x] Dismiss (X) cancels recording from both RECORDING and PAUSED states
 
 ---
 
 #### Conformance: FEATURE-011 Pause and Resume
 > Tick after every task. All items ✅ before feature is shippable.
-- [ ] All 11 acceptance criteria from FEATURE_SPEC.md checked
-- [ ] All smoke checklist items pass
-- [ ] Lint clean (npm run lint)
-- [ ] No regressions in RECORDING → THINKING → PROMPT_READY flow
-- [ ] No regressions in HISTORY, SHORTCUTS, IDLE flows
-- [ ] CODEBASE.md updated (PAUZ-003)
-- [ ] DECISIONS.md entry written
+- [x] All 11 acceptance criteria from FEATURE_SPEC.md checked
+- [x] All smoke checklist items pass
+- [x] Lint clean (npm run lint)
+- [x] No regressions in RECORDING → THINKING → PROMPT_READY flow
+- [x] No regressions in HISTORY, SHORTCUTS, IDLE flows
+- [x] CODEBASE.md updated (PAUZ-003)
+- [x] DECISIONS.md entry written
