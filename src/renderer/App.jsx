@@ -118,6 +118,7 @@ export default function App() {
 
   const startRecording = useCallback(async () => {
     try {
+      await window.electronAPI.requestMic()
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder = new MediaRecorder(stream)
       mediaRecorderRef.current = recorder
@@ -255,6 +256,7 @@ export default function App() {
 
   const handleIterate = useCallback(async () => {
     try {
+      await window.electronAPI.requestMic()
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder = new MediaRecorder(stream)
       iterRecorderRef.current = recorder

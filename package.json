@@ -14,7 +14,7 @@
     "start:react": "npm run build:renderer && electron .",
     "dist": "electron-builder --universal",
     "lint": "eslint main.js preload.js",
-    "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null"
+    "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null --config.mac.hardenedRuntime=false"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

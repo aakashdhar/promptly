@@ -303,8 +303,13 @@ function createWindow() {
 app.commandLine.appendSwitch('enable-transparent-visuals');
 
 app.whenReady().then(async () => {
-  // Auto-grant media permission at Electron level — real TCC check is handled in splash
-  // via systemPreferences.askForMediaAccess(), so no second dialog should appear
+  // setPermissionCheckHandler: Chromium asks "do I already have this permission?" before
+  // opening any stream. Returning true for 'media' tells Chromium it's already granted —
+  // prevents the repeated per-call dialog. TCC is handled once in splash via askForMediaAccess.
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    return permission === 'media';
+  });
+  // setPermissionRequestHandler: handles any fresh permission request that still comes through.
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     callback(permission === 'media');
   });
@@ -361,7 +366,8 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('request-mic', async () => {
-    return { ok: true };
+    const granted = await systemPreferences.askForMediaAccess('microphone');
+    return { ok: granted };
   });
 
   ipcMain.handle('check-mic-status', async () => {
