@@ -5,39 +5,63 @@
   --color-red: #FF3B30;
   --color-green: #30D158;
   --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  --animate-pulse-expand: pulse-expand 1.8s ease-out infinite;
+  --animate-pulse-expand: pulse-expand 2s ease-out infinite;
   --animate-stop-glow: stop-glow 2s ease-in-out infinite;
   --animate-cursor-blink: cursor-blink 1s step-end infinite;
   --animate-pause-glow: pauseGlow 2s ease-in-out infinite;
 }
 
-@keyframes pulse-expand {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
+/* POLISH-001: State transition animations */
+.state-enter {
+  animation: stateIn 200ms ease-out forwards;
 }
+.state-exit {
+  animation: stateOut 120ms ease-in forwards;
+}
+@keyframes stateIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes stateOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+
+/* POLISH-005: Pulse rings */
+@keyframes pulse-expand {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes pulse-inner {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes mic-breathe {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.06); }
+}
+
 @keyframes stop-glow {
   0%,100% { box-shadow: 0 0 14px rgba(255,59,48,0.5), 0 2px 8px rgba(0,0,0,0.4); }
-  50% { box-shadow: 0 0 28px rgba(255,59,48,0.9), 0 2px 8px rgba(0,0,0,0.4); }
+  50%     { box-shadow: 0 0 28px rgba(255,59,48,0.9), 0 2px 8px rgba(0,0,0,0.4); }
 }
 @keyframes morph-wave-anim {
   from { stroke-dashoffset: 0; }
 }
 @keyframes cursor-blink {
   0%,100% { opacity: 1; }
-  50% { opacity: 0; }
+  50%     { opacity: 0; }
 }
 @keyframes pauseGlow {
   0%,100% { box-shadow: 0 0 10px rgba(255,189,46,0.3); }
-  50% { box-shadow: 0 0 20px rgba(255,189,46,0.65); }
+  50%     { box-shadow: 0 0 20px rgba(255,189,46,0.65); }
 }
 @keyframes iterGlow {
   0%,100% { box-shadow: 0 0 14px rgba(10,132,255,0.45), 0 2px 8px rgba(0,0,0,0.4); }
-  50% { box-shadow: 0 0 26px rgba(10,132,255,0.8), 0 2px 8px rgba(0,0,0,0.4); }
+  50%     { box-shadow: 0 0 26px rgba(10,132,255,0.8), 0 2px 8px rgba(0,0,0,0.4); }
 }
 
-html {
-  height: 100%;
-}
+html { height: 100%; }
 
 body {
   margin: 0;
@@ -50,15 +74,15 @@ body {
   user-select: none;
 }
 
-#root {
-  height: 100%;
-}
+#root { height: 100%; }
 
-.scrollbar-thin::-webkit-scrollbar { width: 3px; }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: transparent;
+/* POLISH-006: Global scrollbar refinement */
+*::-webkit-scrollbar { width: 3px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
   border-radius: 2px;
 }
-.scrollbar-thin:hover::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.18);
 }

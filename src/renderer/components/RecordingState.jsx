@@ -15,15 +15,18 @@ export default function RecordingState({ onStop, onDismiss, onPause, duration })
           id="dismissBtn"
           onClick={onDismiss}
         >
+          {/* POLISH-009: stroke 0.45 → 0.75 */}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
         <div className="flex-1 flex items-center h-9 [-webkit-app-region:no-drag]">
           <WaveformCanvas />
         </div>
+        {/* POLISH-003: timer fontWeight 400, letterSpacing 0.08em; POLISH-009: 0.30 → 0.60 */}
         <span
-          className="text-[11px] font-medium text-white/30 tracking-[0.06em] flex-shrink-0 min-w-[28px] text-right tabular-nums [-webkit-app-region:no-drag]"
+          className="text-[11px] flex-shrink-0 min-w-[28px] text-right tabular-nums [-webkit-app-region:no-drag]"
+          style={{ color: 'rgba(255,255,255,0.60)', fontWeight: 400, letterSpacing: '0.08em' }}
           id="recDur"
         >
           {duration}
