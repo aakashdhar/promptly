@@ -96,6 +96,22 @@ export default function IdleState({ mode, modeLabel, onStart }) {
           {modeLabel}
         </span>
       </div>
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        left: 0,
+        right: 0,
+        textAlign: 'center',
+        fontSize: '9px',
+        letterSpacing: '0.08em',
+        color: 'rgba(255,255,255,0.12)',
+        fontWeight: 400,
+        pointerEvents: 'none',
+        userSelect: 'none',
+        zIndex: 2
+      }}>
+        built using vibe-* skills
+      </div>
     </div>
   )
 }
