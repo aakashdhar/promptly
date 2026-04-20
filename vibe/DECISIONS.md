@@ -776,3 +776,43 @@ Key fixes applied:
 > P0: 0 · P1: 2 (both fixed) · P2: 2 (acknowledged)
 > Action: fixed — both P1s resolved before build
 > Report: vibe/spec-reviews/2026-04-20-add-feature.md
+
+---
+
+## 2026-04-20 — UI Polish Pass (feat/ui-polish branch)
+
+### POLISH-001 — State transition animations
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Instant state snaps felt cheap. Added `displayState` + `stateClass` pattern: exit animation 120ms (opacity 1→0, translateY 0→-4px), gap 60ms, enter animation 200ms (opacity 0→1, translateY 6px→0). `animateToState()` helper called from `transition()`, `openHistory()`, `closeHistory()`. Logic state (`currentState`) updates immediately; visual state (`displayState`) lags 120ms to allow exit animation.
+
+### POLISH-002 — Window resize spring animation
+- **Date**: 2026-04-20 · **Type**: discovery
+- **Why**: Already implemented — `win.setSize(width, height, true)` was already present across all three resize IPC handlers (`resize-window`, `resize-window-width`, `set-window-size`). No change needed.
+
+### POLISH-003 — Typography hierarchy
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Status text ("Promptly is ready", "Building your prompt") → fontSize 13px, fontWeight 500, letterSpacing -0.01em, color rgba(255,255,255,0.82). Section labels → letterSpacing 0.12em (from 0.14em). Timer → fontWeight 400, letterSpacing 0.08em. Primary content → letterSpacing -0.01em.
+
+### POLISH-004 — Button hover states
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Buttons lacked hover feedback. Used onMouseEnter/onMouseLeave with local state for each button in PromptReadyState, HistoryPanel, ShortcutsPanel. Edit button border brightens on hover. Iterate gets text-shadow glow. Regenerate/Reset/Export/Done/Cancel fade from 0.58→0.80. Clear all red fades 0.55→0.75.
+
+### POLISH-005 — Pulse ring and mic breathing animation
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Two-ring system: inner ring uses new `pulse-inner` keyframe (scale 1→1.8, 2s), outer uses updated `pulse-expand` (scale 1→2.4, 2s, 0.5s delay). Mic SVG gets `mic-breathe` keyframe (scale 1.00↔1.06, 3s ease-in-out infinite).
+
+### POLISH-006 — Scrollbar refinement
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Replaced `.scrollbar-thin` class (opacity 0 → on-hover) with global `*::-webkit-scrollbar` rules: 3px width, transparent track, rgba(255,255,255,0.08) thumb always visible, 0.18 on hover. More legible and consistent.
+
+### POLISH-007 — Copy button success state
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Improved success state: green gradient rgba(48,209,88,0.85)→rgba(30,168,70,0.85), boxShadow 0 2px 16px rgba(48,209,88,0.35), text changed to '✓ Copied', transition: all 300ms ease on the button.
+
+### POLISH-008 — Section dividers in prompt output
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Added 0.5px rgba(255,255,255,0.04) horizontal dividers between each prompt section in renderPromptOutput. Divider inserted before every non-first label. Removed old mt-5/first:mt-0 margin approach.
+
+### POLISH-009 — Global text brightness pass
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: All text colors below rgba(255,255,255,0.5) were too dim on the dark glass background. Applied brightness map across all component files: white 0.14–0.45 → 0.45–0.75 range. Blue accent 0.42–0.55 → 0.70–0.80. Purple refine 0.7–0.9 → 0.85–1.0. Exceptions: borders, box shadows, backgrounds, ambient glows — unchanged.
