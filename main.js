@@ -346,6 +346,38 @@ app.whenReady().then(async () => {
     });
   });
 
+  ipcMain.handle('generate-raw', (_event, { systemPrompt }) => {
+    return new Promise((resolve) => {
+      if (!claudePath) {
+        resolve({ success: false, error: 'Claude CLI not found.' });
+        return;
+      }
+      const { spawn } = require('child_process');
+      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
+      let stdout = '', stderr = '', resolved = false;
+      const timer = setTimeout(() => {
+        resolved = true; child.kill();
+        resolve({ success: false, error: 'Claude took too long — try again' });
+      }, 60000);
+      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stderr.on('data', (d) => { stderr += d.toString(); });
+      child.stdin.end();
+      child.on('close', (code) => {
+        if (resolved) return;
+        clearTimeout(timer); resolved = true;
+        if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error' }); return; }
+        const prompt = stdout.trim();
+        if (!prompt) { resolve({ success: false, error: 'Claude returned empty response — try again' }); return; }
+        resolve({ success: true, prompt });
+      });
+      child.on('error', (err) => {
+        if (resolved) return;
+        clearTimeout(timer); resolved = true;
+        resolve({ success: false, error: err.message || 'Claude CLI error' });
+      });
+    });
+  });
+
   ipcMain.handle('copy-to-clipboard', (_event, { text }) => {
     clipboard.writeText(text);
     return { success: true };

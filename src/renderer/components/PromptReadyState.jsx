@@ -50,6 +50,8 @@ export default function PromptReadyState({
   onRegenerate,
   onReset,
   mode,
+  onIterate,
+  isIterated,
 }) {
   const [isCopied, setIsCopied] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -130,8 +132,36 @@ export default function PromptReadyState({
         >
           <span style={{ color: '#30D158', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
           <span>{mode === 'refine' ? 'Refinement prompt ready' : 'Prompt ready'}</span>
+          {isIterated && (
+            <span style={{
+              fontSize: '10px',
+              color: 'rgba(10,132,255,0.6)',
+              background: 'rgba(10,132,255,0.08)',
+              border: '0.5px solid rgba(10,132,255,0.2)',
+              borderRadius: '20px',
+              padding: '1px 8px',
+              letterSpacing: '.04em',
+            }}>
+              ↻ iterated
+            </span>
+          )}
         </div>
         <div className="flex" style={{ gap: '16px', WebkitAppRegion: 'no-drag' }}>
+          <button
+            onClick={onIterate}
+            style={{
+              fontSize: '11px',
+              color: 'rgba(10,132,255,0.85)',
+              fontWeight: 500,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              letterSpacing: '0.01em',
+            }}
+          >
+            ↻ Iterate
+          </button>
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em] hover:text-[#0A84FF] transition-colors duration-150"
             style={{ color: 'rgba(255,255,255,0.2)' }}

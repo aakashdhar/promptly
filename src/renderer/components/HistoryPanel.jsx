@@ -198,6 +198,9 @@ export default function HistoryPanel({ onClose, onReuse }) {
                     }}>
                       {entry.mode}
                     </span>
+                    {entry.isIteration && (
+                      <span style={{fontSize:'9px', color:'rgba(10,132,255,0.5)', marginLeft:'4px'}}>↻</span>
+                    )}
                     <span style={{fontSize:'10px', color:'rgba(255,255,255,0.28)'}}>
                       {formatTime(entry.timestamp)}
                     </span>
