@@ -4,50 +4,59 @@ set -e
 CERT_NAME="Promptly Signing"
 
 # Check if cert already exists
-if security find-identity -v -p codesigning | grep -q "$CERT_NAME"; then
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "$CERT_NAME"; then
   echo "✓ Certificate '$CERT_NAME' already exists — skipping creation"
   exit 0
 fi
 
 echo "Creating self-signed code signing certificate..."
 
-# Create a temporary config file for the certificate
-cat > /tmp/promptly-cert.cfg << EOF
-[ req ]
-default_bits       = 2048
-distinguished_name = req_distinguished_name
-x509_extensions    = v3_req
-prompt             = no
+PASS="promptlysigning"
+TMPDIR=$(mktemp -d)
+KEY="$TMPDIR/promptly.key"
+CRT="$TMPDIR/promptly.crt"
+P12="$TMPDIR/promptly.p12"
 
-[ req_distinguished_name ]
-CN = Promptly Signing
+# Generate key and certificate
+openssl genrsa -out "$KEY" 2048 2>/dev/null
 
-[ v3_req ]
-keyUsage         = critical, digitalSignature
-extendedKeyUsage = critical, codeSigning
-EOF
+openssl req -new -x509 -key "$KEY" -out "$CRT" -days 3650 \
+  -subj "/CN=Promptly Signing" \
+  -addext "keyUsage=critical,digitalSignature" \
+  -addext "extendedKeyUsage=critical,codeSigning" 2>/dev/null
 
-# Generate private key and self-signed cert
-openssl req -x509 -newkey rsa:2048 -keyout /tmp/promptly.key \
-  -out /tmp/promptly.crt -days 3650 -nodes \
-  -config /tmp/promptly-cert.cfg
+# Export to PKCS12 using legacy format (required for macOS security command)
+# Falls back to non-legacy if openssl version doesn't support -legacy flag
+if openssl pkcs12 -export -legacy \
+  -out "$P12" \
+  -inkey "$KEY" \
+  -in "$CRT" \
+  -passout "pass:$PASS" 2>/dev/null; then
+  : # legacy succeeded
+else
+  openssl pkcs12 -export \
+    -out "$P12" \
+    -inkey "$KEY" \
+    -in "$CRT" \
+    -passout "pass:$PASS"
+fi
 
-# Convert to p12
-openssl pkcs12 -export -out /tmp/promptly.p12 \
-  -inkey /tmp/promptly.key -in /tmp/promptly.crt \
-  -passout pass:promptly123
+# Import into login keychain
+security import "$P12" \
+  -k ~/Library/Keychains/login.keychain-db \
+  -P "$PASS" \
+  -T /usr/bin/codesign \
+  -T /usr/bin/security
 
-# Import into keychain
-security import /tmp/promptly.p12 -k ~/Library/Keychains/login.keychain-db \
-  -P promptly123 -T /usr/bin/codesign
-
-# Set partition list to allow codesign access without password prompt
-security set-key-partition-list -S apple-tool:,apple: \
-  -s -k "$(security find-generic-password -wa 'login' 2>/dev/null || echo '')" \
+# Allow codesign to access without password prompt
+security set-key-partition-list \
+  -S apple-tool:,apple:,codesign: \
+  -s -k "" \
   ~/Library/Keychains/login.keychain-db 2>/dev/null || true
 
-# Clean up temp files
-rm -f /tmp/promptly.key /tmp/promptly.crt /tmp/promptly.p12 /tmp/promptly-cert.cfg
+# Cleanup
+rm -rf "$TMPDIR"
 
-echo "✓ Certificate '$CERT_NAME' created and imported into Keychain"
-echo "  Note: You may see a Keychain access dialog — click Allow"
+echo "✓ Certificate '$CERT_NAME' created and imported"
+echo ""
+echo "Verify with: security find-identity -v -p codesigning"
