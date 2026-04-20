@@ -729,3 +729,25 @@ Key fixes applied:
 - **Alternatives considered**: Keeping timer in RecordingState and passing it back up on pause — rejected because parent-owns-state is simpler and avoids ref-forwarding complexity.
 - **Impact on other tasks**: transition() updated to hide traffic lights for PAUSED (same as RECORDING). stopRecording() works from 'paused' MediaRecorder state natively.
 - **Approved by**: human
+
+---
+
+### D-008 — Vibrancy removed; solid #0A0A14 background for consistent cross-wallpaper readability
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **What was planned**: `vibrancy: 'fullscreen-ui'` + `visualEffectState: 'active'` + `transparent: true` on both main win and splashWin
+- **What was done**: Removed `vibrancy`, `visualEffectState`. Set `transparent: false`, `backgroundColor: '#0A0A14'`. Updated `index.css` body background to `#0A0A14`. Updated `splash.html` html/body background to `#0A0A14`.
+- **Why**: Vibrancy bleeds the desktop wallpaper through the bar, producing unpredictable readability depending on the user's wallpaper (bright photos, white backgrounds). Solid opaque background eliminates the variable entirely — the bar looks identical on any wallpaper and any macOS appearance setting.
+- **Alternatives considered**: Keep vibrancy but increase overlay opacity — rejected because it still bleeds through at low contrast.
+- **Impact on other tasks**: Bar container `backdropFilter: blur(40px)` removed (meaningless without transparency). Glow effect (D-009) added to compensate for lost depth.
+- **Approved by**: human
+
+---
+
+### D-009 — Ambient blue + purple glow added for premium dark glass aesthetic
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **What was planned**: No ambient glow — vibrancy provided depth
+- **What was done**: Two absolutely-positioned `div` glow layers added to App.jsx bar container and `splash.html`: blue radial gradient top-right (`rgba(10,132,255,0.08)`), purple radial gradient bottom-left (`rgba(120,40,200,0.1)`). `zIndex: -1` so they render behind all content. Bar container gradient: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)`.
+- **Why**: Solid dark background needed visual depth to replace vibrancy. Ambient glow adds premium "dark glass" feel without any dependency, without transparency, and without wallpaper sensitivity. Purple complements the blue accent colour (#0A84FF) already in the design system.
+- **Alternatives considered**: CSS box-shadow only — rejected as too flat. Adding a subtle texture PNG — rejected (adds a binary asset).
+- **Impact on other tasks**: Splash screen updated to match — same two glow divs added before `.content`. All state panel content renders above glows via natural stacking (glows at z-index:-1).
+- **Approved by**: human

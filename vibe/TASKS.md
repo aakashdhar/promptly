@@ -234,6 +234,7 @@
    vibe/cost/report-2026-04-20-session14.md
 
 ✅ FEATURE-011 — Pause and Resume Recording — complete 2026-04-20
+✅ DESIGN-001 — Vibrancy removed + ambient glow added — complete 2026-04-20 (D-008, D-009)
    - preload.js: `onShortcutPause` added — wires existing shortcut-pause IPC channel
    - App.jsx: PAUSED state + STATE_HEIGHTS.PAUSED=89, recSecs/recTimerRef/isPausedRef, startTimer/pauseTimer/stopTimer, pauseRecording/resumeRecording, onShortcutPause handler, PAUSED render, duration prop passed to RecordingState
    - RecordingState.jsx: internal timer removed, accepts duration+onPause props, amber pause button added
@@ -243,5 +244,13 @@
    - lint: ✅ 0 errors
 
 ## What's next
-⬜ Smoke test FEATURE-011: record → pause button visible → tap pause → amber flat line + status text → tap resume → waveform restarts → stop → transcript processes → Alt+P toggles
+✅ DESIGN-001 — Remove vibrancy bleed-through + add ambient purple glow — complete 2026-04-20
+   - main.js: both BrowserWindow configs — vibrancy/visualEffectState removed, transparent:false, backgroundColor:'#0A0A14'
+   - App.jsx: bar container → linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14); backdropFilter removed; blue glow div (top-right) + purple glow div (bottom-left) at zIndex:-1
+   - index.css: body background → #0A0A14 (was transparent)
+   - splash.html: html/body background → #0A0A14; .splash → gradient; two glow divs added before .content
+   - DECISIONS.md: D-008 (vibrancy removed) + D-009 (ambient glow) logged
+   - smoke test: ✅ human-confirmed 2026-04-20
+
+## What's next
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
