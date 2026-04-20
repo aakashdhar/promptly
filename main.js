@@ -167,15 +167,57 @@ function createTray() {
   if (app.dock) app.dock.hide();
 }
 
-function resolveClaudePath() {
+async function resolveClaudePath() {
+  const commonPaths = [
+    '/usr/local/bin/claude',
+    '/usr/bin/claude',
+    path.join(os.homedir(), '.local/bin/claude'),
+    path.join(os.homedir(), '.npm-global/bin/claude'),
+    path.join(os.homedir(), 'node_modules/.bin/claude'),
+    '/opt/homebrew/bin/claude',
+    '/opt/local/bin/claude',
+  ];
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+  }
   return new Promise((resolve) => {
     exec('zsh -lc "which claude"', (err, stdout) => {
-      const p = stdout.trim();
-      if (err || !p) {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which claude"', (err2, stdout2) => {
+        if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
         resolve(null);
-      } else {
-        resolve(p);
-      }
+      });
+    });
+  });
+}
+
+async function resolveWhisperPath() {
+  const commonPaths = [
+    '/usr/local/bin/whisper',
+    '/usr/bin/whisper',
+    path.join(os.homedir(), '.local/bin/whisper'),
+    path.join(os.homedir(), '.local/pipx/venvs/openai-whisper/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.9/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.10/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.11/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.12/bin/whisper'),
+    '/opt/homebrew/bin/whisper',
+    '/opt/local/bin/whisper',
+    '/usr/local/lib/python3.9/site-packages/whisper',
+  ];
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+  }
+  return new Promise((resolve) => {
+    exec('zsh -lc "which whisper"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which whisper"', (err2, stdout2) => {
+        if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
+        exec('zsh -lc "python3 -m whisper --help > /dev/null 2>&1 && echo python3"', (err3, stdout3) => {
+          if (!err3 && stdout3.trim()) { resolve('python3 -m whisper'); return; }
+          resolve(null);
+        });
+      });
     });
   });
 }
@@ -237,10 +279,7 @@ app.commandLine.appendSwitch('enable-transparent-visuals');
 
 app.whenReady().then(async () => {
   claudePath = await resolveClaudePath();
-
-  exec('zsh -lc "which whisper"', (err, stdout) => {
-    whisperPath = stdout.trim() || null;
-  });
+  whisperPath = await resolveWhisperPath();
 
   splashWin = new BrowserWindow({
     width: 520,
@@ -460,7 +499,10 @@ app.whenReady().then(async () => {
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        exec(`"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`,
+        const whisperCmd = whisperPath === 'python3 -m whisper'
+          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
+          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
+        exec(whisperCmd,
           { timeout: 60000 }, (err, _stdout, stderr) => {
             try {
               const text = fs.readFileSync(txtFile, 'utf8').trim();
