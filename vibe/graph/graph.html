@@ -107,6 +107,7 @@
     <option value="shortcuts">shortcuts</option>
     <option value="export">export</option>
     <option value="history-panel">history-panel</option>
+    <option value="pause-resume">pause-resume</option>
   </select>
   <span id="stats"></span>
 </div>
@@ -202,9 +203,10 @@ const DEPENDENCY_GRAPH = {
       {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.* consumed throughout"},
       {"file":"splash.html","source":"EXTRACTED","confidence":1.0}
     ],
-    "exposes": ["generatePrompt","copyToClipboard","checkClaudePath","resizeWindow","setWindowButtonsVisible","showModeMenu","onModeSelected","transcribeAudio","splashDone","splashCheckCLI","splashCheckWhisper","splashOpenURL","requestMic","onShortcutTriggered","onShortcutConflict","getTheme","onThemeChanged","onShowShortcuts","saveFile","resizeWindowWidth","setWindowSize","onShowHistory"],
+    "exposes": ["generatePrompt","copyToClipboard","checkClaudePath","resizeWindow","setWindowButtonsVisible","showModeMenu","onModeSelected","transcribeAudio","splashDone","splashCheckCLI","splashCheckWhisper","splashOpenURL","requestMic","onShortcutTriggered","onShortcutConflict","getTheme","onThemeChanged","onShowShortcuts","saveFile","resizeWindowWidth","setWindowSize","onShowHistory","onShortcutPause"],
     "rationale": [
-      {"type":"DECISION","text":"nodeIntegration:false + contextIsolation:true always — security boundary; all IPC via window.electronAPI only","source":"INFERRED"}
+      {"type":"DECISION","text":"nodeIntegration:false + contextIsolation:true always — security boundary; all IPC via window.electronAPI only","source":"INFERRED"},
+      {"type":"DECISION","text":"onShortcutPause added FEATURE-011 — shortcut-pause IPC existed since FSC-004 (Alt+P stub) but was never exposed via contextBridge until pause/resume was implemented","source":"EXTRACTED","added":"2026-04-20"}
     ]
   },
   "splash.html": {
@@ -236,14 +238,17 @@ const DEPENDENCY_GRAPH = {
   "src/renderer/index.css": {
     "state": "built", "type": "stylesheet", "concept": "react-migration",
     "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "secondary_concepts": ["pause-resume"],
     "imports": [],
     "imported_by": [{"file":"src/renderer/main.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
+    "rationale": [
+      {"type":"DECISION","text":"@keyframes pauseGlow added FEATURE-011 — amber pulse animation shared between RecordingState pause button and PausedState resume button; defined once in global CSS","source":"EXTRACTED","added":"2026-04-20"}
+    ]
   },
   "src/renderer/App.jsx": {
     "state": "built", "type": "react-component", "concept": "foundation",
     "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "secondary_concepts": ["speech-recording","claude-integration","dark-mode","history-panel","shortcuts","export"],
+    "secondary_concepts": ["speech-recording","claude-integration","dark-mode","history-panel","shortcuts","export","pause-resume"],
     "imports": [
       {"file":"src/renderer/hooks/useMode.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 2"},
       {"file":"src/renderer/hooks/useWindowResize.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 3"},
@@ -251,18 +256,21 @@ const DEPENDENCY_GRAPH = {
       {"file":"src/renderer/components/ShortcutsPanel.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 5"},
       {"file":"src/renderer/components/HistoryPanel.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 6"},
       {"file":"src/renderer/components/RecordingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 7"},
-      {"file":"src/renderer/components/ThinkingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 8"},
-      {"file":"src/renderer/components/PromptReadyState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 9"},
-      {"file":"src/renderer/components/ErrorState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 10"},
-      {"file":"src/renderer/utils/history.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 11"}
+      {"file":"src/renderer/components/PausedState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 8 — added FEATURE-011"},
+      {"file":"src/renderer/components/ThinkingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 9"},
+      {"file":"src/renderer/components/PromptReadyState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 10"},
+      {"file":"src/renderer/components/ErrorState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 11"},
+      {"file":"src/renderer/utils/history.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 12"}
     ],
     "imported_by": [{"file":"src/renderer/main.jsx","source":"EXTRACTED","confidence":1.0}],
-    "key_vars": ["STATES","STATE_HEIGHTS"],
-    "key_functions": ["transition","startRecording","stopRecording","handleDismiss","handleRegenerate","openHistory","closeHistory"],
+    "key_vars": ["STATES","STATE_HEIGHTS","recSecs","recTimerRef","isPausedRef"],
+    "key_functions": ["transition","startRecording","stopRecording","pauseRecording","resumeRecording","handleDismiss","handleRegenerate","openHistory","closeHistory","startTimer","pauseTimer","stopTimer"],
     "rationale": [
       {"type":"DECISION","text":"openHistory/closeHistory use setWindowSize (atomic) instead of separate calls — avoids RAF race condition where resize-window reads stale width","source":"EXTRACTED"},
       {"type":"DECISION","text":"closeHistory always transitions to IDLE (not prevState) — HISTORY is a browsing mode, not a temporary overlay","source":"EXTRACTED"},
-      {"type":"DECISION","text":"Root div uses inline style width:100% instead of Tailwind w-[520px] — Tailwind JIT/purge was not generating the dynamic width class","source":"EXTRACTED"}
+      {"type":"DECISION","text":"Root div uses inline style width:100% instead of Tailwind w-[520px] — Tailwind JIT/purge was not generating the dynamic width class","source":"EXTRACTED"},
+      {"type":"DECISION","text":"Timer (recSecs) lifted from RecordingState to App.jsx — FEATURE-011: timer must survive RECORDING→PAUSED→RECORDING; component unmount would reset local useState(0)","source":"EXTRACTED","added":"2026-04-20"},
+      {"type":"DECISION","text":"transition() hides traffic lights for both RECORDING and PAUSED — PAUSED must not show window chrome; same UX as RECORDING","source":"EXTRACTED","added":"2026-04-20"}
     ]
   },
   "src/renderer/utils/history.js": {
@@ -313,9 +321,24 @@ const DEPENDENCY_GRAPH = {
   "src/renderer/components/RecordingState.jsx": {
     "state": "built", "type": "react-component", "concept": "speech-recording",
     "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "imports": [{"file":"src/renderer/components/WaveformCanvas.jsx","source":"INFERRED","confidence":0.90}],
+    "secondary_concepts": ["pause-resume"],
+    "imports": [{"file":"src/renderer/components/WaveformCanvas.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"import WaveformCanvas at line 1"}],
     "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
+    "props": ["onStop","onDismiss","onPause","duration"],
+    "rationale": [
+      {"type":"DECISION","text":"Timer state removed from RecordingState — FEATURE-011: timer lifted to App.jsx so recSecs persists across RECORDING↔PAUSED transitions without reset","source":"EXTRACTED","added":"2026-04-20"}
+    ]
+  },
+  "src/renderer/components/PausedState.jsx": {
+    "state": "built", "type": "react-component", "concept": "pause-resume",
+    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 8 — added FEATURE-011"}],
+    "props": ["duration","onResume","onStop","onDismiss"],
+    "rationale": [
+      {"type":"DECISION","text":"Flat amber gradient line (no canvas) — PAUSED is a static state; waveform animation would imply active recording","source":"EXTRACTED","added":"2026-04-20"},
+      {"type":"DECISION","text":"pauseGlow animation reused on resume button — same @keyframes as pause button in RecordingState; amber pulse signals interactivity","source":"EXTRACTED","added":"2026-04-20"}
+    ]
   },
   "src/renderer/components/WaveformCanvas.jsx": {
     "state": "built", "type": "react-component", "concept": "speech-recording",
@@ -365,16 +388,17 @@ const DEPENDENCY_GRAPH = {
 const CONCEPT_GRAPH = {
   "foundation":         { "state":"built","files":["package.json","entitlements.plist","eslint.config.js","main.js","preload.js","index.html","src/renderer/App.jsx","src/renderer/main.jsx","src/renderer/hooks/useWindowResize.js"],"depends_on":[],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","first-run","dark-mode","tray","react-migration","history-panel","shortcuts","export"],"tasks_complete":9,"tasks_total":9 },
   "react-migration":    { "state":"built","files":["vite.config.js","src/renderer/main.jsx","src/renderer/index.css","src/renderer/App.jsx"],"depends_on":["foundation"],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","dark-mode","history-panel","shortcuts","export"],"tasks_complete":14,"tasks_total":14 },
-  "state-machine":      { "state":"built","files":["src/renderer/App.jsx","main.js","src/renderer/components/IdleState.jsx","src/renderer/components/ErrorState.jsx"],"depends_on":["foundation","react-migration"],"depended_on_by":["speech-recording","claude-integration","actions","first-run","history-panel","shortcuts"],"tasks_complete":5,"tasks_total":5 },
+  "state-machine":      { "state":"built","files":["src/renderer/App.jsx","main.js","src/renderer/components/IdleState.jsx","src/renderer/components/ErrorState.jsx","src/renderer/components/PausedState.jsx"],"depends_on":["foundation","react-migration"],"depended_on_by":["speech-recording","claude-integration","actions","first-run","history-panel","shortcuts","pause-resume"],"tasks_complete":5,"tasks_total":5 },
   "first-run":          { "state":"built","files":["splash.html","main.js"],"depends_on":["foundation","state-machine"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
-  "speech-recording":   { "state":"built","files":["src/renderer/App.jsx","main.js","preload.js","src/renderer/components/RecordingState.jsx","src/renderer/components/WaveformCanvas.jsx"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":["claude-integration","actions"],"tasks_complete":5,"tasks_total":5 },
+  "speech-recording":   { "state":"built","files":["src/renderer/App.jsx","main.js","preload.js","src/renderer/components/RecordingState.jsx","src/renderer/components/WaveformCanvas.jsx"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":["claude-integration","actions","pause-resume"],"tasks_complete":5,"tasks_total":5 },
   "claude-integration": { "state":"built","files":["main.js","src/renderer/App.jsx","src/renderer/components/ThinkingState.jsx","src/renderer/components/MorphCanvas.jsx","src/renderer/hooks/useMode.js"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":["actions"],"tasks_complete":4,"tasks_total":4 },
   "actions":            { "state":"built","files":["src/renderer/components/PromptReadyState.jsx","src/renderer/App.jsx"],"depends_on":["foundation","state-machine","claude-integration"],"depended_on_by":["export"],"tasks_complete":4,"tasks_total":4 },
   "dark-mode":          { "state":"built","files":["main.js","preload.js","src/renderer/App.jsx"],"depends_on":["foundation"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 },
   "tray":               { "state":"built","files":["main.js"],"depends_on":["foundation"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 },
   "shortcuts":          { "state":"built","files":["src/renderer/components/ShortcutsPanel.jsx","src/renderer/App.jsx","main.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 },
   "export":             { "state":"built","files":["src/renderer/components/PromptReadyState.jsx","main.js","preload.js"],"depends_on":["foundation","actions"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
-  "history-panel":      { "state":"built","files":["src/renderer/utils/history.js","src/renderer/components/HistoryPanel.jsx","src/renderer/App.jsx","main.js","preload.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 }
+  "history-panel":      { "state":"built","files":["src/renderer/utils/history.js","src/renderer/components/HistoryPanel.jsx","src/renderer/App.jsx","main.js","preload.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 },
+  "pause-resume":       { "state":"built","files":["src/renderer/App.jsx","src/renderer/components/PausedState.jsx","src/renderer/components/RecordingState.jsx","src/renderer/index.css","preload.js"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 }
 };
 
 // ── Colour map ──────────────────────────────────────────────────────────────
@@ -403,7 +427,8 @@ const CONCEPT_COLOURS = {
   "tray":               "#78716c",
   "shortcuts":          "#eab308",
   "export":             "#10b981",
-  "history-panel":      "#f43f5e"
+  "history-panel":      "#f43f5e",
+  "pause-resume":       "#f59e0b"
 };
 
 // ── State ───────────────────────────────────────────────────────────────────

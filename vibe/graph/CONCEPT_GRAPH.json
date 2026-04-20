@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-19T12:00:00Z",
-    "update_count": 2,
+    "last_updated": "2026-04-20T00:00:00Z",
+    "update_count": 3,
     "project": "promptly",
-    "update_note": "Added react-migration, shortcuts, export, history-panel concepts; restored history concept from deleted→built (FEATURE-009)"
+    "update_note": "Added pause-resume concept (FEATURE-011); updated state-machine to 8 states + PausedState.jsx; updated speech-recording depended_on_by"
   },
 
   "foundation": {
@@ -53,15 +53,16 @@
   "state-machine": {
     "state": "built",
     "type": "feature",
-    "description": "7-state UI state machine (IDLE, RECORDING, THINKING, PROMPT_READY, ERROR, SHORTCUTS, HISTORY), window resize IPC. React implementation in App.jsx via transition() function.",
+    "description": "8-state UI state machine (IDLE, RECORDING, PAUSED, THINKING, PROMPT_READY, ERROR, SHORTCUTS, HISTORY), window resize IPC. React implementation in App.jsx via transition() function.",
     "files": [
       { "file": "src/renderer/App.jsx",          "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
       { "file": "src/renderer/components/IdleState.jsx",    "state": "built", "source": "INFERRED", "confidence": 0.85 },
       { "file": "src/renderer/components/ErrorState.jsx",   "state": "built", "source": "INFERRED", "confidence": 0.85 },
+      { "file": "src/renderer/components/PausedState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "PAUSED state added FEATURE-011; PausedState.jsx renders inside state machine" },
       { "file": "main.js",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "resize-window IPC channel" }
     ],
     "depends_on": ["foundation", "react-migration"],
-    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run", "history-panel", "shortcuts"],
+    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run", "history-panel", "shortcuts", "pause-resume"],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 2 — complete",
@@ -87,7 +88,7 @@
   "speech-recording": {
     "state": "built",
     "type": "feature",
-    "description": "MediaRecorder audio capture → Whisper CLI transcription (--language en hardcoded) → originalTranscript captured once in stopRecording(); transitions to THINKING",
+    "description": "MediaRecorder audio capture → Whisper CLI transcription (--language en hardcoded) → originalTranscript captured once in stopRecording(); transitions to THINKING. MediaRecorder.pause/resume used by pause-resume feature.",
     "files": [
       { "file": "src/renderer/App.jsx",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "startRecording, stopRecording, mediaRecorderRef, audioChunksRef" },
       { "file": "src/renderer/components/RecordingState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
@@ -96,7 +97,7 @@
       { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribeAudio(arrayBuffer) exposed via contextBridge" }
     ],
     "depends_on": ["foundation", "state-machine", "react-migration"],
-    "depended_on_by": ["claude-integration", "actions"],
+    "depended_on_by": ["claude-integration", "actions", "pause-resume"],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 2 — complete",
@@ -256,5 +257,25 @@
     "tasks_complete": 3,
     "tasks_total": 3,
     "phase": "Phase 4 — removed before shipping"
+  },
+
+  "pause-resume": {
+    "state": "built",
+    "type": "feature",
+    "description": "PAUSED state with amber UI — MediaRecorder.pause/resume, timer persists in App.jsx across RECORDING↔PAUSED transitions, Alt+P shortcut (onShortcutPause IPC), PausedState.jsx with flat amber line and resume button",
+    "files": [
+      { "file": "src/renderer/App.jsx",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "PAUSED state, pauseRecording, resumeRecording, recSecs, recTimerRef, isPausedRef, onShortcutPause handler" },
+      { "file": "src/renderer/components/RecordingState.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "pause button added; timer removed (now stateless via duration prop)" },
+      { "file": "src/renderer/components/PausedState.jsx",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "primary owner — sole purpose is PAUSED state UI" },
+      { "file": "src/renderer/index.css",                     "state": "built", "source": "INFERRED",  "confidence": 0.85, "evidence": "pauseGlow @keyframes added for amber button glow animation" },
+      { "file": "preload.js",                                 "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "onShortcutPause method added to contextBridge" }
+    ],
+    "depends_on": ["foundation", "state-machine", "speech-recording"],
+    "depended_on_by": [],
+    "tasks_complete": 3,
+    "tasks_total": 3,
+    "phase": "Phase 4 — complete 2026-04-20",
+    "feature_folder": "vibe/features/2026-04-20-pause-resume",
+    "notes": "Alt+P IPC (shortcut-pause) was stubbed in main.js since FSC-004 (FEATURE-006). onShortcutPause was the missing preload.js link. MediaRecorder handles audio chunk accumulation across pause/resume natively — no custom buffering needed."
   }
 }

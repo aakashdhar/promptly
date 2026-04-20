@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/CODEBASE.md + source files",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-19T12:00:00Z",
-    "update_count": 2,
+    "last_updated": "2026-04-20T00:00:00Z",
+    "update_count": 3,
     "project": "promptly",
-    "update_note": "Incremental update — added React renderer nodes (App.jsx, history.js, HistoryPanel.jsx); updated main.js + preload.js IPC surface for FEATURE-009 + BUG-011"
+    "update_note": "Incremental update — FEATURE-011 pause/resume: added PausedState.jsx node; updated App.jsx (PAUSED state, timer logic, pauseRecording/resumeRecording, PausedState import); updated RecordingState.jsx (stateless timer, onPause prop); updated preload.js (onShortcutPause); updated index.css (pauseGlow keyframe); added pause-resume concept"
   },
 
   "package.json": {
@@ -193,7 +193,7 @@
       "transcribeAudio", "splashDone", "splashCheckCLI", "splashCheckWhisper",
       "splashOpenURL", "requestMic", "onShortcutTriggered", "onShortcutConflict",
       "getTheme", "onThemeChanged", "onShowShortcuts", "saveFile",
-      "resizeWindowWidth", "setWindowSize", "onShowHistory"
+      "resizeWindowWidth", "setWindowSize", "onShowHistory", "onShortcutPause"
     ],
     "rationale": [
       {
@@ -201,6 +201,12 @@
         "text": "nodeIntegration: false + contextIsolation: true always — security boundary between renderer and Node.js; all IPC via window.electronAPI only",
         "source": "INFERRED",
         "evidence": "contextBridge pattern enforces this; ARCHITECTURE.md rule"
+      },
+      {
+        "type": "DECISION",
+        "text": "onShortcutPause added (FEATURE-011) — shortcut-pause IPC channel existed since FSC-004 (Alt+P stub) but was never wired to renderer via contextBridge until pause/resume was implemented",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
       }
     ]
   },
@@ -281,11 +287,19 @@
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
     "concept_evidence": "Tailwind v4 entry — @import 'tailwindcss', @theme tokens, @keyframes, body reset",
+    "secondary_concepts": ["pause-resume"],
     "imports": [],
     "imported_by": [
       { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
     ],
-    "rationale": []
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "pauseGlow @keyframes added (FEATURE-011) — amber glow animation for pause/resume buttons; inline animation: property references this keyframe name directly since Tailwind @theme token generates [animation:pauseGlow_2s_ease-in-out_infinite] class",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
   },
 
   "src/renderer/App.jsx": {
@@ -295,7 +309,7 @@
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
     "concept_evidence": "Root state machine — owns STATES, STATE_HEIGHTS, transition(), all IPC listeners, recording flow, theme wiring",
-    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export"],
+    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export", "pause-resume"],
     "imports": [
       { "file": "src/renderer/hooks/useMode.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 2" },
       { "file": "src/renderer/hooks/useWindowResize.js",            "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 3" },
@@ -303,16 +317,17 @@
       { "file": "src/renderer/components/ShortcutsPanel.jsx",       "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 5" },
       { "file": "src/renderer/components/HistoryPanel.jsx",         "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 6" },
       { "file": "src/renderer/components/RecordingState.jsx",       "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 7" },
-      { "file": "src/renderer/components/ThinkingState.jsx",        "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 8" },
-      { "file": "src/renderer/components/PromptReadyState.jsx",     "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 9" },
-      { "file": "src/renderer/components/ErrorState.jsx",           "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 10" },
-      { "file": "src/renderer/utils/history.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 11 — saveToHistory" }
+      { "file": "src/renderer/components/PausedState.jsx",          "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 8 — added FEATURE-011" },
+      { "file": "src/renderer/components/ThinkingState.jsx",        "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 9" },
+      { "file": "src/renderer/components/PromptReadyState.jsx",     "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 10" },
+      { "file": "src/renderer/components/ErrorState.jsx",           "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 11" },
+      { "file": "src/renderer/utils/history.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 12 — saveToHistory" }
     ],
     "imported_by": [
       { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
     ],
-    "key_vars": ["STATES", "STATE_HEIGHTS"],
-    "key_functions": ["transition", "startRecording", "stopRecording", "handleDismiss", "handleRegenerate", "openHistory", "closeHistory"],
+    "key_vars": ["STATES", "STATE_HEIGHTS", "recSecs", "recTimerRef", "isPausedRef"],
+    "key_functions": ["transition", "startRecording", "stopRecording", "pauseRecording", "resumeRecording", "handleDismiss", "handleRegenerate", "openHistory", "closeHistory", "startTimer", "pauseTimer", "stopTimer"],
     "ipc_consumed": ["window.electronAPI.*"],
     "rationale": [
       {
@@ -332,6 +347,18 @@
         "text": "Root div uses inline style width:100% instead of Tailwind w-[520px] — Tailwind JIT/purge was not generating the dynamic width class in HISTORY state; inline style is immune to purge",
         "source": "EXTRACTED",
         "added": "2026-04-19"
+      },
+      {
+        "type": "DECISION",
+        "text": "Timer (recSecs) lifted from RecordingState to App.jsx — FEATURE-011 pause/resume requires timer to persist across RECORDING↔PAUSED state transitions; component unmount/mount would reset local useState to 0",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "transition() hides traffic lights for both RECORDING and PAUSED — PAUSED state must not show window chrome; same UX rationale as RECORDING",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
       }
     ]
   },
@@ -449,11 +476,46 @@
     "concept": "speech-recording",
     "concept_source": "INFERRED",
     "concept_confidence": 0.90,
+    "secondary_concepts": ["pause-resume"],
     "imports": [
-      { "file": "src/renderer/components/WaveformCanvas.jsx", "source": "INFERRED", "confidence": 0.90 }
+      { "file": "src/renderer/components/WaveformCanvas.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "import WaveformCanvas line 1" }
     ],
     "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
-    "rationale": []
+    "props": ["onStop", "onDismiss", "onPause", "duration"],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "Internal timer (useState + setInterval) removed in FEATURE-011 — duration now flows down as prop from App.jsx; required for timer to survive RECORDING→PAUSED→RECORDING transitions without resetting to 0",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
+  },
+
+  "src/renderer/components/PausedState.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "pause-resume",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "vibe/features/2026-04-20-pause-resume/ — PAUZ-002 Touches field; sole purpose is to render PAUSED state UI",
+    "imports": [],
+    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 8" }],
+    "props": ["duration", "onResume", "onStop", "onDismiss"],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "Flat amber gradient line instead of WaveformCanvas — waveform animation would need to be frozen-in-place; a static ambient line communicates 'paused' more clearly with zero complexity",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "Stop button retained in PAUSED state — MediaRecorder.stop() works natively from 'paused' state; user should not need to resume before stopping",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
   },
 
   "src/renderer/components/WaveformCanvas.jsx": {

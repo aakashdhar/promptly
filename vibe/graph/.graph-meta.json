@@ -2,39 +2,42 @@
   "version": 2,
   "project": "promptly",
   "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-19T12:30:00Z",
-  "update_count": 3,
-  "mode": "full-rebuild",
+  "last_updated": "2026-04-20T14:00:00Z",
+  "update_count": 4,
+  "update_note": "FEATURE-011 pause/resume — PausedState.jsx added, RecordingState timer lifted, onShortcutPause wired, pause-resume concept built",
+  "mode": "incremental",
+  "files_updated_this_run": 5,
+  "inferred_to_extracted_this_run": 1,
   "coverage": {
-    "files_indexed": 22,
-    "concepts_mapped": 11,
-    "extracted_edges": 24,
-    "inferred_edges": 12,
+    "files_indexed": 23,
+    "concepts_mapped": 12,
+    "extracted_edges": 26,
+    "inferred_edges": 11,
     "ambiguous_edges": 1,
-    "rationale_nodes": 14
+    "rationale_nodes": 20
   },
   "god_nodes": [
     {
       "file": "src/renderer/App.jsx",
-      "connections": 11,
-      "concept": "state-machine",
-      "type": "component",
+      "connections": 12,
+      "concept": "foundation",
+      "type": "react-component",
       "risk": "HIGH",
       "srp_flag": true,
-      "srp_note": "11 connections — root orchestrator, expected for this architecture"
+      "srp_note": "12 connections — root orchestrator; PausedState.jsx import added FEATURE-011"
     },
     {
       "file": "main.js",
       "connections": 7,
       "concept": "foundation",
-      "type": "entry",
+      "type": "electron-main",
       "risk": "MEDIUM"
     },
     {
       "file": "preload.js",
       "connections": 4,
       "concept": "foundation",
-      "type": "bridge",
+      "type": "electron-preload",
       "risk": "LOW"
     }
   ],
@@ -48,7 +51,6 @@
     }
   ],
   "inferred_edges_list": [
-    { "from": "src/renderer/components/RecordingState.jsx", "to": "src/renderer/components/WaveformCanvas.jsx", "confidence": 0.90 },
     { "from": "src/renderer/components/ThinkingState.jsx", "to": "src/renderer/components/MorphCanvas.jsx", "confidence": 0.85 },
     { "from": "src/renderer/components/IdleState.jsx", "to": "src/renderer/hooks/useMode.js", "confidence": 0.85 },
     { "from": "src/renderer/components/PromptReadyState.jsx", "to": "preload.js", "confidence": 0.80 },

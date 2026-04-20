@@ -230,6 +230,9 @@
 ---
 
 ## What just happened
+💰 Cost tracked — Session #14: ~$0.674 est. | Project total: ~$7.89 est. | ↑ +23% vs 5-session avg
+   vibe/cost/report-2026-04-20-session14.md
+
 ✅ FEATURE-011 — Pause and Resume Recording — complete 2026-04-20
    - preload.js: `onShortcutPause` added — wires existing shortcut-pause IPC channel
    - App.jsx: PAUSED state + STATE_HEIGHTS.PAUSED=89, recSecs/recTimerRef/isPausedRef, startTimer/pauseTimer/stopTimer, pauseRecording/resumeRecording, onShortcutPause handler, PAUSED render, duration prop passed to RecordingState
