@@ -14,7 +14,7 @@
     "start:react": "npm run build:renderer && electron .",
     "dist": "electron-builder --universal",
     "lint": "eslint main.js preload.js",
-    "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null --config.mac.hardenedRuntime=false"
+    "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -34,9 +34,7 @@
     "icon": "build/icon",
     "mac": {
       "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
-      "entitlements": "entitlements.plist",
-      "entitlementsInherit": "entitlements.plist",
+      "hardenedRuntime": false,
       "target": [
         {
           "target": "dmg",
@@ -44,7 +42,10 @@
             "universal"
           ]
         }
-      ]
+      ],
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Promptly needs microphone access to record your voice for prompt generation."
+      }
     },
     "dmg": {
       "title": "Promptly"

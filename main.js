@@ -1,5 +1,9 @@
 'use strict';
 
+process.on('uncaughtException', (err) => {
+  console.error('[Promptly] Uncaught exception:', err.message, err.stack);
+});
+
 const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session } = require('electron');
 const path = require('path');
 const os = require('os');
@@ -257,7 +261,7 @@ function registerShortcut() {
     const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
       winSend('shortcut-triggered');
     });
-    if (fallbackRegistered) {
+    if (fallbackRegistered && win && !win.isDestroyed()) {
       win.webContents.on('did-finish-load', () => {
         winSend('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
       });
@@ -334,7 +338,7 @@ app.whenReady().then(async () => {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-  splashWin.loadFile('splash.html');
+  splashWin.loadFile(path.join(__dirname, 'splash.html'));
   splashWin.once('ready-to-show', () => {
     splashWin.show();
     splashWin.center();
