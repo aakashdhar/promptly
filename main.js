@@ -244,25 +244,30 @@ async function resolveWhisperPath() {
   return shellResolved;
 }
 
+function winSend(channel, payload) {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send(channel, payload);
+}
+
 function registerShortcut() {
   const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
-    win.webContents.send('shortcut-triggered');
+    winSend('shortcut-triggered');
   });
   if (!primaryRegistered) {
     const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
-      win.webContents.send('shortcut-triggered');
+      winSend('shortcut-triggered');
     });
     if (fallbackRegistered) {
       win.webContents.on('did-finish-load', () => {
-        win.webContents.send('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
+        winSend('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
       });
     }
   }
   globalShortcut.register('CommandOrControl+Shift+/', () => {
-    win.webContents.send('show-shortcuts');
+    winSend('show-shortcuts');
   });
   globalShortcut.register('Alt+P', () => {
-    win.webContents.send('shortcut-pause');
+    winSend('shortcut-pause');
   });
 }
 
@@ -290,9 +295,7 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'dist-renderer/index.html'))
   nativeTheme.on('updated', () => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
-    }
+    winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
   });
   return win;
 }
@@ -501,17 +504,17 @@ app.whenReady().then(async () => {
         label,
         type: 'checkbox',
         checked: currentMode === key,
-        click: () => { win.webContents.send('mode-selected', key); },
+        click: () => { winSend('mode-selected', key); },
       })),
       { type: 'separator' },
       {
         label: 'Keyboard shortcuts ⌘?',
-        click: () => { win.webContents.send('show-shortcuts'); },
+        click: () => { winSend('show-shortcuts'); },
       },
       { type: 'separator' },
       {
         label: 'History ⌘H',
-        click: () => { win.webContents.send('show-history'); },
+        click: () => { winSend('show-history'); },
       },
     ]);
     menu.popup({ window: win });
