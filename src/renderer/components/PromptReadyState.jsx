@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-function renderPromptOutput(text) {
+function renderPromptOutput(text, labelColor = 'rgba(100,170,255,0.42)') {
   if (!text) return null
   const lines = text.split('\n')
   const result = []
@@ -21,7 +21,7 @@ function renderPromptOutput(text) {
         <span
           key={key++}
           className="block text-[8.5px] font-bold tracking-[0.14em] uppercase mb-[6px] mt-5 first:mt-0"
-          style={{ color: 'rgba(100,170,255,0.42)' }}
+          style={{ color: labelColor }}
         >
           {m[1].trim()}
         </span>
@@ -129,7 +129,7 @@ export default function PromptReadyState({
           style={{ gap: '8px', color: 'rgba(255,255,255,0.4)', WebkitAppRegion: 'no-drag' }}
         >
           <span style={{ color: '#30D158', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
-          <span>Prompt ready</span>
+          <span>{mode === 'refine' ? 'Refinement prompt ready' : 'Prompt ready'}</span>
         </div>
         <div className="flex" style={{ gap: '16px', WebkitAppRegion: 'no-drag' }}>
           <button
@@ -214,7 +214,7 @@ export default function PromptReadyState({
           WebkitAppRegion: 'no-drag',
         }}
       >
-        {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt)}
+        {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt, mode === 'refine' ? 'rgba(168,85,247,0.7)' : 'rgba(100,170,255,0.42)')}
       </div>
 
       {/* BUTTON ROW */}
@@ -240,7 +240,9 @@ export default function PromptReadyState({
           className={`flex-1 cursor-pointer text-[13px] font-semibold tracking-[0.02em] rounded-[10px] text-white transition-shadow duration-150 ${
             isCopied
               ? 'hover:shadow-[0_4px_28px_rgba(48,209,88,0.65)]'
-              : 'hover:shadow-[0_4px_28px_rgba(10,132,255,0.65)]'
+              : mode === 'refine'
+                ? 'hover:shadow-[0_4px_28px_rgba(168,85,247,0.65)]'
+                : 'hover:shadow-[0_4px_28px_rgba(10,132,255,0.65)]'
           }`}
           id="btn-copy"
           onClick={handleCopy}
@@ -250,10 +252,14 @@ export default function PromptReadyState({
             borderTop: '0.5px solid rgba(255,255,255,0.18)',
             background: isCopied
               ? 'linear-gradient(135deg, rgba(48,209,88,0.92), rgba(30,168,70,0.92))'
-              : 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
+              : mode === 'refine'
+                ? 'linear-gradient(135deg, rgba(168,85,247,0.85), rgba(139,60,220,0.85))'
+                : 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
             boxShadow: isCopied
               ? '0 2px 20px rgba(48,209,88,0.4)'
-              : '0 2px 20px rgba(10,132,255,0.4)',
+              : mode === 'refine'
+                ? '0 2px 16px rgba(168,85,247,0.3)'
+                : '0 2px 20px rgba(10,132,255,0.4)',
           }}
         >
           {isCopied ? 'Copied ✓' : 'Copy prompt'}

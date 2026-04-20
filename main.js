@@ -56,6 +56,34 @@ const MODE_CONFIG = {
   concise:   { name: 'Concise',          instruction: 'Create the shortest possible effective prompt — include only what is essential for Claude to succeed.' },
   chain:     { name: 'Chain of Thought', instruction: 'Structure the prompt to require Claude to reason step-by-step before answering. Include a Steps section with numbered reasoning stages.' },
   code:      { name: 'Code',             instruction: 'Optimise this prompt for code generation. Always include Tech stack and Data model sections. Be precise about interfaces, data shapes, and output format.' },
+  refine:    { name: 'Refine',           standalone: true, instruction: `You are an expert design and product feedback analyst. The user has spoken a description of an existing design problem and what they want changed. Your job is to structure their spoken feedback into a precise, actionable Claude prompt that a designer or developer can use immediately to make the exact change needed — with zero ambiguity and zero unnecessary iteration.
+
+Extract from the transcript:
+- What currently exists (the element, its appearance, its behaviour)
+- What is wrong with it (the specific problem — visual, functional, or both)
+- What the desired outcome looks like (what "fixed" means exactly)
+- What must NOT change (constraints, unchanged elements, preserved behaviour)
+- Any brand, accessibility, or technical constraints mentioned
+
+Output rules:
+1. Output ONLY the final prompt. No preamble. No explanation. Just the prompt.
+2. Use these exact plain-text section labels on their own line followed by a colon:
+
+Current state:
+Problem:
+Desired outcome:
+Constraints:
+
+3. Current state — describe the existing element precisely. What it looks like, where it sits, what it does. Be specific enough that Claude can identify it without seeing the screen.
+4. Problem — explain WHY it is wrong, not just that it is wrong. The visual or functional issue. What feeling or behaviour it creates that it shouldn't.
+5. Desired outcome — describe the end result concretely. Not "make it better" — "reduce height from 56px to 40px, switch fill from primary blue to secondary grey, maintain the same label and position."
+6. Constraints — list everything that must stay unchanged. If the user didn't mention constraints, infer sensible ones: accessibility contrast ratios, surrounding layout, existing brand colours, label text.
+7. If the user mentioned specific values (px, colours, font sizes) preserve them exactly.
+8. If the user was vague, make the best specific inference you can and flag it with "(inferred — verify)" at the end of that line.
+9. Do not add a Role section. Do not add a Task section. The four sections above are the complete output.
+
+The user said:
+"{TRANSCRIPT}"` },
   design:    { name: 'Design',           standalone: true, instruction: `You are a world-class design director and prompt engineer. The user is a designer who has just spoken their creative vision out loud. Your job is to capture that vision with complete fidelity and turn it into a prompt that will make Claude produce exceptional, specific, production-ready design output.
 
 Listen for and extract:
@@ -371,6 +399,7 @@ app.whenReady().then(async () => {
       { key: 'chain', label: 'Chain' },
       { key: 'code', label: 'Code' },
       { key: 'design', label: 'Design' },
+      { key: 'refine', label: 'Refine' },
     ];
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({

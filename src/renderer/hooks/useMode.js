@@ -7,6 +7,7 @@ const MODE_LABELS = {
   chain: 'Chain',
   code: 'Code',
   design: 'Design',
+  refine: 'Refine',
 }
 
 export default function useMode() {
