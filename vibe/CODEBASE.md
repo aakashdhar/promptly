@@ -21,17 +21,18 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html) | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React) | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset, scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `handleDismiss()`, `handleRegenerate()`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `startTimer()`, `pauseTimer()`, `stopTimer()`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
-| `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, stop | — |
+| `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
+| `src/renderer/components/PausedState.jsx` | PAUSED panel — dismiss, flat amber line, amber timer, resume (▶), stop, status text | props: duration, onResume, onStop, onDismiss |
 | `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup | — |
 | `src/renderer/components/ThinkingState.jsx` | THINKING panel — status badge, morph wave, YOU SAID | — |
 | `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
@@ -70,7 +71,7 @@
 | `show-language-menu` | renderer → main | ✅ registered — builds native radio menu from passed languages array, sends `language-selected` to renderer on click |
 | `language-selected` | main → renderer | ✅ sent from show-language-menu click handler with language code |
 | `show-shortcuts` | main → renderer | ✅ registered — sent by CommandOrControl+Shift+/ global shortcut or "Keyboard shortcuts ⌘?" context menu item |
-| `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut (Phase 2 pause/resume — stub) |
+| `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut; wired in App.jsx via onShortcutPause — toggles pause/resume |
 | `save-file` | renderer → main | ✅ registered — dialog.showSaveDialog + fs.writeFileSync; returns `{ ok, filePath }` or `{ ok: false }` |
 | `resize-window-width` | renderer → main | ✅ registered — win.setSize(width, h, true) with setResizable guards |
 | `set-window-size` | renderer → main | ✅ registered — win.setMinimumSize + setMaximumSize + setSize(width, height) atomically; used by openHistory/closeHistory to avoid race condition between separate width/height calls |
@@ -89,7 +90,8 @@
 | State | Panel ID | Height | Notes |
 |-------|----------|--------|-------|
 | `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint, ⌘? hint |
-| `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/stop buttons; traffic lights hidden |
+| `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
+| `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
@@ -112,9 +114,12 @@
 | `stateRef` | useRef string | mirrors currentState — stale-closure-safe for IPC handlers | onShortcutTriggered callback, onShowShortcuts callback, keydown listener |
 | `prevStateRef` | useRef string | state before SHORTCUTS or HISTORY transition — for Done/Close button return | ShortcutsPanel onClose handler, HistoryPanel onClose handler |
 | `generatedPromptRef` | useRef string | mirrors generatedPrompt — stale-closure-safe for keydown listener | ⌘C handler |
-| `mediaRecorderRef` | useRef MediaRecorder\|null | startRecording, handleDismiss | stopRecording, handleDismiss |
+| `mediaRecorderRef` | useRef MediaRecorder\|null | startRecording, handleDismiss | stopRecording, handleDismiss, pauseRecording, resumeRecording |
 | `audioChunksRef` | useRef Blob[] | startRecording ondataavailable | stopRecording onstop |
 | `isProcessingRef` | useRef boolean | stopRecording start/end guard | stopRecording early-exit guard |
+| `isPausedRef` | useRef boolean | pauseRecording/resumeRecording/handleDismiss | guard |
+| `recTimerRef` | useRef interval\|null | startTimer/pauseTimer/stopTimer | cleared on pause/stop/dismiss |
+| `recSecs` | useState number | startTimer interval | duration formatting for RecordingState + PausedState |
 
 ## Module-scope variables (in index.html — legacy, main branch only)
 

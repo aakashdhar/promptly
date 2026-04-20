@@ -445,3 +445,27 @@ Never: dangerouslySetInnerHTML with dynamic content · localStorage direct acces
 - Introducing a framework, bundler, or build step
 - Mutating `originalTranscript` after recording stops
 
+
+---
+
+### Active Feature: FEATURE-011 (Pause and Resume Recording)
+> Folder: vibe/features/2026-04-20-pause-resume/ | Added: 2026-04-20
+> Status: COMPLETE 2026-04-20
+
+**Feature summary**: PAUSED state with amber UI — MediaRecorder.pause/resume, timer persists across transitions, Alt+P shortcut toggles, PausedState.jsx component.
+**Files in scope**: `src/renderer/App.jsx`, `src/renderer/components/RecordingState.jsx`, `src/renderer/components/PausedState.jsx`, `src/renderer/index.css`, `preload.js`
+**Files out of scope**: `main.js` (Alt+P already registered), all other components
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `recSecs` (useState) owned by App.jsx — passed as `duration` string to RecordingState and PausedState
+- `pauseRecording`/`resumeRecording` use stable refs (pauseRecordingRef/resumeRecordingRef)
+- `transition()` hides traffic lights for PAUSED same as RECORDING
+- Timer helpers `startTimer`/`pauseTimer`/`stopTimer` are plain functions (not useCallback)
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run `npm run build:renderer` to verify · run lint before commit
+Never: dangerouslySetInnerHTML · mutate originalTranscript · touch files not in scope list
+
+---

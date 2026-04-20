@@ -712,3 +712,20 @@ Key fixes applied:
 - **Alternatives considered**: Using PROMPT_TEMPLATE with a refine-specific instruction — rejected because Refine has its own distinct 4-section output format that must not be wrapped in the generic Role/Task/Context/Constraints/Output format template
 - **Impact on other tasks**: None. Mode system is additive by design.
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-011 (Pause and Resume Recording) — 2026-04-20
+> Folder: vibe/features/2026-04-20-pause-resume/
+> Add pause/resume to recording flow — PAUSED state with amber UI, timer persistence, Alt+P shortcut.
+> Tasks: PAUZ-001 · PAUZ-002 · PAUZ-003 | Estimated: ~3-4 hours
+> Note: Unplanned addition — not in original PLAN.md feature map.
+
+### D-PAUZ-001 — Pause/resume is an unplanned addition
+- **Date**: 2026-04-20 · **Task**: PAUZ-001 · **Type**: scope-change
+- **What was planned**: PLAN.md has no pause/resume entry — original spec had IDLE/RECORDING/THINKING/PROMPT_READY/ERROR
+- **What was done**: Added PAUSED as an 8th state (after SHORTCUTS and HISTORY). Timer lifted from RecordingState to App.jsx to persist across RECORDING↔PAUSED transitions. MediaRecorder.pause()/resume() used natively — audio chunks accumulate across pause/resume automatically.
+- **Why**: User-requested addition. Alt+P shortcut was already stubbed in main.js (FSC-004). onShortcutPause was the missing link.
+- **Alternatives considered**: Keeping timer in RecordingState and passing it back up on pause — rejected because parent-owns-state is simpler and avoids ref-forwarding complexity.
+- **Impact on other tasks**: transition() updated to hide traffic lights for PAUSED (same as RECORDING). stopRecording() works from 'paused' MediaRecorder state natively.
+- **Approved by**: human

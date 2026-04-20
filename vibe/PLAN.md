@@ -130,6 +130,12 @@ Phase 1 complete (Electron shell + IPC skeleton + PATH resolution)
 
 ### Unplanned additions (Phase 4+)
 
+#### FEATURE-011 — Pause and Resume Recording ← UNPLANNED ADDITION ✅ COMPLETE 2026-04-20
+> Added: 2026-04-20 · See DECISIONS.md D-PAUZ-001 for context
+> Build order: after FEATURE-004 (React migration) — extends recording state machine
+> Depends on: STATES/STATE_HEIGHTS pattern in App.jsx, Alt+P stub from FEATURE-006 (FSC-004)
+> Shared data: reads/writes mediaRecorderRef; recSecs state new (timer lifted to App.jsx)
+
 #### FEATURE-010 — Refine Mode ← UNPLANNED ADDITION ✅ COMPLETE 2026-04-20
 > Added: 2026-04-20 · See DECISIONS.md D-RFNE-001 for context
 > Build order: after FEATURE-002 (Design mode) — extends mode infrastructure

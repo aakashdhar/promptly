@@ -218,36 +218,27 @@
    [x] RFNE-005 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md + TASKS.md updated
    → Full specs: vibe/features/2026-04-20-refine-mode/FEATURE_TASKS.md (agent use)
 
+✅ **FEATURE-011 — Pause and Resume Recording** (3/3 — COMPLETE 2026-04-20)
+   Estimated: approx. 3-4 hours (S: 1, M: 2)
+   [x] PAUZ-001 · Core state, timer, pause/resume logic — App.jsx + preload.js
+   [x] PAUZ-002 · RecordingState pause button + PausedState.jsx + pauseGlow keyframe
+   [x] PAUZ-003 · Wire PAUSED render in App.jsx + CODEBASE.md update
+   → Full specs: vibe/features/2026-04-20-pause-resume/FEATURE_TASKS.md (agent use)
+
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ---
 
 ## What just happened
-✅ FEATURE-010 — Refine Mode — complete 2026-04-20
-   - main.js: `refine` added to MODE_CONFIG with standalone 4-section system prompt
-   - useMode.js: `refine: 'Refine'` added to MODE_LABELS
-   - IdleState.jsx: purple mode pill, pulse ring, mic SVG stroke, subtitle text when mode === 'refine'
-   - PromptReadyState.jsx: status line → 'Refinement prompt ready'; section labels → purple rgba(168,85,247,0.7); copy button → purple gradient
-   - lint: 0 errors
-   - HistoryPanel.jsx fully rewritten with inline styles
-   - App.jsx root container switched to inline width:100%
-   - set-window-size IPC added (atomic width+height, min/max constraints)
-   - BrowserWindow minWidth/maxWidth constraint discovered and handled
-
-✅ Manual smoke test — ⌘H, history list, search, delete, reuse, clear all (human-confirmed 2026-04-19)
-✅ review: FEATURE-009 — Score 8.6/10 (B+) — 0 P0, 2 P1 logged
-
-✅ Review fixes — FEATURE-009 gate (2/2 ✅)
-   [x] RFX-F009-001 · Remove console.log from App.jsx line 53
-   [x] RFX-F009-002 · Update ARCHITECTURE.md — 4 IPC channels added + stack section updated to React/Vite
-   [x] BL-028 · Document closeHistory→IDLE in DECISIONS.md (D-BUG-011-B)
-   [x] BL-029 · Comment minWidth/maxWidth in createWindow explaining set-window-size override
-
-💰 Cost tracked — Session #13: ~$0.17 est. (startup + vibe-cost only)
-   Project total: ~$11.87 est. (7 Phase 4 sessions untracked, retroactively estimated)
-   Tracked sessions: 13 | Untracked gap: ~$4.65 (FEATURE-004 through BUG-011)
-   vibe/cost/report-2026-04-19-session13.md
+✅ FEATURE-011 — Pause and Resume Recording — complete 2026-04-20
+   - preload.js: `onShortcutPause` added — wires existing shortcut-pause IPC channel
+   - App.jsx: PAUSED state + STATE_HEIGHTS.PAUSED=89, recSecs/recTimerRef/isPausedRef, startTimer/pauseTimer/stopTimer, pauseRecording/resumeRecording, onShortcutPause handler, PAUSED render, duration prop passed to RecordingState
+   - RecordingState.jsx: internal timer removed, accepts duration+onPause props, amber pause button added
+   - PausedState.jsx: new component — flat amber line, amber timer, resume/stop buttons, status text
+   - index.css: pauseGlow @keyframes + --animate-pause-glow token added
+   - build: ✅ vite build succeeded, 30 modules
+   - lint: ✅ 0 errors
 
 ## What's next
-⬜ Smoke test FEATURE-010: right-click → Refine → purple UI → record → 4 sections → purple labels → copy → green flash → restart → mode persists
+⬜ Smoke test FEATURE-011: record → pause button visible → tap pause → amber flat line + status text → tap resume → waveform restarts → stop → transcript processes → Alt+P toggles
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
