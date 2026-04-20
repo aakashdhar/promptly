@@ -298,22 +298,17 @@ async function runChecks() {
 
   await new Promise(r => setTimeout(r, 200));
   setCheck('mic', 'checking');
+  await new Promise(r => setTimeout(r, 300));
 
-  const micResult = await window.electronAPI.checkMicStatus();
-  if (!micResult.granted) {
-    setCheck('mic', 'fail');
-    showReady('Microphone access denied — check System Preferences', true);
-    return;
-  }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     stream.getTracks().forEach(t => t.stop());
-  } catch {
+    setCheck('mic', 'done');
+  } catch (err) {
     setCheck('mic', 'fail');
     showReady('Microphone access denied — check System Preferences', true);
     return;
   }
-  setCheck('mic', 'done');
 
   await new Promise(r => setTimeout(r, 300));
   showReady('All checks passed — launching');

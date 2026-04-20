@@ -378,15 +378,13 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('request-mic', async () => {
-    const granted = await systemPreferences.askForMediaAccess('microphone');
-    return { ok: granted };
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    return { ok: status === 'granted' };
   });
 
   ipcMain.handle('check-mic-status', async () => {
-    // askForMediaAccess uses the native macOS TCC API — persists for unsigned apps,
-    // returns true immediately without a prompt if permission was already granted
-    const granted = await systemPreferences.askForMediaAccess('microphone');
-    return { granted };
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    return { granted: status === 'granted' };
   });
 
   // P1-008: IPC handlers
