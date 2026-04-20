@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/CODEBASE.md + source files",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-20T00:00:00Z",
-    "update_count": 3,
+    "last_updated": "2026-04-20T16:00:00Z",
+    "update_count": 4,
     "project": "promptly",
-    "update_note": "Incremental update — FEATURE-011 pause/resume: added PausedState.jsx node; updated App.jsx (PAUSED state, timer logic, pauseRecording/resumeRecording, PausedState import); updated RecordingState.jsx (stateless timer, onPause prop); updated preload.js (onShortcutPause); updated index.css (pauseGlow keyframe); added pause-resume concept"
+    "update_note": "Incremental update — FEATURE-012 iteration mode: added IteratingState.jsx node; updated App.jsx (ITERATING state, iterationBase/isIterated/iterRecorderRef refs, startIteration/stopIteration, generate-raw IPC call); updated main.js (generate-raw handle); updated preload.js (generateRaw exposed); updated PromptReadyState.jsx (iterate button); updated history.js + HistoryPanel.jsx (isIteration flag); updated index.css (iterGlow keyframe)"
   },
 
   "package.json": {
@@ -85,8 +85,8 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.90,
     "concept_evidence": "Electron main process — owns IPC hub, window lifecycle, PATH resolution; touched by multiple features but no single feature owns it",
-    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export"],
-    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export)",
+    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export", "iteration-mode"],
+    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode)",
     "imports": [
       {
         "file": "preload.js",
@@ -115,7 +115,7 @@
       "resize-window", "transcribe-audio", "show-mode-menu",
       "set-window-buttons-visible", "splash-done", "splash-check-cli",
       "splash-check-whisper", "splash-open-url", "request-mic",
-      "get-theme", "save-file", "resize-window-width", "set-window-size"
+      "get-theme", "save-file", "resize-window-width", "set-window-size", "generate-raw"
     ],
     "ipc_sends": ["shortcut-triggered", "shortcut-conflict", "mode-selected", "theme-changed", "show-history", "show-shortcuts"],
     "key_vars": ["claudePath", "whisperPath", "win", "splashWin", "tray", "PROMPT_TEMPLATE", "MODE_CONFIG"],
@@ -193,7 +193,8 @@
       "transcribeAudio", "splashDone", "splashCheckCLI", "splashCheckWhisper",
       "splashOpenURL", "requestMic", "onShortcutTriggered", "onShortcutConflict",
       "getTheme", "onThemeChanged", "onShowShortcuts", "saveFile",
-      "resizeWindowWidth", "setWindowSize", "onShowHistory", "onShortcutPause"
+      "resizeWindowWidth", "setWindowSize", "onShowHistory", "onShortcutPause",
+      "generateRaw"
     ],
     "rationale": [
       {
@@ -205,6 +206,12 @@
       {
         "type": "DECISION",
         "text": "onShortcutPause added (FEATURE-011) — shortcut-pause IPC channel existed since FSC-004 (Alt+P stub) but was never wired to renderer via contextBridge until pause/resume was implemented",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "generateRaw added (FEATURE-012) — separate from generatePrompt; takes { systemPrompt } directly (no PROMPT_TEMPLATE wrapper) to support iteration's custom combined prompt; IPC channel is 'generate-raw'",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
@@ -287,7 +294,7 @@
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
     "concept_evidence": "Tailwind v4 entry — @import 'tailwindcss', @theme tokens, @keyframes, body reset",
-    "secondary_concepts": ["pause-resume"],
+    "secondary_concepts": ["pause-resume", "iteration-mode"],
     "imports": [],
     "imported_by": [
       { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
@@ -296,6 +303,12 @@
       {
         "type": "DECISION",
         "text": "pauseGlow @keyframes added (FEATURE-011) — amber glow animation for pause/resume buttons; inline animation: property references this keyframe name directly since Tailwind @theme token generates [animation:pauseGlow_2s_ease-in-out_infinite] class",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "iterGlow @keyframes added (FEATURE-012) — violet/indigo glow animation for IteratingState; IteratingState.jsx references it inline as animation:'iterGlow 2s ease-in-out infinite' (no Tailwind class)",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
@@ -309,7 +322,7 @@
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
     "concept_evidence": "Root state machine — owns STATES, STATE_HEIGHTS, transition(), all IPC listeners, recording flow, theme wiring",
-    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export", "pause-resume"],
+    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export", "pause-resume", "iteration-mode"],
     "imports": [
       { "file": "src/renderer/hooks/useMode.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 2" },
       { "file": "src/renderer/hooks/useWindowResize.js",            "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 3" },
@@ -321,13 +334,14 @@
       { "file": "src/renderer/components/ThinkingState.jsx",        "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 9" },
       { "file": "src/renderer/components/PromptReadyState.jsx",     "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 10" },
       { "file": "src/renderer/components/ErrorState.jsx",           "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 11" },
-      { "file": "src/renderer/utils/history.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 12 — saveToHistory" }
+      { "file": "src/renderer/components/IteratingState.jsx",       "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 12 — added FEATURE-012" },
+      { "file": "src/renderer/utils/history.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 13 — saveToHistory" }
     ],
     "imported_by": [
       { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
     ],
-    "key_vars": ["STATES", "STATE_HEIGHTS", "recSecs", "recTimerRef", "isPausedRef"],
-    "key_functions": ["transition", "startRecording", "stopRecording", "pauseRecording", "resumeRecording", "handleDismiss", "handleRegenerate", "openHistory", "closeHistory", "startTimer", "pauseTimer", "stopTimer"],
+    "key_vars": ["STATES", "STATE_HEIGHTS", "recSecs", "recTimerRef", "isPausedRef", "iterationBase", "isIterated", "iterRecorderRef", "iterChunksRef", "iterIsProcessingRef"],
+    "key_functions": ["transition", "startRecording", "stopRecording", "pauseRecording", "resumeRecording", "handleDismiss", "handleRegenerate", "openHistory", "closeHistory", "startTimer", "pauseTimer", "stopTimer", "startIteration", "stopIteration"],
     "ipc_consumed": ["window.electronAPI.*"],
     "rationale": [
       {
@@ -357,6 +371,24 @@
       {
         "type": "DECISION",
         "text": "transition() hides traffic lights for both RECORDING and PAUSED — PAUSED state must not show window chrome; same UX rationale as RECORDING",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "Separate iterRecorderRef for iteration recording — FEATURE-012 spec rule: never reuse mediaRecorderRef for iteration to avoid overwriting a running main recording session state",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "iterationBase useRef stores { transcript, prompt, mode } snapshot at ↻ tap — generate-raw IPC needs original prompt + new iter text combined; snapshot prevents stale closure over generatedPrompt state",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "originalTranscript.current updated to iterText after successful iteration — allows infinite chained iterations; each iter becomes the base for the next; deliberately mutates the ref (exception to the ARCHITECTURE.md immutability rule, documented in DECISIONS.md D-010)",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
@@ -563,10 +595,36 @@
     "concept": "actions",
     "concept_source": "INFERRED",
     "concept_confidence": 0.90,
-    "secondary_concepts": ["export"],
+    "secondary_concepts": ["export", "iteration-mode"],
     "imports": [],
     "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
     "rationale": []
+  },
+
+  "src/renderer/components/IteratingState.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "iteration-mode",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "vibe/features/2026-04-20-iteration-mode/ — ITR-002 Touches field; sole purpose is ITERATING state UI",
+    "imports": [],
+    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 12" }],
+    "props": ["onStop", "onDismiss"],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "All styles inline — no Tailwind classes, matching HistoryPanel.jsx pattern; avoids Tailwind JIT purge issues for rarely-activated ITERATING state",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "Uses iterGlow @keyframes from index.css inline — violet/indigo colour distinguishes ITERATING from RECORDING (blue waveform) and PAUSED (amber); visual hierarchy: new input=violet, prev recording=blue",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
   },
 
   "src/renderer/components/ErrorState.jsx": {
