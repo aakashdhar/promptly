@@ -235,6 +235,8 @@
 
 ✅ FEATURE-011 — Pause and Resume Recording — complete 2026-04-20
 ✅ DESIGN-001 — Vibrancy removed + ambient glow added — complete 2026-04-20 (D-008, D-009)
+💰 Cost tracked — Session #15: ~$0.35 est. | Project total: ~$8.24 est. | ↓ -29% vs 4-session avg
+   vibe/cost/report-2026-04-20-session15.md
    - preload.js: `onShortcutPause` added — wires existing shortcut-pause IPC channel
    - App.jsx: PAUSED state + STATE_HEIGHTS.PAUSED=89, recSecs/recTimerRef/isPausedRef, startTimer/pauseTimer/stopTimer, pauseRecording/resumeRecording, onShortcutPause handler, PAUSED render, duration prop passed to RecordingState
    - RecordingState.jsx: internal timer removed, accepts duration+onPause props, amber pause button added

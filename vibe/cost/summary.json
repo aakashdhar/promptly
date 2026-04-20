@@ -2,10 +2,10 @@
   "project_name": "Promptly",
   "generated": "2026-04-20",
   "model": "claude-sonnet-4-6",
-  "total_cost_usd": 7.894,
-  "total_sessions": 14,
-  "build_progress_pct": 98,
-  "tasks_remaining": 2,
+  "total_cost_usd": 8.244,
+  "total_sessions": 15,
+  "build_progress_pct": 97,
+  "tasks_remaining": 3,
   "phase_summary": [
     {
       "phase": "Planning",
@@ -34,8 +34,8 @@
     {
       "phase": "Phase 4 \u2014 v2 Features",
       "status": "active",
-      "sessions": 4,
-      "cost_usd": 2.273
+      "sessions": 5,
+      "cost_usd": 1.949
     }
   ],
   "feature_costs": [
@@ -48,7 +48,7 @@
       "cost_usd": 2.074
     },
     {
-      "label": "Bug fixes & polish (Phase 2/3)",
+      "label": "Bug fixes & design polish (Phase 2/3)",
       "cost_usd": 1.565
     },
     {
@@ -66,40 +66,38 @@
     {
       "label": "Pause/resume recording (FEATURE-011)",
       "cost_usd": 0.674
+    },
+    {
+      "label": "Visual design \u2014 dark glass, ambient glow (DESIGN-001)",
+      "cost_usd": 0.35
     }
   ],
-  "at_a_glance": "You have spent .89 across 14 sessions. Phase 2 was the heaviest investment at .01 across 8 sessions \u2014 the core recording flow, Claude integration, and visual design all shipped there. Phase 4 v2 features are well-priced at .27 for React migration plus 7 new features. Costs are healthy relative to output.",
+  "at_a_glance": "You have spent $8.24 across 15 sessions building Promptly from blank canvas to a shipped macOS app. Phase 2 was the heaviest investment at $4.01 across 8 sessions \u2014 the core recording flow, Claude integration, bug fixes, and visual design all shipped there. Phase 4 v2 features have been well-priced at $1.95 for React migration plus 8 new features. Session 15 was the lightest yet at $0.35 \u2014 a small cosmetic pass removing vibrancy bleed-through and adding an ambient glow.",
   "session_narratives": {
-    "2026-04-18-001": "The kickoff session \u2014 brainstorm, architect, and spec review. Relatively expensive per task but unavoidable; these decisions shaped everything that followed.",
-    "2026-04-18-002": "Phase 1 foundation \u2014 11 tasks including parallel subagents for the full Electron shell, IPC skeleton, and PATH resolution. Most expensive single session at .30.",
+    "2026-04-18-001": "The kickoff session \u2014 brainstorm, architect, and spec review. Expensive per task but unavoidable; these decisions shaped everything that followed.",
+    "2026-04-18-002": "Phase 1 foundation \u2014 11 tasks including parallel subagents for the full Electron shell, IPC skeleton, and PATH resolution. Most expensive single session at $1.30.",
     "2026-04-18-003": "F-STATE planning session. Zero code tasks but produced the full spec, plan, and task breakdown for the state machine and UI skeleton.",
     "2026-04-18-004": "F-STATE build \u2014 5 tasks completing the full state machine, all 6 panels, CSS tokens, and IPC wiring.",
     "2026-04-18-005": "F-FIRST-RUN + F-SPEECH planning. Two feature specs in one session \u2014 heavy reading day.",
     "2026-04-18-006": "Finishing FRN-004, the last first-run task. Short session, mostly a single-task cleanup.",
-    "2026-04-18-007": "Design system implementation and 3 bug fixes. The L-sized design task dominated at /bin/zsh.27.",
+    "2026-04-18-007": "Design system implementation and 3 bug fixes. The L-sized design task dominated at ~$0.27.",
     "2026-04-18-008": "DECISION-004 (recording state moved into main window) plus BUG-004. Architecture refactor was the heavy lift.",
-    "2026-04-18-009": "Vibrancy, BUG-007, and FEATURE-001 splash screen. Splash screen was the L task at /bin/zsh.25.",
-    "2026-04-18-010": "Phase 2 review + all 11 review fixes applied in one session. phase-2-review alone consumed /bin/zsh.31.",
-    "2026-04-18-011": "Final review gate cleared \u2014 0 P0, 0 P1. Lean session; app was already in good shape.",
+    "2026-04-18-009": "Vibrancy, BUG-007, and FEATURE-001 splash screen. Splash screen was the L task at ~$0.25.",
+    "2026-04-18-010": "Phase 2 review + all 11 review fixes applied in one session. phase-2-review alone consumed ~$0.31.",
+    "2026-04-18-011": "Final review gate cleared \u2014 0 P0, 0 P1. Lean session; the app was already in good shape.",
     "2026-04-19-012": "v2 features day \u2014 history removal, language removal, and Phase 4 cleanup across 5 tasks.",
-    "2026-04-19-013": "Minimal startup + cost tracking session. No implementation tasks; cheapest session at /bin/zsh.165.",
-    "2026-04-20-014": "FEATURE-011 pause/resume \u2014 full feature from spec to shipping in one session. vibe-add-feature planning consumed 33% (/bin/zsh.225) of the /bin/zsh.674 total."
+    "2026-04-19-013": "Minimal startup + cost tracking session. No implementation tasks; cheapest session at $0.165.",
+    "2026-04-20-014": "FEATURE-011 pause/resume \u2014 full feature from spec to shipping in one session. vibe-add-feature planning consumed 33% ($0.225) of the $0.674 total.",
+    "2026-04-20-015": "DESIGN-001 \u2014 vibrancy removed and ambient blue/purple glow added. The lightest session in the project at $0.35. One small targeted change to 4 source files, logged as D-008 and D-009."
   },
   "recommendations": [
     {
       "code": "CP-05",
-      "title": "CLAUDE.md caching disabled \u2014 high-frequency edits preventing cache hits",
-      "body": "Every session adds or modifies an active feature section in CLAUDE.md, resetting the cache on every turn. With 14 sessions and 0 cache reads recorded, this is costing approximately /bin/zsh.15\u20130.20/session in avoidable input tokens. Splitting CLAUDE.md into a stable core (architecture rules, never list, naming conventions) and a volatile active-feature overlay would allow the stable portion to cache across the session.",
-      "saving": "save ~/bin/zsh.15\u20130.20/session",
+      "title": "CLAUDE.md caching still disabled \u2014 15 sessions, zero cache reads",
+      "body": "CLAUDE.md has grown significantly with active feature sections for F-SPEECH, F-CLAUDE, F-ACTIONS, FEATURE-004, FEATURE-007, FEATURE-009, and FEATURE-011 \u2014 all still live in the file even though those features are complete. It is now approximately 5,000 tokens and changes each session, preventing caching from ever activating. At this stage of the project, consider archiving the completed feature sections out of CLAUDE.md \u2014 the rules they enforced are now baked into the codebase. A leaner CLAUDE.md would cache reliably and save ~$0.10\u20130.15 per session.",
+      "saving": "save ~$0.10\u20130.15/session",
       "severity": "warn"
-    },
-    {
-      "code": "CP-06",
-      "title": "vibe-add-feature planning consumed 33% of session cost for a 3-task feature",
-      "body": "For FEATURE-011 (3 tasks, S/M sized), the vibe-add-feature skill cost /bin/zsh.225 \u2014 one third of the total session. The full spec/plan/tasks kit is valuable for complex features but over-engineered for small targeted additions like pause/resume. For features under 4 tasks with a fully-detailed inline spec already provided, a lightweight inline planning step would be more cost-efficient.",
-      "saving": "save ~/bin/zsh.10\u20130.15 on small features",
-      "severity": "ok"
     }
   ],
-  "forecast_narrative": "The project is ~98% complete \u2014 remaining work is distribution prep (notarisation, Sparkle auto-update, landing page) and smoke testing FEATURE-010 and FEATURE-011. These are S-sized tasks; expect /bin/zsh.10\u20130.25 to finish. Total project cost will land around .00\u20138.15, well within a lean internal tool budget."
+  "forecast_narrative": "The project is 97% complete \u2014 3 tasks remain: manual Phase 3 smoke test, broader distribution prep (notarisation, Sparkle, landing page). These are S-sized tasks. Expect $0.10\u20130.25 to finish. Total project cost will land around $8.35\u20138.50, comfortably within budget for a solo macOS utility built end-to-end with Claude."
 }
