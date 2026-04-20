@@ -776,3 +776,172 @@ Key fixes applied:
 > P0: 0 · P1: 2 (both fixed) · P2: 2 (acknowledged)
 > Action: fixed — both P1s resolved before build
 > Report: vibe/spec-reviews/2026-04-20-add-feature.md
+
+---
+
+## 2026-04-20 — UI Polish Pass (feat/ui-polish branch)
+
+### POLISH-001 — State transition animations
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Instant state snaps felt cheap. Added `displayState` + `stateClass` pattern: exit animation 120ms (opacity 1→0, translateY 0→-4px), gap 60ms, enter animation 200ms (opacity 0→1, translateY 6px→0). `animateToState()` helper called from `transition()`, `openHistory()`, `closeHistory()`. Logic state (`currentState`) updates immediately; visual state (`displayState`) lags 120ms to allow exit animation.
+
+### POLISH-002 — Window resize spring animation
+- **Date**: 2026-04-20 · **Type**: discovery
+- **Why**: Already implemented — `win.setSize(width, height, true)` was already present across all three resize IPC handlers (`resize-window`, `resize-window-width`, `set-window-size`). No change needed.
+
+### POLISH-003 — Typography hierarchy
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Status text ("Promptly is ready", "Building your prompt") → fontSize 13px, fontWeight 500, letterSpacing -0.01em, color rgba(255,255,255,0.82). Section labels → letterSpacing 0.12em (from 0.14em). Timer → fontWeight 400, letterSpacing 0.08em. Primary content → letterSpacing -0.01em.
+
+### POLISH-004 — Button hover states
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Buttons lacked hover feedback. Used onMouseEnter/onMouseLeave with local state for each button in PromptReadyState, HistoryPanel, ShortcutsPanel. Edit button border brightens on hover. Iterate gets text-shadow glow. Regenerate/Reset/Export/Done/Cancel fade from 0.58→0.80. Clear all red fades 0.55→0.75.
+
+### POLISH-005 — Pulse ring and mic breathing animation
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Two-ring system: inner ring uses new `pulse-inner` keyframe (scale 1→1.8, 2s), outer uses updated `pulse-expand` (scale 1→2.4, 2s, 0.5s delay). Mic SVG gets `mic-breathe` keyframe (scale 1.00↔1.06, 3s ease-in-out infinite).
+
+### POLISH-006 — Scrollbar refinement
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Replaced `.scrollbar-thin` class (opacity 0 → on-hover) with global `*::-webkit-scrollbar` rules: 3px width, transparent track, rgba(255,255,255,0.08) thumb always visible, 0.18 on hover. More legible and consistent.
+
+### POLISH-007 — Copy button success state
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Improved success state: green gradient rgba(48,209,88,0.85)→rgba(30,168,70,0.85), boxShadow 0 2px 16px rgba(48,209,88,0.35), text changed to '✓ Copied', transition: all 300ms ease on the button.
+
+### POLISH-008 — Section dividers in prompt output
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Added 0.5px rgba(255,255,255,0.04) horizontal dividers between each prompt section in renderPromptOutput. Divider inserted before every non-first label. Removed old mt-5/first:mt-0 margin approach.
+
+### POLISH-009 — Global text brightness pass
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: All text colors below rgba(255,255,255,0.5) were too dim on the dark glass background. Applied brightness map across all component files: white 0.14–0.45 → 0.45–0.75 range. Blue accent 0.42–0.55 → 0.70–0.80. Purple refine 0.7–0.9 → 0.85–1.0. Exceptions: borders, box shadows, backgrounds, ambient glows — unchanged.
+
+
+---
+
+### D-BUG-012 — PATH resolution expanded: common paths + zsh/bash fallback
+- **Date**: 2026-04-20 · **Task**: BUG-012 · **Type**: blocker-fix
+- **Root cause**: In packaged .app/.dmg builds, `exec('zsh -lc "which claude"')` silently fails because the process environment does not load the user's shell profile. `whisperPath` had an additional race condition — resolved via fire-and-forget callback, so `splash-check-whisper` could run before it was set.
+- **Files in scope**: `main.js`
+- **Fix approach**: `resolveClaudePath()` and new `resolveWhisperPath()` — both check a list of common installation paths via `fs.existsSync` first (no shell needed), then fall back to zsh login shell, then bash login shell. Whisper also tries `python3 -m whisper`. Both are `async` and `await`ed in `app.whenReady()` before any window is created.
+- **CODEBASE.md update**: Yes — `whisperPath` row + `resolveWhisperPath()` added to main.js exports
+- **ARCHITECTURE.md update**: Yes — PATH resolution section updated with expanded search pattern
+- **Deviations from BUG_PLAN.md**: None
+
+---
+
+### D-BUG-013 — Microphone permission dialog repeating: three root causes
+
+- **Date**: 2026-04-20 · **Type**: discovery + blocker-fix
+
+**Root cause A — `setPermissionCheckHandler` missing (critical)**
+Electron/Chromium has a two-step permission system for `getUserMedia`:
+1. **Check** (`setPermissionCheckHandler`): Chromium asks "do I already have this permission?" *before* opening the stream. If this returns `false` (or no handler is set), Chromium treats every call as a fresh request and re-prompts.
+2. **Request** (`setPermissionRequestHandler`): handles an incoming request when the check fails.
+We had only set the request handler. Without the check handler returning `true` for `'media'`, Chromium re-prompted on every single `getUserMedia` call — splash, recording start, iteration start — even in the same session.
+**Fix**: `session.defaultSession.setPermissionCheckHandler((_wc, p) => p === 'media')` — both handlers must be set together.
+
+**Root cause B — `request-mic` IPC was a no-op**
+The `request-mic` IPC handler returned `{ ok: true }` without calling `systemPreferences.askForMediaAccess`. This meant macOS TCC was only touched in splash, not refreshed before recording. On relaunches where TCC expired, `getUserMedia` hit an un-granted TCC entry.
+**Fix**: `request-mic` now calls `askForMediaAccess('microphone')`. `startRecording()` and `handleIterate()` in App.jsx call `requestMic()` before every `getUserMedia`.
+
+**Root cause C — `dist:unsigned` with `hardenedRuntime: true` and no signature**
+Hardened runtime entitlements (`com.apple.security.device.audio-input`) only apply to *signed* builds. An unsigned build with `hardenedRuntime: true` runs under hardened runtime restrictions without the entitlements that would bypass them — causing TCC to not persist between launches.
+**Fix**: `dist:unsigned` script now passes `--config.mac.hardenedRuntime=false`.
+
+**Key learnings for future Electron mic work:**
+- Always set BOTH `setPermissionCheckHandler` AND `setPermissionRequestHandler` — one without the other causes repeated prompts.
+- `systemPreferences.askForMediaAccess` (main process, macOS TCC) and `getUserMedia` (renderer, Chromium) are two separate layers. Both must agree.
+- `askForMediaAccess` returns `true` silently if TCC is already granted — safe to call before every recording start.
+- For unsigned DMG distribution: always set `hardenedRuntime: false` or the entitlements won't apply and TCC won't persist.
+
+---
+
+### D-BUG-013-B — Renderer process TCC grant missing — getUserMedia never primed in splash
+- **Date**: 2026-04-20 · **Task**: BUG-013 · **Type**: blocker-resolution
+- **What was planned**: BUG-013 fix (D-BUG-013 above) was considered complete after setting both Electron session handlers and wiring `requestMic()` before every recording.
+- **What was done**: Added a `getUserMedia({ audio: true })` call (with immediate track release) inside the splash mic check block, after `checkMicStatus` returns granted, before showing the green checkmark.
+- **Why**: macOS TCC has **two separate process-level grants**:
+  1. Main process grant — obtained via `systemPreferences.askForMediaAccess()` from main.js. This is what the splash `check-mic-status` IPC was calling. It grants TCC for the **main process**.
+  2. Renderer helper process grant — only obtained when `getUserMedia` is called from a **renderer context**. In packaged Electron apps on macOS (esp. Sequoia/Darwin 25), the renderer runs as a separate subprocess (`Promptly Helper (Renderer).app`) with its own TCC entry requirement. `askForMediaAccess` from the main process does NOT cover the renderer subprocess.
+  
+  Result: splash passed green (main process TCC = granted), but the first `getUserMedia` call in the main window's renderer triggered the macOS dialog again because the renderer helper process had never been granted.
+
+  By calling `getUserMedia` inside the splash renderer context (then immediately releasing the stream), we prime the renderer helper's TCC grant during the controlled splash sequence — where the user expects to grant permissions — so subsequent `getUserMedia` calls in the main window are silent.
+
+- **Alternatives considered**: (1) Call `getUserMedia` from main window on first load before user presses shortcut — rejected, no clear hook without adding new IPC and timing complexity. (2) Use `setPermissionCheckHandler` return value to bypass TCC entirely — confirmed this only prevents Chromium's dialog, not macOS TCC. (3) Current fix — one `getUserMedia` in splash renderer, immediate track release. Minimal, correct, and happens at the expected "grant permissions" moment.
+- **Impact on other tasks**: None — splash.html only. No IPC changes.
+- **Approved by**: human
+
+---
+
+### D-BUG-014 — Whisper fails in DMG — ffmpeg not found, err swallowed, timeout too short
+- **Date**: 2026-04-20 · **Task**: BUG-014 · **Type**: blocker-resolution
+- **Symptom**: Recording stops → THINKING spins ~60s → ERROR state. Confirmed ffmpeg missing from packaged app PATH.
+- **Root causes**:
+  - **A — ffmpeg PATH too narrow**: whisperEnv only included 7 paths. Homebrew Cask ffmpeg lives at `/opt/homebrew/bin/ffmpeg`, conda variants live at `~/anaconda3/bin`, `~/miniconda3/bin`, `~/miniforge3/bin`. Old Homebrew at `/usr/local/opt/ffmpeg/bin`. All missing.
+  - **B — exec err swallowed**: callback read txtFile before checking `err`. If whisper exited non-zero, and a stale txtFile existed, it could resolve with wrong text. If no txtFile, the real error (from stderr) was only surfaced via the catch path — fragile ordering.
+  - **C — timeout 60s too short for first-run model download**: `--model tiny` is ~75MB. On a slow connection inside a DMG cold-start, download + transcription can exceed 60s. Increased to 90s.
+  - **D — Python env vars missing**: pyenv-managed whisper needs `PYENV_VERSION` and `PYTHONPATH` to resolve its packages. These were not forwarded.
+- **Fixes**:
+  1. Expanded `whisperEnv.PATH` to 13 entries covering all known ffmpeg install locations.
+  2. Added `PYENV_VERSION`, `PYTHONPATH` (forwarded from process.env if set), `PYTHONUNBUFFERED=1`.
+  3. `exec` callback checks `err` first, rejects immediately with `stderr || err.message`.
+  4. Timeout raised to 90000ms.
+  5. `splash-check-whisper` now also returns `ffmpegFound` (probes 4 common paths) — informational, not a blocker.
+  6. `--model tiny` confirmed already in use — no change.
+- **Impact on other tasks**: None — `transcribe-audio` handler only.
+- **Approved by**: human
+
+---
+
+### D-BUG-015 — TypeError Object destroyed + mic dialog repeating + double mic request
+- **Date**: 2026-04-20 · **Task**: BUG-015 · **Type**: blocker-resolution
+- **Symptom 1**: `TypeError: Object has been destroyed` on launch — splashWin internal Chromium IPC fires after the 400ms destroy timeout, hitting a dead webContents.
+- **Symptom 2**: Microphone permission dialog appears on every launch instead of only the first.
+- **Symptom 3**: Two consecutive TCC requests on recording start — could trigger a second dialog.
+- **Root causes**:
+  - **A — splash-done timeout too short**: `splash-done` handler destroys splashWin after 400ms. `getUserMedia` in splash renderer triggers async Chromium-internal IPC back through splashWin.webContents. With 400ms destroy the IPC arrives after destruction → TypeError.
+  - **B — hardenedRuntime: false**: Unsigned/unhardened app bundle has no code identity TCC can persist. macOS re-prompts every launch.
+  - **C — redundant requestMic() in startRecording**: `startRecording` and `handleIterate` both call `window.electronAPI.requestMic()` (which calls `askForMediaAccess` in main) and then immediately `getUserMedia`. With the session permission handlers in place this is redundant and risks a race on first recording.
+- **Fixes**:
+  1. `main.js` splash-done: timeout 400→1200ms. Added `isDestroyed()` guards on `splashWin` and `win` inside the timeout callback.
+  2. `package.json`: `hardenedRuntime: true`, `gatekeeperAssess: false`, `entitlements: "entitlements.plist"`, `entitlementsInherit: "entitlements.plist"`, `minimumSystemVersion: "12.0"`.
+  3. `entitlements.plist`: added `com.apple.security.network.client` key (was missing).
+  4. `App.jsx`: removed `await window.electronAPI.requestMic()` from `startRecording` and `handleIterate`. `getUserMedia({ audio: true, video: false })` handles TCC directly.
+- **Files in scope**: `main.js`, `package.json`, `entitlements.plist`, `src/renderer/App.jsx`
+- **Impact**: Smoke checklist: no TypeError on launch, mic dialog once only, recording starts silently.
+- **Approved by**: human
+
+---
+
+### D-BUG-016 — Mic permission dialog on every launch: askForMediaAccess is the wrong API
+- **Date**: 2026-04-20 · **Task**: BUG-016 · **Type**: blocker-resolution
+- **Symptom**: macOS microphone permission dialog appears on every launch, even after the user has clicked Allow.
+- **Root cause**: `check-mic-status` and `request-mic` IPC handlers both called `systemPreferences.askForMediaAccess('microphone')`. Despite documentation suggesting it returns immediately if already granted, `askForMediaAccess` re-shows the TCC dialog on every call for unsigned builds — it is an *active request* API, not a *status query* API.
+- **Fixes**:
+  1. `main.js` — `check-mic-status`: replaced `askForMediaAccess` with `systemPreferences.getMediaAccessStatus('microphone')`. Synchronous status-only query — no dialog, ever.
+  2. `main.js` — `request-mic`: same replacement. Returns `{ ok: status === 'granted' }` without side effects.
+  3. `splash.html` — `runChecks()` mic block: removed `window.electronAPI.checkMicStatus()` entirely. Replaced with direct `getUserMedia({ audio: true })` — the only call that correctly registers a TCC grant for the renderer helper process. First launch: dialog once. All subsequent launches: resolves silently.
+  4. `preload.js` — removed `checkMicStatus` and `requestMic` contextBridge exposures (confirmed unused in all renderer src).
+- **Why getUserMedia is correct**: `askForMediaAccess` grants TCC for the main process; `getUserMedia` in the renderer grants TCC for the renderer helper subprocess — the same context that handles all recording. Only `getUserMedia` in the splash renderer produces a persistent grant for recording.
+- **Files changed**: `main.js`, `preload.js`, `splash.html`
+- **Impact**: First launch → one dialog; all subsequent launches → zero dialogs; recording starts silently.
+- **Approved by**: human
+
+---
+
+### D-FEATURE-SIGNING — Self-signed code signing for persistent TCC mic permissions
+- **Date**: 2026-04-20 · **Task**: FEATURE-SIGNING · **Type**: tech-choice
+- **What was planned**: Unsigned builds (identity=null) for local distribution.
+- **What was done**: Added self-signed code signing scripts and npm commands so macOS TCC can persist the microphone permission grant across launches.
+- **Why**: Even with hardenedRuntime:true, an unsigned bundle has no persistent code identity. TCC may re-prompt on each launch. A self-signed certificate gives the bundle a stable identity without requiring an Apple Developer account or notarisation.
+- **Scripts added**:
+  - `scripts/create-cert.sh` — generates a 10-year RSA-2048 self-signed cert with codeSigning EKU, imports into login.keychain-db via openssl + security CLI. Idempotent (no-op if cert already exists).
+  - `scripts/sign-app.sh` — signs dylibs/frameworks first, then helper .app bundles, then the main bundle with --options runtime + entitlements.plist. Runs codesign --verify at end.
+  - `scripts/build-signed.sh` — orchestrates: build:renderer → electron-builder (unsigned pkg) → sign-app.sh → electron-builder dmg.
+- **npm scripts added**: `create-cert`, `sign-app`, `dist:signed`
+- **entitlements.plist**: already correct — no changes needed.
+- **Alternatives considered**: Apple Developer ID signing (requires paid account + notarisation). Ad-hoc signing (--sign - flag; no persistent identity, TCC still re-prompts).
+- **Impact on other tasks**: None. `dist:unsigned` remains unchanged. New workflow: run `npm run create-cert` once, then `npm run dist:signed` for any signed build.

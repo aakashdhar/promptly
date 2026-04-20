@@ -20,7 +20,7 @@
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
-| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
+| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `generateRaw`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React). Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
@@ -154,7 +154,7 @@
 | Variable | Set when | Value |
 |----------|----------|-------|
 | `claudePath` | app-ready — `resolveClaudePath()` Promise | resolved binary path or null |
-| `whisperPath` | app-ready — `exec('zsh -lc "which whisper"')` | resolved binary path or null |
+| `whisperPath` | app-ready — `resolveWhisperPath()` Promise (awaited) | resolved binary path, `'python3 -m whisper'`, or null |
 | `win` | `createWindow()` called after `resolveClaudePath()` resolves | BrowserWindow instance |
 | `splashWin` | `app.whenReady()` — created before `win`, destroyed after `splash-done` | BrowserWindow instance (null after splash) |
 | `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |

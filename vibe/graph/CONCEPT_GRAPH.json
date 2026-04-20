@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-20T16:00:00Z",
-    "update_count": 4,
+    "last_updated": "2026-04-20T20:00:00Z",
+    "update_count": 5,
     "project": "promptly",
-    "update_note": "Added iteration-mode concept (FEATURE-012); updated state-machine to 9 states + ITERATING/IteratingState.jsx; updated foundation/depended_on_by; updated actions depended_on_by; updated claude-integration depended_on_by"
+    "update_note": "Added signing concept (FEATURE-SIGNING); added ui-polish concept (POLISH-001–009); updated foundation files list (signing scripts); updated first-run to reference BUG-013/015/016 mic-permission fixes"
   },
 
   "foundation": {
@@ -22,10 +22,11 @@
       { "file": "index.html",                        "state": "built", "source": "AMBIGUOUS", "confidence": 0.50, "note": "legacy vanilla JS renderer — not loaded in production" },
       { "file": "src/renderer/App.jsx",              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
       { "file": "src/renderer/main.jsx",             "state": "built", "source": "INFERRED",  "confidence": 0.95 },
-      { "file": "src/renderer/hooks/useWindowResize.js", "state": "built", "source": "INFERRED", "confidence": 0.90 }
+      { "file": "src/renderer/hooks/useWindowResize.js", "state": "built", "source": "INFERRED", "confidence": 0.90 },
+      { "file": "scripts/generate-icon.js",          "state": "built", "source": "INFERRED", "confidence": 0.80 }
     ],
     "depends_on": [],
-    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray", "react-migration", "history-panel", "shortcuts", "export", "iteration-mode"],
+    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray", "react-migration", "history-panel", "shortcuts", "export", "iteration-mode", "signing", "ui-polish"],
     "tasks_complete": 9,
     "tasks_total": 9,
     "phase": "Phase 1 — complete",
@@ -73,7 +74,7 @@
   "first-run": {
     "state": "built",
     "type": "feature",
-    "description": "Launch-time splash screen with CLI + mic checks before main bar shows; replaces in-bar FIRST_RUN state (D-007)",
+    "description": "Launch-time splash screen with CLI + Whisper checks before main bar shows; seeds TCC mic grant via getUserMedia; check-mic-status IPC skips redundant grant if already granted. Replaces in-bar FIRST_RUN state (D-007). BUG-013/015/016 hardened the mic permission flow.",
     "files": [
       { "file": "splash.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
       { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
@@ -301,5 +302,50 @@
     "phase": "Phase 4 — complete 2026-04-20",
     "feature_folder": "vibe/features/2026-04-20-pause-resume",
     "notes": "Alt+P IPC (shortcut-pause) was stubbed in main.js since FSC-004 (FEATURE-006). onShortcutPause was the missing preload.js link. MediaRecorder handles audio chunk accumulation across pause/resume natively — no custom buffering needed."
+  },
+
+  "signing": {
+    "state": "built",
+    "type": "feature",
+    "description": "Self-signed certificate workflow for persistent TCC mic grant. create-cert.sh generates a macOS Keychain cert; sign-app.sh codesigns dist/mac-universal/Promptly.app with entitlements; build-signed.sh orchestrates the full flow. hardenedRuntime: true in package.json required. BUG-013/015/016 hardened the TCC grant pattern on the Electron side.",
+    "files": [
+      { "file": "scripts/create-cert.sh",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "scripts/sign-app.sh",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "scripts/build-signed.sh", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "entitlements.plist",      "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "sign-app.sh passes entitlements.plist to codesign" },
+      { "file": "package.json",            "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "hardenedRuntime: true, gatekeeperAssess: false, dist:signed script" }
+    ],
+    "depends_on": ["foundation"],
+    "depended_on_by": [],
+    "tasks_complete": 2,
+    "tasks_total": 2,
+    "phase": "Phase 4 — complete 2026-04-20",
+    "feature_folder": "vibe/features/2026-04-20-signing",
+    "notes": "Self-signed cert approach gives persistent TCC entry without Apple Developer Program. The cert-name 'Promptly Signing' must match across create-cert.sh and sign-app.sh. Broader notarisation (requires paid Developer account) is a future distribution task."
+  },
+
+  "ui-polish": {
+    "state": "built",
+    "type": "feature",
+    "description": "POLISH-001–009 premium UI pass: CSS transitions (opacity + translateY on state enter), font-weight calibration, hover states on all interactive elements, pulse ring refinements, custom scrollbar styles for HistoryPanel, text brightness tuning. All via index.css and component inline styles.",
+    "files": [
+      { "file": "src/renderer/index.css",                              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",                                "state": "built", "source": "INFERRED",  "confidence": 0.85 },
+      { "file": "src/renderer/components/IdleState.jsx",               "state": "built", "source": "INFERRED",  "confidence": 0.85 },
+      { "file": "src/renderer/components/RecordingState.jsx",          "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/PausedState.jsx",             "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/ThinkingState.jsx",           "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/PromptReadyState.jsx",        "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/ErrorState.jsx",              "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/HistoryPanel.jsx",            "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/ShortcutsPanel.jsx",          "state": "built", "source": "INFERRED",  "confidence": 0.80 },
+      { "file": "src/renderer/components/IteratingState.jsx",          "state": "built", "source": "INFERRED",  "confidence": 0.80 }
+    ],
+    "depends_on": ["foundation", "react-migration", "state-machine"],
+    "depended_on_by": [],
+    "tasks_complete": 1,
+    "tasks_total": 1,
+    "phase": "Phase 4 — complete 2026-04-20",
+    "notes": "POLISH-001–009 applied as a single commit (8cf7ee7). No new IPC channels, no new state. Pure visual layer on top of existing state machine."
   }
 }

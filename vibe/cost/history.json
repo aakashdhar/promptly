@@ -690,5 +690,80 @@
         "output_tokens": 3000
       }
     }
+  },
+  {
+    "session_id": "2026-04-20-016",
+    "date": "2026-04-20",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 7,
+    "phase": "Phase 4 \u2014 FEATURE-012 + BUG-012/013/014/015/016 + FEATURE-SIGNING",
+    "input_tokens": 237000,
+    "output_tokens": 30500,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 1.17,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "FEATURE-012-iteration": {
+        "size": "L",
+        "cost_usd": 0.3,
+        "input_tokens": 50000,
+        "output_tokens": 10000
+      },
+      "BUG-012-path-resolution": {
+        "size": "M",
+        "cost_usd": 0.12,
+        "input_tokens": 25000,
+        "output_tokens": 3000
+      },
+      "BUG-013-mic-permission": {
+        "size": "M",
+        "cost_usd": 0.12,
+        "input_tokens": 25000,
+        "output_tokens": 3000
+      },
+      "BUG-014-whisper-ffmpeg": {
+        "size": "M",
+        "cost_usd": 0.099,
+        "input_tokens": 20000,
+        "output_tokens": 2500
+      },
+      "BUG-015-object-destroyed": {
+        "size": "M",
+        "cost_usd": 0.128,
+        "input_tokens": 25000,
+        "output_tokens": 3500
+      },
+      "BUG-016-mic-dialog": {
+        "size": "S",
+        "cost_usd": 0.059,
+        "input_tokens": 12000,
+        "output_tokens": 1500
+      },
+      "FEATURE-SIGNING": {
+        "size": "M",
+        "cost_usd": 0.135,
+        "input_tokens": 25000,
+        "output_tokens": 4000
+      },
+      "context-overhead": {
+        "size": "S",
+        "cost_usd": 0.12,
+        "input_tokens": 40000,
+        "output_tokens": 0
+      },
+      "vibe-cost": {
+        "size": "S",
+        "cost_usd": 0.09,
+        "input_tokens": 15000,
+        "output_tokens": 3000
+      }
+    }
   }
 ]

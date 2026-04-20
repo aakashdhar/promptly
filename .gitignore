@@ -1,6 +1,7 @@
 node_modules/
 dist/
 out/
+dist-renderer/
 *.dmg
 *.pkg
 .DS_Store

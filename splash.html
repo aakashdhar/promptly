@@ -224,6 +224,9 @@ html, body {
     <button class="install-btn" id="install-btn">Install Claude CLI</button>
     <button class="install-btn" id="whisper-btn" style="display:none">Copy install command</button>
   </div>
+  <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:0.08em;color:rgba(255,255,255,0.12);pointer-events:none;user-select:none;">
+    built using vibe-* skills
+  </div>
 </div>
 
 <script>
@@ -295,12 +298,13 @@ async function runChecks() {
 
   await new Promise(r => setTimeout(r, 200));
   setCheck('mic', 'checking');
+  await new Promise(r => setTimeout(r, 300));
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     stream.getTracks().forEach(t => t.stop());
     setCheck('mic', 'done');
-  } catch (e) {
+  } catch (err) {
     setCheck('mic', 'fail');
     showReady('Microphone access denied — check System Preferences', true);
     return;

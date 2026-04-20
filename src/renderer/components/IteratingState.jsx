@@ -66,19 +66,21 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
         borderRadius: '10px',
         position: 'relative',
       }}>
+        {/* POLISH-009 blue: 0.55 → 0.80 */}
         <div style={{
           fontSize: '9px',
           fontWeight: 700,
-          letterSpacing: '.1em',
+          letterSpacing: '.10em',
           textTransform: 'uppercase',
-          color: 'rgba(100,180,255,0.55)',
+          color: 'rgba(100,180,255,0.80)',
           marginBottom: '4px',
         }}>
           ITERATING ON
         </div>
+        {/* 0.55 is above threshold, stays */}
         <div style={{
           fontSize: '12px',
-          color: 'rgba(255,255,255,0.55)',
+          color: 'rgba(255,255,255,0.58)',
           lineHeight: 1.55,
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -114,8 +116,9 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
           }}
           onClick={onDismiss}
         >
+          {/* POLISH-009: stroke 0.45 → 0.75 */}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
 
@@ -134,14 +137,16 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
           />
         </div>
 
+        {/* POLISH-003: timer fontWeight 400, letterSpacing 0.08em */}
         <span style={{
           fontSize: '11px',
-          fontWeight: 500,
-          color: 'rgba(255,255,255,0.55)',
+          fontWeight: 400,
+          color: 'rgba(255,255,255,0.60)',
           flexShrink: 0,
           minWidth: '28px',
           textAlign: 'right',
           fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '0.08em',
           WebkitAppRegion: 'no-drag',
         }}>
           {duration}

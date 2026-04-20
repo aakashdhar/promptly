@@ -1,6 +1,10 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog } = require('electron');
+process.on('uncaughtException', (err) => {
+  console.error('[Promptly] Uncaught exception:', err.message, err.stack);
+});
+
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -167,38 +171,107 @@ function createTray() {
   if (app.dock) app.dock.hide();
 }
 
-function resolveClaudePath() {
+async function resolveClaudePath() {
+  const commonPaths = [
+    '/usr/local/bin/claude',
+    '/usr/bin/claude',
+    path.join(os.homedir(), '.local/bin/claude'),
+    path.join(os.homedir(), '.npm-global/bin/claude'),
+    path.join(os.homedir(), 'node_modules/.bin/claude'),
+    '/opt/homebrew/bin/claude',
+    '/opt/local/bin/claude',
+  ];
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+  }
   return new Promise((resolve) => {
     exec('zsh -lc "which claude"', (err, stdout) => {
-      const p = stdout.trim();
-      if (err || !p) {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which claude"', (err2, stdout2) => {
+        if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
         resolve(null);
-      } else {
-        resolve(p);
-      }
+      });
     });
   });
 }
 
+function resolveShimToRealBinary(shimPath) {
+  // Shims (pyenv/conda) need their tool initialized at runtime — resolve to the real binary
+  // so it can be called directly without any shell environment
+  return new Promise((resolve) => {
+    exec('zsh -lc "pyenv which whisper 2>/dev/null"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "pyenv which whisper 2>/dev/null"', (err2, stdout2) => {
+        resolve(stdout2?.trim() || shimPath);
+      });
+    });
+  });
+}
+
+async function resolveWhisperPath() {
+  const commonPaths = [
+    '/usr/local/bin/whisper',
+    '/usr/bin/whisper',
+    path.join(os.homedir(), '.pyenv/shims/whisper'),
+    path.join(os.homedir(), '.local/bin/whisper'),
+    path.join(os.homedir(), '.local/pipx/venvs/openai-whisper/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.9/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.10/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.11/bin/whisper'),
+    path.join(os.homedir(), 'Library/Python/3.12/bin/whisper'),
+    '/opt/homebrew/bin/whisper',
+    '/opt/local/bin/whisper',
+  ];
+  for (const p of commonPaths) {
+    try {
+      if (fs.existsSync(p)) {
+        if (p.includes('.pyenv/shims/')) return resolveShimToRealBinary(p);
+        return p;
+      }
+    } catch { /* ignore */ }
+  }
+  const shellResolved = await new Promise((resolve) => {
+    exec('zsh -lc "which whisper"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which whisper"', (err2, stdout2) => {
+        if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
+        exec('zsh -lc "python3 -m whisper --help > /dev/null 2>&1 && echo found"', (err3, stdout3) => {
+          if (!err3 && stdout3.trim()) { resolve('python3 -m whisper'); return; }
+          resolve(null);
+        });
+      });
+    });
+  });
+  if (shellResolved && shellResolved.includes('.pyenv/shims/')) {
+    return resolveShimToRealBinary(shellResolved);
+  }
+  return shellResolved;
+}
+
+function winSend(channel, payload) {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send(channel, payload);
+}
+
 function registerShortcut() {
   const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
-    win.webContents.send('shortcut-triggered');
+    winSend('shortcut-triggered');
   });
   if (!primaryRegistered) {
     const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
-      win.webContents.send('shortcut-triggered');
+      winSend('shortcut-triggered');
     });
-    if (fallbackRegistered) {
+    if (fallbackRegistered && win && !win.isDestroyed()) {
       win.webContents.on('did-finish-load', () => {
-        win.webContents.send('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
+        winSend('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
       });
     }
   }
   globalShortcut.register('CommandOrControl+Shift+/', () => {
-    win.webContents.send('show-shortcuts');
+    winSend('show-shortcuts');
   });
   globalShortcut.register('Alt+P', () => {
-    win.webContents.send('shortcut-pause');
+    winSend('shortcut-pause');
   });
 }
 
@@ -226,9 +299,7 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'dist-renderer/index.html'))
   nativeTheme.on('updated', () => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
-    }
+    winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
   });
   return win;
 }
@@ -236,11 +307,19 @@ function createWindow() {
 app.commandLine.appendSwitch('enable-transparent-visuals');
 
 app.whenReady().then(async () => {
-  claudePath = await resolveClaudePath();
-
-  exec('zsh -lc "which whisper"', (err, stdout) => {
-    whisperPath = stdout.trim() || null;
+  // setPermissionCheckHandler: Chromium asks "do I already have this permission?" before
+  // opening any stream. Returning true for 'media' tells Chromium it's already granted —
+  // prevents the repeated per-call dialog. TCC is handled once in splash via askForMediaAccess.
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    return permission === 'media';
   });
+  // setPermissionRequestHandler: handles any fresh permission request that still comes through.
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'media');
+  });
+
+  claudePath = await resolveClaudePath();
+  whisperPath = await resolveWhisperPath();
 
   splashWin = new BrowserWindow({
     width: 520,
@@ -259,7 +338,7 @@ app.whenReady().then(async () => {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-  splashWin.loadFile('splash.html');
+  splashWin.loadFile(path.join(__dirname, 'splash.html'));
   splashWin.once('ready-to-show', () => {
     splashWin.show();
     splashWin.center();
@@ -268,15 +347,13 @@ app.whenReady().then(async () => {
   createWindow();
 
   ipcMain.handle('splash-done', async () => {
-    if (splashWin) splashWin.hide();
+    if (splashWin && !splashWin.isDestroyed()) splashWin.hide();
     setTimeout(() => {
-      if (splashWin) { splashWin.destroy(); splashWin = null; }
-      win.show();
-      win.webContents.openDevTools({ mode: 'detach' });
-      win.center();
+      if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
+      if (win && !win.isDestroyed()) { win.show(); win.center(); }
       registerShortcut();
       createTray();
-    }, 400);
+    }, 1200);
   });
 
   ipcMain.handle('splash-check-cli', async () => {
@@ -284,7 +361,16 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('splash-check-whisper', async () => {
-    return { ok: !!whisperPath, path: whisperPath };
+    const ffmpegPaths = [
+      '/usr/local/bin/ffmpeg',
+      '/opt/homebrew/bin/ffmpeg',
+      path.join(os.homedir(), '.local/bin/ffmpeg'),
+      '/usr/bin/ffmpeg',
+    ];
+    const ffmpegFound = ffmpegPaths.some(p => {
+      try { return fs.existsSync(p); } catch { return false; }
+    });
+    return { ok: !!whisperPath, path: whisperPath, ffmpegFound };
   });
 
   ipcMain.handle('splash-open-url', async (_event, url) => {
@@ -292,7 +378,13 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('request-mic', async () => {
-    return { ok: true };
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    return { ok: status === 'granted' };
+  });
+
+  ipcMain.handle('check-mic-status', async () => {
+    const status = systemPreferences.getMediaAccessStatus('microphone');
+    return { granted: status === 'granted' };
   });
 
   // P1-008: IPC handlers
@@ -434,17 +526,17 @@ app.whenReady().then(async () => {
         label,
         type: 'checkbox',
         checked: currentMode === key,
-        click: () => { win.webContents.send('mode-selected', key); },
+        click: () => { winSend('mode-selected', key); },
       })),
       { type: 'separator' },
       {
         label: 'Keyboard shortcuts ⌘?',
-        click: () => { win.webContents.send('show-shortcuts'); },
+        click: () => { winSend('show-shortcuts'); },
       },
       { type: 'separator' },
       {
         label: 'History ⌘H',
-        click: () => { win.webContents.send('show-history'); },
+        click: () => { winSend('show-history'); },
       },
     ]);
     menu.popup({ window: win });
@@ -461,17 +553,49 @@ app.whenReady().then(async () => {
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        exec(`"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`,
-          { timeout: 60000 }, (err, _stdout, stderr) => {
-            try {
-              const text = fs.readFileSync(txtFile, 'utf8').trim();
-              try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
-              try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
-              resolve(text);
-            } catch {
-              reject(new Error(stderr || err?.message || 'Whisper output not found'));
-            }
-          });
+        const whisperCmd = whisperPath === 'python3 -m whisper'
+          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
+          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
+
+        const pyenvVersion = process.env.PYENV_VERSION || '';
+        const pythonPath = process.env.PYTHONPATH || '';
+        const whisperEnv = {
+          ...process.env,
+          PATH: [
+            '/usr/local/bin',
+            '/usr/bin',
+            '/bin',
+            '/opt/homebrew/bin',
+            '/opt/homebrew/sbin',
+            '/opt/local/bin',
+            path.join(os.homedir(), '.local/bin'),
+            path.join(os.homedir(), '.pyenv/bin'),
+            path.join(os.homedir(), '.pyenv/shims'),
+            path.join(os.homedir(), 'anaconda3/bin'),
+            path.join(os.homedir(), 'miniconda3/bin'),
+            path.join(os.homedir(), 'miniforge3/bin'),
+            '/usr/local/opt/ffmpeg/bin',
+            process.env.PATH,
+          ].filter(Boolean).join(':'),
+          ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
+          ...(pythonPath && { PYTHONPATH: pythonPath }),
+          PYTHONUNBUFFERED: '1',
+        };
+
+        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, stdout, stderr) => {
+          if (err) {
+            reject(new Error(stderr || err.message || 'Whisper failed'));
+            return;
+          }
+          try {
+            const text = fs.readFileSync(txtFile, 'utf8').trim();
+            try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
+            resolve(text);
+          } catch {
+            reject(new Error('Whisper output not found'));
+          }
+        });
       });
       return { success: true, transcript };
     } catch (err) {

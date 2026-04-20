@@ -234,23 +234,30 @@
    [x] ITR-006 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
    → Full specs: vibe/features/2026-04-20-iteration-mode/FEATURE_TASKS.md (agent use)
 
+✅ **BUG-012 — PATH resolution fails in packaged DMG** (FIXED 2026-04-20)
+   [x] BUG-012-001 · main.js — resolveClaudePath() expanded + resolveWhisperPath() added + await both + whisper exec cmd fix
+   [x] BUG-012-002 · Lint clean + dev boot verified
+   [x] BUG-012-003 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
+   → Full specs: vibe/bugs/2026-04-20-bug-012/ | DECISIONS.md D-BUG-012
+
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ---
 
+✅ **BUG-015 — TypeError Object destroyed + mic dialog repeating** (FIXED 2026-04-20)
+   [x] main.js: splash-done timeout 400→1200ms + isDestroyed() guards on splashWin + win
+   [x] package.json: hardenedRuntime true + gatekeeperAssess false + entitlements wired
+   [x] entitlements.plist: added network.client key
+   [x] App.jsx: removed requestMic() from startRecording + handleIterate (getUserMedia handles TCC)
+   → Specs: vibe/bugs/2026-04-20-bug-015/ | DECISIONS.md D-BUG-015
+
 ## What just happened
-✅ FEATURE-012 — Iteration Mode — complete 2026-04-20
-   All 6 tasks built in parallel via vibe-parallel (Wave 1: 3 parallel, Waves 2-4: sequential)
-   - main.js: generate-raw IPC handler added
-   - preload.js: generateRaw exposed on window.electronAPI
-   - index.css: @keyframes iterGlow added
-   - IteratingState.jsx: new — blue banner + blue waveform + timer + iterGlow stop
-   - App.jsx: ITERATING state + STATE_HEIGHTS.ITERATING=200, 5 new refs, handleIterate/stopIterating/dismissIterating
-   - PromptReadyState.jsx: ↻ Iterate button (blue, leftmost) + ↻ iterated badge
-   - history.js: saveToHistory extended with isIteration + basedOn fields
-   - HistoryPanel.jsx: ↻ indicator on iteration entries
-   - CODEBASE.md + ARCHITECTURE.md: updated
+✅ BUG-015 — TypeError Object destroyed + mic dialog repeating — fixed 2026-04-20
+   - splash-done timeout extended to 1200ms; isDestroyed() guards added
+   - hardenedRuntime: true in package.json — TCC entry now persists across launches
+   - entitlements.plist: network.client key added
+   - requestMic() removed from startRecording + handleIterate — getUserMedia calls directly
 
 ## What's next
-⬜ Manual smoke test — run app, exercise FEATURE-012 smoke checklist (11 items)
+⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, run smoke checklist
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

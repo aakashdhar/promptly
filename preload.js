@@ -56,9 +56,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   splashOpenURL: (url) =>
     ipcRenderer.invoke('splash-open-url', url),
 
-  requestMic: () =>
-    ipcRenderer.invoke('request-mic'),
-
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) =>
     ipcRenderer.on('shortcut-triggered', callback),

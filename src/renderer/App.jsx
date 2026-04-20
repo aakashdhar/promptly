@@ -38,6 +38,8 @@ const STATE_HEIGHTS = {
 
 export default function App() {
   const [currentState, setCurrentState] = useState(STATES.IDLE)
+  const [displayState, setDisplayState] = useState(STATES.IDLE)
+  const [stateClass, setStateClass] = useState('')
   const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
@@ -56,25 +58,35 @@ export default function App() {
   const iterChunksRef = useRef([])
   const iterIsProcessingRef = useRef(false)
   const recTimerRef = useRef(null)
+  const transitionTimerRef = useRef(null)
   const [recSecs, setRecSecs] = useState(0)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
 
-  // Resize window to IDLE height on initial mount
+  // POLISH-001: animate between states
+  function animateToState(newState) {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
+    setStateClass('state-exit')
+    transitionTimerRef.current = setTimeout(() => {
+      setDisplayState(newState)
+      setStateClass('state-enter')
+      transitionTimerRef.current = setTimeout(() => {
+        setStateClass('')
+        transitionTimerRef.current = null
+      }, 200)
+    }, 120)
+  }
+
   useEffect(() => {
     resizeWindow(STATE_HEIGHTS.IDLE)
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
+    }
   }, [])
 
-  // Keep stateRef in sync with currentState
-  useEffect(() => {
-    stateRef.current = currentState
-  }, [currentState])
-
-  // Keep generatedPromptRef in sync for stale-closure-safe access in keydown listener
-  useEffect(() => {
-    generatedPromptRef.current = generatedPrompt
-  }, [generatedPrompt])
+  useEffect(() => { stateRef.current = currentState }, [currentState])
+  useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
 
   function startTimer() {
     recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
@@ -101,11 +113,12 @@ export default function App() {
         newState !== STATES.ITERATING
       )
     }
+    animateToState(newState)
   }
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       const recorder = new MediaRecorder(stream)
       mediaRecorderRef.current = recorder
       audioChunksRef.current = []
@@ -209,12 +222,14 @@ export default function App() {
     setCurrentState(STATES.HISTORY)
     stateRef.current = STATES.HISTORY
     if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
+    animateToState(STATES.HISTORY)
   }
   function closeHistory() {
     if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
     setCurrentState(STATES.IDLE)
     stateRef.current = STATES.IDLE
     if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
+    animateToState(STATES.IDLE)
   }
 
   const handleRegenerate = useCallback(async () => {
@@ -240,7 +255,7 @@ export default function App() {
 
   const handleIterate = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       const recorder = new MediaRecorder(stream)
       iterRecorderRef.current = recorder
       iterChunksRef.current = []
@@ -333,7 +348,6 @@ Mode: ${iterationBase.current.mode}`
     transition(STATES.PROMPT_READY)
   }
 
-  // Stable refs for IPC handlers (avoid stale closures)
   const startRecordingRef = useRef(startRecording)
   const stopRecordingRef = useRef(stopRecording)
   const pauseRecordingRef = useRef(pauseRecording)
@@ -343,7 +357,6 @@ Mode: ${iterationBase.current.mode}`
   useEffect(() => { pauseRecordingRef.current = pauseRecording }, [pauseRecording])
   useEffect(() => { resumeRecordingRef.current = resumeRecording }, [resumeRecording])
 
-  // IPC listeners — mounted once
   useEffect(() => {
     if (!window.electronAPI) return
 
@@ -380,7 +393,6 @@ Mode: ${iterationBase.current.mode}`
     })
   }, [])
 
-  // Window-focused keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e) {
       const meta = e.metaKey || e.ctrlKey
@@ -421,7 +433,6 @@ Mode: ${iterationBase.current.mode}`
   const recS = recSecs % 60
   const duration = `${recM}:${String(recS).padStart(2, '0')}`
 
-  // Right-click context menu on bar (mode menu)
   function handleContextMenu(e) {
     e.preventDefault()
     if (currentState !== STATES.IDLE) return
@@ -437,61 +448,69 @@ Mode: ${iterationBase.current.mode}`
       <div style={{position:'absolute',top:'-60px',right:'-40px',width:'280px',height:'280px',borderRadius:'50%',background:'radial-gradient(circle, rgba(10,132,255,0.08) 0%, transparent 70%)',pointerEvents:'none',zIndex:-1}} />
       <div style={{position:'absolute',bottom:'-60px',left:'-40px',width:'240px',height:'240px',borderRadius:'50%',background:'radial-gradient(circle, rgba(120,40,200,0.1) 0%, transparent 70%)',pointerEvents:'none',zIndex:-1}} />
       <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/[0.28] to-transparent pointer-events-none z-10" />
-      {currentState === STATES.IDLE && (
-        <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} />
-      )}
-      {currentState === STATES.RECORDING && (
-        <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
-      )}
-      {currentState === STATES.PAUSED && (
-        <PausedState duration={duration} onResume={resumeRecording} onStop={stopRecording} onDismiss={handleDismiss} />
-      )}
-      {currentState === STATES.ITERATING && (
-        <IteratingState
-          contextText={iterationBase.current?.transcript || ''}
-          duration={duration}
-          onStop={stopIterating}
-          onDismiss={dismissIterating}
-        />
-      )}
-      {currentState === STATES.THINKING && (
-        <ThinkingState transcript={thinkTranscript} />
-      )}
-      {currentState === STATES.PROMPT_READY && (
-        <PromptReadyState
-          originalTranscript={originalTranscript.current}
-          generatedPrompt={generatedPrompt}
-          setGeneratedPrompt={setGeneratedPrompt}
-          onRegenerate={handleRegenerate}
-          onReset={() => transition(STATES.IDLE)}
-          mode={mode}
-          onIterate={handleIterate}
-          isIterated={isIterated.current}
-        />
-      )}
-      {currentState === STATES.ERROR && (
-        <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
-      )}
-      {currentState === STATES.SHORTCUTS && (
-        <>
-          <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
-          <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
-        </>
-      )}
-      {currentState === STATES.HISTORY && (
-        <>
-          <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
-          <HistoryPanel
-            onClose={closeHistory}
-            onReuse={(entry) => {
-              originalTranscript.current = entry.transcript
-              setGeneratedPrompt(entry.prompt)
-              if (window.electronAPI) window.electronAPI.resizeWindowWidth(520)
-              transition(STATES.PROMPT_READY)
-            }}
+
+      {/* POLISH-001: animated state wrapper */}
+      <div
+        className={stateClass}
+        style={{flex:1, display:'flex', flexDirection:'column', position:'relative', minHeight:0, overflow:'hidden'}}
+      >
+        {displayState === STATES.IDLE && (
+          <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} />
+        )}
+        {displayState === STATES.RECORDING && (
+          <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
+        )}
+        {displayState === STATES.PAUSED && (
+          <PausedState duration={duration} onResume={resumeRecording} onStop={stopRecording} onDismiss={handleDismiss} />
+        )}
+        {displayState === STATES.ITERATING && (
+          <IteratingState
+            contextText={iterationBase.current?.transcript || ''}
+            duration={duration}
+            onStop={stopIterating}
+            onDismiss={dismissIterating}
           />
-        </>
-      )}
+        )}
+        {displayState === STATES.THINKING && (
+          <ThinkingState transcript={thinkTranscript} />
+        )}
+        {displayState === STATES.PROMPT_READY && (
+          <PromptReadyState
+            originalTranscript={originalTranscript.current}
+            generatedPrompt={generatedPrompt}
+            setGeneratedPrompt={setGeneratedPrompt}
+            onRegenerate={handleRegenerate}
+            onReset={() => transition(STATES.IDLE)}
+            mode={mode}
+            onIterate={handleIterate}
+            isIterated={isIterated.current}
+          />
+        )}
+        {displayState === STATES.ERROR && (
+          <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
+        )}
+        {displayState === STATES.SHORTCUTS && (
+          <>
+            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+            <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
+          </>
+        )}
+        {displayState === STATES.HISTORY && (
+          <>
+            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+            <HistoryPanel
+              onClose={closeHistory}
+              onReuse={(entry) => {
+                originalTranscript.current = entry.transcript
+                setGeneratedPrompt(entry.prompt)
+                if (window.electronAPI) window.electronAPI.resizeWindowWidth(520)
+                transition(STATES.PROMPT_READY)
+              }}
+            />
+          </>
+        )}
+      </div>
+
       <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[#FF3B30]/20 to-transparent pointer-events-none z-10" />
     </div>
   )

@@ -12,10 +12,12 @@ export default function ErrorState({ message, onDismiss }) {
           ⚠
         </div>
         <div className="flex-1 [-webkit-app-region:no-drag]" style={{marginLeft:16}}>
-          <div className="text-[13px] font-medium text-white/50 tracking-[0.01em] mb-[3px]" id="error-message">
+          {/* error message stays at 0.50 */}
+          <div className="text-[13px] font-medium tracking-[0.01em] mb-[3px]" style={{color:'rgba(255,255,255,0.75)'}} id="error-message">
             {message || 'Something went wrong'}
           </div>
-          <div className="text-[11px] text-white/[0.18] tracking-[0.01em]">Tap to retry</div>
+          {/* POLISH-009: 0.18 → 0.48 */}
+          <div className="text-[11px] tracking-[0.01em]" style={{color:'rgba(255,255,255,0.48)'}}>Tap to retry</div>
         </div>
       </div>
     </div>

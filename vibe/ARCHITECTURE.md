@@ -145,19 +145,67 @@ IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 
 ## PATH resolution (critical — most common failure point)
 
-**Rule:** The `claude` binary MUST be resolved via the user's login shell at startup.
+**Rule:** Both `claude` and `whisper` binaries MUST be resolved via expanded search at startup, then cached. In packaged `.app` / `.dmg` builds the process environment does not load the user's shell PATH, so a direct `which` call is unreliable.
 
+**Pattern (BUG-012 — 2026-04-20):**
 ```js
-// main.js — run once at app ready, cache result
-exec('zsh -lc "which claude"', (err, stdout) => {
-  claudePath = stdout.trim(); // cache globally
-});
+// 1. Check common installation directories first (fs.existsSync — no shell needed)
+// 2. Fall back to zsh login shell (loads .zshrc/.zprofile)
+// 3. Fall back to bash login shell
+// 4. For whisper only: fall back to python3 -m whisper
+async function resolveXPath() {
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch {}
+  }
+  return new Promise((resolve) => {
+    exec('zsh -lc "which X"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which X"', (err2, stdout2) => {
+        resolve(stdout2?.trim() || null);
+      });
+    });
+  });
+}
 ```
 
+- Both `resolveClaudePath()` and `resolveWhisperPath()` are `async` functions — `await`ed in `app.whenReady()` before any window is created.
+- `whisperPath` may be the string `'python3 -m whisper'` — `transcribe-audio` constructs the exec command accordingly.
 - Never use bare `exec('claude ...')` — it will fail for most users.
 - If resolution fails → send `check-claude-path` error to renderer → transition to ERROR state.
 - All subsequent `claude -p` calls use the cached `claudePath`.
 - If `claudePath` is null at call time → ERROR state, message: "Claude CLI not found."
+
+---
+
+## Microphone permission (critical — two separate layers)
+
+**Rule:** Microphone access in Electron on macOS goes through TWO independent layers. Both must be configured. Missing either one causes repeated permission dialogs.
+
+### Layer 1 — macOS TCC (system level)
+`systemPreferences.askForMediaAccess('microphone')` — native macOS API. Creates a persistent TCC entry for the app. Returns `true` immediately if already granted (safe to call before every recording).
+- Called in **splash** (`check-mic-status` IPC) — user sees the dialog once at a controlled time.
+- Called in **`request-mic` IPC** — `startRecording()` and `handleIterate()` in App.jsx call this before every `getUserMedia` to ensure TCC is current.
+
+### Layer 2 — Electron/Chromium (renderer level)
+`getUserMedia` in the renderer goes through Chromium's own permission system before reaching macOS. Two handlers must BOTH be set in `app.whenReady()`:
+
+```js
+// Step 1 — check: "do I already have this?" — must return true to skip re-prompting
+session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+  return permission === 'media';
+});
+// Step 2 — request: handles any fresh request that still comes through
+session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+  callback(permission === 'media');
+});
+```
+
+**If only `setPermissionRequestHandler` is set** (without the check handler), Chromium treats every `getUserMedia` call as a new request and re-prompts — even in the same session.
+
+### Unsigned build rule
+`dist:unsigned` must pass `--config.mac.hardenedRuntime=false`. Hardened runtime entitlements (`com.apple.security.device.audio-input`) only apply to signed builds. An unsigned build with `hardenedRuntime: true` runs under hardened runtime restrictions *without* the entitlements that would lift them — causing TCC entries to not persist between launches.
+
+> See DECISIONS.md D-BUG-013 for full diagnosis.
 
 ---
 

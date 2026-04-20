@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/CODEBASE.md + source files",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-20T16:00:00Z",
-    "update_count": 4,
+    "last_updated": "2026-04-20T20:00:00Z",
+    "update_count": 5,
     "project": "promptly",
-    "update_note": "Incremental update — FEATURE-012 iteration mode: added IteratingState.jsx node; updated App.jsx (ITERATING state, iterationBase/isIterated/iterRecorderRef refs, startIteration/stopIteration, generate-raw IPC call); updated main.js (generate-raw handle); updated preload.js (generateRaw exposed); updated PromptReadyState.jsx (iterate button); updated history.js + HistoryPanel.jsx (isIteration flag); updated index.css (iterGlow keyframe)"
+    "update_note": "Incremental update — POLISH-001–009 (UI pass: transitions, typography, hovers, pulse rings, scrollbars); BUG-012 (PATH resolution — resolveWhisperPath, expanded env); BUG-013 (mic permission — session.defaultSession.setPermissionRequestHandler, getUserMedia in splash); BUG-014 (whisper ffmpeg PATH, 90s timeout); BUG-015 (isDestroyed guards, hardenedRuntime, splash-done 1200ms, requestMic removed from preload + App.jsx); BUG-016 (check-mic-status IPC, getMediaAccessStatus); FEATURE-SIGNING (scripts/create-cert.sh, sign-app.sh, build-signed.sh); chore (generate-icon.js, app icon files)"
   },
 
   "package.json": {
@@ -16,6 +16,7 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.95,
     "concept_evidence": "Core project manifest — no feature folder owns it",
+    "secondary_concepts": ["signing"],
     "imports": [],
     "imported_by": [
       {
@@ -25,7 +26,20 @@
         "evidence": "electron-builder config in package.json references entitlements.plist for hardened runtime"
       }
     ],
-    "rationale": []
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "hardenedRuntime: true + gatekeeperAssess: false added (BUG-015/FEATURE-SIGNING) — hardenedRuntime is required for the self-signed cert approach to grant persistent TCC entry; gatekeeperAssess: false skips Gatekeeper check for unsigned builds so dev installs work",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "dist:unsigned script added — runs electron-builder without signing; useful for CI/dev when no cert is set up; dist:signed (FEATURE-SIGNING) orchestrates create-cert + electron-builder + sign-app",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
   },
 
   "entitlements.plist": {
@@ -35,6 +49,7 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.95,
     "concept_evidence": "macOS distribution entitlement — no feature folder owns it",
+    "secondary_concepts": ["signing"],
     "imports": [],
     "imported_by": [
       {
@@ -44,7 +59,14 @@
         "evidence": "electron-builder hardenedRuntime + entitlements config references this file"
       }
     ],
-    "rationale": []
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "com.apple.security.network.client added (BUG-015) — required for hardenedRuntime: true; without it, any outbound network call (even to localhost) is blocked by the hardened sandbox",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
   },
 
   "eslint.config.js": {
@@ -85,8 +107,8 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.90,
     "concept_evidence": "Electron main process — owns IPC hub, window lifecycle, PATH resolution; touched by multiple features but no single feature owns it",
-    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export", "iteration-mode"],
-    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode)",
+    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export", "iteration-mode", "signing", "ui-polish"],
+    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode), request-mic + check-mic-status + session.defaultSession handler (signing/mic permission), remove DevTools (ui-polish)",
     "imports": [
       {
         "file": "preload.js",
@@ -115,11 +137,12 @@
       "resize-window", "transcribe-audio", "show-mode-menu",
       "set-window-buttons-visible", "splash-done", "splash-check-cli",
       "splash-check-whisper", "splash-open-url", "request-mic",
-      "get-theme", "save-file", "resize-window-width", "set-window-size", "generate-raw"
+      "get-theme", "save-file", "resize-window-width", "set-window-size",
+      "generate-raw", "check-mic-status"
     ],
     "ipc_sends": ["shortcut-triggered", "shortcut-conflict", "mode-selected", "theme-changed", "show-history", "show-shortcuts"],
     "key_vars": ["claudePath", "whisperPath", "win", "splashWin", "tray", "PROMPT_TEMPLATE", "MODE_CONFIG"],
-    "key_functions": ["resolveClaudePath", "registerShortcut", "createWindow", "createTray", "updateTrayMenu"],
+    "key_functions": ["resolveClaudePath", "resolveWhisperPath", "registerShortcut", "createWindow", "createTray", "updateTrayMenu"],
     "rationale": [
       {
         "type": "DECISION",
@@ -155,6 +178,30 @@
         "text": "set-window-size IPC added (BUG-011) — separate width+height calls had a race condition: resize-window (RAF-deferred) read win.getSize() before resize-window-width had applied, clamping width back to 520",
         "source": "EXTRACTED",
         "added": "2026-04-19"
+      },
+      {
+        "type": "DECISION",
+        "text": "resolveWhisperPath() added (BUG-012) — whisper binary resolves via 'zsh -lc \"which whisper\"' then symlink-followed to real binary; pyenv/conda shims would resolve to wrong env otherwise",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "session.defaultSession.setPermissionRequestHandler grants mic automatically (BUG-013) — prevents repeated OS dialog in packaged builds; TCC entry is seeded once in splash via getUserMedia, then Electron's handler bypasses subsequent native prompts",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "isDestroyed() guards on every win/splashWin access (BUG-015) — splash-done timeout extended to 1200ms; without guards, async callbacks racing window destruction threw 'Object has been destroyed' errors",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "check-mic-status IPC returns systemPreferences.getMediaAccessStatus('microphone') — lets splash check TCC status before deciding whether to call getUserMedia; avoids redundant mic request if already granted",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
       }
     ]
   },
@@ -190,11 +237,14 @@
     "exposes": [
       "generatePrompt", "copyToClipboard", "checkClaudePath", "resizeWindow",
       "setWindowButtonsVisible", "showModeMenu", "onModeSelected",
-      "transcribeAudio", "splashDone", "splashCheckCLI", "splashCheckWhisper",
-      "splashOpenURL", "requestMic", "onShortcutTriggered", "onShortcutConflict",
-      "getTheme", "onThemeChanged", "onShowShortcuts", "saveFile",
-      "resizeWindowWidth", "setWindowSize", "onShowHistory", "onShortcutPause",
-      "generateRaw"
+      "transcribeAudio", "generateRaw", "saveFile",
+      "resizeWindowWidth", "setWindowSize", "onShowHistory",
+      "splashDone", "splashCheckCLI", "splashCheckWhisper", "splashOpenURL",
+      "onShortcutTriggered", "onShowShortcuts", "onShortcutPause", "onShortcutConflict",
+      "getTheme", "onThemeChanged"
+    ],
+    "removed_methods": [
+      { "method": "requestMic", "removed": "2026-04-20", "reason": "BUG-015 — App.jsx no longer calls requestMic(); splash.html calls getUserMedia() directly; TCC grant handled once at splash time via getUserMedia, not repeated per-recording" }
     ],
     "rationale": [
       {
@@ -212,6 +262,12 @@
       {
         "type": "DECISION",
         "text": "generateRaw added (FEATURE-012) — separate from generatePrompt; takes { systemPrompt } directly (no PROMPT_TEMPLATE wrapper) to support iteration's custom combined prompt; IPC channel is 'generate-raw'",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "requestMic removed (BUG-015) — App.jsx was calling requestMic() at startRecording, causing repeated mic dialogs on every recording. TCC grant is now a one-time splash responsibility via getUserMedia. preload no longer exposes this method.",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
@@ -242,7 +298,20 @@
       }
     ],
     "key_functions": ["runChecks", "setCheck", "showReady", "openInstall"],
-    "rationale": []
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "getUserMedia() called directly in splash.html renderer (BUG-013) — seeds the TCC microphone grant once per app install; session.defaultSession permission handler in main.js then auto-grants subsequent requests so recordings never trigger a repeated dialog",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "check-mic-status IPC checked before getUserMedia (BUG-016) — if TCC status is already 'granted', splash skips the getUserMedia call entirely; avoids redundant mic UI flash on every launch after first use",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
   },
 
   "index.html": {
@@ -294,7 +363,7 @@
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
     "concept_evidence": "Tailwind v4 entry — @import 'tailwindcss', @theme tokens, @keyframes, body reset",
-    "secondary_concepts": ["pause-resume", "iteration-mode"],
+    "secondary_concepts": ["pause-resume", "iteration-mode", "ui-polish"],
     "imports": [],
     "imported_by": [
       { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
@@ -311,6 +380,12 @@
         "text": "iterGlow @keyframes added (FEATURE-012) — violet/indigo glow animation for IteratingState; IteratingState.jsx references it inline as animation:'iterGlow 2s ease-in-out infinite' (no Tailwind class)",
         "source": "EXTRACTED",
         "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "POLISH-001–009 — state transitions added (opacity + translateY), font-weight tuning, hover states on all interactive elements, pulse ring enhancements, custom scrollbar styles for HistoryPanel, text brightness calibration; all via Tailwind utility classes or CSS tokens",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
       }
     ]
   },
@@ -322,7 +397,7 @@
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
     "concept_evidence": "Root state machine — owns STATES, STATE_HEIGHTS, transition(), all IPC listeners, recording flow, theme wiring",
-    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export", "pause-resume", "iteration-mode"],
+    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export", "pause-resume", "iteration-mode", "ui-polish"],
     "imports": [
       { "file": "src/renderer/hooks/useMode.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 2" },
       { "file": "src/renderer/hooks/useWindowResize.js",            "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 3" },
@@ -389,6 +464,12 @@
       {
         "type": "DECISION",
         "text": "originalTranscript.current updated to iterText after successful iteration — allows infinite chained iterations; each iter becomes the base for the next; deliberately mutates the ref (exception to the ARCHITECTURE.md immutability rule, documented in DECISIONS.md D-010)",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "requestMic() removed from startRecording and handleIterate (BUG-015) — was causing repeated OS mic dialogs every time recording started; TCC grant is now handled once in splash.html via getUserMedia, not repeated per-recording",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
@@ -656,8 +737,92 @@
     "concept": "shortcuts",
     "concept_source": "INFERRED",
     "concept_confidence": 0.90,
+    "secondary_concepts": ["ui-polish"],
     "imports": [],
     "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
+    "rationale": []
+  },
+
+  "src/renderer/components/IdleState.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "state-machine",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.85,
+    "secondary_concepts": ["ui-polish"],
+    "imports": [],
+    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "'built using vibe-* skills' footer added — attribution line; renders below the ⌘? hint chip in IDLE state",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
+  },
+
+  "scripts/create-cert.sh": {
+    "state": "built",
+    "type": "shell-script",
+    "concept": "signing",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "FEATURE-SIGNING — creates a self-signed code signing certificate in the macOS Keychain for persistent TCC mic grant",
+    "imports": [],
+    "imported_by": [
+      { "file": "scripts/build-signed.sh", "source": "EXTRACTED", "confidence": 1.0, "evidence": "build-signed.sh orchestrates create-cert.sh + electron-builder + sign-app.sh" }
+    ],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "Legacy PKCS12 fallback included — security import -f pkcs12 works on older macOS where newer API unavailable; tmpdir used for intermediate files and cleaned up on exit",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
+  },
+
+  "scripts/sign-app.sh": {
+    "state": "built",
+    "type": "shell-script",
+    "concept": "signing",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "FEATURE-SIGNING — codesigns dist/mac-universal/Promptly.app with self-signed cert + entitlements.plist",
+    "imports": [
+      { "file": "entitlements.plist", "source": "EXTRACTED", "confidence": 1.0, "evidence": "codesign --entitlements entitlements.plist" }
+    ],
+    "imported_by": [
+      { "file": "scripts/build-signed.sh", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "rationale": []
+  },
+
+  "scripts/build-signed.sh": {
+    "state": "built",
+    "type": "shell-script",
+    "concept": "signing",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "FEATURE-SIGNING — orchestration script: create-cert → npm run dist → sign-app; maps to 'dist:signed' npm script",
+    "imports": [
+      { "file": "scripts/create-cert.sh", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "scripts/sign-app.sh",    "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "imported_by": [],
+    "rationale": []
+  },
+
+  "scripts/generate-icon.js": {
+    "state": "built",
+    "type": "node-script",
+    "concept": "foundation",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.80,
+    "concept_evidence": "Build tooling — generates build/icon.icns from build/icon.png; one-time dev utility",
+    "imports": [],
+    "imported_by": [],
     "rationale": []
   }
 }
