@@ -929,3 +929,19 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Files changed**: `main.js`, `preload.js`, `splash.html`
 - **Impact**: First launch → one dialog; all subsequent launches → zero dialogs; recording starts silently.
 - **Approved by**: human
+
+---
+
+### D-FEATURE-SIGNING — Self-signed code signing for persistent TCC mic permissions
+- **Date**: 2026-04-20 · **Task**: FEATURE-SIGNING · **Type**: tech-choice
+- **What was planned**: Unsigned builds (identity=null) for local distribution.
+- **What was done**: Added self-signed code signing scripts and npm commands so macOS TCC can persist the microphone permission grant across launches.
+- **Why**: Even with hardenedRuntime:true, an unsigned bundle has no persistent code identity. TCC may re-prompt on each launch. A self-signed certificate gives the bundle a stable identity without requiring an Apple Developer account or notarisation.
+- **Scripts added**:
+  - `scripts/create-cert.sh` — generates a 10-year RSA-2048 self-signed cert with codeSigning EKU, imports into login.keychain-db via openssl + security CLI. Idempotent (no-op if cert already exists).
+  - `scripts/sign-app.sh` — signs dylibs/frameworks first, then helper .app bundles, then the main bundle with --options runtime + entitlements.plist. Runs codesign --verify at end.
+  - `scripts/build-signed.sh` — orchestrates: build:renderer → electron-builder (unsigned pkg) → sign-app.sh → electron-builder dmg.
+- **npm scripts added**: `create-cert`, `sign-app`, `dist:signed`
+- **entitlements.plist**: already correct — no changes needed.
+- **Alternatives considered**: Apple Developer ID signing (requires paid account + notarisation). Ad-hoc signing (--sign - flag; no persistent identity, TCC still re-prompts).
+- **Impact on other tasks**: None. `dist:unsigned` remains unchanged. New workflow: run `npm run create-cert` once, then `npm run dist:signed` for any signed build.
