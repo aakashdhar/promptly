@@ -362,7 +362,16 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('splash-check-whisper', async () => {
-    return { ok: !!whisperPath, path: whisperPath };
+    const ffmpegPaths = [
+      '/usr/local/bin/ffmpeg',
+      '/opt/homebrew/bin/ffmpeg',
+      path.join(os.homedir(), '.local/bin/ffmpeg'),
+      '/usr/bin/ffmpeg',
+    ];
+    const ffmpegFound = ffmpegPaths.some(p => {
+      try { return fs.existsSync(p); } catch { return false; }
+    });
+    return { ok: !!whisperPath, path: whisperPath, ffmpegFound };
   });
 
   ipcMain.handle('splash-open-url', async (_event, url) => {
@@ -551,32 +560,45 @@ app.whenReady().then(async () => {
           ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
           : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
 
-        // Whisper internally calls ffmpeg to decode audio. Inject common binary dirs
-        // into PATH so ffmpeg is found even in a stripped DMG environment.
+        const pyenvVersion = process.env.PYENV_VERSION || '';
+        const pythonPath = process.env.PYTHONPATH || '';
         const whisperEnv = {
           ...process.env,
           PATH: [
             '/usr/local/bin',
-            '/opt/homebrew/bin',
             '/usr/bin',
             '/bin',
-            path.join(os.homedir(), '.pyenv/shims'),
-            path.join(os.homedir(), '.pyenv/bin'),
+            '/opt/homebrew/bin',
+            '/opt/homebrew/sbin',
+            '/opt/local/bin',
             path.join(os.homedir(), '.local/bin'),
-            process.env.PATH || '',
+            path.join(os.homedir(), '.pyenv/bin'),
+            path.join(os.homedir(), '.pyenv/shims'),
+            path.join(os.homedir(), 'anaconda3/bin'),
+            path.join(os.homedir(), 'miniconda3/bin'),
+            path.join(os.homedir(), 'miniforge3/bin'),
+            '/usr/local/opt/ffmpeg/bin',
+            process.env.PATH,
           ].filter(Boolean).join(':'),
+          ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
+          ...(pythonPath && { PYTHONPATH: pythonPath }),
+          PYTHONUNBUFFERED: '1',
         };
 
-        exec(whisperCmd, { timeout: 60000, env: whisperEnv }, (err, _stdout, stderr) => {
-            try {
-              const text = fs.readFileSync(txtFile, 'utf8').trim();
-              try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
-              try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
-              resolve(text);
-            } catch {
-              reject(new Error(stderr || err?.message || 'Whisper output not found'));
-            }
-          });
+        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, stdout, stderr) => {
+          if (err) {
+            reject(new Error(stderr || err.message || 'Whisper failed'));
+            return;
+          }
+          try {
+            const text = fs.readFileSync(txtFile, 'utf8').trim();
+            try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
+            resolve(text);
+          } catch {
+            reject(new Error('Whisper output not found'));
+          }
+        });
       });
       return { success: true, transcript };
     } catch (err) {
