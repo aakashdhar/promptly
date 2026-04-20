@@ -191,10 +191,21 @@ async function resolveClaudePath() {
   });
 }
 
+function resolveShimToReal(shimPath) {
+  // pyenv/conda shims require the tool to be initialized at runtime — follow to the actual binary
+  return new Promise((resolve) => {
+    exec('zsh -lc "pyenv which whisper 2>/dev/null"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      resolve(shimPath); // fall back to shim if pyenv resolution fails
+    });
+  });
+}
+
 async function resolveWhisperPath() {
   const commonPaths = [
     '/usr/local/bin/whisper',
     '/usr/bin/whisper',
+    path.join(os.homedir(), '.pyenv/shims/whisper'),
     path.join(os.homedir(), '.local/bin/whisper'),
     path.join(os.homedir(), '.local/pipx/venvs/openai-whisper/bin/whisper'),
     path.join(os.homedir(), 'Library/Python/3.9/bin/whisper'),
@@ -203,12 +214,17 @@ async function resolveWhisperPath() {
     path.join(os.homedir(), 'Library/Python/3.12/bin/whisper'),
     '/opt/homebrew/bin/whisper',
     '/opt/local/bin/whisper',
-    '/usr/local/lib/python3.9/site-packages/whisper',
   ];
   for (const p of commonPaths) {
-    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+    try {
+      if (fs.existsSync(p)) {
+        // pyenv shims need resolving to the real binary — exec without login shell breaks them
+        if (p.includes('.pyenv/shims/')) return resolveShimToReal(p);
+        return p;
+      }
+    } catch { /* ignore */ }
   }
-  return new Promise((resolve) => {
+  const shellResolved = await new Promise((resolve) => {
     exec('zsh -lc "which whisper"', (err, stdout) => {
       if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
       exec('bash -lc "which whisper"', (err2, stdout2) => {
@@ -220,6 +236,10 @@ async function resolveWhisperPath() {
       });
     });
   });
+  if (shellResolved && shellResolved.includes('.pyenv/shims/')) {
+    return resolveShimToReal(shellResolved);
+  }
+  return shellResolved;
 }
 
 function registerShortcut() {
