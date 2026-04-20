@@ -1,23 +1,16 @@
 {
   "project_name": "Promptly",
-  "generated": "2026-04-20",
-  "model": "claude-sonnet-4-6",
-  "total_cost_usd": 8.244,
-  "total_sessions": 15,
-  "build_progress_pct": 97,
-  "tasks_remaining": 3,
+  "generated_at": "2026-04-20T00:00:00",
+  "build_progress_pct": 98,
+  "tasks_remaining": 2,
+  "total_cost_usd": 9.414,
+  "total_sessions": 16,
   "phase_summary": [
-    {
-      "phase": "Planning",
-      "status": "complete",
-      "sessions": 1,
-      "cost_usd": 0.606
-    },
     {
       "phase": "Phase 1 \u2014 Foundation",
       "status": "complete",
-      "sessions": 1,
-      "cost_usd": 1.3
+      "sessions": 2,
+      "cost_usd": 1.906
     },
     {
       "phase": "Phase 2 \u2014 Core features",
@@ -26,7 +19,7 @@
       "cost_usd": 4.014
     },
     {
-      "phase": "Phase 3 \u2014 Polish & ship",
+      "phase": "Phase 3 \u2014 Polish and hardening",
       "status": "complete",
       "sessions": 1,
       "cost_usd": 0.375
@@ -35,69 +28,73 @@
       "phase": "Phase 4 \u2014 v2 Features",
       "status": "active",
       "sessions": 5,
-      "cost_usd": 1.949
+      "cost_usd": 3.119
     }
   ],
   "feature_costs": [
     {
-      "label": "Project setup & architecture",
-      "cost_usd": 1.906
+      "label": "Planning and specifications",
+      "cost_usd": 1.516
     },
     {
-      "label": "Core recording flow (state machine, speech, Claude, actions)",
-      "cost_usd": 2.074
+      "label": "Core app foundation",
+      "cost_usd": 1.3
     },
     {
-      "label": "Bug fixes & design polish (Phase 2/3)",
-      "cost_usd": 1.565
+      "label": "UI states and animations",
+      "cost_usd": 1.45
     },
     {
-      "label": "Phase 3 final review & ship",
-      "cost_usd": 0.375
+      "label": "Speech recording and Claude integration",
+      "cost_usd": 0.884
     },
     {
-      "label": "React migration (FEATURE-004)",
-      "cost_usd": 0.4
+      "label": "Reviews and bug fixing",
+      "cost_usd": 1.145
     },
     {
-      "label": "v2 features (history, tray, shortcuts, export, refine)",
-      "cost_usd": 0.9
+      "label": "Advanced features (history, export, shortcuts)",
+      "cost_usd": 1.599
     },
     {
-      "label": "Pause/resume recording (FEATURE-011)",
-      "cost_usd": 0.674
-    },
-    {
-      "label": "Visual design \u2014 dark glass, ambient glow (DESIGN-001)",
-      "cost_usd": 0.35
+      "label": "UI polish and distribution prep",
+      "cost_usd": 1.52
     }
   ],
-  "at_a_glance": "You have spent $8.24 across 15 sessions building Promptly from blank canvas to a shipped macOS app. Phase 2 was the heaviest investment at $4.01 across 8 sessions \u2014 the core recording flow, Claude integration, bug fixes, and visual design all shipped there. Phase 4 v2 features have been well-priced at $1.95 for React migration plus 8 new features. Session 15 was the lightest yet at $0.35 \u2014 a small cosmetic pass removing vibrancy bleed-through and adding an ambient glow.",
+  "at_a_glance": "You have spent $9.41 across 16 sessions over 3 days. Today was the most expensive session at ~$1.17, covering 7 work items: the full Iteration Mode feature plus a cluster of packaging and distribution bug fixes (BUG-012 through BUG-016 and FEATURE-SIGNING). The project is 98% complete with only a smoke test and broader distribution work remaining.",
   "session_narratives": {
-    "2026-04-18-001": "The kickoff session \u2014 brainstorm, architect, and spec review. Expensive per task but unavoidable; these decisions shaped everything that followed.",
-    "2026-04-18-002": "Phase 1 foundation \u2014 11 tasks including parallel subagents for the full Electron shell, IPC skeleton, and PATH resolution. Most expensive single session at $1.30.",
-    "2026-04-18-003": "F-STATE planning session. Zero code tasks but produced the full spec, plan, and task breakdown for the state machine and UI skeleton.",
-    "2026-04-18-004": "F-STATE build \u2014 5 tasks completing the full state machine, all 6 panels, CSS tokens, and IPC wiring.",
-    "2026-04-18-005": "F-FIRST-RUN + F-SPEECH planning. Two feature specs in one session \u2014 heavy reading day.",
-    "2026-04-18-006": "Finishing FRN-004, the last first-run task. Short session, mostly a single-task cleanup.",
-    "2026-04-18-007": "Design system implementation and 3 bug fixes. The L-sized design task dominated at ~$0.27.",
-    "2026-04-18-008": "DECISION-004 (recording state moved into main window) plus BUG-004. Architecture refactor was the heavy lift.",
-    "2026-04-18-009": "Vibrancy, BUG-007, and FEATURE-001 splash screen. Splash screen was the L task at ~$0.25.",
-    "2026-04-18-010": "Phase 2 review + all 11 review fixes applied in one session. phase-2-review alone consumed ~$0.31.",
-    "2026-04-18-011": "Final review gate cleared \u2014 0 P0, 0 P1. Lean session; the app was already in good shape.",
-    "2026-04-19-012": "v2 features day \u2014 history removal, language removal, and Phase 4 cleanup across 5 tasks.",
-    "2026-04-19-013": "Minimal startup + cost tracking session. No implementation tasks; cheapest session at $0.165.",
-    "2026-04-20-014": "FEATURE-011 pause/resume \u2014 full feature from spec to shipping in one session. vibe-add-feature planning consumed 33% ($0.225) of the $0.674 total.",
-    "2026-04-20-015": "DESIGN-001 \u2014 vibrancy removed and ambient blue/purple glow added. The lightest session in the project at $0.35. One small targeted change to 4 source files, logged as D-008 and D-009."
+    "2026-04-18-001": "The initial planning session \u2014 brainstorm, architect, and spec review. Expensive per task because these skills read and write large structured documents from scratch.",
+    "2026-04-18-002": "The heaviest session at $1.30 \u2014 all 9 Phase 1 foundation tasks plus phase review. Eleven tasks in one run with vibe-parallel orchestration drove the cost up.",
+    "2026-04-18-003": "Pure planning session for F-STATE \u2014 no code committed, just spec generation and review. Cost reflects the reading of BRIEF.md, SPEC.md, and writing detailed FEATURE_TASKS.md.",
+    "2026-04-18-004": "F-STATE build \u2014 all 5 state machine tasks completed. Steady $0.10/task average, consistent with medium-complexity UI work.",
+    "2026-04-18-005": "F-FIRST-RUN planning session only \u2014 no tasks committed. Feature spec and spec-review drove the cost against a growing context.",
+    "2026-04-18-006": "Tiny session \u2014 only FRN-004 (the final first-run task) plus vibe-cost. Context overhead was relatively low.",
+    "2026-04-18-007": "Design system implementation plus 6 bug fixes and mode dropdown fix. The large design output (10 code sections) explains the higher output token count.",
+    "2026-04-18-008": "DECISION-004 (move recording to main window) + BUG-004 \u2014 a significant architectural refactor that rewrote several IPC channels.",
+    "2026-04-18-009": "Vibrancy, BUG-007, and the FEATURE-001 splash screen. The splash implementation was an L-sized task that drove most of the cost.",
+    "2026-04-18-010": "Phase 2 review + all 11 backlog fixes (BL-013 through BL-023). The review itself consumed 80K tokens reading the full codebase.",
+    "2026-04-18-011": "Final review gate + RFX console cleanup. A focused end-of-v1 session \u2014 two tasks, low output.",
+    "2026-04-19-012": "Phase 4 kickoff \u2014 dark mode follow-up, language docs, TASKS update, and two feature removals (old history + language). Moderate cost for cleanup work.",
+    "2026-04-19-013": "Session startup only plus vibe-cost. Minimal work \u2014 this was likely a short exploratory session with no committed tasks.",
+    "2026-04-20-014": "FEATURE-011 Pause and Resume \u2014 all 3 tasks plus vibe-add-feature spec. A clean $0.17/task average for medium React component work.",
+    "2026-04-20-015": "DESIGN-001 vibrancy and ambient glow \u2014 a single S-sized task. Low cost, focused change.",
+    "2026-04-20-016": "The largest Phase 4 session at $1.17 \u2014 FEATURE-012 Iteration Mode (6 subtasks, L), plus a cluster of packaging bug fixes: BUG-012 PATH resolution, BUG-013/014/015 mic and whisper packaging issues, BUG-016 mic dialog cleanup, and FEATURE-SIGNING self-signed cert. DECISIONS.md at 78KB is now the primary context pressure."
   },
   "recommendations": [
     {
-      "code": "CP-05",
-      "title": "CLAUDE.md caching still disabled \u2014 15 sessions, zero cache reads",
-      "body": "CLAUDE.md has grown significantly with active feature sections for F-SPEECH, F-CLAUDE, F-ACTIONS, FEATURE-004, FEATURE-007, FEATURE-009, and FEATURE-011 \u2014 all still live in the file even though those features are complete. It is now approximately 5,000 tokens and changes each session, preventing caching from ever activating. At this stage of the project, consider archiving the completed feature sections out of CLAUDE.md \u2014 the rules they enforced are now baked into the codebase. A leaner CLAUDE.md would cache reliably and save ~$0.10\u20130.15 per session.",
-      "saving": "save ~$0.10\u20130.15/session",
+      "code": "CP-01",
+      "title": "DECISIONS.md at 78KB is loaded on every session",
+      "body": "DECISIONS.md has grown to 78KB \u2014 approximately 19,500 tokens \u2014 and is likely read whole on every session startup. This adds roughly $0.06 of pure overhead per session. Consider archiving decisions older than Phase 2 into a DECISIONS_ARCHIVE.md that is never loaded automatically.",
+      "saving": "save ~$0.05\u20130.08/session",
       "severity": "warn"
+    },
+    {
+      "code": "CP-05",
+      "title": "Prompt caching unused across all 16 sessions",
+      "body": "Cache hit rate is 0% across every session in this project. CLAUDE.md is 21KB of stable content that could be cached \u2014 it rarely changes between sessions. Prompt caching would reduce input costs by 90% on cached tokens. This is the single highest-leverage optimisation available.",
+      "saving": "save ~$0.10\u20130.20/session on large sessions",
+      "severity": "fix"
     }
   ],
-  "forecast_narrative": "The project is 97% complete \u2014 3 tasks remain: manual Phase 3 smoke test, broader distribution prep (notarisation, Sparkle, landing page). These are S-sized tasks. Expect $0.10\u20130.25 to finish. Total project cost will land around $8.35\u20138.50, comfortably within budget for a solo macOS utility built end-to-end with Claude."
+  "forecast_narrative": "Two tasks remain: a manual smoke test (the \u2b1c item in Phase 3 polish) and broader distribution work (notarisation, Sparkle, landing page). The smoke test is an S-task at roughly $0.05\u20130.10. Distribution planning is unscoped \u2014 if it involves vibe-add-feature spec work it could reach $0.30\u20130.50. Total remaining project cost: $0.10\u20130.60 depending on distribution scope."
 }
