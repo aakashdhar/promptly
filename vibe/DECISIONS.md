@@ -855,3 +855,21 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - `systemPreferences.askForMediaAccess` (main process, macOS TCC) and `getUserMedia` (renderer, Chromium) are two separate layers. Both must agree.
 - `askForMediaAccess` returns `true` silently if TCC is already granted — safe to call before every recording start.
 - For unsigned DMG distribution: always set `hardenedRuntime: false` or the entitlements won't apply and TCC won't persist.
+
+---
+
+### D-BUG-013-B — Renderer process TCC grant missing — getUserMedia never primed in splash
+- **Date**: 2026-04-20 · **Task**: BUG-013 · **Type**: blocker-resolution
+- **What was planned**: BUG-013 fix (D-BUG-013 above) was considered complete after setting both Electron session handlers and wiring `requestMic()` before every recording.
+- **What was done**: Added a `getUserMedia({ audio: true })` call (with immediate track release) inside the splash mic check block, after `checkMicStatus` returns granted, before showing the green checkmark.
+- **Why**: macOS TCC has **two separate process-level grants**:
+  1. Main process grant — obtained via `systemPreferences.askForMediaAccess()` from main.js. This is what the splash `check-mic-status` IPC was calling. It grants TCC for the **main process**.
+  2. Renderer helper process grant — only obtained when `getUserMedia` is called from a **renderer context**. In packaged Electron apps on macOS (esp. Sequoia/Darwin 25), the renderer runs as a separate subprocess (`Promptly Helper (Renderer).app`) with its own TCC entry requirement. `askForMediaAccess` from the main process does NOT cover the renderer subprocess.
+  
+  Result: splash passed green (main process TCC = granted), but the first `getUserMedia` call in the main window's renderer triggered the macOS dialog again because the renderer helper process had never been granted.
+
+  By calling `getUserMedia` inside the splash renderer context (then immediately releasing the stream), we prime the renderer helper's TCC grant during the controlled splash sequence — where the user expects to grant permissions — so subsequent `getUserMedia` calls in the main window are silent.
+
+- **Alternatives considered**: (1) Call `getUserMedia` from main window on first load before user presses shortcut — rejected, no clear hook without adding new IPC and timing complexity. (2) Use `setPermissionCheckHandler` return value to bypass TCC entirely — confirmed this only prevents Chromium's dialog, not macOS TCC. (3) Current fix — one `getUserMedia` in splash renderer, immediate track release. Minimal, correct, and happens at the expected "grant permissions" moment.
+- **Impact on other tasks**: None — splash.html only. No IPC changes.
+- **Approved by**: human
