@@ -244,14 +244,20 @@
 
 ---
 
+✅ **BUG-015 — TypeError Object destroyed + mic dialog repeating** (FIXED 2026-04-20)
+   [x] main.js: splash-done timeout 400→1200ms + isDestroyed() guards on splashWin + win
+   [x] package.json: hardenedRuntime true + gatekeeperAssess false + entitlements wired
+   [x] entitlements.plist: added network.client key
+   [x] App.jsx: removed requestMic() from startRecording + handleIterate (getUserMedia handles TCC)
+   → Specs: vibe/bugs/2026-04-20-bug-015/ | DECISIONS.md D-BUG-015
+
 ## What just happened
-✅ BUG-012 — PATH resolution fixed — 2026-04-20
-   - resolveClaudePath(): common paths checked first (fs.existsSync), then zsh → bash fallback
-   - resolveWhisperPath(): new function, same pattern + python3 -m whisper fallback
-   - Both awaited in app.whenReady() before window creation — race condition eliminated
-   - transcribe-audio: whisperCmd handles 'python3 -m whisper' multi-word case
-   - CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
+✅ BUG-015 — TypeError Object destroyed + mic dialog repeating — fixed 2026-04-20
+   - splash-done timeout extended to 1200ms; isDestroyed() guards added
+   - hardenedRuntime: true in package.json — TCC entry now persists across launches
+   - entitlements.plist: network.client key added
+   - requestMic() removed from startRecording + handleIterate — getUserMedia calls directly
 
 ## What's next
-⬜ Smoke checklist — build dist:unsigned, install from DMG, verify both splash checks pass
+⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, run smoke checklist
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

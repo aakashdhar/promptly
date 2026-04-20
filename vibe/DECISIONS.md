@@ -893,3 +893,23 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   6. `--model tiny` confirmed already in use — no change.
 - **Impact on other tasks**: None — `transcribe-audio` handler only.
 - **Approved by**: human
+
+---
+
+### D-BUG-015 — TypeError Object destroyed + mic dialog repeating + double mic request
+- **Date**: 2026-04-20 · **Task**: BUG-015 · **Type**: blocker-resolution
+- **Symptom 1**: `TypeError: Object has been destroyed` on launch — splashWin internal Chromium IPC fires after the 400ms destroy timeout, hitting a dead webContents.
+- **Symptom 2**: Microphone permission dialog appears on every launch instead of only the first.
+- **Symptom 3**: Two consecutive TCC requests on recording start — could trigger a second dialog.
+- **Root causes**:
+  - **A — splash-done timeout too short**: `splash-done` handler destroys splashWin after 400ms. `getUserMedia` in splash renderer triggers async Chromium-internal IPC back through splashWin.webContents. With 400ms destroy the IPC arrives after destruction → TypeError.
+  - **B — hardenedRuntime: false**: Unsigned/unhardened app bundle has no code identity TCC can persist. macOS re-prompts every launch.
+  - **C — redundant requestMic() in startRecording**: `startRecording` and `handleIterate` both call `window.electronAPI.requestMic()` (which calls `askForMediaAccess` in main) and then immediately `getUserMedia`. With the session permission handlers in place this is redundant and risks a race on first recording.
+- **Fixes**:
+  1. `main.js` splash-done: timeout 400→1200ms. Added `isDestroyed()` guards on `splashWin` and `win` inside the timeout callback.
+  2. `package.json`: `hardenedRuntime: true`, `gatekeeperAssess: false`, `entitlements: "entitlements.plist"`, `entitlementsInherit: "entitlements.plist"`, `minimumSystemVersion: "12.0"`.
+  3. `entitlements.plist`: added `com.apple.security.network.client` key (was missing).
+  4. `App.jsx`: removed `await window.electronAPI.requestMic()` from `startRecording` and `handleIterate`. `getUserMedia({ audio: true, video: false })` handles TCC directly.
+- **Files in scope**: `main.js`, `package.json`, `entitlements.plist`, `src/renderer/App.jsx`
+- **Impact**: Smoke checklist: no TypeError on launch, mic dialog once only, recording starts silently.
+- **Approved by**: human
