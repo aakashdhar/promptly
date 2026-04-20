@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -303,6 +303,12 @@ function createWindow() {
 app.commandLine.appendSwitch('enable-transparent-visuals');
 
 app.whenReady().then(async () => {
+  // Auto-grant media permission at Electron level — real TCC check is handled in splash
+  // via systemPreferences.askForMediaAccess(), so no second dialog should appear
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'media');
+  });
+
   claudePath = await resolveClaudePath();
   whisperPath = await resolveWhisperPath();
 
