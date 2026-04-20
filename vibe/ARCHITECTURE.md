@@ -64,9 +64,13 @@ promptly/
 
 **Approach:** In-memory state machine inside `index.html`. Single `currentState` variable.
 
-**States (6 total — spec'd in BRIEF.md):**
+**States (9 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING added via features):**
 ```
 FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
+                 ↕ PAUSED (FEATURE-011)
+                 → ITERATING (FEATURE-012)
+IDLE / PROMPT_READY → SHORTCUTS (FEATURE-006)
+IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 ```
 
 **Rules:**
@@ -113,6 +117,7 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 | Direction | Channel | Purpose |
 |-----------|---------|---------|
 | renderer → main | `generate-prompt` | Send transcript + mode, returns Claude output |
+| renderer → main | `generate-raw` | Full custom system prompt passthrough → Claude; returns { success, prompt, error } — added FEATURE-012 |
 | renderer → main | `copy-to-clipboard` | Write string to system clipboard |
 | renderer → main | `check-claude-path` | Returns resolved claude binary path or error |
 | renderer → main | `resize-window` | Resize BrowserWindow height per state (STATE_HEIGHTS) |
@@ -264,6 +269,7 @@ The following are P0 review findings — they block phase gates:
 - [ ] Accessing `localStorage` directly outside `getMode()` / `setMode()` wrappers
 - [ ] Introducing a framework, build step, or bundler (Vite, Webpack, React, etc.)
 - [ ] Mutating `originalTranscript` after it is captured — regenerate must always use original
+  > Exception: FEATURE-012 iteration flow — `originalTranscript.current = iterText` is set deliberately after a successful iteration so "You said" and Regenerate reflect the user's latest input. See DECISIONS.md D-ITER-003.
 
 ---
 

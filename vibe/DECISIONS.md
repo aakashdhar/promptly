@@ -751,3 +751,28 @@ Key fixes applied:
 - **Alternatives considered**: CSS box-shadow only — rejected as too flat. Adding a subtle texture PNG — rejected (adds a binary asset).
 - **Impact on other tasks**: Splash screen updated to match — same two glow divs added before `.content`. All state panel content renders above glows via natural stacking (glows at z-index:-1).
 - **Approved by**: human
+
+---
+
+## FEATURE-012 — Iteration Mode — 2026-04-20
+> Folder: vibe/features/2026-04-20-iteration-mode/
+> Allows users to refine a generated prompt by speaking a new voice input that is combined with the original prompt and sent to Claude.
+> Tasks: ITR-001 through ITR-006 | Estimated: 6–9 hours | Unplanned addition
+
+### D-ITER-001 — generate-raw IPC channel added
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: `generate-prompt` constructs its system prompt from MODE_CONFIG in main.js and cannot accept a pre-built system prompt. Iteration requires sending the original prompt + new transcript as a fully pre-assembled system prompt from the renderer. `generate-raw` is the minimal new IPC surface: takes `{ systemPrompt }` string, same timeout/error/spawn pattern as `generate-prompt`.
+
+### D-ITER-002 — ITERATING is a state, not a mode
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: Iteration works across all existing modes — it's a refinement flow, not a prompt style. A new state (ITERATING) is required to show the blue recording UI without conflicting with RECORDING. No new MODE_CONFIG entry, no localStorage key, no mode pill change.
+
+### D-ITER-003 — originalTranscript.current updated to iterText on successful iteration
+- **Date**: 2026-04-20 · **Type**: tech-choice
+- **Why**: "You said" in PROMPT_READY should show the user's most recent input (the iteration voice input), not the original recording from possibly many minutes ago. The original prompt content is safely preserved in iterationBase.current.prompt. If user regenerates after iteration, they regenerate from the latest iteration transcript, which is the correct behaviour.
+
+---
+## 2026-04-20 — Spec review: add-feature (FEATURE-012)
+> P0: 0 · P1: 2 (both fixed) · P2: 2 (acknowledged)
+> Action: fixed — both P1s resolved before build
+> Report: vibe/spec-reviews/2026-04-20-add-feature.md

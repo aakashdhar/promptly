@@ -225,34 +225,32 @@
    [x] PAUZ-003 · Wire PAUSED render in App.jsx + CODEBASE.md update
    → Full specs: vibe/features/2026-04-20-pause-resume/FEATURE_TASKS.md (agent use)
 
+✅ **FEATURE-012 — Iteration Mode** — refine a generated prompt with a new voice recording (6/6 ✅)
+   [x] ITR-001 · generate-raw IPC + iterGlow CSS — main.js, preload.js, index.css
+   [x] ITR-002 · IteratingState.jsx — blue banner + waveform + timer + stop button
+   [x] ITR-003 · App.jsx — ITERATING state + full iteration recording + dismiss flow
+   [x] ITR-004 · PromptReadyState.jsx — ↻ Iterate button + ↻ iterated badge
+   [x] ITR-005 · history.js + HistoryPanel.jsx — isIteration fields + ↻ indicator
+   [x] ITR-006 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
+   → Full specs: vibe/features/2026-04-20-iteration-mode/FEATURE_TASKS.md (agent use)
+
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ---
 
 ## What just happened
-💰 Cost tracked — Session #14: ~$0.674 est. | Project total: ~$7.89 est. | ↑ +23% vs 5-session avg
-   vibe/cost/report-2026-04-20-session14.md
-
-✅ FEATURE-011 — Pause and Resume Recording — complete 2026-04-20
-✅ DESIGN-001 — Vibrancy removed + ambient glow added — complete 2026-04-20 (D-008, D-009)
-💰 Cost tracked — Session #15: ~$0.35 est. | Project total: ~$8.24 est. | ↓ -29% vs 4-session avg
-   vibe/cost/report-2026-04-20-session15.md
-   - preload.js: `onShortcutPause` added — wires existing shortcut-pause IPC channel
-   - App.jsx: PAUSED state + STATE_HEIGHTS.PAUSED=89, recSecs/recTimerRef/isPausedRef, startTimer/pauseTimer/stopTimer, pauseRecording/resumeRecording, onShortcutPause handler, PAUSED render, duration prop passed to RecordingState
-   - RecordingState.jsx: internal timer removed, accepts duration+onPause props, amber pause button added
-   - PausedState.jsx: new component — flat amber line, amber timer, resume/stop buttons, status text
-   - index.css: pauseGlow @keyframes + --animate-pause-glow token added
-   - build: ✅ vite build succeeded, 30 modules
-   - lint: ✅ 0 errors
+✅ FEATURE-012 — Iteration Mode — complete 2026-04-20
+   All 6 tasks built in parallel via vibe-parallel (Wave 1: 3 parallel, Waves 2-4: sequential)
+   - main.js: generate-raw IPC handler added
+   - preload.js: generateRaw exposed on window.electronAPI
+   - index.css: @keyframes iterGlow added
+   - IteratingState.jsx: new — blue banner + blue waveform + timer + iterGlow stop
+   - App.jsx: ITERATING state + STATE_HEIGHTS.ITERATING=200, 5 new refs, handleIterate/stopIterating/dismissIterating
+   - PromptReadyState.jsx: ↻ Iterate button (blue, leftmost) + ↻ iterated badge
+   - history.js: saveToHistory extended with isIteration + basedOn fields
+   - HistoryPanel.jsx: ↻ indicator on iteration entries
+   - CODEBASE.md + ARCHITECTURE.md: updated
 
 ## What's next
-✅ DESIGN-001 — Remove vibrancy bleed-through + add ambient purple glow — complete 2026-04-20
-   - main.js: both BrowserWindow configs — vibrancy/visualEffectState removed, transparent:false, backgroundColor:'#0A0A14'
-   - App.jsx: bar container → linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14); backdropFilter removed; blue glow div (top-right) + purple glow div (bottom-left) at zIndex:-1
-   - index.css: body background → #0A0A14 (was transparent)
-   - splash.html: html/body background → #0A0A14; .splash → gradient; two glow divs added before .content
-   - DECISIONS.md: D-008 (vibrancy removed) + D-009 (ambient glow) logged
-   - smoke test: ✅ human-confirmed 2026-04-20
-
-## What's next
+⬜ Manual smoke test — run app, exercise FEATURE-012 smoke checklist (11 items)
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

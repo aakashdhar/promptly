@@ -469,3 +469,47 @@ Always: follow ARCHITECTURE.md patterns · run `npm run build:renderer` to verif
 Never: dangerouslySetInnerHTML · mutate originalTranscript · touch files not in scope list
 
 ---
+
+---
+
+### Active Feature: FEATURE-012 (Iteration Mode)
+> Folder: vibe/features/2026-04-20-iteration-mode/ | Added: 2026-04-20
+
+**Feature summary**: After PROMPT_READY, user taps ↻ Iterate to record a voice refinement. Original prompt + new transcript are combined into a custom system prompt and sent to Claude via generate-raw IPC. Result replaces the prompt in PROMPT_READY with an ↻ iterated badge. Infinite sequential iterations supported.
+**Files in scope**: `src/renderer/App.jsx`, `src/renderer/components/PromptReadyState.jsx`, `src/renderer/components/IteratingState.jsx` (new), `src/renderer/components/HistoryPanel.jsx`, `src/renderer/utils/history.js`, `src/renderer/index.css`, `main.js`, `preload.js`
+**Files out of scope**: `splash.html`, `entitlements.plist`, `vite.config.js`, `package.json`, all other components
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `generate-raw` IPC: takes `{ systemPrompt }` string → spawns claude -p → returns `{ success, prompt }`
+- `iterationBase` (useRef) stores `{ transcript, prompt, mode }` snapshot when ↻ Iterate is tapped
+- `isIterated` (useRef) — set true after successful iteration; reset to false on fresh stopRecording
+- Separate iter recorder refs: `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`
+- `originalTranscript.current` updated to iterText after successful iteration (not immutable here)
+- All styles in IteratingState.jsx are inline — no Tailwind classes
+- `iterGlow` keyframe in index.css; referenced inline as `animation: 'iterGlow 2s ease-in-out infinite'`
+- Traffic lights hidden for ITERATING same as RECORDING/PAUSED
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run `npm run build:renderer` after ITR-002+ · run lint before commit · update CODEBASE.md (ITR-006)
+
+Ask first: any new IPC channel beyond generate-raw · new localStorage keys
+
+Never: dangerouslySetInnerHTML with dynamic content · localStorage direct access · add runtime npm deps · touch files not in scope list · reuse mediaRecorderRef for iteration (use iterRecorderRef)
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Run `npm run build:renderer` — must succeed (after ITR-002+)
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add <changed files>
+   git commit -m "feat(iter): [ITR-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-20-iteration-mode/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [ITR-00X] done — iter"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.

@@ -21,18 +21,19 @@
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. | `createWindow()`, `resolveClaudePath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `generateRaw`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React). Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`, no backdropFilter; blue glow div (top-right, zIndex:-1) + purple glow div (bottom-left, zIndex:-1). | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `startTimer()`, `pauseTimer()`, `stopTimer()`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`, no backdropFilter; blue glow div (top-right, zIndex:-1) + purple glow div (bottom-left, zIndex:-1). | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `startTimer()`, `pauseTimer()`, `stopTimer()`. Refs: `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
 | `src/renderer/components/PausedState.jsx` | PAUSED panel — dismiss, flat amber line, amber timer, resume (▶), stop, status text | props: duration, onResume, onStop, onDismiss |
+| `src/renderer/components/IteratingState.jsx` | ITERATING state panel — blue context banner showing previous transcript, blue animated waveform (RAF loop with cleanup), timer, blue glow stop button (iterGlow). All styles inline. | props: contextText, duration, onStop, onDismiss |
 | `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup | — |
 | `src/renderer/components/ThinkingState.jsx` | THINKING panel — status badge, morph wave, YOU SAID | — |
 | `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
@@ -53,6 +54,7 @@
 | Channel | Direction | Status |
 |---------|-----------|--------|
 | `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error } |
+| `generate-raw` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), full system prompt passed from renderer (no MODE_CONFIG); used by iteration flow. Returns { success, prompt, error } |
 | `copy-to-clipboard` | renderer → main | ✅ registered — clipboard.writeText({ text }) → { success: true } |
 | `check-claude-path` | renderer → main | ✅ registered — returns { found, path } or { found: false, error } |
 | `resize-window` | renderer → main | ✅ registered — win.setSize(520, height, true) |
@@ -92,6 +94,7 @@
 | `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint, ⌘? hint |
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
 | `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
+| `ITERATING` | IteratingState | 200px | Blue context banner + blue waveform + timer + blue stop; traffic lights hidden; separate iter MediaRecorder from main recording |
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
@@ -120,6 +123,11 @@
 | `isPausedRef` | useRef boolean | pauseRecording/resumeRecording/handleDismiss | guard |
 | `recTimerRef` | useRef interval\|null | startTimer/pauseTimer/stopTimer | cleared on pause/stop/dismiss |
 | `recSecs` | useState number | startTimer interval | duration formatting for RecordingState + PausedState |
+| `iterationBase` | useRef {transcript,prompt,mode}\|null | handleIterate — set when user taps ↻ Iterate | stopIterating — reads .prompt and .mode for system prompt |
+| `isIterated` | useRef boolean | stopIterating (true on success); stopRecording onstop (reset false) | PromptReadyState isIterated prop — controls badge |
+| `iterRecorderRef` | useRef MediaRecorder\|null | handleIterate | stopIterating, dismissIterating |
+| `iterChunksRef` | useRef Blob[] | handleIterate ondataavailable | stopIterating onstop |
+| `iterIsProcessingRef` | useRef boolean | stopIterating start/end guard | stopIterating early-exit guard |
 
 ## Module-scope variables (in index.html — legacy, main branch only)
 
@@ -181,7 +189,7 @@
 | Key | Written by | Read by | Notes |
 |-----|-----------|---------|-------|
 | `mode` | `useMode.setMode()` | `useMode.mode` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
-| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript |
+| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript. Iteration entries also include optional fields: `isIteration: true` and `basedOn: string` (first 100 chars of original prompt) |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 > `promptHistory` (old key, 20-entry cap) — replaced by `promptly_history` (100-entry cap) in FEATURE-004
