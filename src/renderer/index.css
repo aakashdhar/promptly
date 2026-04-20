@@ -39,7 +39,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: transparent;
+  background: #0A0A14;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   -webkit-font-smoothing: antialiased;
