@@ -128,6 +128,16 @@ Phase 1 complete (Electron shell + IPC skeleton + PATH resolution)
 
 - F-FIRST-RUN and F-SPEECH share no data writes → can run simultaneously after F-STATE
 
+### Unplanned additions (Phase 4+)
+
+#### FEATURE-010 — Refine Mode ← UNPLANNED ADDITION ✅ COMPLETE 2026-04-20
+> Added: 2026-04-20 · See DECISIONS.md D-RFNE-001 for context
+> Build order: after FEATURE-002 (Design mode) — extends mode infrastructure
+> Depends on: MODE_CONFIG pattern established in F-CLAUDE + FEATURE-002
+> Shared data: reads `mode` localStorage key (written by useMode hook); no new keys
+
+---
+
 ### What Phase 1-3 must NOT hard-code (for v2 compatibility)
 
 - Mode system: string-keyed, not integer-indexed — new modes can be added without schema change
