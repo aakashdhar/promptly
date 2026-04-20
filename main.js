@@ -191,9 +191,20 @@ async function resolveClaudePath() {
   });
 }
 
+function resolveShimToRealBinary(shimPath) {
+  // Shims (pyenv/conda) need their tool initialized at runtime — resolve to the real binary
+  // so it can be called directly without any shell environment
+  return new Promise((resolve) => {
+    exec('zsh -lc "pyenv which whisper 2>/dev/null"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "pyenv which whisper 2>/dev/null"', (err2, stdout2) => {
+        resolve(stdout2?.trim() || shimPath);
+      });
+    });
+  });
+}
+
 async function resolveWhisperPath() {
-  // Purpose: detect whether whisper is installed (for splash check).
-  // Execution always goes through zsh login shell — handles pyenv/conda/pipx/etc.
   const commonPaths = [
     '/usr/local/bin/whisper',
     '/usr/bin/whisper',
@@ -208,9 +219,14 @@ async function resolveWhisperPath() {
     '/opt/local/bin/whisper',
   ];
   for (const p of commonPaths) {
-    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+    try {
+      if (fs.existsSync(p)) {
+        if (p.includes('.pyenv/shims/')) return resolveShimToRealBinary(p);
+        return p;
+      }
+    } catch { /* ignore */ }
   }
-  return new Promise((resolve) => {
+  const shellResolved = await new Promise((resolve) => {
     exec('zsh -lc "which whisper"', (err, stdout) => {
       if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
       exec('bash -lc "which whisper"', (err2, stdout2) => {
@@ -222,6 +238,10 @@ async function resolveWhisperPath() {
       });
     });
   });
+  if (shellResolved && shellResolved.includes('.pyenv/shims/')) {
+    return resolveShimToRealBinary(shellResolved);
+  }
+  return shellResolved;
 }
 
 function registerShortcut() {
@@ -336,7 +356,10 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('check-mic-status', async () => {
-    return { status: systemPreferences.getMediaAccessStatus('microphone') };
+    // askForMediaAccess uses the native macOS TCC API — persists for unsigned apps,
+    // returns true immediately without a prompt if permission was already granted
+    const granted = await systemPreferences.askForMediaAccess('microphone');
+    return { granted };
   });
 
   // P1-008: IPC handlers
@@ -505,9 +528,11 @@ app.whenReady().then(async () => {
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       const transcript = await new Promise((resolve, reject) => {
-        // Always run via zsh login shell so pyenv/conda/pipx/etc. are initialized
-        const whisperInvoke = whisperPath === 'python3 -m whisper' ? 'python3 -m whisper' : 'whisper';
-        const whisperCmd = `zsh -lc "${whisperInvoke} '${tmpFile}' --model tiny --language en --output_format txt --output_dir '${outDir}'"`;
+        // Use full resolved path directly — avoids shell env issues in packaged DMG
+        const whisperCmd = whisperPath === 'python3 -m whisper'
+          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
+          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
+
         exec(whisperCmd,
           { timeout: 60000 }, (err, _stdout, stderr) => {
             try {
