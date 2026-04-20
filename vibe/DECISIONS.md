@@ -913,3 +913,19 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Files in scope**: `main.js`, `package.json`, `entitlements.plist`, `src/renderer/App.jsx`
 - **Impact**: Smoke checklist: no TypeError on launch, mic dialog once only, recording starts silently.
 - **Approved by**: human
+
+---
+
+### D-BUG-016 — Mic permission dialog on every launch: askForMediaAccess is the wrong API
+- **Date**: 2026-04-20 · **Task**: BUG-016 · **Type**: blocker-resolution
+- **Symptom**: macOS microphone permission dialog appears on every launch, even after the user has clicked Allow.
+- **Root cause**: `check-mic-status` and `request-mic` IPC handlers both called `systemPreferences.askForMediaAccess('microphone')`. Despite documentation suggesting it returns immediately if already granted, `askForMediaAccess` re-shows the TCC dialog on every call for unsigned builds — it is an *active request* API, not a *status query* API.
+- **Fixes**:
+  1. `main.js` — `check-mic-status`: replaced `askForMediaAccess` with `systemPreferences.getMediaAccessStatus('microphone')`. Synchronous status-only query — no dialog, ever.
+  2. `main.js` — `request-mic`: same replacement. Returns `{ ok: status === 'granted' }` without side effects.
+  3. `splash.html` — `runChecks()` mic block: removed `window.electronAPI.checkMicStatus()` entirely. Replaced with direct `getUserMedia({ audio: true })` — the only call that correctly registers a TCC grant for the renderer helper process. First launch: dialog once. All subsequent launches: resolves silently.
+  4. `preload.js` — removed `checkMicStatus` and `requestMic` contextBridge exposures (confirmed unused in all renderer src).
+- **Why getUserMedia is correct**: `askForMediaAccess` grants TCC for the main process; `getUserMedia` in the renderer grants TCC for the renderer helper subprocess — the same context that handles all recording. Only `getUserMedia` in the splash renderer produces a persistent grant for recording.
+- **Files changed**: `main.js`, `preload.js`, `splash.html`
+- **Impact**: First launch → one dialog; all subsequent launches → zero dialogs; recording starts silently.
+- **Approved by**: human
