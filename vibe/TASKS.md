@@ -210,12 +210,25 @@
    - openHistory/closeHistory: now use setWindowSize(746, 720) / setWindowSize(520, IDLE) directly
    - Discovered: BrowserWindow had `minWidth:520, maxWidth:520` — must call setMinimumSize/setMaximumSize before setSize to change width
 
+✅ **FEATURE-010 — Refine Mode** (5/5 — COMPLETE 2026-04-20)
+   [x] RFNE-001 · main.js — refine added to MODE_CONFIG (standalone) + show-mode-menu array
+   [x] RFNE-002 · useMode.js — refine: 'Refine' added to MODE_LABELS
+   [x] RFNE-003 · IdleState.jsx — purple pill + pulse ring + mic stroke + subtitle text
+   [x] RFNE-004 · PromptReadyState.jsx — status line + purple section labels + purple copy button
+   [x] RFNE-005 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md + TASKS.md updated
+   → Full specs: vibe/features/2026-04-20-refine-mode/FEATURE_TASKS.md (agent use)
+
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ---
 
 ## What just happened
-✅ BUG-011 fixed — 2026-04-19
+✅ FEATURE-010 — Refine Mode — complete 2026-04-20
+   - main.js: `refine` added to MODE_CONFIG with standalone 4-section system prompt
+   - useMode.js: `refine: 'Refine'` added to MODE_LABELS
+   - IdleState.jsx: purple mode pill, pulse ring, mic SVG stroke, subtitle text when mode === 'refine'
+   - PromptReadyState.jsx: status line → 'Refinement prompt ready'; section labels → purple rgba(168,85,247,0.7); copy button → purple gradient
+   - lint: 0 errors
    - HistoryPanel.jsx fully rewritten with inline styles
    - App.jsx root container switched to inline width:100%
    - set-window-size IPC added (atomic width+height, min/max constraints)
@@ -236,4 +249,5 @@
    vibe/cost/report-2026-04-19-session13.md
 
 ## What's next
+⬜ Smoke test FEATURE-010: right-click → Refine → purple UI → record → 4 sections → purple labels → copy → green flash → restart → mode persists
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

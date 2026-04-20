@@ -145,7 +145,7 @@
 | `win` | `createWindow()` called after `resolveClaudePath()` resolves | BrowserWindow instance |
 | `splashWin` | `app.whenReady()` — created before `win`, destroyed after `splash-done` | BrowserWindow instance (null after splash) |
 | `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |
-| `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, design }` — each `{ name, instruction }`; design has `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
+| `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, refine, design }` — 7 modes total; each `{ name, instruction }`; `refine` and `design` have `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
 | `tray` | `createTray()` called from splash-done | Tray instance or null |
 
 ---

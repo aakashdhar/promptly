@@ -695,3 +695,20 @@ Key fixes applied:
 - **What was done**: closeHistory calls setWindowSize(520, STATE_HEIGHTS.IDLE) and always transitions to IDLE
 - **Why**: User explicitly requested "On HISTORY close: resizeWindow(STATE_HEIGHTS.IDLE)" during BUG-011 fix session — IDLE is the correct home state after reviewing history
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-010 (Refine Mode) — 2026-04-20
+> Folder: vibe/features/2026-04-20-refine-mode/
+> Add Refine as a 7th prompt mode — standalone 4-section design feedback prompt with purple visual accent.
+> Tasks: RFNE-001 · RFNE-002 · RFNE-003 · RFNE-004 · RFNE-005 | Estimated: ~3 hours
+> Note: User referenced this as FEATURE-009 in the feature: command — renumbered to FEATURE-010 since FEATURE-009 is the History Panel (complete).
+
+### D-RFNE-001 — Refine mode is an unplanned addition
+- **Date**: 2026-04-20 · **Task**: RFNE-001 · **Type**: scope-change
+- **What was planned**: PLAN.md has no Refine mode entry — original spec had 5 modes (balanced, detailed, concise, chain, code) + FEATURE-002 added design
+- **What was done**: Added `refine` as a 7th mode with `standalone: true` — same pattern as `design`
+- **Why**: User-requested addition. Mode infrastructure (MODE_CONFIG, show-mode-menu, useMode hook, mode-selected IPC) is generic — adding a new mode requires only an entry in MODE_CONFIG + one line in the menu array
+- **Alternatives considered**: Using PROMPT_TEMPLATE with a refine-specific instruction — rejected because Refine has its own distinct 4-section output format that must not be wrapped in the generic Role/Task/Context/Constraints/Output format template
+- **Impact on other tasks**: None. Mode system is additive by design.
+- **Approved by**: human
