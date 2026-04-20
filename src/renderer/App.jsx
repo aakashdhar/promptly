@@ -5,6 +5,7 @@ import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
 import RecordingState from './components/RecordingState.jsx'
+import PausedState from './components/PausedState.jsx'
 import ThinkingState from './components/ThinkingState.jsx'
 import PromptReadyState from './components/PromptReadyState.jsx'
 import ErrorState from './components/ErrorState.jsx'
@@ -13,6 +14,7 @@ import { saveToHistory } from './utils/history.js'
 const STATES = {
   IDLE: 'IDLE',
   RECORDING: 'RECORDING',
+  PAUSED: 'PAUSED',
   THINKING: 'THINKING',
   PROMPT_READY: 'PROMPT_READY',
   ERROR: 'ERROR',
@@ -23,6 +25,7 @@ const STATES = {
 const STATE_HEIGHTS = {
   IDLE: 118,
   RECORDING: 89,
+  PAUSED: 89,
   THINKING: 320,
   PROMPT_READY: 560,
   ERROR: 101,
@@ -43,6 +46,9 @@ export default function App() {
   const audioChunksRef = useRef([])
   const isProcessingRef = useRef(false)
   const generatedPromptRef = useRef('')
+  const isPausedRef = useRef(false)
+  const recTimerRef = useRef(null)
+  const [recSecs, setRecSecs] = useState(0)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -62,13 +68,28 @@ export default function App() {
     generatedPromptRef.current = generatedPrompt
   }, [generatedPrompt])
 
+  function startTimer() {
+    recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
+  }
+  function pauseTimer() {
+    clearInterval(recTimerRef.current)
+    recTimerRef.current = null
+  }
+  function stopTimer() {
+    clearInterval(recTimerRef.current)
+    recTimerRef.current = null
+    setRecSecs(0)
+  }
+
   function transition(newState, payload = {}) {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
     resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
-      window.electronAPI.setWindowButtonsVisible(newState !== STATES.RECORDING)
+      window.electronAPI.setWindowButtonsVisible(
+        newState !== STATES.RECORDING && newState !== STATES.PAUSED
+      )
     }
   }
 
@@ -81,6 +102,7 @@ export default function App() {
       recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data)
       recorder.start()
       transition(STATES.RECORDING)
+      startTimer()
     } catch {
       transition(STATES.ERROR, { message: 'Microphone access denied' })
     }
@@ -91,6 +113,8 @@ export default function App() {
     if (!recorder || isProcessingRef.current) return
     isProcessingRef.current = true
 
+    stopTimer()
+    isPausedRef.current = false
     recorder.stop()
     recorder.stream.getTracks().forEach((t) => t.stop())
 
@@ -143,7 +167,29 @@ export default function App() {
     }
     audioChunksRef.current = []
     isProcessingRef.current = false
+    isPausedRef.current = false
+    stopTimer()
     transition(STATES.IDLE)
+  }, [])
+
+  const pauseRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current
+    if (recorder && recorder.state === 'recording') {
+      pauseTimer()
+      recorder.pause()
+      isPausedRef.current = true
+      transition(STATES.PAUSED)
+    }
+  }, [])
+
+  const resumeRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current
+    if (recorder && recorder.state === 'paused') {
+      recorder.resume()
+      isPausedRef.current = false
+      startTimer()
+      transition(STATES.RECORDING)
+    }
   }, [])
 
   function openHistory() {
@@ -184,8 +230,12 @@ export default function App() {
   // Stable refs for IPC handlers (avoid stale closures)
   const startRecordingRef = useRef(startRecording)
   const stopRecordingRef = useRef(stopRecording)
+  const pauseRecordingRef = useRef(pauseRecording)
+  const resumeRecordingRef = useRef(resumeRecording)
   useEffect(() => { startRecordingRef.current = startRecording }, [startRecording])
   useEffect(() => { stopRecordingRef.current = stopRecording }, [stopRecording])
+  useEffect(() => { pauseRecordingRef.current = pauseRecording }, [pauseRecording])
+  useEffect(() => { resumeRecordingRef.current = resumeRecording }, [resumeRecording])
 
   // IPC listeners — mounted once
   useEffect(() => {
@@ -216,6 +266,11 @@ export default function App() {
 
     window.electronAPI.onShowHistory(() => {
       openHistory()
+    })
+
+    window.electronAPI.onShortcutPause(() => {
+      if (stateRef.current === STATES.RECORDING) pauseRecordingRef.current()
+      else if (stateRef.current === STATES.PAUSED) resumeRecordingRef.current()
     })
   }, [])
 
@@ -256,6 +311,10 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  const recM = Math.floor(recSecs / 60)
+  const recS = recSecs % 60
+  const duration = `${recM}:${String(recS).padStart(2, '0')}`
+
   // Right-click context menu on bar (mode menu)
   function handleContextMenu(e) {
     e.preventDefault()
@@ -274,7 +333,10 @@ export default function App() {
         <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} />
       )}
       {currentState === STATES.RECORDING && (
-        <RecordingState onStop={stopRecording} onDismiss={handleDismiss} />
+        <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
+      )}
+      {currentState === STATES.PAUSED && (
+        <PausedState duration={duration} onResume={resumeRecording} onStop={stopRecording} onDismiss={handleDismiss} />
       )}
       {currentState === STATES.THINKING && (
         <ThinkingState transcript={thinkTranscript} />

@@ -1,21 +1,8 @@
-import { useState, useEffect } from 'react'
 import WaveformCanvas from './WaveformCanvas.jsx'
 
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
-export default function RecordingState({ onStop, onDismiss }) {
-  const [secs, setSecs] = useState(0)
-
-  useEffect(() => {
-    setSecs(0)
-    const t = setInterval(() => setSecs((s) => s + 1), 1000)
-    return () => clearInterval(t)
-  }, [])
-
-  const m = Math.floor(secs / 60)
-  const s = secs % 60
-  const dur = `${m}:${String(s).padStart(2, '0')}`
-
+export default function RecordingState({ onStop, onDismiss, onPause, duration }) {
   return (
     <div id="panel-recording" className="relative z-[1]">
       <div className="h-[13px] [-webkit-app-region:drag]" />
@@ -39,8 +26,22 @@ export default function RecordingState({ onStop, onDismiss }) {
           className="text-[11px] font-medium text-white/30 tracking-[0.06em] flex-shrink-0 min-w-[28px] text-right tabular-nums [-webkit-app-region:no-drag]"
           id="recDur"
         >
-          {dur}
+          {duration}
         </span>
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag]"
+          style={{
+            background: 'rgba(255,189,46,0.12)',
+            border: '0.5px solid rgba(255,189,46,0.3)',
+            animation: 'pauseGlow 2s ease-in-out infinite',
+          }}
+          onClick={onPause}
+        >
+          <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+            <rect x="1" y="1" width="3" height="10" rx="1" fill="rgba(255,189,46,0.9)" />
+            <rect x="6" y="1" width="3" height="10" rx="1" fill="rgba(255,189,46,0.9)" />
+          </svg>
+        </div>
         <div
           className="w-8 h-8 rounded-full bg-[#FF3B30] border-none flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] [animation:stop-glow_2s_ease-in-out_infinite]"
           id="stopBtn"
