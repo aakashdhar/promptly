@@ -2,36 +2,37 @@
   "version": 2,
   "project": "promptly",
   "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-20T16:00:00Z",
-  "update_count": 5,
-  "update_note": "FEATURE-012 iteration mode — IteratingState.jsx added; App.jsx updated (ITERATING state, iterationBase/isIterated/iterRecorderRef, startIteration/stopIteration, generate-raw call); main.js (generate-raw handle); preload.js (generateRaw exposed); PromptReadyState.jsx (iterate button + badge); history.js + HistoryPanel.jsx (isIteration flag); index.css (iterGlow); iteration-mode concept added",
+  "last_updated": "2026-04-20T20:00:00Z",
+  "update_count": 6,
+  "update_note": "POLISH-001–009 (UI pass all components); BUG-012/013/014/015/016 (PATH, mic permission, isDestroyed guards, requestMic removal); FEATURE-SIGNING (signing scripts + hardenedRuntime); chore (icon, generate-icon.js). New nodes: scripts/create-cert.sh, scripts/sign-app.sh, scripts/build-signed.sh, scripts/generate-icon.js. New concepts: signing, ui-polish.",
   "mode": "incremental",
-  "files_updated_this_run": 8,
+  "files_updated_this_run": 23,
   "inferred_to_extracted_this_run": 0,
   "coverage": {
-    "files_indexed": 24,
-    "concepts_mapped": 13,
-    "extracted_edges": 27,
-    "inferred_edges": 11,
+    "files_indexed": 31,
+    "concepts_mapped": 15,
+    "extracted_edges": 32,
+    "inferred_edges": 12,
     "ambiguous_edges": 2,
-    "rationale_nodes": 28
+    "rationale_nodes": 42
   },
   "god_nodes": [
     {
       "file": "src/renderer/App.jsx",
-      "connections": 13,
+      "connections": 14,
       "concept": "foundation",
       "type": "react-component",
       "risk": "HIGH",
       "srp_flag": true,
-      "srp_note": "13 connections — root orchestrator; IteratingState.jsx import added FEATURE-012 (+1 from FEATURE-011's 12)"
+      "srp_note": "14 connections — root orchestrator; +1 from ui-polish secondary concept; consider splitting iteration logic into useIteration hook if more iteration complexity is added"
     },
     {
       "file": "main.js",
-      "connections": 7,
+      "connections": 8,
       "concept": "foundation",
       "type": "electron-main",
-      "risk": "MEDIUM"
+      "risk": "MEDIUM",
+      "srp_note": "8 connections — +1 from check-mic-status IPC (BUG-016); still manageable"
     },
     {
       "file": "preload.js",
