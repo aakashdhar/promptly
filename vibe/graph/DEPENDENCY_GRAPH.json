@@ -421,6 +421,12 @@
         "text": "getHistory() wraps JSON.parse in try/catch returning [] — corrupted or missing key is a silent no-op, not a crash",
         "source": "EXTRACTED",
         "added": "2026-04-19"
+      },
+      {
+        "type": "DECISION",
+        "text": "saveToHistory() accepts optional { isIteration, basedOn } fields (FEATURE-012) — isIteration:true marks entry for HistoryPanel badge; basedOn stores first 100 chars of original prompt for provenance display",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
       }
     ]
   },
@@ -452,6 +458,12 @@
         "text": "Right panel has minHeight:0 on the flex container — without it, flex items don't shrink below content size and overflowY:auto on the inner prompt div never activates",
         "source": "EXTRACTED",
         "added": "2026-04-19"
+      },
+      {
+        "type": "DECISION",
+        "text": "↻ iterated badge shown on history entry when entry.isIteration === true (FEATURE-012) — distinguishes AI-refined iterations from original recordings in the history list",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
       }
     ]
   },

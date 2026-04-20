@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-20T00:00:00Z",
-    "update_count": 3,
+    "last_updated": "2026-04-20T16:00:00Z",
+    "update_count": 4,
     "project": "promptly",
-    "update_note": "Added pause-resume concept (FEATURE-011); updated state-machine to 8 states + PausedState.jsx; updated speech-recording depended_on_by"
+    "update_note": "Added iteration-mode concept (FEATURE-012); updated state-machine to 9 states + ITERATING/IteratingState.jsx; updated foundation/depended_on_by; updated actions depended_on_by; updated claude-integration depended_on_by"
   },
 
   "foundation": {
@@ -25,7 +25,7 @@
       { "file": "src/renderer/hooks/useWindowResize.js", "state": "built", "source": "INFERRED", "confidence": 0.90 }
     ],
     "depends_on": [],
-    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray", "react-migration", "history-panel", "shortcuts", "export"],
+    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray", "react-migration", "history-panel", "shortcuts", "export", "iteration-mode"],
     "tasks_complete": 9,
     "tasks_total": 9,
     "phase": "Phase 1 — complete",
@@ -53,16 +53,17 @@
   "state-machine": {
     "state": "built",
     "type": "feature",
-    "description": "8-state UI state machine (IDLE, RECORDING, PAUSED, THINKING, PROMPT_READY, ERROR, SHORTCUTS, HISTORY), window resize IPC. React implementation in App.jsx via transition() function.",
+    "description": "9-state UI state machine (IDLE, RECORDING, PAUSED, ITERATING, THINKING, PROMPT_READY, ERROR, SHORTCUTS, HISTORY), window resize IPC. React implementation in App.jsx via transition() function.",
     "files": [
       { "file": "src/renderer/App.jsx",          "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/components/IdleState.jsx",    "state": "built", "source": "INFERRED", "confidence": 0.85 },
-      { "file": "src/renderer/components/ErrorState.jsx",   "state": "built", "source": "INFERRED", "confidence": 0.85 },
-      { "file": "src/renderer/components/PausedState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "PAUSED state added FEATURE-011; PausedState.jsx renders inside state machine" },
+      { "file": "src/renderer/components/IdleState.jsx",       "state": "built", "source": "INFERRED", "confidence": 0.85 },
+      { "file": "src/renderer/components/ErrorState.jsx",      "state": "built", "source": "INFERRED", "confidence": 0.85 },
+      { "file": "src/renderer/components/PausedState.jsx",     "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "PAUSED state added FEATURE-011; PausedState.jsx renders inside state machine" },
+      { "file": "src/renderer/components/IteratingState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "ITERATING state added FEATURE-012; IteratingState.jsx renders inside state machine" },
       { "file": "main.js",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "resize-window IPC channel" }
     ],
     "depends_on": ["foundation", "react-migration"],
-    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run", "history-panel", "shortcuts", "pause-resume"],
+    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run", "history-panel", "shortcuts", "pause-resume", "iteration-mode"],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 2 — complete",
@@ -116,7 +117,7 @@
       { "file": "src/renderer/hooks/useMode.js",             "state": "built", "source": "INFERRED", "confidence": 0.85 }
     ],
     "depends_on": ["foundation", "state-machine", "speech-recording"],
-    "depended_on_by": ["actions"],
+    "depended_on_by": ["actions", "iteration-mode"],
     "tasks_complete": 4,
     "tasks_total": 4,
     "phase": "Phase 2 — complete",
@@ -132,7 +133,7 @@
       { "file": "src/renderer/App.jsx",                         "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "handleRegenerate" }
     ],
     "depends_on": ["foundation", "state-machine", "claude-integration"],
-    "depended_on_by": ["export"],
+    "depended_on_by": ["export", "iteration-mode"],
     "tasks_complete": 4,
     "tasks_total": 4,
     "phase": "Phase 2 — complete",
@@ -257,6 +258,29 @@
     "tasks_complete": 3,
     "tasks_total": 3,
     "phase": "Phase 4 — removed before shipping"
+  },
+
+  "iteration-mode": {
+    "state": "built",
+    "type": "feature",
+    "description": "After PROMPT_READY, ↻ Iterate button launches a fresh voice recording (ITERATING state). New transcript + original prompt are combined into a custom system prompt and sent to Claude via generate-raw IPC. Result replaces the prompt in PROMPT_READY with ↻ iterated badge. Infinite sequential iterations supported.",
+    "files": [
+      { "file": "src/renderer/App.jsx",                          "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "ITERATING state, iterationBase/isIterated/iterRecorderRef refs, startIteration, stopIteration, generate-raw IPC call" },
+      { "file": "src/renderer/components/IteratingState.jsx",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "primary owner — sole purpose is ITERATING state UI with violet iterGlow" },
+      { "file": "src/renderer/components/PromptReadyState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "↻ Iterate button + ↻ iterated badge in prompt header" },
+      { "file": "src/renderer/components/HistoryPanel.jsx",      "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "↻ iterated badge displayed when entry.isIteration === true" },
+      { "file": "src/renderer/utils/history.js",                 "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "saveToHistory extended with { isIteration, basedOn } optional fields" },
+      { "file": "src/renderer/index.css",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "iterGlow @keyframes added" },
+      { "file": "main.js",                                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "generate-raw IPC handle — spawns claude -p with custom systemPrompt via stdin" },
+      { "file": "preload.js",                                    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "generateRaw(systemPrompt) exposed via contextBridge" }
+    ],
+    "depends_on": ["foundation", "state-machine", "speech-recording", "claude-integration", "actions", "history-panel"],
+    "depended_on_by": [],
+    "tasks_complete": 5,
+    "tasks_total": 5,
+    "phase": "Phase 4 — complete 2026-04-20",
+    "feature_folder": "vibe/features/2026-04-20-iteration-mode",
+    "notes": "generate-raw IPC bypasses PROMPT_TEMPLATE — takes systemPrompt directly, embedding original prompt + new transcript inline. originalTranscript.current updated post-iteration (documented exception D-010 to ARCHITECTURE.md immutability rule)."
   },
 
   "pause-resume": {

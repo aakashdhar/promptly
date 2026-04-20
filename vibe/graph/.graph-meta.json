@@ -2,29 +2,29 @@
   "version": 2,
   "project": "promptly",
   "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-20T14:00:00Z",
-  "update_count": 4,
-  "update_note": "FEATURE-011 pause/resume — PausedState.jsx added, RecordingState timer lifted, onShortcutPause wired, pause-resume concept built",
+  "last_updated": "2026-04-20T16:00:00Z",
+  "update_count": 5,
+  "update_note": "FEATURE-012 iteration mode — IteratingState.jsx added; App.jsx updated (ITERATING state, iterationBase/isIterated/iterRecorderRef, startIteration/stopIteration, generate-raw call); main.js (generate-raw handle); preload.js (generateRaw exposed); PromptReadyState.jsx (iterate button + badge); history.js + HistoryPanel.jsx (isIteration flag); index.css (iterGlow); iteration-mode concept added",
   "mode": "incremental",
-  "files_updated_this_run": 5,
-  "inferred_to_extracted_this_run": 1,
+  "files_updated_this_run": 8,
+  "inferred_to_extracted_this_run": 0,
   "coverage": {
-    "files_indexed": 23,
-    "concepts_mapped": 12,
-    "extracted_edges": 26,
+    "files_indexed": 24,
+    "concepts_mapped": 13,
+    "extracted_edges": 27,
     "inferred_edges": 11,
-    "ambiguous_edges": 1,
-    "rationale_nodes": 20
+    "ambiguous_edges": 2,
+    "rationale_nodes": 28
   },
   "god_nodes": [
     {
       "file": "src/renderer/App.jsx",
-      "connections": 12,
+      "connections": 13,
       "concept": "foundation",
       "type": "react-component",
       "risk": "HIGH",
       "srp_flag": true,
-      "srp_note": "12 connections — root orchestrator; PausedState.jsx import added FEATURE-011"
+      "srp_note": "13 connections — root orchestrator; IteratingState.jsx import added FEATURE-012 (+1 from FEATURE-011's 12)"
     },
     {
       "file": "main.js",
@@ -48,6 +48,13 @@
       "imports": "window.electronAPI.saveFile",
       "issue": "saveFile called via window.electronAPI — not a static import, so edge cannot be EXTRACTED from source",
       "action": "Treat as INFERRED — PromptReadyState depends on preload.js saveFile bridge"
+    },
+    {
+      "id": "AMB-002",
+      "file": "src/renderer/App.jsx",
+      "imports": "window.electronAPI.generateRaw",
+      "issue": "generateRaw called via window.electronAPI — runtime IPC call, not a static import; cannot be EXTRACTED",
+      "action": "Treat as INFERRED — App.jsx depends on preload.js generateRaw bridge for iteration"
     }
   ],
   "inferred_edges_list": [
