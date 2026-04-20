@@ -873,3 +873,23 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: (1) Call `getUserMedia` from main window on first load before user presses shortcut — rejected, no clear hook without adding new IPC and timing complexity. (2) Use `setPermissionCheckHandler` return value to bypass TCC entirely — confirmed this only prevents Chromium's dialog, not macOS TCC. (3) Current fix — one `getUserMedia` in splash renderer, immediate track release. Minimal, correct, and happens at the expected "grant permissions" moment.
 - **Impact on other tasks**: None — splash.html only. No IPC changes.
 - **Approved by**: human
+
+---
+
+### D-BUG-014 — Whisper fails in DMG — ffmpeg not found, err swallowed, timeout too short
+- **Date**: 2026-04-20 · **Task**: BUG-014 · **Type**: blocker-resolution
+- **Symptom**: Recording stops → THINKING spins ~60s → ERROR state. Confirmed ffmpeg missing from packaged app PATH.
+- **Root causes**:
+  - **A — ffmpeg PATH too narrow**: whisperEnv only included 7 paths. Homebrew Cask ffmpeg lives at `/opt/homebrew/bin/ffmpeg`, conda variants live at `~/anaconda3/bin`, `~/miniconda3/bin`, `~/miniforge3/bin`. Old Homebrew at `/usr/local/opt/ffmpeg/bin`. All missing.
+  - **B — exec err swallowed**: callback read txtFile before checking `err`. If whisper exited non-zero, and a stale txtFile existed, it could resolve with wrong text. If no txtFile, the real error (from stderr) was only surfaced via the catch path — fragile ordering.
+  - **C — timeout 60s too short for first-run model download**: `--model tiny` is ~75MB. On a slow connection inside a DMG cold-start, download + transcription can exceed 60s. Increased to 90s.
+  - **D — Python env vars missing**: pyenv-managed whisper needs `PYENV_VERSION` and `PYTHONPATH` to resolve its packages. These were not forwarded.
+- **Fixes**:
+  1. Expanded `whisperEnv.PATH` to 13 entries covering all known ffmpeg install locations.
+  2. Added `PYENV_VERSION`, `PYTHONPATH` (forwarded from process.env if set), `PYTHONUNBUFFERED=1`.
+  3. `exec` callback checks `err` first, rejects immediately with `stderr || err.message`.
+  4. Timeout raised to 90000ms.
+  5. `splash-check-whisper` now also returns `ffmpegFound` (probes 4 common paths) — informational, not a blocker.
+  6. `--model tiny` confirmed already in use — no change.
+- **Impact on other tasks**: None — `transcribe-audio` handler only.
+- **Approved by**: human
