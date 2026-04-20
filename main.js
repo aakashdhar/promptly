@@ -404,7 +404,7 @@ app.whenReady().then(async () => {
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({
         label,
-        type: 'radio',
+        type: 'checkbox',
         checked: currentMode === key,
         click: () => { win.webContents.send('mode-selected', key); },
       })),
