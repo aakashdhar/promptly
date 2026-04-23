@@ -279,15 +279,20 @@
    [x] POL-007 · HistoryPanel.jsx — green mode tag + CODEBASE.md update
    → Full specs: vibe/features/2026-04-23-polish-mode/FEATURE_TASKS.md (agent use)
 
+## FEATURE-015 gate
+✅ review: feature-015 — reviewed 2026-04-23 — Score 7.7/10 (B) — 0 P0, 2 P1 logged (BL-033 App.jsx SRP, BL-031 carryover), 3 P2 (BL-034 ARCH.md modes table, BL-035 copied state reset, BL-036 checklist ticks)
+   → Full report: vibe/reviews/feature-015-review.md
+
 ⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, smoke checklist
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ## What just happened
-✅ FEATURE-015 Polish Mode — all 7 tasks complete 2026-04-23 via vibe-parallel
-   - 4 waves: W1 (POL-001+002), W2 (POL-003+004+005), W3 (POL-006), W4 (POL-007)
-   - New files: useTone.js, PolishReadyState.jsx
-   - Modified: main.js, preload.js, useMode.js, App.jsx, IdleState.jsx, history.js, HistoryPanel.jsx, CODEBASE.md
+✅ review: feature-015 — 2026-04-23 — Score 7.7/10 (B) — PASS (0 P0)
+   - P1: BL-033 App.jsx SRP (652 lines), BL-031 @xmldom carryover
+   - P2: BL-034 ARCHITECTURE.md modes table not updated (polish missing), BL-035 copied state not reset on exit, BL-036 conformance checklist not ticked
+   - P3: redundant resizeWindow(320) calls (3 occurrences)
+   - Architecture drift: ARCHITECTURE.md prompt modes table (-0.5)
 
 ## What's next
-⬜ Manual smoke test — run app, switch to Polish mode, verify green UI + tone toggle + full generate flow
-Run `review: feature-015` when smoke test passes.
+⬜ P2 fixes (optional before smoke): tick FEATURE_TASKS.md conformance checklist (BL-036) + update ARCHITECTURE.md modes table (BL-034) + fix copied state reset (BL-035)
+⬜ Manual smoke test — run app, switch to Polish mode, verify green UI + tone toggle + full generate flow → polish output + change notes → copy → green flash → tone toggle regenerates → history entry shows green tag → reuse from history

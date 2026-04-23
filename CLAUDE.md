@@ -584,3 +584,47 @@ Never: fix other bugs noticed · modify preload.js · touch renderer files ·
 
 **Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
 **Between tasks:** "next" → verify acceptance criteria → lint → commit code → commit docs → state next task.
+
+---
+
+### Active Feature: FEATURE-015 (Polish Mode)
+> Folder: vibe/features/2026-04-23-polish-mode/ | Added: 2026-04-23
+
+**Feature summary**: Add 'polish' mode — speaks rough input, returns clean polished prose + change notes. Green accent throughout. Formal/Casual tone toggle in localStorage. Dedicated PolishReadyState.jsx component.
+**Files in scope**: `main.js`, `preload.js`, `src/renderer/hooks/useMode.js`, `src/renderer/hooks/useTone.js` (new), `src/renderer/components/IdleState.jsx`, `src/renderer/App.jsx`, `src/renderer/components/PolishReadyState.jsx` (new), `src/renderer/utils/history.js`, `src/renderer/components/HistoryPanel.jsx`
+**Files out of scope**: `splash.html`, `entitlements.plist`, `vite.config.js`, `package.json`, `PromptReadyState.jsx`, `RecordingState.jsx`, `ThinkingState.jsx`, `ShortcutsPanel.jsx`
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `polish` in MODE_CONFIG with `standalone: true` — system prompt with `{TONE}` and `{TRANSCRIPT}` placeholders
+- `generate-prompt` IPC extended with backwards-compatible `options = {}` param; `options.tone` only read for polish
+- All `promptly_polish_tone` localStorage access through `useTone.js` exports only — never direct
+- `parsePolishOutput(raw)` is a pure function — never throws, always returns `{ polished, changes }`
+- `polishResult` state in App.jsx — reset to `null` when non-polish mode generates
+- All styles in PolishReadyState.jsx inline — no Tailwind classes (matches IteratingState/TypingState pattern)
+- `polishTone` and `onPolishToneChange` passed as props to IdleState — not imported as hook inside component
+- Tone toggle in IdleState does NOT call `showModeMenu` — it toggles tone only via `onPolishToneChange`
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run `npm run build:renderer` after POL-003+ · run lint before commit · update CODEBASE.md (POL-007)
+
+Ask first: any new IPC channel beyond options extension · new localStorage keys beyond `promptly_polish_tone`
+
+Never: dangerouslySetInnerHTML with dynamic content · localStorage direct access outside useTone.js · add runtime npm deps · touch files not in scope list · pass transcript as shell argument · modify PromptReadyState for polish (it has its own component)
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Run `npm run build:renderer` — must succeed (after POL-003+)
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add main.js preload.js src/renderer/hooks/useMode.js src/renderer/hooks/useTone.js src/renderer/components/IdleState.jsx src/renderer/App.jsx src/renderer/components/PolishReadyState.jsx src/renderer/utils/history.js src/renderer/components/HistoryPanel.jsx
+   git commit -m "feat(polish): [POL-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-23-polish-mode/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [POL-00X] done — polish"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.

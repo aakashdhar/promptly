@@ -985,3 +985,28 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Why**: TypingState calls resizeWindow on every keystroke (onChange). The hook is a thin IPC wrapper — both approaches produce identical behaviour. Passing as prop avoids a second hook instantiation for a component that does not otherwise need the hook at mount time.
 - **Impact**: None — functionally identical. Noted as minor deviation from hook-everywhere convention.
 ---
+
+---
+
+## — Feature Start: FEATURE-015 Polish Mode — 2026-04-23
+> Folder: vibe/features/2026-04-23-polish-mode/
+> Add 'polish' as an 8th prompt mode that returns clean polished prose + change notes instead of a Claude prompt. Formal/Casual tone toggle persists via promptly_polish_tone localStorage key. Green accent throughout. Dedicated PolishReadyState.jsx component.
+> Tasks: POL-001, POL-002, POL-003, POL-004, POL-005, POL-006, POL-007 | Estimated: 14-18 hours
+> Drift logged below.
+---
+
+## 2026-04-23 — Spec review: add-feature (FEATURE-015)
+> P0: 0 · P1: 2 · P2: 3
+> Action: both P1s fixed inline before build
+> Report: vibe/spec-reviews/2026-04-23-add-feature-polish-mode.md
+---
+
+### D-POL-001 — FEATURE-015 is an unplanned addition
+- **Date**: 2026-04-23 · **Task**: planning · **Type**: scope-change
+- **What was planned**: PLAN.md Section 6 did not include a Polish mode.
+- **What was done**: Polish mode added as unplanned vertical slice.
+- **Why**: User request — a "clean prose" mode is a natural complement to the existing prompt-generation modes. All prerequisites (React migration, mode system, history panel, generate-prompt IPC) are complete. No dependency violations.
+- **Alternatives considered**: Adding tone toggle to existing Balanced mode rather than a new mode. Rejected — Polish has a fundamentally different output shape (direct prose, not a Claude prompt), requiring its own output component.
+- **Impact on other tasks**: `generate-prompt` IPC gets a backwards-compatible `options` parameter. New localStorage key `promptly_polish_tone`. New `PolishReadyState.jsx` component. HistoryPanel gets green mode tag for polish entries. All other modes unaffected.
+- **Approved by**: human
+---

@@ -130,6 +130,27 @@
 
 ---
 
+---
+
+## From FEATURE-015 Review (2026-04-23)
+
+### Outstanding P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-033 | src/renderer/App.jsx | 652 lines | App.jsx now 652 lines — SRP concern, grew +91 lines this feature. Extract polish flow into usePolishMode hook at next refactor: parsePolishOutput call sites, polishResult+polishToneRef+effects, handlePolishToneChange, copied/setCopied. | ⬜ open |
+| BL-031 | package.json (devDep) | — | @xmldom/xmldom high severity GHSA-crh6-fp67-6883 — carryover from FEATURE-014, no change in status | ⬜ open (devDep only) |
+
+### Outstanding P2 — Fix this sprint
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-034 | vibe/ARCHITECTURE.md | ~238 | Prompt modes table missing `polish` row. IPC table `generate-prompt` entry does not mention `options` passthrough. Add: `\| Polish \| `polish` \| Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; {TONE} replaced via options.tone \|` | ⬜ open |
+| BL-035 | src/renderer/App.jsx | 80 | `copied` state not reset on PolishReadyState exit — if user exits during 1.8s flash window, next PolishReadyState mount briefly shows "✓ Copied". Fix: `onReset={() => { setCopied(false); transition(STATES.IDLE) }}` | ⬜ open |
+| BL-036 | vibe/features/2026-04-23-polish-mode/FEATURE_TASKS.md | 666–683 | Conformance checklist 18 items all `[ ]` unchecked despite feature being complete. Fix: tick all 18 items. | ⬜ open |
+
+---
+
 ## Resolved Issues
 
 | ID | Finding | Resolved in |
