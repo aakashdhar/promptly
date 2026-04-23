@@ -113,6 +113,23 @@
 
 ---
 
+## From FEATURE-014 Review (2026-04-23)
+
+### Outstanding P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-030 | src/renderer/App.jsx | ~561 | App.jsx over 500 lines (561) — SRP concern, pre-existing, grew +46 this feature. Consider extracting handleTypingSubmit + ⌘T keydown into useTextInput hook when App.jsx next hits a natural refactor point. | ⬜ open |
+| BL-031 | package.json (devDep) | — | @xmldom/xmldom high severity GHSA-crh6-fp67-6883 (ReDoS) — electron-builder devDep chain only, NOT present in packaged .dmg. Zero runtime risk. Track for electron-builder upgrade. | ⬜ open (devDep only) |
+
+### Outstanding P2 — Fix before deploy (lower priority)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-032~~ | src/renderer/App.jsx | ~238 | handleTypingSubmit declared as plain async function — inconsistent with useCallback pattern. Wrapped in useCallback([mode]). | ✅ resolved — fix(text-input) 3eba286 |
+
+---
+
 ## Resolved Issues
 
 | ID | Finding | Resolved in |
