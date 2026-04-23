@@ -663,22 +663,22 @@ Optionally (if desired), add a "What changed" note display for polish entries in
 
 #### Conformance: FEATURE-015 Polish Mode
 > Tick after every task. All items ✅ before feature is shippable.
-- [ ] `polish` in MODE_CONFIG with standalone + system prompt with `{TONE}` placeholder
-- [ ] `generate-prompt` IPC accepts and uses `options.tone` for polish
-- [ ] `promptly_polish_tone` localStorage key + `useTone.js` hook
-- [ ] `polish: 'Polish'` in MODE_LABELS
-- [ ] IdleState: green ring, lines icon, subtitle, tone toggle when polish
-- [ ] `parsePolishOutput` correctly extracts polished text and changes array
-- [ ] `PolishReadyState.jsx` renders polished text + change notes + copy button
-- [ ] `PolishReadyState` shown in App.jsx when `mode === 'polish'` + `PROMPT_READY`
-- [ ] Tone change in output reruns generation
-- [ ] Copy text copies polished text only, 1.8s green flash
-- [ ] Polish entries save to history with `polishChanges` field
-- [ ] HistoryPanel shows green mode tag for polish entries
-- [ ] Reuse from history loads `PolishReadyState` correctly
-- [ ] All existing modes unaffected
-- [ ] `npm run lint` passes (0 errors)
-- [ ] `npm run build:renderer` succeeds
-- [ ] CODEBASE.md updated
-- [ ] DECISIONS.md updated (D-POL-001)
+- [x] `polish` in MODE_CONFIG with standalone + system prompt with `{TONE}` placeholder
+- [x] `generate-prompt` IPC accepts and uses `options.tone` for polish
+- [x] `promptly_polish_tone` localStorage key + `useTone.js` hook
+- [x] `polish: 'Polish'` in MODE_LABELS
+- [x] IdleState: green ring, lines icon, subtitle, tone toggle when polish
+- [x] `parsePolishOutput` correctly extracts polished text and changes array
+- [x] `PolishReadyState.jsx` renders polished text + change notes + copy button
+- [x] `PolishReadyState` shown in App.jsx when `mode === 'polish'` + `PROMPT_READY`
+- [x] Tone change in output reruns generation
+- [x] Copy text copies polished text only, 1.8s green flash
+- [x] Polish entries save to history with `polishChanges` field
+- [x] HistoryPanel shows green mode tag for polish entries
+- [x] Reuse from history loads `PolishReadyState` correctly
+- [x] All existing modes unaffected
+- [x] `npm run lint` passes (0 errors)
+- [x] `npm run build:renderer` succeeds
+- [x] CODEBASE.md updated
+- [x] DECISIONS.md updated (D-POL-001)
 ---

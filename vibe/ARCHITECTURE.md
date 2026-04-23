@@ -116,7 +116,7 @@ IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 
 | Direction | Channel | Purpose |
 |-----------|---------|---------|
-| renderer → main | `generate-prompt` | Send transcript + mode, returns Claude output |
+| renderer → main | `generate-prompt` | Send transcript + mode + optional `options` (e.g. `{ tone }` for polish), returns Claude output |
 | renderer → main | `generate-raw` | Full custom system prompt passthrough → Claude; returns { success, prompt, error } — added FEATURE-012 |
 | renderer → main | `copy-to-clipboard` | Write string to system clipboard |
 | renderer → main | `check-claude-path` | Returns resolved claude binary path or error |
@@ -236,6 +236,7 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 | Code | `code` | Code-first with language/output format specified |
 | Design | `design` | Standalone 12-section design-director prompt; bypasses PROMPT_TEMPLATE |
 | Refine | `refine` | Standalone 4-section design feedback prompt (Current state, Problem, Desired outcome, Constraints); purple accent in UI; bypasses PROMPT_TEMPLATE |
+| Polish | `polish` | Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; `{TONE}` replaced via `options.tone`; green accent in UI |
 
 - Mode is selected via right-click context menu on the bar.
 - Active mode persisted in localStorage via `getMode()` / `setMode()`.

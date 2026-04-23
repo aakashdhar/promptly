@@ -27,9 +27,10 @@
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history, polish mode. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`, no backdropFilter; blue glow div (top-right, zIndex:-1) + purple glow div (bottom-left, zIndex:-1). | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `startTimer()`, `pauseTimer()`, `stopTimer()`, `parsePolishOutput()`, `handlePolishToneChange()`. State: `polishResult`. Refs: `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history, polish mode. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`, no backdropFilter; blue glow div (top-right, zIndex:-1) + purple glow div (bottom-left, zIndex:-1). Polish state delegated to `usePolishMode` hook. | `STATES`, `STATE_HEIGHTS`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `startTimer()`, `pauseTimer()`, `stopTimer()`. Refs: `transitionRef`, `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useTone.js` | Polish tone localStorage wrapper — `promptly_polish_tone` key, default `'formal'` | `getPolishTone()`, `setPolishTone()`, `usePolishTone()` → `{ tone, setTone }` |
+| `src/renderer/hooks/usePolishMode.js` | Polish flow hook — owns polishResult, copied, tone state, polishToneRef, handlePolishToneChange | `parsePolishOutput(raw)` (named export), `usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })` → `{ polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
@@ -132,10 +133,11 @@
 | `iterRecorderRef` | useRef MediaRecorder\|null | handleIterate | stopIterating, dismissIterating |
 | `iterChunksRef` | useRef Blob[] | handleIterate ondataavailable | stopIterating onstop |
 | `iterIsProcessingRef` | useRef boolean | stopIterating start/end guard | stopIterating early-exit guard |
-| `polishResult` | useState `{polished,changes}|null` | stopRecording/handleTypingSubmit/handleRegenerate/handlePolishToneChange | PolishReadyState |
-| `polishTone` | hook (useTone) string | usePolishTone() | IdleState, PolishReadyState, generate calls |
-| `polishToneRef` | useRef string | mirrors polishTone — stale-closure-safe for generate calls | stopRecording, handleTypingSubmit, handleRegenerate |
-| `copied` | useState boolean | onCopy in PolishReadyState render | PolishReadyState copied prop |
+| `polishResult` | useState (in usePolishMode) `{polished,changes}|null` | stopRecording/handleTypingSubmit/handleRegenerate/handlePolishToneChange | PolishReadyState |
+| `polishTone` | hook (usePolishMode→useTone) string | usePolishMode() | IdleState, PolishReadyState, generate calls |
+| `polishToneRef` | useRef (in usePolishMode) string | mirrors polishTone — stale-closure-safe for generate calls | stopRecording, handleTypingSubmit, handleRegenerate |
+| `transitionRef` | useRef (in App.jsx) function | updated every render: `transitionRef.current = transition` | usePolishMode.handlePolishToneChange — calls transitionRef.current() to avoid stale closure |
+| `copied` | useState (in usePolishMode) boolean | onCopy in PolishReadyState render | PolishReadyState copied prop |
 
 ## Module-scope variables (in index.html — legacy, main branch only)
 
