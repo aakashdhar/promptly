@@ -35,6 +35,9 @@
     "appId": "io.betacraft.promptly",
     "productName": "Promptly",
     "icon": "build/icon",
+    "asar": true,
+    "compression": "maximum",
+    "electronLanguages": ["en-US"],
     "mac": {
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
