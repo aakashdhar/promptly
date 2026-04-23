@@ -1028,3 +1028,40 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Impact on other tasks**: `generate-prompt` IPC gets a backwards-compatible `options` parameter. New localStorage key `promptly_polish_tone`. New `PolishReadyState.jsx` component. HistoryPanel gets green mode tag for polish entries. All other modes unaffected.
 - **Approved by**: human
 ---
+
+### D-POLISH-010 — ShortcutsPanel.jsx complete redesign
+- **Date**: 2026-04-23 · **Task**: POLISH-010 · **Type**: tech-choice
+- **What was planned**: Incremental polish tweaks to the existing flat shortcut list.
+- **What was done**: Full component replacement — flat list replaced with grouped layout (Recording / Prompt / Navigation), inline styles throughout, group section headers with blue accent, gradient dividers between groups, 3D key chips (borderBottom 1.5px + inset shadow), hover background on each row, Done button with pill style. STATE_HEIGHTS.SHORTCUTS updated 400 → 380.
+- **Why**: Grouped layout improves scannability; inline styles eliminate Tailwind dependency in this component; 3D key chips match macOS visual language more closely.
+- **Alternatives considered**: Keeping flat list with cosmetic tweaks. Rejected — too many shortcuts for a flat list; grouping is clearer at 9 items.
+- **Impact on other tasks**: None. No logic changes — only presentation. `onClose` prop contract unchanged.
+---
+
+### D-BUG-019 — Trivial fix: app never appears in Dock
+- **Date**: 2026-04-23 · **Type**: drift (trivial bug)
+- **Root cause**: `createTray()` called `app.dock.hide()` unconditionally after tray creation — removed the app from the macOS Dock entirely, so minimize had nowhere to go and the app was invisible to the user outside the menu bar.
+- **Fix**: Removed `if (app.dock) app.dock.hide()` from `createTray()` in `main.js`. The Dock icon is now visible; minimize sends the window to the Dock; tray icon continues to work alongside it.
+- **Regression test**: Manual — npm start, confirm Dock icon visible, click minimize, confirm window goes to Dock, click Dock icon to restore.
+- **Approved by**: human
+---
+
+### D-POLISH-011 — Bundle size audit + reduction
+- **Date**: 2026-04-23 · **Task**: POLISH-011 · **Type**: tech-choice
+- **What was planned**: No explicit bundle size target in PLAN.md.
+- **What was done**: Full audit of the universal `.app` bundle, then three targeted changes to `package.json` build config:
+  1. `"electronLanguages": ["en-US"]` — strips all non-English `.lproj` locale packs from Electron Framework (~28MB of locale files, 0 at runtime)
+  2. `"asar": true` — explicitly set (was already the default; made explicit for clarity)
+  3. `"compression": "maximum"` — maximum ASAR + installer compression
+- **Size before**: `.app` 468MB installed · `.dmg` 200MB download
+- **Size after**: `.app` 422MB installed · `.dmg` 176MB download
+- **Savings**: 46MB installed (10%), 24MB download (12%)
+- **Why the target of <250MB installed is unachievable**: The Electron Framework alone (Chromium + Node.js runtime) is 418MB of the 422MB total. Our app code is 340KB (app.asar). Reducing below 250MB installed would require abandoning Electron entirely. The DMG download at 176MB is well under 250MB.
+- **Key findings from audit**:
+  - No runtime `dependencies` — everything in `devDependencies` — so node_modules were never being bundled. File exclusion steps were already effective.
+  - The `files` config was already minimal (5 files + dist-renderer only).
+  - The only material savings available were locale file stripping and compression tuning.
+- **Alternatives considered**: Two-package.json structure — rejected (no runtime deps, no benefit). Locale stripping beyond en-US — possible but may affect non-English macOS installs unexpectedly.
+- **Impact on other tasks**: None. `npm run dist:unsigned` now produces 176MB DMG.
+- **Approved by**: human
+---

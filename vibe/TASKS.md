@@ -293,8 +293,11 @@
    [ ] BUG-018-004 · Update docs — ARCHITECTURE.md window lifecycle + DECISIONS.md D-BUG-018
    → Full specs: vibe/bugs/2026-04-23-bug-018/BUG_TASKS.md (agent use)
 
+✅ **BUG-019 — App never appears in Dock** — fixed 2026-04-23 (trivial ✅)
+   - main.js createTray(): removed `if (app.dock) app.dock.hide()` — this was the sole cause
+
 ## What just happened
-🔧 BUG-018-002 complete — all lifecycle fixes applied to main.js: isQuitting flag, before-quit handler, requestSingleInstanceLock() + second-instance handler, win.on('close') hide-intercept, tray label 'Quit Promptly'. Lint clean. Committed db51894.
+🔧 BUG-019 fixed — removed `app.dock.hide()` from createTray(). App now appears in Dock. Minimize goes to Dock; tray icon still works. Lint clean.
 
 ## What's next
 ⬜ BUG-018-003 · Smoke test — open app, close with red X, confirm tray stays, Dock icon reshows window, second launch focuses existing, Quit Promptly exits fully
