@@ -168,6 +168,7 @@ let whisperPath = null;
 let win = null;
 let splashWin = null;
 let tray = null;
+let isQuitting = false;
 
 function updateTrayMenu() {
   if (!tray) return;
@@ -181,7 +182,7 @@ function updateTrayMenu() {
       },
     },
     { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() },
+    { label: 'Quit Promptly', click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
   tray.on('click', () => {
@@ -351,11 +352,33 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
-  win.loadFile(path.join(__dirname, 'dist-renderer/index.html'))
+  win.loadFile(path.join(__dirname, 'dist-renderer/index.html'));
+  win.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      win.hide();
+      updateTrayMenu();
+    }
+  });
   nativeTheme.on('updated', () => {
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
   });
   return win;
+}
+
+app.on('before-quit', () => { isQuitting = true; });
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (win && !win.isDestroyed()) {
+      if (win.isMinimized()) win.restore();
+      if (!win.isVisible()) win.show();
+      win.focus();
+    }
+  });
 }
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
