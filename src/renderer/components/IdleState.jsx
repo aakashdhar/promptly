@@ -67,8 +67,8 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           )}
         </div>
 
-        {/* Text — true screen-centre */}
-        <div className="text-center" style={{WebkitAppRegion:'no-drag'}}>
+        {/* Text — left-anchored near mic */}
+        <div style={{position:'absolute', left:'78px', textAlign:'left', WebkitAppRegion:'no-drag'}}>
           {/* POLISH-003: status text */}
           <div
             className="text-[13px] font-medium mb-[3px]"
@@ -92,7 +92,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           onClick={(e) => { e.stopPropagation(); onTypePrompt(); }}
           title="Type prompt (⌘T)"
           style={{
-            position:'absolute', right:'140px',
+            position:'absolute', right: isPolish ? '156px' : '108px',
             width:'32px', height:'32px', borderRadius:'9px',
             background:'rgba(255,255,255,0.05)',
             border:'0.5px solid rgba(255,255,255,0.1)',
@@ -115,26 +115,36 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
         {isPolish ? (
           <div style={{
             position:'absolute', right:'20px',
-            display:'flex', background:'rgba(255,255,255,0.05)',
-            border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:'20px',
-            padding:'2px', gap:'2px', flexShrink:0, WebkitAppRegion:'no-drag'
+            display:'flex', flexDirection:'row', alignItems:'center', gap:'6px',
+            flexShrink:0, WebkitAppRegion:'no-drag'
           }}>
-            {['Formal','Casual'].map(t => (
-              <div
-                key={t}
-                onClick={(e) => { e.stopPropagation(); onPolishToneChange(t.toLowerCase()) }}
-                style={{
-                  padding:'3px 10px', borderRadius:'16px', fontSize:'10px',
-                  fontWeight: polishTone === t.toLowerCase() ? 500 : 400,
-                  cursor:'pointer',
-                  background: polishTone === t.toLowerCase() ? 'rgba(48,209,88,0.15)' : 'transparent',
-                  border: polishTone === t.toLowerCase() ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid transparent',
-                  color: polishTone === t.toLowerCase() ? 'rgba(100,220,130,0.9)' : 'rgba(255,255,255,0.3)'
-                }}
-              >
-                {t}
-              </div>
-            ))}
+            {/* Tone pill — opens native menu like mode selector */}
+            <span
+              onClick={(e) => { e.stopPropagation(); if (window.electronAPI) window.electronAPI.showToneMenu(polishTone) }}
+              style={{
+                padding:'4px 12px', borderRadius:'20px', fontSize:'10px',
+                fontWeight:500, cursor:'pointer', textAlign:'center',
+                background:'rgba(48,209,88,0.08)',
+                border:'0.5px solid rgba(48,209,88,0.2)',
+                color:'rgba(100,220,130,0.75)', whiteSpace:'nowrap'
+              }}
+            >
+              {polishTone === 'formal' ? 'Formal' : 'Casual'}
+            </span>
+            {/* Mode pill — click to change mode */}
+            <span
+              id="mode-pill"
+              style={{
+                padding:'4px 12px', borderRadius:'20px', fontSize:'10px',
+                fontWeight:500, cursor:'pointer', textAlign:'center',
+                background:'rgba(48,209,88,0.12)',
+                border:'0.5px solid rgba(48,209,88,0.3)',
+                color:'rgba(100,220,130,0.9)', whiteSpace:'nowrap'
+              }}
+              onClick={handleModePillClick}
+            >
+              {modeLabel}
+            </span>
           </div>
         ) : (
           <span

@@ -38,7 +38,7 @@ const STATE_HEIGHTS = {
   SHORTCUTS: 380,
   HISTORY: 720,
   ITERATING: 200,
-  TYPING: 220,
+  TYPING: 244,
 }
 
 export default function App() {
@@ -93,6 +93,8 @@ export default function App() {
 
   useEffect(() => { stateRef.current = currentState }, [currentState])
   useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
+  const modeRef = useRef(mode)
+  useEffect(() => { modeRef.current = mode }, [mode])
 
   function startTimer() {
     recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
@@ -432,6 +434,10 @@ Mode: ${iterationBase.current.mode}`
       setMode(key)
     })
 
+    window.electronAPI.onToneSelected((t) => {
+      setPolishToneValue(t)
+    })
+
     window.electronAPI.onShowShortcuts(() => {
       prevStateRef.current = stateRef.current
       transition(STATES.SHORTCUTS)
@@ -482,6 +488,10 @@ Mode: ${iterationBase.current.mode}`
       if (meta && e.key === 'e' && stateRef.current === STATES.PROMPT_READY) {
         e.preventDefault()
         document.dispatchEvent(new CustomEvent('export-prompt'))
+      }
+      if (meta && e.key === ',' && stateRef.current === STATES.IDLE) {
+        e.preventDefault()
+        if (window.electronAPI) window.electronAPI.showModeMenu(modeRef.current)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -542,8 +552,7 @@ Mode: ${iterationBase.current.mode}`
             <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
             <TypingState
               onDismiss={(target) => {
-                if (target === 'voice') startRecording()
-                else transition(STATES.IDLE)
+                transition(STATES.IDLE)
               }}
               onSubmit={handleTypingSubmit}
               resizeWindow={resizeWindow}
@@ -586,7 +595,7 @@ Mode: ${iterationBase.current.mode}`
         )}
         {displayState === STATES.SHORTCUTS && (
           <>
-            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+            <div className="h-[44px] w-full" style={{WebkitAppRegion:'drag'}} />
             <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
           </>
         )}

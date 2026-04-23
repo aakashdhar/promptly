@@ -201,7 +201,6 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Promptly');
   updateTrayMenu();
-  if (app.dock) app.dock.hide();
 }
 
 async function resolveClaudePath() {
@@ -621,6 +620,23 @@ app.whenReady().then(async () => {
         click: () => { winSend('show-history'); },
       },
     ]);
+    menu.popup({ window: win });
+    return { ok: true };
+  });
+
+  ipcMain.handle('show-tone-menu', (_event, { currentTone }) => {
+    const tones = [
+      { key: 'formal', label: 'Formal' },
+      { key: 'casual', label: 'Casual' },
+    ];
+    const menu = Menu.buildFromTemplate(
+      tones.map(({ key, label }) => ({
+        label,
+        type: 'checkbox',
+        checked: currentTone === key,
+        click: () => { winSend('tone-selected', key); },
+      }))
+    );
     menu.popup({ window: win });
     return { ok: true };
   });

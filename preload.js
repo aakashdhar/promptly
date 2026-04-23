@@ -25,6 +25,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onModeSelected: (callback) =>
     ipcRenderer.on('mode-selected', (_event, key) => callback(key)),
 
+  showToneMenu: (currentTone) =>
+    ipcRenderer.invoke('show-tone-menu', { currentTone }),
+
+  onToneSelected: (callback) =>
+    ipcRenderer.on('tone-selected', (_event, key) => callback(key)),
+
   transcribeAudio: (arrayBuffer) =>
     ipcRenderer.invoke('transcribe-audio', arrayBuffer),
 

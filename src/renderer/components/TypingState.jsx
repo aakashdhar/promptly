@@ -12,7 +12,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
     const val = e.target.value
     setText(val)
     const lines = val.split('\n').length
-    const newH = Math.min(220 + Math.floor(lines / 4) * 40, 320)
+    const newH = Math.min(244 + Math.floor(lines / 4) * 40, 344)
     resizeWindow(newH)
   }
 
@@ -27,8 +27,10 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
 
   return (
     <div style={{position:'relative', zIndex:1}}>
+      {/* Traffic light breathing room */}
+      <div style={{height:'36px', WebkitAppRegion:'drag'}} />
       {/* Top row */}
-      <div style={{height:'54px', display:'flex', alignItems:'center', padding:'0 18px', gap:'10px', WebkitAppRegion:'drag'}}>
+      <div style={{height:'36px', display:'flex', alignItems:'center', padding:'0 18px', gap:'10px', WebkitAppRegion:'drag'}}>
         <div
           onClick={onDismiss}
           style={{width:'28px', height:'28px', borderRadius:'50%', background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, WebkitAppRegion:'no-drag'}}
@@ -84,7 +86,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
       <div style={{height:'0.5px', background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', margin:'0 18px'}}/>
 
       {/* Submit row */}
-      <div style={{padding:'12px 18px 16px'}}>
+      <div style={{padding:'12px 18px 22px'}}>
         <button
           onClick={() => hasText && onSubmit(text.trim())}
           disabled={!hasText}
