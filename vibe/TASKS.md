@@ -286,13 +286,16 @@
 ⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, smoke checklist
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
+🐛 BUG-018 — App window destroyed on close, no single-instance lock (2/4)
+   [x] BUG-018-001 · Regression baseline — confirmed: no requestSingleInstanceLock(), no win.on('close'), tray label 'Quit'
+   [x] BUG-018-002 · Implement fix — isQuitting flag + before-quit + requestSingleInstanceLock + win.on('close') hide + Quit Promptly label
+   [ ] BUG-018-003 · Verify — full smoke checklist, lint clean
+   [ ] BUG-018-004 · Update docs — ARCHITECTURE.md window lifecycle + DECISIONS.md D-BUG-018
+   → Full specs: vibe/bugs/2026-04-23-bug-018/BUG_TASKS.md (agent use)
+
 ## What just happened
-✅ review: feature-015 — 2026-04-23 — Score 7.7/10 (B) — PASS (0 P0)
-   - P1: BL-033 App.jsx SRP (652 lines), BL-031 @xmldom carryover
-   - P2: BL-034 ARCHITECTURE.md modes table not updated (polish missing), BL-035 copied state not reset on exit, BL-036 conformance checklist not ticked
-   - P3: redundant resizeWindow(320) calls (3 occurrences)
-   - Architecture drift: ARCHITECTURE.md prompt modes table (-0.5)
+🔧 BUG-018-002 complete — all lifecycle fixes applied to main.js: isQuitting flag, before-quit handler, requestSingleInstanceLock() + second-instance handler, win.on('close') hide-intercept, tray label 'Quit Promptly'. Lint clean. Committed db51894.
 
 ## What's next
-⬜ P2 fixes (optional before smoke): tick FEATURE_TASKS.md conformance checklist (BL-036) + update ARCHITECTURE.md modes table (BL-034) + fix copied state reset (BL-035)
-⬜ Manual smoke test — run app, switch to Polish mode, verify green UI + tone toggle + full generate flow → polish output + change notes → copy → green flash → tone toggle regenerates → history entry shows green tag → reuse from history
+⬜ BUG-018-003 · Smoke test — open app, close with red X, confirm tray stays, Dock icon reshows window, second launch focuses existing, Quit Promptly exits fully
+Say "next" to smoke test.
