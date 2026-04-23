@@ -16,11 +16,15 @@ npx electron-builder --mac --universal --config.mac.identity=null
 echo "Signing app..."
 bash scripts/sign-app.sh
 
-# Step 4: Create DMG from signed app
-echo "Creating DMG..."
-npx electron-builder --mac dmg --config.mac.identity=null \
-  --config.dmg.contents[0].path="dist/mac-universal/Promptly.app"
+# Step 4: Create DMG from signed app using hdiutil
+echo "Creating signed DMG..."
+rm -f dist/Promptly-signed.dmg
+hdiutil create \
+  -volname "Promptly" \
+  -srcfolder dist/mac-universal/Promptly.app \
+  -ov -format UDZO \
+  dist/Promptly-signed.dmg
 
 echo ""
 echo "=== Build complete ==="
-echo "Output: dist/Promptly-1.0.0-universal.dmg"
+echo "Output: dist/Promptly-signed.dmg"
