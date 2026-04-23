@@ -147,20 +147,36 @@ IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 
 **Rule:** Both `claude` and `whisper` binaries MUST be resolved via expanded search at startup, then cached. In packaged `.app` / `.dmg` builds the process environment does not load the user's shell PATH, so a direct `which` call is unreliable.
 
-**Pattern (BUG-012 — 2026-04-20):**
+**Pattern (BUG-012 + BUG-017 — 2026-04-23):**
 ```js
-// 1. Check common installation directories first (fs.existsSync — no shell needed)
-// 2. Fall back to zsh login shell (loads .zshrc/.zprofile)
-// 3. Fall back to bash login shell
+// 1. Check static common paths (fs.existsSync — no shell needed)
+//    Includes: /usr/local/bin, /opt/homebrew/bin, ~/.local/bin, ~/.npm-global/bin,
+//              ~/.volta/bin, ~/n/bin (node version managers)
+// 2. Dynamic nvm scan — enumerate ~/.nvm/versions/node/*/bin/{binary}
+//    Required because nvm installs under a version-keyed path not in any static list
+// 3. Shell fallback with explicit NVM_DIR initialization
+//    Plain `zsh -lc "which X"` silently fails for nvm users in packaged apps;
+//    must source nvm.sh explicitly so nvm's PATH entries are present
 // 4. For whisper only: fall back to python3 -m whisper
 async function resolveXPath() {
+  const home = os.homedir();
   for (const p of commonPaths) {
     try { if (fs.existsSync(p)) return p; } catch {}
   }
+  const nvmDir = path.join(home, '.nvm', 'versions', 'node');
+  try {
+    if (fs.existsSync(nvmDir)) {
+      for (const version of fs.readdirSync(nvmDir)) {
+        const bin = path.join(nvmDir, version, 'bin', 'X');
+        try { if (fs.existsSync(bin)) return bin; } catch {}
+      }
+    }
+  } catch {}
   return new Promise((resolve) => {
-    exec('zsh -lc "which X"', (err, stdout) => {
+    const nvmInit = `export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; which X`;
+    exec(`zsh -lc '${nvmInit}'`, (err, stdout) => {
       if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec('bash -lc "which X"', (err2, stdout2) => {
+      exec(`bash -lc '${nvmInit}'`, (err2, stdout2) => {
         resolve(stdout2?.trim() || null);
       });
     });

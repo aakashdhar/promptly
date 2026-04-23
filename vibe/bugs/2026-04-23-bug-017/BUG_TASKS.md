@@ -126,15 +126,15 @@ try {
 ---
 
 #### Bug Fix Sign-off: BUG-017 — Distribution failures (nvm PATH + Gatekeeper)
-- [ ] resolveClaudePath(): volta + n paths in static list
-- [ ] resolveClaudePath(): nvm dynamic scan present and wrapped in try/catch
-- [ ] resolveClaudePath(): shell fallback sources nvm.sh explicitly
-- [ ] resolveWhisperPath(): nvm dynamic scan present after static loop
-- [ ] INSTALL.md created at repo root with 3-option Gatekeeper bypass
-- [ ] vibe/distribution/slack-message.md updated with xattr line
-- [ ] npm run lint — 0 errors
-- [ ] App boots + splash CLI check green
-- [ ] No files outside BUG_PLAN.md scope modified
-- [ ] ARCHITECTURE.md updated with 4-step PATH resolution pattern
-- [ ] DECISIONS.md D-BUG-017 appended
-- [ ] Doc commits separate from code commits
+- [x] resolveClaudePath(): volta + n paths in static list
+- [x] resolveClaudePath(): nvm dynamic scan present and wrapped in try/catch
+- [x] resolveClaudePath(): shell fallback sources nvm.sh explicitly
+- [x] resolveWhisperPath(): nvm dynamic scan present after static loop
+- [x] INSTALL.md created at repo root with 3-option Gatekeeper bypass
+- [x] vibe/distribution/slack-message.md updated with xattr line
+- [x] npm run lint — 0 errors
+- [x] App boots + splash CLI check green
+- [x] No files outside BUG_PLAN.md scope modified
+- [x] ARCHITECTURE.md updated with 4-step PATH resolution pattern
+- [x] DECISIONS.md D-BUG-017 appended
+- [x] Doc commits separate from code commits

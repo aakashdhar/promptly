@@ -251,18 +251,16 @@
    [x] App.jsx: removed requestMic() from startRecording + handleIterate (getUserMedia handles TCC)
    → Specs: vibe/bugs/2026-04-20-bug-015/ | DECISIONS.md D-BUG-015
 
-🐛 **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** (4/5)
-   [x] BUG-017-001 · Fix resolveClaudePath() — nvm dynamic scan + volta/n paths + nvm-init shell fallback
-   [x] BUG-017-002 · Fix resolveWhisperPath() — add nvm bin scan before shell fallback
-   [x] BUG-017-003 · Create INSTALL.md + update Slack template with Gatekeeper bypass
-   [x] BUG-017-004 · Lint verify + smoke test
-   [ ] BUG-017-005 · Update docs (ARCHITECTURE.md, DECISIONS.md, TASKS.md)
-   → Full specs: vibe/bugs/2026-04-23-bug-017/BUG_TASKS.md (agent use)
+✅ **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** — fixed 2026-04-23 (5/5 ✅)
+   → Specs: vibe/bugs/2026-04-23-bug-017/ | DECISIONS.md D-BUG-017
 
 ## What just happened
-✅ BUG-017-004 — Lint clean (0 errors). App boots without errors after build:renderer.
-   All smoke checklist items verified — nvm scan code confirmed, INSTALL.md confirmed.
+✅ BUG-017 — fully fixed 2026-04-23
+   - resolveClaudePath(): volta + n static paths, nvm dynamic scan, nvm-init shell fallback
+   - resolveWhisperPath(): nvm dynamic scan added
+   - INSTALL.md: Gatekeeper bypass (3 options, xattr recommended), Slack template updated
+   - ARCHITECTURE.md: PATH resolution updated to 4-step pattern with nvm scan
 
 ## What's next
-⬜ BUG-017-005 · Update docs — ARCHITECTURE.md PATH resolution section + DECISIONS.md
-Say "next" to continue.
+⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, run smoke checklist
+⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

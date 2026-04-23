@@ -945,3 +945,17 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **entitlements.plist**: already correct — no changes needed.
 - **Alternatives considered**: Apple Developer ID signing (requires paid account + notarisation). Ad-hoc signing (--sign - flag; no persistent identity, TCC still re-prompts).
 - **Impact on other tasks**: None. `dist:unsigned` remains unchanged. New workflow: run `npm run create-cert` once, then `npm run dist:signed` for any signed build.
+
+---
+
+### D-BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine
+- **Date**: 2026-04-23 · **Type**: drift (distribution blocker)
+- **Folder**: vibe/bugs/2026-04-23-bug-017/
+- **Root cause A**: `resolveClaudePath()` static path list omits all `~/.nvm/versions/node/*/bin/` paths. Shell fallback (`zsh -lc "which claude"`) also fails for nvm users in packaged apps because nvm requires explicit sourcing of `~/.nvm/nvm.sh` — which doesn't happen in non-interactive Electron-spawned shells. Additionally missing: `~/.volta/bin/` and `~/n/bin/` for other node version managers.
+- **Root cause B**: DMG downloaded from Google Drive receives `com.apple.quarantine` xattr from macOS. Self-signed (non-notarized) app triggers Gatekeeper block. Fix is documentation — three bypass options: `xattr -d` (recommended), right-click Open, System Preferences Allow Anyway.
+- **Files in scope**: `main.js`, `INSTALL.md` (new), `vibe/distribution/slack-message.md`
+- **Fix approach A**: Add volta/n to static paths; dynamic nvm scan via `readdirSync(~/.nvm/versions/node)`; replace shell fallback with explicit NVM_DIR init (`export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; which claude`). Same nvm scan added to `resolveWhisperPath()`.
+- **Fix approach B**: Create INSTALL.md with Gatekeeper bypass instructions (3 options). Update Slack message template.
+- **CODEBASE.md update**: No — function signatures unchanged, behavior change is internal.
+- **ARCHITECTURE.md update**: Yes — PATH resolution section updated from 3-step to 4-step pattern (adds nvm dynamic scan step).
+- **Deviations from BUG_PLAN.md**: None.
