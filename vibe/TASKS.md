@@ -254,13 +254,28 @@
 ✅ **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** — fixed 2026-04-23 (5/5 ✅)
    → Specs: vibe/bugs/2026-04-23-bug-017/ | DECISIONS.md D-BUG-017
 
+✅ **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** — fixed 2026-04-23 (5/5 ✅)
+   → Specs: vibe/bugs/2026-04-23-bug-017/ | DECISIONS.md D-BUG-017
+
+✅ **FEATURE-014 — Text Input (Type Prompt)** — type a prompt directly without voice (5/5 ✅)
+   [x] TXT-001 · Add TYPING state + STATE_HEIGHTS.TYPING=220 to App.jsx
+   [x] TXT-002 · Create TypingState.jsx — textarea, submit, dismiss, switch-to-voice, dynamic height
+   [x] TXT-003 · Update IdleState.jsx — keyboard icon button + subtitle '⌥ Space to speak · ⌘T to type'
+   [x] TXT-004 · Wire handleTypingSubmit + ⌘T keydown + render TypingState + ShortcutsPanel ⌘T row
+   [x] TXT-005 · CODEBASE.md update
+   → Full specs: vibe/features/2026-04-23-text-input/FEATURE_TASKS.md (agent use)
+
 ## What just happened
-✅ BUG-017 — fully fixed 2026-04-23
-   - resolveClaudePath(): volta + n static paths, nvm dynamic scan, nvm-init shell fallback
-   - resolveWhisperPath(): nvm dynamic scan added
-   - INSTALL.md: Gatekeeper bypass (3 options, xattr recommended), Slack template updated
-   - ARCHITECTURE.md: PATH resolution updated to 4-step pattern with nvm scan
+✅ FEATURE-014 Text Input — complete 2026-04-23
+   - TypingState.jsx created (textarea, ⌘↵ submit, switch-to-voice, dynamic height)
+   - IdleState.jsx: keyboard icon button + subtitle updated
+   - App.jsx: TYPING state, handleTypingSubmit, ⌘T shortcut, render block
+   - ShortcutsPanel.jsx: ⌘T row added
+   - Build clean, lint 0 errors, all 5/5 tasks ✅
+   - Executed via vibe-parallel (Wave 2 ran TXT-002+TXT-003 simultaneously)
 
 ## What's next
-⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, run smoke checklist
+⬜ Manual smoke test — run `npm start` and exercise the full typing flow
+   Say "review:" when smoke test passes to gate the feature.
+⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, smoke checklist
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

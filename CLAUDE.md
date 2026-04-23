@@ -513,3 +513,74 @@ Never: dangerouslySetInnerHTML with dynamic content · localStorage direct acces
    git commit -m "docs(FEATURE_TASKS+TASKS): mark [ITR-00X] done — iter"
    ```
 6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
+### Active Feature: FEATURE-014 (Text Input — Type Prompt)
+> Folder: vibe/features/2026-04-23-text-input/ | Added: 2026-04-23
+
+**Feature summary**: Add a TYPING state — keyboard icon in IDLE opens textarea panel; ⌘T shortcut; typed text flows through generate-prompt IPC same as voice transcript.
+**Files in scope**: `src/renderer/App.jsx`, `src/renderer/components/IdleState.jsx`, `src/renderer/components/TypingState.jsx` (new), `src/renderer/components/ShortcutsPanel.jsx`
+**Files out of scope**: `main.js`, `preload.js`, all other components, `package.json`, `entitlements.plist`, `vite.config.js`
+
+**Conventions** (from vibe/ARCHITECTURE.md + React patterns):
+- `transition(STATES.TYPING)` for all entries to TYPING state
+- `handleTypingSubmit(typedText)` sets `originalTranscript.current`, resets `isIterated.current = false`, calls `generatePrompt`
+- All styles in TypingState.jsx are inline — no Tailwind classes (matches IteratingState pattern)
+- `resizeWindow` passed as prop to TypingState — not imported as hook inside component
+- `textarea` is controlled: `value={text} onChange={handleChange}` — never uncontrolled
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run `npm run build:renderer` after TXT-002+ · run lint before commit · update CODEBASE.md (TXT-005)
+
+Ask first: any new IPC channel · new localStorage keys
+
+Never: dangerouslySetInnerHTML with dynamic content · localStorage direct access · add runtime npm deps · touch files not in scope list · call startRecording from ⌘T keydown (transition to TYPING only; voice switch is inside TypingState onDismiss)
+
+**Between tasks:** "next" triggers this exact sequence:
+1. Verify all acceptance criteria in FEATURE_TASKS.md for completed task
+2. Run `npm run build:renderer` — must succeed (after TXT-002+)
+3. Run lint: `npm run lint` (must pass)
+4. Commit code changes:
+   ```
+   git add src/renderer/App.jsx src/renderer/components/IdleState.jsx src/renderer/components/TypingState.jsx src/renderer/components/ShortcutsPanel.jsx
+   git commit -m "feat(text-input): [TXT-00X] — description"
+   ```
+5. Commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-23-text-input/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [TXT-00X] done — text-input"
+   ```
+6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
+### Active Bug Fix: BUG-017 — Distribution failures (nvm PATH + Gatekeeper)
+> Folder: vibe/bugs/2026-04-23-bug-017/ | Added: 2026-04-23
+
+**Files in scope**: `main.js`, `INSTALL.md` (new), `vibe/distribution/slack-message.md`
+**Files out of scope**: `preload.js`, `src/renderer/**`, `splash.html`, `entitlements.plist`, `package.json`
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint before commit · smallest change only ·
+        update ARCHITECTURE.md PATH resolution section (BUG-017-005) ·
+        update TASKS.md after every task in plain English
+
+Ask first: touching any file not in BUG_PLAN.md · any new IPC channel
+
+Never: fix other bugs noticed · modify preload.js · touch renderer files ·
+       change any IPC contract or channel shape
+
+**Done condition:**
+- [ ] resolveClaudePath(): nvm dynamic scan + volta + n paths + nvm-init shell fallback
+- [ ] resolveWhisperPath(): nvm dynamic scan added
+- [ ] INSTALL.md created with Gatekeeper bypass (3 options)
+- [ ] npm run lint — 0 errors · App boots
+- [ ] ARCHITECTURE.md PATH resolution section updated
+- [ ] DECISIONS.md D-BUG-017 appended
+
+**Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
+**Between tasks:** "next" → verify acceptance criteria → lint → commit code → commit docs → state next task.

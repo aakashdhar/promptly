@@ -959,3 +959,29 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **CODEBASE.md update**: No — function signatures unchanged, behavior change is internal.
 - **ARCHITECTURE.md update**: Yes — PATH resolution section updated from 3-step to 4-step pattern (adds nvm dynamic scan step).
 - **Deviations from BUG_PLAN.md**: None.
+
+---
+
+## — Feature Start: FEATURE-014 Text Input (Type Prompt) — 2026-04-23
+> Folder: vibe/features/2026-04-23-text-input/
+> Add a TYPING state so users can type prompts directly — same generate-prompt pipeline as voice, same history, same modes. No new IPC channels.
+> Tasks: TXT-001, TXT-002, TXT-003, TXT-004, TXT-005 | Estimated: 5–6 hours
+> Drift logged below.
+---
+
+---
+
+## 2026-04-23 — Spec review: add-feature (FEATURE-014)
+> P0: 0 · P1: 1 · P2: 2
+> Action: all findings fixed before build
+> Report: vibe/spec-reviews/2026-04-23-add-feature.md
+---
+
+---
+
+### D-TXT-001 — resizeWindow passed as prop to TypingState (not via hook)
+- **Date**: 2026-04-23 · **Task**: TXT-002 · **Type**: pattern-deviation
+- **Decision**: `resizeWindow` is passed from App.jsx as a prop to TypingState rather than calling `useWindowResize()` inside TypingState directly.
+- **Why**: TypingState calls resizeWindow on every keystroke (onChange). The hook is a thin IPC wrapper — both approaches produce identical behaviour. Passing as prop avoids a second hook instantiation for a component that does not otherwise need the hook at mount time.
+- **Impact**: None — functionally identical. Noted as minor deviation from hook-everywhere convention.
+---

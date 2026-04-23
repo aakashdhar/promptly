@@ -142,6 +142,12 @@ Phase 1 complete (Electron shell + IPC skeleton + PATH resolution)
 > Depends on: MODE_CONFIG pattern established in F-CLAUDE + FEATURE-002
 > Shared data: reads `mode` localStorage key (written by useMode hook); no new keys
 
+#### FEATURE-014 — Text Input (Type Prompt) ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-04-23
+> Added: 2026-04-23 · See DECISIONS.md FEATURE-014 entry for context
+> Build order: after FEATURE-004 (React migration) — extends state machine with new TYPING state
+> Depends on: STATES/STATE_HEIGHTS pattern in App.jsx, generate-prompt IPC (F-CLAUDE), saveToHistory (FCR-013)
+> Shared data: reads `mode` (useMode hook); writes `originalTranscript.current` (same as stopRecording); no new localStorage keys
+
 ---
 
 ### What Phase 1-3 must NOT hard-code (for v2 compatibility)
