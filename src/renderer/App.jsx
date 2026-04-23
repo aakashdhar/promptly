@@ -235,12 +235,11 @@ export default function App() {
     animateToState(STATES.IDLE)
   }
 
-  async function handleTypingSubmit(typedText) {
+  const handleTypingSubmit = useCallback(async (typedText) => {
     isIterated.current = false
     originalTranscript.current = typedText
     setThinkTranscript(typedText)
     transition(STATES.THINKING)
-    resizeWindow(320)
 
     if (!window.electronAPI) {
       transition(STATES.ERROR, { message: 'Electron API not available' })
@@ -256,7 +255,7 @@ export default function App() {
     setGeneratedPrompt(genResult.prompt)
     saveToHistory({ transcript: typedText, prompt: genResult.prompt, mode })
     transition(STATES.PROMPT_READY)
-  }
+  }, [mode])
 
   const handleRegenerate = useCallback(async () => {
     transition(STATES.THINKING)

@@ -23,6 +23,8 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
     }
   }
 
+  const hasText = !!text.trim()
+
   return (
     <div style={{position:'relative', zIndex:1}}>
       {/* Top row */}
@@ -84,18 +86,18 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
       {/* Submit row */}
       <div style={{padding:'12px 18px 16px'}}>
         <button
-          onClick={() => text.trim() && onSubmit(text.trim())}
-          disabled={!text.trim()}
+          onClick={() => hasText && onSubmit(text.trim())}
+          disabled={!hasText}
           style={{
             width:'100%', height:'38px',
-            background: text.trim()
+            background: hasText
               ? 'linear-gradient(135deg,rgba(10,132,255,0.92),rgba(10,100,220,0.92))'
               : 'rgba(255,255,255,0.06)',
-            color: text.trim() ? 'white' : 'rgba(255,255,255,0.25)',
+            color: hasText ? 'white' : 'rgba(255,255,255,0.25)',
             border:'none', borderRadius:'10px',
             fontSize:'13px', fontWeight:600, fontFamily:'inherit',
-            cursor: text.trim() ? 'pointer' : 'default',
-            boxShadow: text.trim() ? '0 2px 16px rgba(10,132,255,0.35)' : 'none',
+            cursor: hasText ? 'pointer' : 'default',
+            boxShadow: hasText ? '0 2px 16px rgba(10,132,255,0.35)' : 'none',
             transition:'all 200ms'
           }}
         >
