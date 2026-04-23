@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useMode from './hooks/useMode.js'
-import usePolishTone from './hooks/useTone.js'
+import usePolishMode, { parsePolishOutput } from './hooks/usePolishMode.js'
 import useWindowResize from './hooks/useWindowResize.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
@@ -41,17 +41,6 @@ const STATE_HEIGHTS = {
   TYPING: 220,
 }
 
-function parsePolishOutput(raw) {
-  const polishedMatch = raw.match(/POLISHED:\n([\s\S]*?)(?:\n\nCHANGES:|$)/)
-  const changesMatch = raw.match(/CHANGES:\n([\s\S]*)$/)
-  return {
-    polished: polishedMatch ? polishedMatch[1].trim() : raw.trim(),
-    changes: changesMatch
-      ? changesMatch[1].trim().split('\n').filter(l => l.trim())
-      : []
-  }
-}
-
 export default function App() {
   const [currentState, setCurrentState] = useState(STATES.IDLE)
   const [displayState, setDisplayState] = useState(STATES.IDLE)
@@ -75,13 +64,11 @@ export default function App() {
   const iterIsProcessingRef = useRef(false)
   const recTimerRef = useRef(null)
   const transitionTimerRef = useRef(null)
+  const transitionRef = useRef(null)
   const [recSecs, setRecSecs] = useState(0)
-  const [polishResult, setPolishResult] = useState(null)
-  const [copied, setCopied] = useState(false)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
-  const { tone: polishTone, setTone: setPolishToneValue } = usePolishTone()
 
   // POLISH-001: animate between states
   function animateToState(newState) {
@@ -104,11 +91,8 @@ export default function App() {
     }
   }, [])
 
-  const polishToneRef = useRef(polishTone)
-
   useEffect(() => { stateRef.current = currentState }, [currentState])
   useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
-  useEffect(() => { polishToneRef.current = polishTone }, [polishTone])
 
   function startTimer() {
     recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
@@ -137,6 +121,10 @@ export default function App() {
     }
     animateToState(newState)
   }
+
+  transitionRef.current = transition
+
+  const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })
 
   const startRecording = useCallback(async () => {
     try {
@@ -191,7 +179,6 @@ export default function App() {
 
       originalTranscript.current = text
       setThinkTranscript(text)
-      resizeWindow(320)
 
       const genResult = await window.electronAPI.generatePrompt(text, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
       if (!genResult.success) {
@@ -295,7 +282,6 @@ export default function App() {
   const handleRegenerate = useCallback(async () => {
     transition(STATES.THINKING)
     setThinkTranscript(originalTranscript.current)
-    resizeWindow(320)
 
     if (!window.electronAPI) {
       transition(STATES.ERROR, { message: 'Electron API not available' })
@@ -320,27 +306,6 @@ export default function App() {
     }
     transition(STATES.PROMPT_READY)
   }, [mode])
-
-  const handlePolishToneChange = useCallback(async (newTone) => {
-    setPolishToneValue(newTone)
-    transition(STATES.THINKING)
-    setThinkTranscript(originalTranscript.current)
-    resizeWindow(320)
-    if (!window.electronAPI) {
-      transition(STATES.ERROR, { message: 'Electron API not available' })
-      return
-    }
-    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, 'polish', { tone: newTone })
-    if (!genResult.success) {
-      transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
-      return
-    }
-    const parsed = parsePolishOutput(genResult.prompt)
-    setPolishResult(parsed)
-    setGeneratedPrompt(parsed.polished)
-    saveToHistory({ transcript: originalTranscript.current, prompt: parsed.polished, mode: 'polish', polishChanges: parsed.changes })
-    transition(STATES.PROMPT_READY)
-  }, [])
 
   const handleIterate = useCallback(async () => {
     try {
@@ -606,7 +571,7 @@ Mode: ${iterationBase.current.mode}`
             changes={polishResult?.changes || []}
             transcript={originalTranscript.current}
             tone={polishTone}
-            onReset={() => transition(STATES.IDLE)}
+            onReset={() => { setCopied(false); transition(STATES.IDLE) }}
             onCopy={() => {
               navigator.clipboard.writeText(polishResult?.polished || generatedPrompt)
               setCopied(true)
