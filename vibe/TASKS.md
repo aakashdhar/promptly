@@ -301,8 +301,19 @@
    - .app: 468MB → 422MB · .dmg: 200MB → 176MB (signed: 205MB)
    - scripts/build-signed.sh: fixed broken DMG step → hdiutil create
 
+✅ **FEATURE-016 — Uninstaller** (8/8 ✅ COMPLETE 2026-04-24)
+   [x] UNIN-001 · scripts/uninstall.sh — confirmation, graceful quit, removes all data, TCC reset
+   [x] UNIN-002 · chmod +x + npm run uninstall script
+   [x] UNIN-003 · handleUninstall() + uninstall-promptly IPC in main.js
+   [x] UNIN-004 · triggerUninstall in preload.js
+   [x] UNIN-005 · "Uninstall Promptly..." in tray menu
+   [x] UNIN-006 · dmg.extraFiles for uninstall.sh
+   [x] UNIN-007 · ## Uninstall section in INSTALL.md (3 options)
+   [x] UNIN-008 · CODEBASE.md + DECISIONS.md + TASKS.md updated
+   → Full specs: vibe/features/2026-04-23-uninstaller/ (agent use)
+
 ## What just happened
-✅ Full smoke test passed (human-confirmed 2026-04-23). BUG-018 complete, BUG-019 complete, POLISH-011 complete. Signed DMG rebuilt at dist/Promptly-signed.dmg (205MB).
+✅ FEATURE-016 complete — uninstaller shipped. scripts/uninstall.sh in DMG, tray "Uninstall Promptly..." menu item, IPC handler, INSTALL.md ## Uninstall section.
 
 ## What's next
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page

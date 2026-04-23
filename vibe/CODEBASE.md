@@ -20,7 +20,7 @@
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
-| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. MODE_CONFIG has 8 modes total (adds polish). | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
+| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. MODE_CONFIG has 8 modes total (adds polish). | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `handleUninstall()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt(transcript, mode, options?)`, `generateRaw`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React). Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
@@ -82,6 +82,7 @@
 | `resize-window-width` | renderer → main | ✅ registered — win.setSize(width, h, true) with setResizable guards |
 | `set-window-size` | renderer → main | ✅ registered — win.setMinimumSize + setMaximumSize + setSize(width, height) atomically; used by openHistory/closeHistory to avoid race condition between separate width/height calls |
 | `show-history` | main → renderer | ✅ registered — sent by "History ⌘H" context menu item |
+| `uninstall-promptly` | renderer → main | ✅ registered — shows native confirmation dialog, removes all data dirs + TCC, quits app; also called from tray menu via handleUninstall() |
 
 ---
 

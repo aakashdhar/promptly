@@ -1065,3 +1065,19 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Impact on other tasks**: None. `npm run dist:unsigned` now produces 176MB DMG.
 - **Approved by**: human
 ---
+
+### D-FEATURE-016 — Uninstaller: shell script + tray + IPC
+- **Date**: 2026-04-24 · **Task**: UNIN-001 to UNIN-008 · **Type**: scope-change
+- **What was planned**: No uninstaller in original PLAN.md.
+- **What was done**: Three uninstall surfaces — scripts/uninstall.sh (standalone, included in DMG via dmg.extraFiles), tray menu "Uninstall Promptly..." item (native confirmation dialog via handleUninstall() helper), and INSTALL.md manual instructions.
+- **Why**: Dragging Promptly to Trash leaves behind ~/Library/Application Support/promptly, Logs, Preferences, Saved State, and the TCC microphone entry. No clean uninstall path existed.
+- **Key decisions**:
+  - handleUninstall() extracted as a shared function — both IPC handler and tray click call it; avoids code duplication.
+  - dialog.showMessageBox called without a win reference — always visible even when window is hidden.
+  - fs.rmSync with { recursive: true, force: true } for data dirs — no-op if not found, no error thrown.
+  - tccutil reset run via exec — gracefully succeeds even if no TCC entry exists.
+  - set -e omitted from uninstall.sh — each step uses || to handle failure independently without aborting the entire script.
+- **Alternatives considered**: electron-store reset IPC — rejected; too narrow. AppleScript-only — rejected; doesn't handle ~/Library dirs.
+- **Impact on other tasks**: None. Additive only.
+- **Approved by**: human
+---
