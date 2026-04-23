@@ -517,7 +517,7 @@ Mode: ${iterationBase.current.mode}`
           <IdleState
             mode={mode}
             modeLabel={modeLabel}
-            onStart={startRecording}
+            onStart={() => { if (stateRef.current === STATES.IDLE) startRecording() }}
             onTypePrompt={() => transition(STATES.TYPING)}
             polishTone={polishTone}
             onPolishToneChange={setPolishToneValue}
