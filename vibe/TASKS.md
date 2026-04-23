@@ -283,22 +283,26 @@
 ✅ review: feature-015 — reviewed 2026-04-23 — Score 7.7/10 (B) — 0 P0, 2 P1 logged (BL-033 App.jsx SRP, BL-031 carryover), 3 P2 (BL-034 ARCH.md modes table, BL-035 copied state reset, BL-036 checklist ticks)
    → Full report: vibe/reviews/feature-015-review.md
 
-⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, smoke checklist
+✅ Build dist:unsigned — smoke tested 2026-04-23, all states pass
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
-🐛 BUG-018 — App window destroyed on close, no single-instance lock (2/4)
+✅ **BUG-018 — App window destroyed on close, no single-instance lock** (4/4 — COMPLETE 2026-04-23)
    [x] BUG-018-001 · Regression baseline — confirmed: no requestSingleInstanceLock(), no win.on('close'), tray label 'Quit'
    [x] BUG-018-002 · Implement fix — isQuitting flag + before-quit + requestSingleInstanceLock + win.on('close') hide + Quit Promptly label
-   [ ] BUG-018-003 · Verify — full smoke checklist, lint clean
-   [ ] BUG-018-004 · Update docs — ARCHITECTURE.md window lifecycle + DECISIONS.md D-BUG-018
+   [x] BUG-018-003 · Verify — full smoke checklist passed (human-confirmed 2026-04-23), lint clean
+   [x] BUG-018-004 · Update docs — ARCHITECTURE.md window lifecycle + DECISIONS.md D-BUG-018
    → Full specs: vibe/bugs/2026-04-23-bug-018/BUG_TASKS.md (agent use)
 
 ✅ **BUG-019 — App never appears in Dock** — fixed 2026-04-23 (trivial ✅)
    - main.js createTray(): removed `if (app.dock) app.dock.hide()` — this was the sole cause
 
+✅ **POLISH-011 — Bundle size reduction** — complete 2026-04-23
+   - package.json: electronLanguages en-US + asar true + compression maximum
+   - .app: 468MB → 422MB · .dmg: 200MB → 176MB (signed: 205MB)
+   - scripts/build-signed.sh: fixed broken DMG step → hdiutil create
+
 ## What just happened
-🔧 BUG-019 fixed — removed `app.dock.hide()` from createTray(). App now appears in Dock. Minimize goes to Dock; tray icon still works. Lint clean.
+✅ Full smoke test passed (human-confirmed 2026-04-23). BUG-018 complete, BUG-019 complete, POLISH-011 complete. Signed DMG rebuilt at dist/Promptly-signed.dmg (205MB).
 
 ## What's next
-⬜ BUG-018-003 · Smoke test — open app, close with red X, confirm tray stays, Dock icon reshows window, second launch focuses existing, Quit Promptly exits fully
-Say "next" to smoke test.
+⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
