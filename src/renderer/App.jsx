@@ -10,6 +10,7 @@ import ThinkingState from './components/ThinkingState.jsx'
 import PromptReadyState from './components/PromptReadyState.jsx'
 import ErrorState from './components/ErrorState.jsx'
 import IteratingState from './components/IteratingState.jsx'
+import TypingState from './components/TypingState.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -22,6 +23,7 @@ const STATES = {
   SHORTCUTS: 'SHORTCUTS',
   HISTORY: 'HISTORY',
   ITERATING: 'ITERATING',
+  TYPING: 'TYPING',
 }
 
 const STATE_HEIGHTS = {
@@ -34,6 +36,7 @@ const STATE_HEIGHTS = {
   SHORTCUTS: 380,
   HISTORY: 720,
   ITERATING: 200,
+  TYPING: 220,
 }
 
 export default function App() {
@@ -232,6 +235,29 @@ export default function App() {
     animateToState(STATES.IDLE)
   }
 
+  async function handleTypingSubmit(typedText) {
+    isIterated.current = false
+    originalTranscript.current = typedText
+    setThinkTranscript(typedText)
+    transition(STATES.THINKING)
+    resizeWindow(320)
+
+    if (!window.electronAPI) {
+      transition(STATES.ERROR, { message: 'Electron API not available' })
+      return
+    }
+
+    const genResult = await window.electronAPI.generatePrompt(typedText, mode)
+    if (!genResult.success) {
+      transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
+      return
+    }
+
+    setGeneratedPrompt(genResult.prompt)
+    saveToHistory({ transcript: typedText, prompt: genResult.prompt, mode })
+    transition(STATES.PROMPT_READY)
+  }
+
   const handleRegenerate = useCallback(async () => {
     transition(STATES.THINKING)
     setThinkTranscript(originalTranscript.current)
@@ -415,6 +441,11 @@ Mode: ${iterationBase.current.mode}`
         openHistory()
         return
       }
+      if (meta && e.key === 't' && stateRef.current === STATES.IDLE) {
+        e.preventDefault()
+        transition(STATES.TYPING)
+        return
+      }
       if (meta && e.key === 'c' && stateRef.current === STATES.PROMPT_READY) {
         e.preventDefault()
         if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPromptRef.current)
@@ -455,7 +486,7 @@ Mode: ${iterationBase.current.mode}`
         style={{flex:1, display:'flex', flexDirection:'column', position:'relative', minHeight:0, overflow:'hidden'}}
       >
         {displayState === STATES.IDLE && (
-          <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} />
+          <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} onTypePrompt={() => transition(STATES.TYPING)} />
         )}
         {displayState === STATES.RECORDING && (
           <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
@@ -470,6 +501,19 @@ Mode: ${iterationBase.current.mode}`
             onStop={stopIterating}
             onDismiss={dismissIterating}
           />
+        )}
+        {displayState === STATES.TYPING && (
+          <>
+            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+            <TypingState
+              onDismiss={(target) => {
+                if (target === 'voice') startRecording()
+                else transition(STATES.IDLE)
+              }}
+              onSubmit={handleTypingSubmit}
+              resizeWindow={resizeWindow}
+            />
+          </>
         )}
         {displayState === STATES.THINKING && (
           <ThinkingState transcript={thinkTranscript} />

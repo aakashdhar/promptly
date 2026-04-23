@@ -9,6 +9,7 @@ export default function ShortcutsPanel({ onClose }) {
     { desc: 'Copy last prompt', keys: ['⌘', 'C'] },
     { desc: 'Export prompt', keys: ['⌘', 'E'] },
     { desc: 'Open history', keys: ['⌘', 'H'] },
+    { desc: 'Type prompt', keys: ['⌘', 'T'] },
     { desc: 'Iteration mode', keys: ['⌘', 'I'] },
     { desc: 'Show / hide window', keys: ['⌥', 'Space'] },
     { desc: 'Reset to idle', keys: ['Esc'] },

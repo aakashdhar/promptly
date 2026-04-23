@@ -1,4 +1,4 @@
-export default function IdleState({ mode, modeLabel, onStart }) {
+export default function IdleState({ mode, modeLabel, onStart, onTypePrompt }) {
   const isRefine = mode === 'refine'
 
   function handleModePillClick(e) {
@@ -71,10 +71,34 @@ export default function IdleState({ mode, modeLabel, onStart }) {
             className="text-[11px]"
             style={{ color:'rgba(255,255,255,0.48)', letterSpacing:'-0.01em' }}
           >
-            {isRefine ? "Describe what exists, what's wrong, and what you want" : 'Press ⌥ Space or click to speak your prompt'}
+            {isRefine ? "Describe what exists, what's wrong, and what you want" : '⌥ Space to speak · ⌘T to type'}
           </div>
           {/* POLISH-009: hint from 0.10 → 0.40 */}
           <span className="text-[9px] mt-[4px] block" style={{color:'rgba(255,255,255,0.40)'}}>⌘? for shortcuts</span>
+        </div>
+
+        {/* Keyboard icon — type prompt */}
+        <div
+          onClick={onTypePrompt}
+          title="Type prompt (⌘T)"
+          style={{
+            position:'absolute', right:'140px',
+            width:'32px', height:'32px', borderRadius:'9px',
+            background:'rgba(255,255,255,0.05)',
+            border:'0.5px solid rgba(255,255,255,0.1)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            cursor:'pointer', flexShrink:0,
+            WebkitAppRegion:'no-drag',
+            transition:'background 150ms'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+        >
+          <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+            <rect x="1" y="1" width="12" height="8" rx="2" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2"/>
+            <line x1="3.5" y1="4" x2="10.5" y2="4" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <line x1="3.5" y1="6.5" x2="7.5" y2="6.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
         </div>
 
         {/* Mode pill — anchored right */}
