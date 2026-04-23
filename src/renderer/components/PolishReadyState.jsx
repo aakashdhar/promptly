@@ -4,10 +4,13 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
       display:'flex', flexDirection:'column', height:'100%',
       padding:'0 0 12px 0', overflow:'hidden'
     }}>
+      {/* Traffic light breathing room */}
+      <div style={{height:'36px', flexShrink:0}} />
+
       {/* Top row */}
       <div style={{
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'14px 20px 10px', flexShrink:0
+        padding:'0 20px 10px', flexShrink:0
       }}>
         <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
           <span style={{
