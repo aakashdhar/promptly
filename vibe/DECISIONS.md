@@ -1081,3 +1081,10 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Impact on other tasks**: None. Additive only.
 - **Approved by**: human
 ---
+
+### D-SPEC-REVIEW-FEATURE-013 — Spec review: path config panel
+- **Date**: 2026-04-24 · **Type**: spec-review · **P0**: 1 · **P1**: 3 · **P2**: 2
+- **Action**: All findings fixed before build began.
+- **Key fix**: electron-store runtime dep (P0) replaced with native `readConfig()`/`writeConfig()` using built-in `fs` + `app.getPath('userData')` — zero runtime deps preserved.
+- **Report**: vibe/spec-reviews/2026-04-24-add-feature-path-config.md
+---
