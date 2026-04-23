@@ -8,6 +8,7 @@ const MODE_LABELS = {
   code: 'Code',
   design: 'Design',
   refine: 'Refine',
+  polish: 'Polish',
 }
 
 export default function useMode() {

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useMode from './hooks/useMode.js'
+import usePolishTone from './hooks/useTone.js'
 import useWindowResize from './hooks/useWindowResize.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
@@ -8,6 +9,7 @@ import RecordingState from './components/RecordingState.jsx'
 import PausedState from './components/PausedState.jsx'
 import ThinkingState from './components/ThinkingState.jsx'
 import PromptReadyState from './components/PromptReadyState.jsx'
+import PolishReadyState from './components/PolishReadyState.jsx'
 import ErrorState from './components/ErrorState.jsx'
 import IteratingState from './components/IteratingState.jsx'
 import TypingState from './components/TypingState.jsx'
@@ -39,6 +41,17 @@ const STATE_HEIGHTS = {
   TYPING: 220,
 }
 
+function parsePolishOutput(raw) {
+  const polishedMatch = raw.match(/POLISHED:\n([\s\S]*?)(?:\n\nCHANGES:|$)/)
+  const changesMatch = raw.match(/CHANGES:\n([\s\S]*)$/)
+  return {
+    polished: polishedMatch ? polishedMatch[1].trim() : raw.trim(),
+    changes: changesMatch
+      ? changesMatch[1].trim().split('\n').filter(l => l.trim())
+      : []
+  }
+}
+
 export default function App() {
   const [currentState, setCurrentState] = useState(STATES.IDLE)
   const [displayState, setDisplayState] = useState(STATES.IDLE)
@@ -63,9 +76,12 @@ export default function App() {
   const recTimerRef = useRef(null)
   const transitionTimerRef = useRef(null)
   const [recSecs, setRecSecs] = useState(0)
+  const [polishResult, setPolishResult] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
+  const { tone: polishTone, setTone: setPolishToneValue } = usePolishTone()
 
   // POLISH-001: animate between states
   function animateToState(newState) {
@@ -88,8 +104,11 @@ export default function App() {
     }
   }, [])
 
+  const polishToneRef = useRef(polishTone)
+
   useEffect(() => { stateRef.current = currentState }, [currentState])
   useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
+  useEffect(() => { polishToneRef.current = polishTone }, [polishTone])
 
   function startTimer() {
     recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
@@ -174,14 +193,22 @@ export default function App() {
       setThinkTranscript(text)
       resizeWindow(320)
 
-      const genResult = await window.electronAPI.generatePrompt(text, mode)
+      const genResult = await window.electronAPI.generatePrompt(text, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
       if (!genResult.success) {
         transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
         return
       }
 
-      setGeneratedPrompt(genResult.prompt)
-      saveToHistory({ transcript: text, prompt: genResult.prompt, mode })
+      if (mode === 'polish') {
+        const parsed = parsePolishOutput(genResult.prompt)
+        setPolishResult(parsed)
+        setGeneratedPrompt(parsed.polished)
+        saveToHistory({ transcript: text, prompt: parsed.polished, mode, polishChanges: parsed.changes })
+      } else {
+        setPolishResult(null)
+        setGeneratedPrompt(genResult.prompt)
+        saveToHistory({ transcript: text, prompt: genResult.prompt, mode })
+      }
       transition(STATES.PROMPT_READY)
     }
   }, [mode])
@@ -246,14 +273,22 @@ export default function App() {
       return
     }
 
-    const genResult = await window.electronAPI.generatePrompt(typedText, mode)
+    const genResult = await window.electronAPI.generatePrompt(typedText, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
     if (!genResult.success) {
       transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
       return
     }
 
-    setGeneratedPrompt(genResult.prompt)
-    saveToHistory({ transcript: typedText, prompt: genResult.prompt, mode })
+    if (mode === 'polish') {
+      const parsed = parsePolishOutput(genResult.prompt)
+      setPolishResult(parsed)
+      setGeneratedPrompt(parsed.polished)
+      saveToHistory({ transcript: typedText, prompt: parsed.polished, mode, polishChanges: parsed.changes })
+    } else {
+      setPolishResult(null)
+      setGeneratedPrompt(genResult.prompt)
+      saveToHistory({ transcript: typedText, prompt: genResult.prompt, mode })
+    }
     transition(STATES.PROMPT_READY)
   }, [mode])
 
@@ -267,16 +302,45 @@ export default function App() {
       return
     }
 
-    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode)
+    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
     if (!genResult.success) {
       transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
       return
     }
 
-    setGeneratedPrompt(genResult.prompt)
-    saveToHistory({ transcript: originalTranscript.current, prompt: genResult.prompt, mode })
+    if (mode === 'polish') {
+      const parsed = parsePolishOutput(genResult.prompt)
+      setPolishResult(parsed)
+      setGeneratedPrompt(parsed.polished)
+      saveToHistory({ transcript: originalTranscript.current, prompt: parsed.polished, mode, polishChanges: parsed.changes })
+    } else {
+      setPolishResult(null)
+      setGeneratedPrompt(genResult.prompt)
+      saveToHistory({ transcript: originalTranscript.current, prompt: genResult.prompt, mode })
+    }
     transition(STATES.PROMPT_READY)
   }, [mode])
+
+  const handlePolishToneChange = useCallback(async (newTone) => {
+    setPolishToneValue(newTone)
+    transition(STATES.THINKING)
+    setThinkTranscript(originalTranscript.current)
+    resizeWindow(320)
+    if (!window.electronAPI) {
+      transition(STATES.ERROR, { message: 'Electron API not available' })
+      return
+    }
+    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, 'polish', { tone: newTone })
+    if (!genResult.success) {
+      transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
+      return
+    }
+    const parsed = parsePolishOutput(genResult.prompt)
+    setPolishResult(parsed)
+    setGeneratedPrompt(parsed.polished)
+    saveToHistory({ transcript: originalTranscript.current, prompt: parsed.polished, mode: 'polish', polishChanges: parsed.changes })
+    transition(STATES.PROMPT_READY)
+  }, [])
 
   const handleIterate = useCallback(async () => {
     try {
@@ -485,7 +549,14 @@ Mode: ${iterationBase.current.mode}`
         style={{flex:1, display:'flex', flexDirection:'column', position:'relative', minHeight:0, overflow:'hidden'}}
       >
         {displayState === STATES.IDLE && (
-          <IdleState mode={mode} modeLabel={modeLabel} onStart={startRecording} onTypePrompt={() => transition(STATES.TYPING)} />
+          <IdleState
+            mode={mode}
+            modeLabel={modeLabel}
+            onStart={startRecording}
+            onTypePrompt={() => transition(STATES.TYPING)}
+            polishTone={polishTone}
+            onPolishToneChange={setPolishToneValue}
+          />
         )}
         {displayState === STATES.RECORDING && (
           <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
@@ -517,7 +588,7 @@ Mode: ${iterationBase.current.mode}`
         {displayState === STATES.THINKING && (
           <ThinkingState transcript={thinkTranscript} />
         )}
-        {displayState === STATES.PROMPT_READY && (
+        {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
           <PromptReadyState
             originalTranscript={originalTranscript.current}
             generatedPrompt={generatedPrompt}
@@ -527,6 +598,22 @@ Mode: ${iterationBase.current.mode}`
             mode={mode}
             onIterate={handleIterate}
             isIterated={isIterated.current}
+          />
+        )}
+        {displayState === STATES.PROMPT_READY && mode === 'polish' && (
+          <PolishReadyState
+            polished={polishResult?.polished || generatedPrompt}
+            changes={polishResult?.changes || []}
+            transcript={originalTranscript.current}
+            tone={polishTone}
+            onReset={() => transition(STATES.IDLE)}
+            onCopy={() => {
+              navigator.clipboard.writeText(polishResult?.polished || generatedPrompt)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 1800)
+            }}
+            copied={copied}
+            onToneChange={handlePolishToneChange}
           />
         )}
         {displayState === STATES.ERROR && (
@@ -546,7 +633,12 @@ Mode: ${iterationBase.current.mode}`
               onReuse={(entry) => {
                 originalTranscript.current = entry.transcript
                 setGeneratedPrompt(entry.prompt)
-                if (window.electronAPI) window.electronAPI.resizeWindowWidth(520)
+                if (entry.mode === 'polish') {
+                  setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })
+                } else {
+                  setPolishResult(null)
+                }
+                if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.PROMPT_READY)
                 transition(STATES.PROMPT_READY)
               }}
             />

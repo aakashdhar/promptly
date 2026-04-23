@@ -1,13 +1,14 @@
 const HISTORY_KEY = 'promptly_history'
 const MAX_ENTRIES = 100
 
-export function saveToHistory({ transcript, prompt, mode, isIteration = false, basedOn = null }) {
+export function saveToHistory({ transcript, prompt, mode, isIteration = false, basedOn = null, polishChanges = null }) {
   const history = getHistory()
   const words = transcript.split(' ')
   const title = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '')
   const entry = { id: Date.now(), title, transcript, prompt, mode, timestamp: new Date().toISOString() }
   if (isIteration) entry.isIteration = true
   if (basedOn) entry.basedOn = basedOn
+  if (polishChanges) entry.polishChanges = polishChanges
   history.unshift(entry)
   if (history.length > MAX_ENTRIES) history.splice(MAX_ENTRIES)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history))

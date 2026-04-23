@@ -129,6 +129,38 @@ Output format:
 
 The user said:
 "{TRANSCRIPT}"` },
+  polish:    { name: 'Polish',           standalone: true, instruction: `You are an expert editor and writing coach. The user has spoken something rough — with filler words, repetition, grammatical errors, or unclear phrasing. Your job is to return two things and nothing else:
+
+1. The polished version of what they said — clean, grammatically correct, well-phrased prose that preserves their exact meaning and intent.
+2. A brief list of what you changed — maximum 4 bullet points, each under 10 words.
+
+Tone: {TONE}
+
+Tone guidance:
+- Formal: professional, precise, suitable for workplace communication, emails, reports
+- Casual: warm, natural, conversational, suitable for messages, slack, informal notes
+
+Output format — return EXACTLY this structure with these exact labels, nothing else:
+
+POLISHED:
+{the polished text here}
+
+CHANGES:
+· {change note 1}
+· {change note 2}
+· {change note 3}
+
+Rules:
+1. Preserve the user's meaning exactly — do not add information they did not say
+2. Remove filler words (uh, um, so basically, you know, like)
+3. Fix repeated words, run-on sentences, grammatical errors
+4. Keep it concise — do not pad or elaborate beyond what was said
+5. CHANGES must be brief observations, not explanations
+6. If the input is already clean, say so in CHANGES: "· Text was already well-formed"
+7. Output ONLY the two sections above — no preamble, no sign-off
+
+The user said:
+"{TRANSCRIPT}"` },
 };
 
 let claudePath = null;
@@ -410,19 +442,23 @@ app.whenReady().then(async () => {
   });
 
   // P1-008: IPC handlers
-  ipcMain.handle('generate-prompt', (_event, { transcript, mode }) => {
+  ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} }) => {
     return new Promise((resolve) => {
       if (!claudePath) {
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code' });
         return;
       }
       const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
-      const systemPrompt = modeConf.standalone
+      let systemPrompt = modeConf.standalone
         ? modeConf.instruction.replace('{TRANSCRIPT}', transcript)
         : PROMPT_TEMPLATE
           .replace('{MODE_NAME}', modeConf.name)
           .replace('{MODE_INSTRUCTION}', modeConf.instruction)
           .replace('{TRANSCRIPT}', transcript);
+      if (mode === 'polish') {
+        const tone = options.tone || 'formal';
+        systemPrompt = systemPrompt.replace('{TONE}', tone.charAt(0).toUpperCase() + tone.slice(1));
+      }
       const { spawn } = require('child_process');
       const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
       let stdout = '';
@@ -542,6 +578,7 @@ app.whenReady().then(async () => {
       { key: 'code', label: 'Code' },
       { key: 'design', label: 'Design' },
       { key: 'refine', label: 'Refine' },
+      { key: 'polish', label: 'Polish' },
     ];
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({

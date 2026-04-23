@@ -171,6 +171,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             )}
             {entries.map(entry => {
               const isSelected = selected?.id === entry.id
+              const isPolish = entry.mode === 'polish'
               return (
                 <div
                   key={entry.id}
@@ -178,8 +179,12 @@ export default function HistoryPanel({ onClose, onReuse }) {
                   style={{
                     padding:'12px 16px',
                     borderBottom:'0.5px solid rgba(255,255,255,0.05)',
-                    borderLeft: isSelected ? '2px solid rgba(10,132,255,0.6)' : '2px solid transparent',
-                    background: isSelected ? 'rgba(10,132,255,0.09)' : 'transparent',
+                    borderLeft: isSelected
+                      ? isPolish ? '2px solid rgba(48,209,88,0.5)' : '2px solid rgba(10,132,255,0.6)'
+                      : '2px solid transparent',
+                    background: isSelected
+                      ? isPolish ? 'rgba(48,209,88,0.07)' : 'rgba(10,132,255,0.09)'
+                      : 'transparent',
                     cursor:'pointer',
                     transition:'all 150ms',
                     position:'relative'
@@ -201,9 +206,12 @@ export default function HistoryPanel({ onClose, onReuse }) {
                       fontSize:'10px', fontWeight:600, letterSpacing:'.06em',
                       textTransform:'uppercase', padding:'2px 7px',
                       borderRadius:'20px',
-                      background: isSelected ? 'rgba(10,132,255,0.15)' : 'rgba(255,255,255,0.07)',
-                      // POLISH-009: 0.40 → 0.70 for unselected
-                      color: isSelected ? 'rgba(100,180,255,0.85)' : 'rgba(255,255,255,0.70)'
+                      background: isSelected
+                        ? isPolish ? 'rgba(48,209,88,0.15)' : 'rgba(10,132,255,0.15)'
+                        : 'rgba(255,255,255,0.07)',
+                      color: isSelected
+                        ? isPolish ? 'rgba(100,220,130,0.85)' : 'rgba(100,180,255,0.85)'
+                        : 'rgba(255,255,255,0.70)'
                     }}>
                       {entry.mode}
                     </span>
@@ -292,6 +300,14 @@ export default function HistoryPanel({ onClose, onReuse }) {
                 minHeight:0
               }}>
                 {renderPromptSections(selected.prompt)}
+                {selected.polishChanges && selected.polishChanges.length > 0 && (
+                  <div style={{margin:'12px 0 20px', padding:'10px 12px', background:'rgba(48,209,88,0.04)', border:'0.5px solid rgba(48,209,88,0.12)', borderRadius:'10px'}}>
+                    <div style={{fontSize:'9px', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(48,209,88,0.5)', marginBottom:'6px'}}>Changes made</div>
+                    {selected.polishChanges.map((note, i) => (
+                      <div key={i} style={{fontSize:'11.5px', color:'rgba(255,255,255,0.45)', lineHeight:1.5}}>{note}</div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Action buttons */}

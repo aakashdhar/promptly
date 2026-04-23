@@ -4,8 +4,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // renderer → main (invoke: async request/response)
-  generatePrompt: (transcript, mode) =>
-    ipcRenderer.invoke('generate-prompt', { transcript, mode }),
+  generatePrompt: (transcript, mode, options) =>
+    ipcRenderer.invoke('generate-prompt', { transcript, mode, options }),
 
   copyToClipboard: (text) =>
     ipcRenderer.invoke('copy-to-clipboard', { text }),
