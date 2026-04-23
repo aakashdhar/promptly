@@ -573,7 +573,7 @@ Mode: ${iterationBase.current.mode}`
             tone={polishTone}
             onReset={() => { setCopied(false); transition(STATES.IDLE) }}
             onCopy={() => {
-              navigator.clipboard.writeText(polishResult?.polished || generatedPrompt)
+              if (window.electronAPI) window.electronAPI.copyToClipboard(polishResult?.polished || generatedPrompt)
               setCopied(true)
               setTimeout(() => setCopied(false), 1800)
             }}
