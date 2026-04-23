@@ -49,6 +49,58 @@ Then open the DMG normally and drag to Applications.
 
 ---
 
+## Uninstall
+
+### Option 1 — Uninstaller script (recommended)
+
+The DMG includes `uninstall.sh` alongside the app. Run it from Terminal:
+
+```bash
+bash ~/Downloads/uninstall.sh
+```
+
+Or if you still have the DMG mounted:
+
+```bash
+bash /Volumes/Promptly/uninstall.sh
+```
+
+The script will confirm before removing anything, then delete the app and all its data.
+
+### Option 2 — Manual cleanup
+
+Run these commands in Terminal to remove everything Promptly stores:
+
+```bash
+# Quit the app
+osascript -e 'quit app "Promptly"'
+
+# Remove app bundle
+rm -rf /Applications/Promptly.app
+
+# Remove app data (history, settings)
+rm -rf ~/Library/Application\ Support/promptly
+
+# Remove logs
+rm -rf ~/Library/Logs/promptly
+
+# Remove preferences
+rm -f ~/Library/Preferences/io.betacraft.promptly.plist
+
+# Remove saved window state
+rm -rf ~/Library/Saved\ Application\ State/io.betacraft.promptly.savedState
+
+# Remove microphone permission entry
+tccutil reset Microphone io.betacraft.promptly
+```
+
+### Option 3 — Tray menu
+
+While Promptly is running, click the menu bar icon and choose **Uninstall Promptly...**
+A confirmation dialog will appear before anything is deleted.
+
+---
+
 ## Slack message template
 
 ```

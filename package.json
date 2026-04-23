@@ -17,7 +17,8 @@
     "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
     "create-cert": "bash scripts/create-cert.sh",
     "sign-app": "bash scripts/sign-app.sh",
-    "dist:signed": "bash scripts/build-signed.sh"
+    "dist:signed": "bash scripts/build-signed.sh",
+    "uninstall": "bash scripts/uninstall.sh"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -58,7 +59,10 @@
       }
     },
     "dmg": {
-      "title": "Promptly"
+      "title": "Promptly",
+      "extraFiles": [
+        { "from": "scripts/uninstall.sh", "to": "uninstall.sh" }
+      ]
     },
     "files": [
       "main.js",

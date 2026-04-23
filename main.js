@@ -170,6 +170,40 @@ let splashWin = null;
 let tray = null;
 let isQuitting = false;
 
+async function handleUninstall() {
+  const BUNDLE_ID = 'io.betacraft.promptly';
+  const home = os.homedir();
+  const { response } = await dialog.showMessageBox({
+    type: 'warning',
+    buttons: ['Cancel', 'Uninstall'],
+    defaultId: 0,
+    cancelId: 0,
+    title: 'Uninstall Promptly',
+    message: 'Uninstall Promptly?',
+    detail: 'This will remove Promptly and all its data:\n\n• Application bundle\n• App data and preferences\n• Logs\n• Microphone permission entry\n\nThis cannot be undone.',
+  });
+  if (response === 0) return { cancelled: true };
+
+  const dataPaths = [
+    path.join(home, 'Library', 'Application Support', 'promptly'),
+    path.join(home, 'Library', 'Logs', 'promptly'),
+    path.join(home, 'Library', 'Preferences', `${BUNDLE_ID}.plist`),
+    path.join(home, 'Library', 'Saved Application State', `${BUNDLE_ID}.savedState`),
+  ];
+  for (const p of dataPaths) {
+    try { fs.rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
+  }
+  await new Promise((resolve) => {
+    exec(`tccutil reset Microphone ${BUNDLE_ID}`, () => resolve());
+  });
+  await new Promise((resolve) => {
+    exec('rm -rf "/Applications/Promptly.app"', () => resolve());
+  });
+  isQuitting = true;
+  app.quit();
+  return { ok: true };
+}
+
 function updateTrayMenu() {
   if (!tray) return;
   const menu = Menu.buildFromTemplate([
@@ -180,6 +214,11 @@ function updateTrayMenu() {
         if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
         updateTrayMenu();
       },
+    },
+    { type: 'separator' },
+    {
+      label: 'Uninstall Promptly...',
+      click: () => { handleUninstall(); },
     },
     { type: 'separator' },
     { label: 'Quit Promptly', click: () => app.quit() },
@@ -730,6 +769,8 @@ app.whenReady().then(async () => {
     }
     return { found: false, error: 'Claude CLI not found.' };
   });
+
+  ipcMain.handle('uninstall-promptly', () => handleUninstall());
 });
 
 app.on('will-quit', () => {

@@ -80,4 +80,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onThemeChanged: (callback) =>
     ipcRenderer.on('theme-changed', (_event, data) => callback(data)),
+
+  triggerUninstall: () =>
+    ipcRenderer.invoke('uninstall-promptly'),
 });
