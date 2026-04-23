@@ -243,6 +243,15 @@ async function resolveWhisperPath() {
       }
     } catch { /* ignore */ }
   }
+  const nvmWhisperDir = path.join(os.homedir(), '.nvm', 'versions', 'node');
+  try {
+    if (fs.existsSync(nvmWhisperDir)) {
+      for (const version of fs.readdirSync(nvmWhisperDir)) {
+        const whisperBin = path.join(nvmWhisperDir, version, 'bin', 'whisper');
+        try { if (fs.existsSync(whisperBin)) return whisperBin; } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore */ }
   const shellResolved = await new Promise((resolve) => {
     exec('zsh -lc "which whisper"', (err, stdout) => {
       if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
