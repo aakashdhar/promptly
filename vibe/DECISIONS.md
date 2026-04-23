@@ -1001,6 +1001,24 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 > Report: vibe/spec-reviews/2026-04-23-add-feature-polish-mode.md
 ---
 
+---
+
+## — Bug Fix: BUG-018 — window destroyed on close + no single-instance lock — 2026-04-23
+> Folder: vibe/bugs/2026-04-23-bug-018/
+> Tasks: BUG-018-001, BUG-018-002, BUG-018-003, BUG-018-004
+> Drift logged below.
+
+### D-BUG-018 — Bug fix: window destroyed on close + no single-instance lock
+- **Date**: 2026-04-23 · **Type**: drift
+- **Folder**: vibe/bugs/2026-04-23-bug-018/
+- **Root cause**: (A) No `app.requestSingleInstanceLock()` — second DMG launch starts a fresh conflicting process. (B) No `win.on('close')` intercept — red X destroys `win`; `activate` handler's `!win.isDestroyed()` guard then fails silently; window can never be reshown. (C) Once hide-on-close is added, the existing tray `Quit` → `app.quit()` would be blocked by the close handler — needs `isQuitting` flag.
+- **Files in scope**: `main.js`
+- **Fix approach**: `isQuitting` flag at module scope + `app.on('before-quit')` to set it + `app.requestSingleInstanceLock()` + `second-instance` handler + `win.on('close')` hide-intercept in `createWindow()` + tray Quit label → 'Quit Promptly'
+- **CODEBASE.md update**: No — no new functions or IPC channels
+- **ARCHITECTURE.md update**: Yes — window lifecycle section added (hide-on-close pattern, isQuitting flag, single-instance lock requirement)
+- **Deviations from BUG_PLAN.md**: none yet
+---
+
 ### D-POL-001 — FEATURE-015 is an unplanned addition
 - **Date**: 2026-04-23 · **Task**: planning · **Type**: scope-change
 - **What was planned**: PLAN.md Section 6 did not include a Polish mode.

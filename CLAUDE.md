@@ -628,3 +628,34 @@ Never: dangerouslySetInnerHTML with dynamic content · localStorage direct acces
    git commit -m "docs(FEATURE_TASKS+TASKS): mark [POL-00X] done — polish"
    ```
 6. Re-read TASKS.md silently → state next task → confirm before starting.
+
+---
+
+### Active Bug Fix: BUG-018 — window destroyed on close + no single-instance lock
+> Folder: vibe/bugs/2026-04-23-bug-018/ | Added: 2026-04-23
+
+**Files in scope**: `main.js`
+**Files out of scope**: `preload.js`, `src/renderer/**`, `splash.html`, `package.json`, `entitlements.plist`
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint before commit · smallest change only ·
+        update ARCHITECTURE.md window lifecycle section (BUG-018-004) ·
+        update TASKS.md after every task in plain English
+
+Ask first: touching any file not in BUG_PLAN.md
+
+Never: fix other bugs noticed · modify preload.js · touch renderer files ·
+       change any IPC contract or channel shape
+
+**Done condition:**
+- [ ] `isQuitting` flag + `before-quit` handler added
+- [ ] `app.requestSingleInstanceLock()` + `second-instance` handler added before `app.whenReady()`
+- [ ] `win.on('close')` hide-intercept added in `createWindow()`
+- [ ] Tray Quit label → 'Quit Promptly'
+- [ ] npm run lint — 0 errors · smoke checklist all pass
+- [ ] ARCHITECTURE.md window lifecycle section updated
+- [ ] DECISIONS.md D-BUG-018 appended
+
+**Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
+**Between tasks:** "next" → verify acceptance criteria → lint → commit code → commit docs → state next task.
