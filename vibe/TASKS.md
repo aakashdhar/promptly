@@ -240,8 +240,6 @@
    [x] BUG-012-003 · CODEBASE.md + ARCHITECTURE.md + DECISIONS.md updated
    → Full specs: vibe/bugs/2026-04-20-bug-012/ | DECISIONS.md D-BUG-012
 
-⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
-
 ---
 
 ✅ **BUG-015 — TypeError Object destroyed + mic dialog repeating** (FIXED 2026-04-20)
@@ -284,7 +282,6 @@
    → Full report: vibe/reviews/feature-015-review.md
 
 ✅ Build dist:unsigned — smoke tested 2026-04-23, all states pass
-⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
 
 ✅ **BUG-018 — App window destroyed on close, no single-instance lock** (4/4 — COMPLETE 2026-04-23)
    [x] BUG-018-001 · Regression baseline — confirmed: no requestSingleInstanceLock(), no win.on('close'), tray label 'Quit'
@@ -316,4 +313,7 @@
 ✅ FEATURE-016 complete — uninstaller shipped. scripts/uninstall.sh in DMG, tray "Uninstall Promptly..." menu item, IPC handler, INSTALL.md ## Uninstall section.
 
 ## What's next
-⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
+⬜ FEATURE-017 — Menubar icon (spec ready)
+⬜ FEATURE-013 — Path config UI (spec ready)
+⬜ BL-033 — Extract usePolishMode hook from App.jsx (P1 tech debt)
+⬜ BL-031 — npm audit fix @xmldom/xmldom (P1, run: npm audit fix)

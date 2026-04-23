@@ -79,7 +79,7 @@
 | ~~BL-021~~ | index.html | 463-528 | Dead code: startMorphAnim, stopMorphAnim, module-scope morphAnimFrame never used as intended (clean up after BL-014 fix) | ✅ resolved — startMorphAnim removed; morphAnimFrame now stores inline RAF handle |
 | ~~BL-022~~ | index.html | 787 | Error message truncated to 60 chars — may hide actionable CLI errors | ✅ resolved — truncation removed |
 | ~~BL-023~~ | splash.html | 217 | inline onclick="openInstall()" — minor deviation from event-listener pattern | ✅ resolved — addEventListener added |
-| BL-024 | package.json | — | 2 low severity npm audit vulns in eslint devDep (@eslint/plugin-kit) — not in .dmg, no runtime risk | ⬜ open (low priority — devDep only) |
+| BL-024 | package.json | — | 2 low severity npm audit vulns in eslint devDep (@eslint/plugin-kit) — not in .dmg, no runtime risk. Fix: `npm audit fix --force` upgrades eslint to 9.39.4 (outside stated dep range — manual decision needed) | ⬜ open (low priority — devDep only) |
 
 ---
 
@@ -96,7 +96,8 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-027 | index.html | 181, 188, 276 | CSS hardcoded hex values bypass token definitions — `#30D158`, `#0A84FF`, `#FF3B30` should use `var(--green)`, `var(--blue)`, `var(--red)` | ⬜ open |
+| ~~BL-027~~ | index.html | 181, 188, 276 | CSS hardcoded hex values at those lines | ✅ resolved — original usages gone after React migration (FEATURE-004); root index.html now only has token definitions in `:root` |
+| BL-037 | src/renderer/components/ | multiple | React migration introduced new hardcoded hex instances bypassing CSS tokens — `#0A84FF` in ThinkingState.jsx:10-11 + IteratingState.jsx:160; `#30D158` in PromptReadyState.jsx:156; `#FF3B30` in App.jsx:623, PausedState.jsx:47, RecordingState.jsx:49, ErrorState.jsx:11. Should use CSS custom props or Tailwind token refs. | ⬜ open (P2) |
 
 ---
 
@@ -145,9 +146,9 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-034 | vibe/ARCHITECTURE.md | ~238 | Prompt modes table missing `polish` row. IPC table `generate-prompt` entry does not mention `options` passthrough. Add: `\| Polish \| `polish` \| Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; {TONE} replaced via options.tone \|` | ⬜ open |
-| BL-035 | src/renderer/App.jsx | 80 | `copied` state not reset on PolishReadyState exit — if user exits during 1.8s flash window, next PolishReadyState mount briefly shows "✓ Copied". Fix: `onReset={() => { setCopied(false); transition(STATES.IDLE) }}` | ⬜ open |
-| BL-036 | vibe/features/2026-04-23-polish-mode/FEATURE_TASKS.md | 666–683 | Conformance checklist 18 items all `[ ]` unchecked despite feature being complete. Fix: tick all 18 items. | ⬜ open |
+| ~~BL-034~~ | vibe/ARCHITECTURE.md | ~238 | Prompt modes table missing `polish` row + IPC options passthrough note | ✅ resolved — already present at ARCHITECTURE.md:119,239 (landed with FEATURE-015) |
+| ~~BL-035~~ | src/renderer/App.jsx | 583 | `copied` state not reset on PolishReadyState exit | ✅ resolved — `setCopied(false)` already in `onReset` at App.jsx:583 (landed with FEATURE-015) |
+| ~~BL-036~~ | vibe/features/2026-04-23-polish-mode/FEATURE_TASKS.md | 666–683 | Conformance checklist 18 items unchecked | ✅ resolved — all 18 items already ticked `[x]` in FEATURE_TASKS.md:666–683 |
 
 ---
 
