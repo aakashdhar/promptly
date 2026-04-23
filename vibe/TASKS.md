@@ -251,13 +251,18 @@
    [x] App.jsx: removed requestMic() from startRecording + handleIterate (getUserMedia handles TCC)
    → Specs: vibe/bugs/2026-04-20-bug-015/ | DECISIONS.md D-BUG-015
 
+🐛 **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** (1/5)
+   [x] BUG-017-001 · Fix resolveClaudePath() — nvm dynamic scan + volta/n paths + nvm-init shell fallback
+   [ ] BUG-017-002 · Fix resolveWhisperPath() — add nvm bin scan before shell fallback
+   [ ] BUG-017-003 · Create INSTALL.md + update Slack template with Gatekeeper bypass
+   [ ] BUG-017-004 · Lint verify + smoke test
+   [ ] BUG-017-005 · Update docs (ARCHITECTURE.md, DECISIONS.md, TASKS.md)
+   → Full specs: vibe/bugs/2026-04-23-bug-017/BUG_TASKS.md (agent use)
+
 ## What just happened
-✅ BUG-015 — TypeError Object destroyed + mic dialog repeating — fixed 2026-04-20
-   - splash-done timeout extended to 1200ms; isDestroyed() guards added
-   - hardenedRuntime: true in package.json — TCC entry now persists across launches
-   - entitlements.plist: network.client key added
-   - requestMic() removed from startRecording + handleIterate — getUserMedia calls directly
+✅ BUG-017-001 — resolveClaudePath() fixed: volta/n added to static paths, nvm dynamic scan added,
+   shell fallback now sources ~/.nvm/nvm.sh explicitly in both zsh and bash exec calls.
 
 ## What's next
-⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, run smoke checklist
-⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
+⬜ BUG-017-002 · Fix resolveWhisperPath() — add nvm bin scan before shell fallback
+Say "next" to continue.
