@@ -172,22 +172,35 @@ function createTray() {
 }
 
 async function resolveClaudePath() {
+  const home = os.homedir();
   const commonPaths = [
     '/usr/local/bin/claude',
     '/usr/bin/claude',
-    path.join(os.homedir(), '.local/bin/claude'),
-    path.join(os.homedir(), '.npm-global/bin/claude'),
-    path.join(os.homedir(), 'node_modules/.bin/claude'),
+    path.join(home, '.local/bin/claude'),
+    path.join(home, '.npm-global/bin/claude'),
+    path.join(home, 'node_modules/.bin/claude'),
     '/opt/homebrew/bin/claude',
     '/opt/local/bin/claude',
+    path.join(home, '.volta/bin/claude'),
+    path.join(home, 'n/bin/claude'),
   ];
   for (const p of commonPaths) {
     try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
   }
+  const nvmDir = path.join(home, '.nvm', 'versions', 'node');
+  try {
+    if (fs.existsSync(nvmDir)) {
+      for (const version of fs.readdirSync(nvmDir)) {
+        const claudeBin = path.join(nvmDir, version, 'bin', 'claude');
+        try { if (fs.existsSync(claudeBin)) return claudeBin; } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore */ }
   return new Promise((resolve) => {
-    exec('zsh -lc "which claude"', (err, stdout) => {
+    const nvmInit = `export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; which claude`;
+    exec(`zsh -lc '${nvmInit}'`, (err, stdout) => {
       if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec('bash -lc "which claude"', (err2, stdout2) => {
+      exec(`bash -lc '${nvmInit}'`, (err2, stdout2) => {
         if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
         resolve(null);
       });
