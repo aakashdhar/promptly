@@ -89,7 +89,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
 
         {/* Keyboard icon — type prompt */}
         <div
-          onClick={onTypePrompt}
+          onClick={(e) => { e.stopPropagation(); onTypePrompt(); }}
           title="Type prompt (⌘T)"
           style={{
             position:'absolute', right:'140px',
