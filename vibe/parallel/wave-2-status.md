@@ -1,13 +1,12 @@
-# Wave 2 — Phase 3 polish
-Started: 2026-04-18T13:44:10Z
+# Wave 2 — FEATURE-015 Polish Mode — COMPLETE
+Started: 2026-04-23 · Completed: 2026-04-23
 
 ## Tasks
-| ID | Size | Status | Started | Completed | Duration |
-|----|------|--------|---------|-----------|----------|
-| PH3-BUILD | M | 🔄 running | 13:44:10 | — | — |
+| ID | Size | Status | Files |
+|----|------|--------|-------|
+| POL-003 | M | ✅ complete | src/renderer/components/IdleState.jsx |
+| POL-004 | M | ✅ complete | src/renderer/App.jsx |
+| POL-005 | S | ✅ complete | src/renderer/components/PolishReadyState.jsx (new) |
 
 ## Summary
-Total tasks: 1
-Complete: 0
-Failed: 0
-Partial: 0
+Total tasks: 3 · Complete: 3 · Failed: 0 · Partial: 0

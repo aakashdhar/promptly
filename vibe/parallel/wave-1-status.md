@@ -1,15 +1,11 @@
-# Wave 1 — FEATURE-012 Iteration Mode
-Started: 2026-04-20
+# Wave 1 — FEATURE-015 Polish Mode — COMPLETE
+Started: 2026-04-23T00:00:00Z · Completed: 2026-04-23
 
 ## Tasks
-| ID | Size | Status | Started | Completed | Duration |
-|----|------|--------|---------|-----------|----------|
-| ITR-001 | S | 🔄 running | now | — | — |
-| ITR-002 | M | 🔄 running | now | — | — |
-| ITR-005 | S | 🔄 running | now | — | — |
+| ID | Size | Status | Files |
+|----|------|--------|-------|
+| POL-001 | S | ✅ complete | main.js, preload.js |
+| POL-002 | S | ✅ complete | src/renderer/hooks/useTone.js (new), src/renderer/hooks/useMode.js |
 
 ## Summary
-Total tasks: 3 · Complete: 0 · Failed: 0 · Partial: 0
-
-## Next wave
-Wave 2 — ITR-003 (App.jsx) — waiting on Wave 1 completion
+Total tasks: 2 · Complete: 2 · Failed: 0 · Partial: 0

@@ -265,17 +265,29 @@
    [x] TXT-005 · CODEBASE.md update
    → Full specs: vibe/features/2026-04-23-text-input/FEATURE_TASKS.md (agent use)
 
-## What just happened
-✅ FEATURE-014 Text Input — complete 2026-04-23
-   - TypingState.jsx created (textarea, ⌘↵ submit, switch-to-voice, dynamic height)
-   - IdleState.jsx: keyboard icon button + subtitle updated
-   - App.jsx: TYPING state, handleTypingSubmit, ⌘T shortcut, render block
-   - ShortcutsPanel.jsx: ⌘T row added
-   - Build clean, lint 0 errors, all 5/5 tasks ✅
-   - Executed via vibe-parallel (Wave 2 ran TXT-002+TXT-003 simultaneously)
+## FEATURE-014 gate
+✅ review: feature-014 — reviewed 2026-04-23 — Score 8.6/10 (B+) — 0 P0, 2 P1 logged to backlog (BL-030, BL-031 — both pre-existing), 1 P2 (BL-032)
+   → Full report: vibe/reviews/feature-014-review.md
 
-## What's next
-⬜ Manual smoke test — run `npm start` and exercise the full typing flow
-   Say "review:" when smoke test passes to gate the feature.
+✅ **FEATURE-015 — Polish Mode** — speak rough → get clean polished prose + change notes (7/7 ✅)
+   [x] POL-001 · main.js + preload.js — polish MODE_CONFIG + IPC options passthrough
+   [x] POL-002 · useTone.js + useMode.js — localStorage hook + MODE_LABELS
+   [x] POL-003 · IdleState.jsx — green visual identity + tone toggle
+   [x] POL-004 · App.jsx Part 1 — parsePolishOutput, polishResult state, generate call updates
+   [x] POL-005 · PolishReadyState.jsx — new output component
+   [x] POL-006 · App.jsx Part 2 — render + toneChange handler + history
+   [x] POL-007 · HistoryPanel.jsx — green mode tag + CODEBASE.md update
+   → Full specs: vibe/features/2026-04-23-polish-mode/FEATURE_TASKS.md (agent use)
+
 ⬜ Build dist:unsigned — run `npm run dist:unsigned`, install from DMG, smoke checklist
 ⬜ Broader distribution — notarisation, Sparkle auto-update, public landing page
+
+## What just happened
+✅ FEATURE-015 Polish Mode — all 7 tasks complete 2026-04-23 via vibe-parallel
+   - 4 waves: W1 (POL-001+002), W2 (POL-003+004+005), W3 (POL-006), W4 (POL-007)
+   - New files: useTone.js, PolishReadyState.jsx
+   - Modified: main.js, preload.js, useMode.js, App.jsx, IdleState.jsx, history.js, HistoryPanel.jsx, CODEBASE.md
+
+## What's next
+⬜ Manual smoke test — run app, switch to Polish mode, verify green UI + tone toggle + full generate flow
+Run `review: feature-015` when smoke test passes.

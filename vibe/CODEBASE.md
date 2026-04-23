@@ -1,7 +1,7 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-20
+> Last updated: 2026-04-23
 
 ---
 
@@ -20,21 +20,23 @@
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
-| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt`, `generateRaw`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
+| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, system tray. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. MODE_CONFIG has 8 modes total (adds polish). | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `registerShortcut()`, `createTray()`, `updateTrayMenu()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt(transcript, mode, options?)`, `generateRaw`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause` |
 | `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React). Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`, no backdropFilter; blue glow div (top-right, zIndex:-1) + purple glow div (bottom-left, zIndex:-1). | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `startTimer()`, `pauseTimer()`, `stopTimer()`. Refs: `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, recording flow, history, polish mode. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`, no backdropFilter; blue glow div (top-right, zIndex:-1) + purple glow div (bottom-left, zIndex:-1). | `STATES`, `STATE_HEIGHTS`, `saveToHistory()`, `transition()`, `startRecording()`, `stopRecording()`, `pauseRecording()`, `resumeRecording()`, `handleDismiss()`, `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `startTimer()`, `pauseTimer()`, `stopTimer()`, `parsePolishOutput()`, `handlePolishToneChange()`. State: `polishResult`. Refs: `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Shortcut handler: IDLE→record, RECORDING→stop, SHORTCUTS→record. Alt+P: RECORDING→pause, PAUSED→resume. Escape: SHORTCUTS→prevState, others→IDLE. ⌘E dispatches `export-prompt` custom event |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
+| `src/renderer/hooks/useTone.js` | Polish tone localStorage wrapper — `promptly_polish_tone` key, default `'formal'` | `getPolishTone()`, `setPolishTone()`, `usePolishTone()` → `{ tone, setTone }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
 | `src/renderer/components/PausedState.jsx` | PAUSED panel — dismiss, flat amber line, amber timer, resume (▶), stop, status text | props: duration, onResume, onStop, onDismiss |
 | `src/renderer/components/IteratingState.jsx` | ITERATING state panel — blue context banner showing previous transcript, blue animated waveform (RAF loop with cleanup), timer, blue glow stop button (iterGlow). All styles inline. | props: contextText, duration, onStop, onDismiss |
 | `src/renderer/components/TypingState.jsx` | TYPING state panel — textarea, ⌘↵ submit, × dismiss, switch-to-voice, dynamic height 220–320px. All styles inline. | props: onDismiss, onSubmit, resizeWindow |
+| `src/renderer/components/PolishReadyState.jsx` | POLISH mode PROMPT_READY panel — polished text + change notes + tone toggle + copy. All styles inline. | props: `polished`, `changes`, `transcript`, `tone`, `onReset`, `onCopy`, `copied`, `onToneChange` |
 | `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup | — |
 | `src/renderer/components/ThinkingState.jsx` | THINKING panel — status badge, morph wave, YOU SAID | — |
 | `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
@@ -54,7 +56,7 @@
 
 | Channel | Direction | Status |
 |---------|-----------|--------|
-| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error } |
+| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error }. Accepts optional `options.tone` for polish mode — used to replace `{TONE}` placeholder in polish system prompt. |
 | `generate-raw` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), full system prompt passed from renderer (no MODE_CONFIG); used by iteration flow. Returns { success, prompt, error } |
 | `copy-to-clipboard` | renderer → main | ✅ registered — clipboard.writeText({ text }) → { success: true } |
 | `check-claude-path` | renderer → main | ✅ registered — returns { found, path } or { found: false, error } |
@@ -130,6 +132,10 @@
 | `iterRecorderRef` | useRef MediaRecorder\|null | handleIterate | stopIterating, dismissIterating |
 | `iterChunksRef` | useRef Blob[] | handleIterate ondataavailable | stopIterating onstop |
 | `iterIsProcessingRef` | useRef boolean | stopIterating start/end guard | stopIterating early-exit guard |
+| `polishResult` | useState `{polished,changes}|null` | stopRecording/handleTypingSubmit/handleRegenerate/handlePolishToneChange | PolishReadyState |
+| `polishTone` | hook (useTone) string | usePolishTone() | IdleState, PolishReadyState, generate calls |
+| `polishToneRef` | useRef string | mirrors polishTone — stale-closure-safe for generate calls | stopRecording, handleTypingSubmit, handleRegenerate |
+| `copied` | useState boolean | onCopy in PolishReadyState render | PolishReadyState copied prop |
 
 ## Module-scope variables (in index.html — legacy, main branch only)
 
@@ -160,7 +166,7 @@
 | `win` | `createWindow()` called after `resolveClaudePath()` resolves | BrowserWindow instance |
 | `splashWin` | `app.whenReady()` — created before `win`, destroyed after `splash-done` | BrowserWindow instance (null after splash) |
 | `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |
-| `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, refine, design }` — 7 modes total; each `{ name, instruction }`; `refine` and `design` have `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
+| `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, refine, design, polish }` — 8 modes total; each `{ name, instruction }`; `refine`, `design`, and `polish` have `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
 | `tray` | `createTray()` called from splash-done | Tray instance or null |
 
 ---
@@ -191,7 +197,8 @@
 | Key | Written by | Read by | Notes |
 |-----|-----------|---------|-------|
 | `mode` | `useMode.setMode()` | `useMode.mode` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
-| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript. Iteration entries also include optional fields: `isIteration: true` and `basedOn: string` (first 100 chars of original prompt) |
+| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript. Iteration entries also include optional fields: `isIteration: true` and `basedOn: string` (first 100 chars of original prompt). Polish entries also include optional `polishChanges: string[]` field. |
+| `promptly_polish_tone` | `useTone.setPolishTone()` | `useTone.getPolishTone()` | Default: `'formal'`. Persists Formal/Casual tone preference for polish mode. |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 > `promptHistory` (old key, 20-entry cap) — replaced by `promptly_history` (100-entry cap) in FEATURE-004
