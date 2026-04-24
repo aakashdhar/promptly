@@ -349,14 +349,14 @@
    [x] HSTV2-004 · Stats bar — prompt count + rating percentages
    [x] HSTV2-005 · Bookmark toggle — Save button in right panel + hover-only delete
    [x] HSTV2-006 · Rating section — thumbs up/down + tag chips
-   [ ] HSTV2-007 · Entry indicators — tag pill in meta row
+   [x] HSTV2-007 · Entry indicators — tag pill in meta row
    [ ] HSTV2-008 · Footer update — saved count in footer
    [ ] HSTV2-009 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
    → Full specs: vibe/features/2026-04-24-history-v2/FEATURE_TASKS.md (agent use)
 
 ## What just happened
 ✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
-🔄 FEATURE-020 in progress — HSTV2-006 done (👍/👎 buttons + Perfect/Clear/Detailed/Too long tag chips, persist via rateHistoryItem); HSTV2-007 next.
+🔄 FEATURE-020 in progress — HSTV2-007 done (green/red tag pills in entry meta row); HSTV2-008 next.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24

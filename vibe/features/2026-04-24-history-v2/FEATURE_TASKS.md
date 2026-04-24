@@ -577,7 +577,7 @@ Rating section JSX — add between prompt content scroll area and action buttons
 ---
 
 ### HSTV2-007 · Entry indicators
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#entry-list
 - **Dependencies**: HSTV2-006
@@ -611,11 +611,11 @@ In the meta row of each entry (the row showing timestamp + mode), add:
 ```
 
 **Acceptance criteria**:
-- [ ] Tag pill appears in meta row for entries with any rating + ratingTag
-- [ ] Thumbs down tag: red background/border/text
-- [ ] Thumbs up tag: green background/border/text
-- [ ] Tag pill not shown when no ratingTag (or no rating)
-- [ ] Tag pill shows correct tag text
+- [x] Tag pill appears in meta row for entries with any rating + ratingTag
+- [x] Thumbs down tag: red background/border/text
+- [x] Thumbs up tag: green background/border/text
+- [x] Tag pill not shown when no ratingTag (or no rating)
+- [x] Tag pill shows correct tag text
 
 **Self-verify**: Re-read FEATURE_SPEC.md#entry-list. Tick every criterion.
 **Test requirement**: Manual — rate entries with tags, confirm pills appear in list.
