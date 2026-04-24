@@ -122,6 +122,11 @@ export default function HistoryPanel({ onClose, onReuse }) {
     ? entries.filter(e => e.bookmarked)
     : entries
 
+  const savedCount = entries.filter(e => e.bookmarked).length
+  const footerText = savedCount > 0
+    ? `${entries.length} prompt${entries.length !== 1 ? 's' : ''} · ${savedCount} saved`
+    : `${entries.length} prompt${entries.length !== 1 ? 's' : ''}`
+
   const filteredEntries = tabFiltered.filter(e => {
     if (activeFilter === 'all') return true
     if (activeFilter === 'up') return e.rating === 'up'
@@ -430,9 +435,10 @@ export default function HistoryPanel({ onClose, onReuse }) {
             borderTop:'0.5px solid rgba(255,255,255,0.06)',
             flexShrink:0
           }}>
-            {/* POLISH-009: 0.25 → 0.55 */}
-            <span style={{fontSize:'11px', color:'rgba(255,255,255,0.55)'}}>
-              {entries.length} prompt{entries.length !== 1 ? 's' : ''}
+            <span style={{fontSize:'10px', color:'rgba(255,255,255,0.2)'}}>
+              {activeTab === 'saved'
+                ? `${tabFiltered.length} saved prompt${tabFiltered.length !== 1 ? 's' : ''}`
+                : footerText}
             </span>
           </div>
         </div>
