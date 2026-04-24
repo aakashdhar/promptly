@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime, bookmarkHistoryItem } from '../utils/history'
+import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime, bookmarkHistoryItem, rateHistoryItem } from '../utils/history'
+
+const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
+const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
 
 function renderPromptSections(prompt) {
   if (!prompt) return null
@@ -86,6 +89,25 @@ export default function HistoryPanel({ onClose, onReuse }) {
     if (window.electronAPI) window.electronAPI.copyToClipboard(selected.prompt)
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
+  }
+
+  function handleRate(rating) {
+    if (!selected) return
+    const newRating = selected.rating === rating ? null : rating
+    const newTag = null
+    rateHistoryItem(selected.id, newRating, newTag)
+    const updated = { ...selected, rating: newRating, ratingTag: newTag }
+    setSelected(updated)
+    setEntries(prev => prev.map(e => e.id === selected.id ? updated : e))
+  }
+
+  function handleTag(tag) {
+    if (!selected || !selected.rating) return
+    const newTag = selected.ratingTag === tag ? null : tag
+    rateHistoryItem(selected.id, selected.rating, newTag)
+    const updated = { ...selected, ratingTag: newTag }
+    setSelected(updated)
+    setEntries(prev => prev.map(e => e.id === selected.id ? updated : e))
   }
 
   function handleBookmark() {
@@ -473,6 +495,64 @@ export default function HistoryPanel({ onClose, onReuse }) {
                     {selected.polishChanges.map((note, i) => (
                       <div key={i} style={{fontSize:'11.5px', color:'rgba(255,255,255,0.45)', lineHeight:1.5}}>{note}</div>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Rating section */}
+              <div style={{
+                borderTop:'0.5px solid rgba(255,255,255,0.06)',
+                padding:'12px 22px', flexShrink:0
+              }}>
+                <div style={{
+                  display:'flex', justifyContent:'space-between',
+                  alignItems:'center', marginBottom:'10px'
+                }}>
+                  <span style={{
+                    fontSize:'10px', fontWeight:600, letterSpacing:'.06em',
+                    textTransform:'uppercase', color:'rgba(255,255,255,0.22)'
+                  }}>Rate this prompt</span>
+                  <div style={{display:'flex', gap:'6px'}}>
+                    {['up', 'down'].map(r => (
+                      <button key={r} onClick={() => handleRate(r)} style={{
+                        width:'30px', height:'30px', borderRadius:'8px',
+                        fontSize:'14px', cursor:'pointer',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        transition:'all 150ms',
+                        fontFamily:'inherit',
+                        background: selected.rating === r
+                          ? (r === 'up' ? 'rgba(48,209,88,0.15)' : 'rgba(255,59,48,0.15)')
+                          : 'rgba(255,255,255,0.04)',
+                        border: `0.5px solid ${selected.rating === r
+                          ? (r === 'up' ? 'rgba(48,209,88,0.35)' : 'rgba(255,59,48,0.35)')
+                          : 'rgba(255,255,255,0.1)'}`
+                      }}>
+                        {r === 'up' ? '👍' : '👎'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {selected.rating && (
+                  <div style={{display:'flex', gap:'6px', flexWrap:'wrap'}}>
+                    {ALL_TAGS.map(tag => {
+                      const isActive = selected.ratingTag === tag
+                      const isPositive = POSITIVE_TAGS.includes(tag)
+                      const activeStyle = isPositive
+                        ? { bg:'rgba(48,209,88,0.12)', border:'rgba(48,209,88,0.3)', text:'rgba(100,220,130,0.85)' }
+                        : { bg:'rgba(255,59,48,0.10)', border:'rgba(255,59,48,0.3)', text:'rgba(255,100,90,0.85)' }
+                      const inactiveStyle = { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', text:'rgba(255,255,255,0.35)' }
+                      const s = isActive ? activeStyle : inactiveStyle
+                      return (
+                        <span key={tag} onClick={() => handleTag(tag)} style={{
+                          padding:'3px 10px', borderRadius:'6px',
+                          fontSize:'10px', fontWeight: isActive ? 500 : 400,
+                          cursor:'pointer', transition:'all 150ms',
+                          background:s.bg, border:`0.5px solid ${s.border}`, color:s.text
+                        }}>
+                          {tag}
+                        </span>
+                      )
+                    })}
                   </div>
                 )}
               </div>
