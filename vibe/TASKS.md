@@ -337,7 +337,7 @@ Must complete before next distribution.
 
 [x] BL-038 · P1 NEW — Fix window-all-closed: change `!tray` to `!menuBarTray` at main.js:1040
               File: main.js:1040 · Issue: app quits on forced window close instead of staying in menu bar
-[ ] BL-031 · P1 CARRYOVER — Run `npm audit fix` to resolve @xmldom/xmldom HIGH vulnerability
+[x] BL-031 · P1 CARRYOVER — Run `npm audit fix` to resolve @xmldom/xmldom HIGH vulnerability
               File: package.json (devDep chain) · Issue: DoS + XML injection CVEs
 [ ] BL-033 · P1 CARRYOVER — Extract useKeyboardShortcuts + useRecording hooks from App.jsx (653 lines)
               File: src/renderer/App.jsx · Issue: SRP violation, too many concerns in one file

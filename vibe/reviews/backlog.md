@@ -161,7 +161,7 @@
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | ~~BL-038~~ | main.js | 1040 | `window-all-closed` checks `!tray` (always null) instead of `!menuBarTray` — app quits on forced window close instead of staying alive in menu bar | ✅ resolved — fix(main) a1ee6e9 |
-| BL-031 | package.json (devDep) | — | @xmldom/xmldom HIGH severity — DoS + XML injection; `npm audit fix` resolves without breaking changes | ⬜ open (carryover — escalated, now confirmed HIGH via latest npm audit) |
+| ~~BL-031~~ | package.json (devDep) | — | @xmldom/xmldom HIGH severity — DoS + XML injection; `npm audit fix` resolves without breaking changes | ✅ resolved — fix(deps) 13e214d |
 | BL-033 | src/renderer/App.jsx | 1-653 | SRP — 653 lines, 8+ concerns; extract useKeyboardShortcuts + useRecording hooks | ⬜ open (carryover) |
 
 ### Outstanding P2 — Fix before deploy (lower priority)
