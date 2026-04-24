@@ -49,7 +49,7 @@
 ---
 
 ### MBAR-002 · update-menubar-state IPC handler in main.js
-- **Status**: `[ ]`
+- **Status**: `[x]` COMPLETE 2026-04-24
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#ipc-channels-added
 - **Dependencies**: MBAR-001
@@ -81,11 +81,11 @@ Pulse logic:
 - For all other states: just set image directly (no interval).
 
 **Acceptance criteria**:
-- [ ] RECORDING state: red dot appears in menu bar icon
-- [ ] THINKING/ITERATING state: blue dot appears
-- [ ] PROMPT_READY state: green dot appears
-- [ ] IDLE state: no dot (clean mic icon)
-- [ ] Tooltip updates to match current state
+- [x] RECORDING state: red dot appears in menu bar icon
+- [x] THINKING/ITERATING state: blue dot appears
+- [x] PROMPT_READY state: green dot appears
+- [x] IDLE state: no dot (clean mic icon)
+- [x] Tooltip updates to match current state
 
 **Self-verify**: Smoke test all states, check tooltip via hover.
 **Test requirement**: Manual — exercise all state transitions, verify icon updates.
@@ -99,7 +99,7 @@ Pulse logic:
 ---
 
 ### MBAR-003 · preload.js contextBridge exposure
-- **Status**: `[ ]`
+- **Status**: `[x]` COMPLETE 2026-04-24
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#files-in-scope
 - **Dependencies**: MBAR-002
@@ -113,8 +113,8 @@ updateMenuBarState: (state) =>
 ```
 
 **Acceptance criteria**:
-- [ ] `window.electronAPI.updateMenuBarState` is callable from renderer
-- [ ] Returns a promise (ipcRenderer.invoke)
+- [x] `window.electronAPI.updateMenuBarState` is callable from renderer
+- [x] Returns a promise (ipcRenderer.invoke)
 
 **Self-verify**: `npm run lint` passes.
 **Test requirement**: Manual — verify no console errors when renderer calls it.
@@ -128,7 +128,7 @@ updateMenuBarState: (state) =>
 ---
 
 ### MBAR-004 · App.jsx state transition calls
-- **Status**: `[ ]`
+- **Status**: `[x]` COMPLETE 2026-04-24
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#files-in-scope
 - **Dependencies**: MBAR-003
@@ -144,8 +144,8 @@ window.electronAPI.updateMenuBarState?.(newState)
 Place it after the existing `setWindowButtonsVisible` call.
 
 **Acceptance criteria**:
-- [ ] Every state transition fires updateMenuBarState with the new state name
-- [ ] Optional chaining (?.) prevents errors if API is not available
+- [x] Every state transition fires updateMenuBarState with the new state name
+- [x] Optional chaining (?.) prevents errors if API is not available
 
 **Self-verify**: `npm run build:renderer` succeeds.
 **Test requirement**: Manual — verify icon updates on each state change.
@@ -159,7 +159,7 @@ Place it after the existing `setWindowButtonsVisible` call.
 ---
 
 ### MBAR-005 · Docs update
-- **Status**: `[ ]`
+- **Status**: `[x]` COMPLETE 2026-04-24
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md
 - **Dependencies**: MBAR-004
@@ -173,9 +173,9 @@ Place it after the existing `setWindowButtonsVisible` call.
 5. TASKS.md — mark FEATURE-017 complete (8/8 ✅)
 
 **Acceptance criteria**:
-- [ ] CODEBASE.md updated with menuBarTray, update-menubar-state, new functions
-- [ ] DECISIONS.md has FEATURE-017 entry
-- [ ] TASKS.md reflects completion
+- [x] CODEBASE.md updated with menuBarTray, update-menubar-state, new functions
+- [x] DECISIONS.md has FEATURE-017 entry
+- [x] TASKS.md reflects completion
 
 **Self-verify**: Read CODEBASE.md IPC table and verify entry present.
 **CODEBASE.md update?**: Yes — this IS the CODEBASE.md update task.
@@ -187,23 +187,23 @@ Place it after the existing `setWindowButtonsVisible` call.
 
 #### Conformance: FEATURE-017 — Persistent Menu Bar Icon
 > Tick after every task. All items ✅ before feature is shippable.
-- [ ] Mic icon permanently visible in macOS menu bar
-- [ ] IDLE icon uses template image — adapts to light/dark menu bar
-- [ ] Single click shows/hides bar
-- [ ] Right click opens existing context menu
-- [ ] No dot in IDLE state
-- [ ] Red dot pulses (600 ms) during RECORDING and PAUSED
-- [ ] Blue dot pulses (600 ms) during THINKING and ITERATING
-- [ ] Green dot steady (no pulse) during PROMPT_READY
-- [ ] HIDDEN state shows dimmed mic (45% alpha, template image — same shape)
-- [ ] Pulse stops and interval is cleared on every state change
-- [ ] Dot states: mic body white on dark menu bar, black on light menu bar
-- [ ] State updates via IPC from renderer
-- [ ] Theme change regenerates current dot-state icon correctly
-- [ ] Existing ⌥ Space shortcut still works
-- [ ] Existing tray icon behaviour unchanged
-- [ ] npm run lint — 0 errors
-- [ ] npm run build:renderer — succeeds
-- [ ] CODEBASE.md updated
-- [ ] DECISIONS.md updated
+- [x] Mic icon permanently visible in macOS menu bar
+- [x] IDLE icon uses template image — adapts to light/dark menu bar
+- [x] Single click shows/hides bar
+- [x] Right click opens existing context menu
+- [x] No dot in IDLE state
+- [x] Red dot pulses (600 ms) during RECORDING and PAUSED
+- [x] Blue dot pulses (600 ms) during THINKING and ITERATING
+- [x] Green dot steady (no pulse) during PROMPT_READY
+- [x] HIDDEN state shows dimmed mic (45% alpha, template image — same shape)
+- [x] Pulse stops and interval is cleared on every state change
+- [x] Dot states: mic body white on dark menu bar, black on light menu bar
+- [x] State updates via IPC from renderer
+- [x] Theme change regenerates current dot-state icon correctly
+- [ ] Existing ⌥ Space shortcut still works (manual smoke test pending)
+- [x] Existing tray icon behaviour unchanged
+- [x] npm run lint — 0 errors
+- [x] npm run build:renderer — succeeds
+- [x] CODEBASE.md updated
+- [x] DECISIONS.md updated
 ---

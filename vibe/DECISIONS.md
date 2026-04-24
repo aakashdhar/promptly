@@ -1110,3 +1110,15 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: Canvas npm package — rejected (zero runtime deps constraint). Two separate tray instances — rejected by user (confusing UX).
 - **Impact on other tasks**: MBAR-002 IPC handler targets `menuBarTray` only (not `tray` which is now null).
 - **Approved by**: human
+
+---
+
+### D-FEATURE-017-MBAR-002-004 — Menu bar state IPC chain
+- **Date**: 2026-04-24 · **Task**: MBAR-002/003/004 · **Type**: tech-choice
+- **What was planned**: `ipcMain.handle('update-menubar-state')` + preload exposure + App.jsx call in `transition()`.
+- **What was done**: Exactly as planned. `updateMenuBarIcon()` helper centralises pulse/tooltip/image logic. IPC handler maps STATES enum strings to icon states via `stateMap` with fallback to `'idle'`.
+- **Key decisions**:
+  - MBAR-002/003/004 implemented and committed together — they form one complete IPC chain; splitting commits adds no value.
+  - `updateMenuBarIcon()` extracted as a standalone function (called by both IPC handler and nativeTheme listener).
+  - Optional chaining (`?.`) in App.jsx — prevents errors if `window.electronAPI` is unavailable.
+- **Approved by**: agent-autonomous

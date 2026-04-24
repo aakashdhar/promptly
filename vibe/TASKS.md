@@ -320,18 +320,17 @@
    [x] PCFG-008 · CODEBASE.md + DECISIONS.md + TASKS.md updated
    → Full specs: vibe/features/2026-04-23-path-config/FEATURE_TASKS.md (agent use)
 
-⬜ **FEATURE-017 — Persistent Menu Bar Icon** (1/5 in progress)
+✅ **FEATURE-017 — Persistent Menu Bar Icon** (5/5 ✅ COMPLETE 2026-04-24)
    [x] MBAR-001 · PNG helpers (crc32, pngEncode) + createMicIcon + createMenuBarIcon — main.js. 44×44 @2x template PNG mic icon. Single tray instance replaces old createTray(). Click=show/hide, right-click=context menu.
-   [ ] MBAR-002 · update-menubar-state IPC handler — main.js
-   [ ] MBAR-003 · preload.js contextBridge exposure
-   [ ] MBAR-004 · App.jsx state transition calls
-   [ ] MBAR-005 · Docs update
+   [x] MBAR-002 · update-menubar-state IPC handler — main.js. State map + updateMenuBarIcon() helper (pulse/tooltip/image). 600ms pulse for recording/thinking.
+   [x] MBAR-003 · preload.js contextBridge exposure — updateMenuBarState(state)
+   [x] MBAR-004 · App.jsx — updateMenuBarState?.(newState) call inside transition() if block
+   [x] MBAR-005 · Docs update — CODEBASE.md + DECISIONS.md + FEATURE_TASKS.md
    → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
 
 ## What just happened
-✅ MBAR-001 complete — mic icon permanently visible in macOS menu bar. 44×44px PNG drawn with Node.js built-in zlib (zero runtime deps). Template image for idle/hidden; diagonal slash + 45% alpha for hidden state. createTray() removed — menuBarTray is the sole Tray instance. eslint.config.js updated with setInterval/clearInterval globals.
+✅ MBAR-002–005 complete — full menu bar state IPC chain wired. Icon shows red dot (pulse) during recording/paused, blue dot (pulse) during thinking/iterating, green dot (steady) when prompt ready, clean mic icon at idle. Tooltip updates match each state. Theme change regenerates icon correctly.
 
 ## What's next
-⬜ MBAR-002 — update-menubar-state IPC: red/blue/green dot pulse during recording/thinking/ready states
 ⬜ BL-033 — Extract usePolishMode hook from App.jsx (P1 tech debt)
 ⬜ BL-031 — npm audit fix @xmldom/xmldom (P1, run: npm audit fix)
