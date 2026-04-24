@@ -1122,3 +1122,18 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   - `updateMenuBarIcon()` extracted as a standalone function (called by both IPC handler and nativeTheme listener).
   - Optional chaining (`?.`) in App.jsx — prevents errors if `window.electronAPI` is unavailable.
 - **Approved by**: agent-autonomous
+
+---
+
+### D-BL-033 — Extract useRecording + useKeyboardShortcuts from App.jsx
+- **Date**: 2026-04-24 · **Task**: BL-033 · **Type**: drift (SRP refactor)
+- **What was planned**: P1 fix from FEATURE-015 review — extract recording + keyboard concerns from App.jsx.
+- **What was done**: Created `src/renderer/hooks/useRecording.js` (171 lines) and `src/renderer/hooks/useKeyboardShortcuts.js` (107 lines). App.jsx reduced 654 → 478 lines.
+- **Key decisions**:
+  - `stopRecording` now uses `modeRef.current` instead of closing over `mode` directly — dep array `[]` instead of `[mode]`. Cleaner pattern consistent with other hooks; no behavior change since `modeRef` is kept current via `useEffect`.
+  - `startTimer`/`stopTimer` exported from `useRecording` — needed by `handleIterate`/`dismissIterating` which stay in App.jsx (iteration logic, not base recording).
+  - Theme effect (getTheme + onThemeChanged) stays in App.jsx as its own `useEffect` — conceptually separate from shortcut wiring.
+  - `useKeyboardShortcuts` receives all refs/callbacks as params; uses `transitionRef.current()` throughout to avoid stale-closure issues.
+- **CODEBASE.md update**: Yes — added two new hook rows, updated App.jsx row.
+- **Alternatives considered**: Moving STATES to a shared constants file — deferred (out of scope for this extraction).
+- **Approved by**: human

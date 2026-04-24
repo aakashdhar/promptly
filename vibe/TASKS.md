@@ -329,17 +329,16 @@
    → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
 
 ## What just happened
-✅ Full codebase review 2026-04-24 — Score 5.9/D. 0 P0. 3 P1 (1 new: BL-038 window-all-closed bug, 2 carryover: BL-031 xmldom, BL-033 App.jsx SRP). 8 P2 (mostly documentation drift). 5 P3.
-→ Full report: vibe/reviews/full-review-2026-04-24.md
+✅ BL-033 fixed 2026-04-24 — Extracted useRecording.js (171 lines) and useKeyboardShortcuts.js (107 lines) from App.jsx. App.jsx reduced from 654 → 478 lines. Build passes, lint clean.
 
-## 🔴 Review fixes required — Full review gate (0/3)
+## 🔴 Review fixes required — Full review gate (2/3 done)
 Must complete before next distribution.
 
 [x] BL-038 · P1 NEW — Fix window-all-closed: change `!tray` to `!menuBarTray` at main.js:1040
               File: main.js:1040 · Issue: app quits on forced window close instead of staying in menu bar
 [x] BL-031 · P1 CARRYOVER — Run `npm audit fix` to resolve @xmldom/xmldom HIGH vulnerability
               File: package.json (devDep chain) · Issue: DoS + XML injection CVEs
-[ ] BL-033 · P1 CARRYOVER — Extract useKeyboardShortcuts + useRecording hooks from App.jsx (653 lines)
+[x] BL-033 · P1 CARRYOVER — Extract useKeyboardShortcuts + useRecording hooks from App.jsx (653 lines)
               File: src/renderer/App.jsx · Issue: SRP violation, too many concerns in one file
 
 ## Documentation cleanup (P2 — next batch commit)
