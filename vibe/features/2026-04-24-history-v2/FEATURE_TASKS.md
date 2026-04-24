@@ -630,7 +630,7 @@ In the meta row of each entry (the row showing timestamp + mode), add:
 ---
 
 ### HSTV2-008 · Footer update
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#footer
 - **Dependencies**: HSTV2-007
@@ -656,10 +656,10 @@ Replace existing footer count span content:
 ```
 
 **Acceptance criteria**:
-- [ ] Footer shows "{n} prompts · {m} saved" when saved count > 0
-- [ ] Footer shows "{n} prompts" when no bookmarks
-- [ ] On Saved tab, footer shows "{m} saved prompts"
-- [ ] Singular/plural handled correctly (1 prompt vs 2 prompts)
+- [x] Footer shows "{n} prompts · {m} saved" when saved count > 0
+- [x] Footer shows "{n} prompts" when no bookmarks
+- [x] On Saved tab, footer shows "{m} saved prompts"
+- [x] Singular/plural handled correctly (1 prompt vs 2 prompts)
 
 **Self-verify**: Re-read FEATURE_SPEC.md#footer. Tick every criterion.
 **Test requirement**: Manual — bookmark entries, confirm footer shows saved count.
