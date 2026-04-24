@@ -97,7 +97,7 @@
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | ~~BL-027~~ | index.html | 181, 188, 276 | CSS hardcoded hex values at those lines | ✅ resolved — original usages gone after React migration (FEATURE-004); root index.html now only has token definitions in `:root` |
-| BL-037 | src/renderer/components/ | multiple | React migration introduced new hardcoded hex instances bypassing CSS tokens — `#0A84FF` in ThinkingState.jsx:10-11 + IteratingState.jsx:160; `#30D158` in PromptReadyState.jsx:156; `#FF3B30` in App.jsx:623, PausedState.jsx:47, RecordingState.jsx:49, ErrorState.jsx:11. Should use CSS custom props or Tailwind token refs. | ⬜ open (P2) |
+| ~~BL-037~~ | src/renderer/components/ | multiple | React migration introduced new hardcoded hex instances bypassing CSS tokens | ✅ resolved — fix(backlog) a0d5dbf · all 8 instances replaced with var(--color-red/blue/green) |
 
 ---
 
@@ -120,8 +120,8 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-030 | src/renderer/App.jsx | ~561 | App.jsx over 500 lines (561) — SRP concern, pre-existing, grew +46 this feature. Consider extracting handleTypingSubmit + ⌘T keydown into useTextInput hook when App.jsx next hits a natural refactor point. | ⬜ open |
-| BL-031 | package.json (devDep) | — | @xmldom/xmldom high severity GHSA-crh6-fp67-6883 (ReDoS) — electron-builder devDep chain only, NOT present in packaged .dmg. Zero runtime risk. Track for electron-builder upgrade. | ⬜ open (devDep only) |
+| ~~BL-030~~ | src/renderer/App.jsx | ~561 | App.jsx over 500 lines (561) — SRP concern, pre-existing, grew +46 this feature. Consider extracting handleTypingSubmit + ⌘T keydown into useTextInput hook when App.jsx next hits a natural refactor point. | ✅ resolved — refactor(app) ed3f9b5 · App.jsx now 470 lines after useRecording + useKeyboardShortcuts extraction |
+| ~~BL-031~~ | package.json (devDep) | — | @xmldom/xmldom high severity GHSA-crh6-fp67-6883 (ReDoS) — electron-builder devDep chain only, NOT present in packaged .dmg. Zero runtime risk. Track for electron-builder upgrade. | ✅ resolved — fix(deps) 13e214d · npm audit 0 vulnerabilities |
 
 ### Outstanding P2 — Fix before deploy (lower priority)
 
@@ -139,8 +139,8 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-033 | src/renderer/App.jsx | 652 lines | App.jsx now 652 lines — SRP concern, grew +91 lines this feature. Extract polish flow into usePolishMode hook at next refactor: parsePolishOutput call sites, polishResult+polishToneRef+effects, handlePolishToneChange, copied/setCopied. | ⬜ open |
-| BL-031 | package.json (devDep) | — | @xmldom/xmldom high severity GHSA-crh6-fp67-6883 — carryover from FEATURE-014, no change in status | ⬜ open (devDep only) |
+| ~~BL-033~~ | src/renderer/App.jsx | 652 lines | App.jsx now 652 lines — SRP concern, grew +91 lines this feature. Extract polish flow into usePolishMode hook at next refactor: parsePolishOutput call sites, polishResult+polishToneRef+effects, handlePolishToneChange, copied/setCopied. | ✅ resolved — refactor(app) ed3f9b5 · App.jsx reduced to 470 lines |
+| ~~BL-031~~ | package.json (devDep) | — | @xmldom/xmldom high severity GHSA-crh6-fp67-6883 — carryover from FEATURE-014, no change in status | ✅ resolved — fix(deps) 13e214d · npm audit 0 vulnerabilities |
 
 ### Outstanding P2 — Fix this sprint
 
