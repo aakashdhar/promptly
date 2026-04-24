@@ -674,7 +674,7 @@ Replace existing footer count span content:
 ---
 
 ### HSTV2-009 · Docs
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md (all sections)
 - **Dependencies**: HSTV2-008
@@ -686,10 +686,10 @@ Replace existing footer count span content:
 3. TASKS.md: Mark FEATURE-020 complete.
 
 **Acceptance criteria**:
-- [ ] CODEBASE.md history.js exports include bookmarkHistoryItem, rateHistoryItem
-- [ ] CODEBASE.md promptly_history entry updated with new fields
-- [ ] DECISIONS.md has FEATURE-020 entry
-- [ ] TASKS.md shows FEATURE-020 complete
+- [x] CODEBASE.md history.js exports include bookmarkHistoryItem, rateHistoryItem
+- [x] CODEBASE.md promptly_history entry updated with new fields
+- [x] DECISIONS.md has FEATURE-020 entry
+- [x] TASKS.md shows FEATURE-020 complete
 
 **Self-verify**: Check all three files updated correctly.
 **Test requirement**: None — doc task.

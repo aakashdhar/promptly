@@ -341,8 +341,7 @@
    [x] BUG-033-005 · Verify + update docs — lint clean, smoke passed, CODEBASE.md + DECISIONS.md updated
    → Full specs: vibe/bugs/2026-04-24-bug-033/BUG_TASKS.md (agent use)
 
-🔄 **FEATURE-020 — History Panel v2** (1/9 — IN PROGRESS)
-   Estimated: approx. 14-18 hours (S: 4, M: 4)
+✅ **FEATURE-020 — History Panel v2** (9/9 — COMPLETE 2026-04-24)
    [x] HSTV2-001 · history.js utility functions — bookmarkHistoryItem + rateHistoryItem added
    [x] HSTV2-002 · Tab switcher — All / Saved tabs in HistoryPanel.jsx
    [x] HSTV2-003 · Filter chips — All, 👍, 👎, Unrated filter row
@@ -351,12 +350,12 @@
    [x] HSTV2-006 · Rating section — thumbs up/down + tag chips
    [x] HSTV2-007 · Entry indicators — tag pill in meta row
    [x] HSTV2-008 · Footer update — saved count in footer
-   [ ] HSTV2-009 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
+   [x] HSTV2-009 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
    → Full specs: vibe/features/2026-04-24-history-v2/FEATURE_TASKS.md (agent use)
 
 ## What just happened
 ✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
-🔄 FEATURE-020 in progress — HSTV2-008 done (footer: "{n} prompts · {m} saved" + Saved tab count); HSTV2-009 next (docs).
+✅ FEATURE-020 complete 2026-04-24 — History Panel v2: bookmarks, ratings (👍/👎 + tags), filter chips, stats bar, hover-only delete, entry indicators, updated footer.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
