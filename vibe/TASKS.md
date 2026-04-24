@@ -309,11 +309,21 @@
    [x] UNIN-008 · CODEBASE.md + DECISIONS.md + TASKS.md updated
    → Full specs: vibe/features/2026-04-23-uninstaller/ (agent use)
 
+✅ **FEATURE-013 — Path Configuration Panel** (8/8 ✅ COMPLETE 2026-04-24)
+   [x] PCFG-001 · main.js: readConfig/writeConfig + stored path checks in resolveClaudePath/resolveWhisperPath + 4 IPC handlers
+   [x] PCFG-002 · preload.js: getStoredPaths, savePaths, browseForBinary, recheckPaths, onOpenSettings
+   [x] PCFG-003 · splash.html HTML: gear icon button + path panel with all required element IDs
+   [x] PCFG-004 · splash.html JavaScript: openPathPanel, setPathStatus, browse handlers, saveRecheckBtn, runChecks hints
+   [x] PCFG-005 · main.js tray: "Path configuration..." menu item → open-settings to renderer
+   [x] PCFG-006 · main.js ⌘, shortcut + App.jsx onOpenSettings stub listener
+   [x] PCFG-007 · ShortcutsPanel.jsx: "Open path settings ⌘ ," in Navigation group
+   [x] PCFG-008 · CODEBASE.md + DECISIONS.md + TASKS.md updated
+   → Full specs: vibe/features/2026-04-23-path-config/FEATURE_TASKS.md (agent use)
+
 ## What just happened
-✅ FEATURE-016 complete — uninstaller shipped. scripts/uninstall.sh in DMG, tray "Uninstall Promptly..." menu item, IPC handler, INSTALL.md ## Uninstall section.
+✅ FEATURE-013 complete — path configuration panel shipped. Gear icon in splash opens editable path inputs with green/red live status. Save & Recheck reruns path resolution without restart. Tray "Path configuration..." + ⌘, shortcut. Paths persist via config.json in userData.
 
 ## What's next
 ⬜ FEATURE-017 — Menubar icon (spec ready)
-⬜ FEATURE-013 — Path config UI (spec ready)
 ⬜ BL-033 — Extract usePolishMode hook from App.jsx (P1 tech debt)
 ⬜ BL-031 — npm audit fix @xmldom/xmldom (P1, run: npm audit fix)

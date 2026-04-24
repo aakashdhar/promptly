@@ -83,6 +83,11 @@
 | `set-window-size` | renderer → main | ✅ registered — win.setMinimumSize + setMaximumSize + setSize(width, height) atomically; used by openHistory/closeHistory to avoid race condition between separate width/height calls |
 | `show-history` | main → renderer | ✅ registered — sent by "History ⌘H" context menu item |
 | `uninstall-promptly` | renderer → main | ✅ registered — shows native confirmation dialog, removes all data dirs + TCC, quits app; also called from tray menu via handleUninstall() |
+| `get-stored-paths` | renderer → main | ✅ registered — returns { claudePath, whisperPath } from config.json (userData) |
+| `save-paths` | renderer → main | ✅ registered — saves { claudePath, whisperPath } to config.json and updates runtime vars |
+| `browse-for-binary` | renderer → main | ✅ registered — opens macOS file picker (openFile), returns { path } or { path: null } |
+| `recheck-paths` | renderer → main | ✅ registered — reruns resolveClaudePath + resolveWhisperPath, returns { claude: { ok, path }, whisper: { ok, path } } |
+| `open-settings` | main → renderer | ✅ registered — sent by tray "Path configuration..." item and ⌘, shortcut; stub console.log in App.jsx |
 
 ---
 
@@ -171,6 +176,9 @@
 | `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |
 | `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, refine, design, polish }` — 8 modes total; each `{ name, instruction }`; `refine`, `design`, and `polish` have `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
 | `tray` | `createTray()` called from splash-done | Tray instance or null |
+| `configPath` | module constant | `path.join(app.getPath('userData'), 'config.json')` — path to persisted path config file |
+| `readConfig()` | called on-demand | reads + parses config.json; returns `{}` on any error |
+| `writeConfig(data)` | called on-demand | JSON.stringify(data, null, 2) → config.json |
 
 ---
 

@@ -11,7 +11,7 @@ Code and doc commits always separate. Lint must pass before every commit.
 ---
 
 ### PCFG-001 · main.js: electron-store + 4 IPC handlers
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Dependencies**: None
 - **Touches**: `main.js`, `package.json`
@@ -42,7 +42,7 @@ Code and doc commits always separate. Lint must pass before every commit.
 ---
 
 ### PCFG-002 · preload.js: contextBridge exposures
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Dependencies**: PCFG-001
 - **Touches**: `preload.js`
@@ -67,7 +67,7 @@ onOpenSettings: (cb) => ipcRenderer.on('open-settings', (_e) => cb())
 ---
 
 ### PCFG-003 · splash.html HTML: gear icon + path config panel
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Dependencies**: PCFG-002
 - **Touches**: `splash.html`
@@ -99,7 +99,7 @@ onOpenSettings: (cb) => ipcRenderer.on('open-settings', (_e) => cb())
 ---
 
 ### PCFG-004 · splash.html JavaScript: panel logic
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Dependencies**: PCFG-003
 - **Touches**: `splash.html`
@@ -142,7 +142,7 @@ Update `runChecks()`:
 ---
 
 ### PCFG-005 · main.js tray: "Path configuration..." menu item
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Dependencies**: PCFG-002
 - **Touches**: `main.js`
@@ -174,7 +174,7 @@ In `updateTrayMenu()`, add before the first separator:
 ---
 
 ### PCFG-006 · main.js ⌘, shortcut + App.jsx stub listener
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Dependencies**: PCFG-005
 - **Touches**: `main.js`, `src/renderer/App.jsx`
@@ -210,7 +210,7 @@ In `updateTrayMenu()`, add before the first separator:
 ---
 
 ### PCFG-007 · ShortcutsPanel.jsx: ⌘, navigation row
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Dependencies**: PCFG-006
 - **Touches**: `src/renderer/components/ShortcutsPanel.jsx`
@@ -231,7 +231,7 @@ In the Navigation group items array, add:
 ---
 
 ### PCFG-008 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Dependencies**: PCFG-007
 - **Touches**: `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`

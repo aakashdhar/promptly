@@ -1088,3 +1088,10 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Key fix**: electron-store runtime dep (P0) replaced with native `readConfig()`/`writeConfig()` using built-in `fs` + `app.getPath('userData')` — zero runtime deps preserved.
 - **Report**: vibe/spec-reviews/2026-04-24-add-feature-path-config.md
 ---
+
+### D-FEATURE-013 — Path Configuration Panel
+- **Date**: 2026-04-24
+- **Decision**: Added gear icon (⚙) to splash top-right that opens a path configuration panel. Users can paste or browse to claude/whisper binary paths, see green/red live status dots, and Save & Recheck to retry without restarting the app.
+- **Why**: Team members on nvm/pyenv/volta installs hit "not found" errors on the splash with no recourse — blocks onboarding and creates support burden.
+- **Implementation**: `readConfig()`/`writeConfig()` using Node.js built-in `fs` + `app.getPath('userData')` — zero runtime npm dependencies. 4 new IPC channels: `get-stored-paths`, `save-paths`, `browse-for-binary`, `recheck-paths`. Tray menu "Path configuration..." + ⌘, shortcut send `open-settings` to renderer (console stub — full SETTINGS state deferred).
+---
