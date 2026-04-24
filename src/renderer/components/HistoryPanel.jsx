@@ -367,6 +367,26 @@ export default function HistoryPanel({ onClose, onReuse }) {
                     <span style={{fontSize:'10px', color:'rgba(255,255,255,0.58)'}}>
                       {formatTime(entry.timestamp)}
                     </span>
+                    {entry.rating === 'down' && entry.ratingTag && (
+                      <span style={{
+                        fontSize:'9px', padding:'1px 5px', borderRadius:'4px',
+                        background:'rgba(255,59,48,0.08)',
+                        border:'0.5px solid rgba(255,59,48,0.2)',
+                        color:'rgba(255,100,90,0.7)'
+                      }}>
+                        {entry.ratingTag}
+                      </span>
+                    )}
+                    {entry.rating === 'up' && entry.ratingTag && (
+                      <span style={{
+                        fontSize:'9px', padding:'1px 5px', borderRadius:'4px',
+                        background:'rgba(48,209,88,0.08)',
+                        border:'0.5px solid rgba(48,209,88,0.2)',
+                        color:'rgba(100,220,130,0.7)'
+                      }}>
+                        {entry.ratingTag}
+                      </span>
+                    )}
                   </div>
                   {/* Delete button — hover only */}
                   <button
