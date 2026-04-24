@@ -156,7 +156,7 @@ export default function ShortcutsPanel({ onClose }) {
                       borderRadius: '5px',
                       fontSize: '11px',
                       color: 'rgba(255,255,255,0.55)',
-                      fontFamily: '-apple-system, sans-serif',
+                      fontFamily: 'inherit',
                       letterSpacing: '0.01em',
                       boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
                     }}>

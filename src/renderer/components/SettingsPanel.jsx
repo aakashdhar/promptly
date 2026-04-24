@@ -73,16 +73,16 @@ export default function SettingsPanel({ onClose }) {
     status === null ? 'rgba(255,255,255,0.2)'
     : status.ok ? 'rgba(48,209,88,0.6)' : 'rgba(255,59,48,0.5)'
 
-  const sectionLabel = { fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 5, fontFamily: '-apple-system,sans-serif' }
+  const sectionLabel = { fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 5, fontFamily: 'inherit' }
   const inputStyle = (status) => ({ width: '100%', height: 32, background: 'rgba(255,255,255,0.05)', border: `0.5px solid ${inputBorder(status)}`, borderRadius: 8, padding: '0 10px', fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' })
-  const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: '-apple-system,sans-serif', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
+  const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
 
   return (
     <div style={{ padding: '16px 20px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
       {/* header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.65)', fontFamily: '-apple-system,sans-serif' }}>Path configuration</span>
-        <button onClick={onClose} style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: '-apple-system,sans-serif', outline: 'none' }}>← Back</button>
+        <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.65)', fontFamily: 'inherit' }}>Path configuration</span>
+        <button onClick={onClose} style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' }}>← Back</button>
       </div>
 
       {/* Claude CLI */}
@@ -95,7 +95,7 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseClaude} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: hintColor(claudeStatus), marginTop: 4, fontFamily: '-apple-system,sans-serif', minHeight: 13 }}>{hintText(claudeStatus, claudeVal)}</div>
+        <div style={{ fontSize: 10, color: hintColor(claudeStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(claudeStatus, claudeVal)}</div>
       </div>
 
       {/* Whisper */}
@@ -108,7 +108,7 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseWhisper} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: hintColor(whisperStatus), marginTop: 4, fontFamily: '-apple-system,sans-serif', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
+        <div style={{ fontSize: 10, color: hintColor(whisperStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
       </div>
 
       {/* divider */}
@@ -117,12 +117,12 @@ export default function SettingsPanel({ onClose }) {
       {/* save button */}
       <button
         onClick={handleSaveRecheck}
-        style={{ width: '100%', height: 34, background: 'linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9))', color: 'rgba(255,255,255,0.92)', border: '0.5px solid rgba(10,132,255,0.35)', borderRadius: 9, fontSize: 12, fontWeight: 500, fontFamily: '-apple-system,sans-serif', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}
+        style={{ width: '100%', height: 34, background: 'linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9))', color: 'rgba(255,255,255,0.92)', border: '0.5px solid rgba(10,132,255,0.35)', borderRadius: 9, fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}
       >
         Save &amp; Recheck
       </button>
 
-      <div style={{ fontSize: 10.5, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: '-apple-system,sans-serif', color: saveMsgColor }}>{saveMsg}</div>
+      <div style={{ fontSize: 10.5, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: 'inherit', color: saveMsgColor }}>{saveMsg}</div>
     </div>
   )
 }
