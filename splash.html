@@ -192,6 +192,12 @@ html, body {
 </head>
 <body>
 <div class="splash">
+  <button id="settingsBtn" style="position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;outline:none;-webkit-app-region:no-drag">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="2" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+      <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.6 2.6l1.1 1.1M10.3 10.3l1.1 1.1M2.6 11.4l1.1-1.1M10.3 3.7l1.1-1.1" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+  </button>
   <div style="position:absolute;top:-60px;right:-40px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle, rgba(10,132,255,0.08) 0%, transparent 70%);pointer-events:none;z-index:0;"></div>
   <div style="position:absolute;bottom:-60px;left:-40px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle, rgba(120,40,200,0.1) 0%, transparent 70%);pointer-events:none;z-index:0;"></div>
   <div class="content">
@@ -226,6 +232,48 @@ html, body {
   </div>
   <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:0.08em;color:rgba(255,255,255,0.12);pointer-events:none;user-select:none;">
     built using vibe-* skills
+  </div>
+
+  <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:18px 22px 22px;z-index:20;flex-direction:column">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);font-family:-apple-system,sans-serif">Path configuration</span>
+      <button id="backBtn" style="font-size:11px;color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 10px;cursor:pointer;font-family:-apple-system,sans-serif;outline:none;-webkit-app-region:no-drag">← Back</button>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:6px;font-family:-apple-system,sans-serif">Claude CLI path</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="position:relative;flex:1">
+          <input id="claudePathInput" type="text" placeholder="/usr/local/bin/claude"
+            style="width:100%;height:36px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 36px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
+          <div id="claudeStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
+        </div>
+        <button id="browseClaudeBtn" style="height:36px;padding:0 12px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
+      </div>
+      <div id="claudePathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:5px;font-family:-apple-system,sans-serif;min-height:14px"></div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:6px;font-family:-apple-system,sans-serif">Whisper path</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="position:relative;flex:1">
+          <input id="whisperPathInput" type="text" placeholder="/usr/local/bin/whisper"
+            style="width:100%;height:36px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 36px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
+          <div id="whisperStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
+        </div>
+        <button id="browseWhisperBtn" style="height:36px;padding:0 12px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
+      </div>
+      <div id="whisperPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:5px;font-family:-apple-system,sans-serif;min-height:14px">Paste full path or use Browse to locate the binary</div>
+    </div>
+
+    <div style="height:0.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin-bottom:16px"></div>
+
+    <button id="saveRecheckBtn" style="width:100%;height:38px;background:linear-gradient(135deg,rgba(10,132,255,0.85),rgba(10,100,220,0.85));color:white;border:none;border-radius:10px;font-size:13px;font-weight:500;font-family:-apple-system,sans-serif;cursor:pointer;outline:none;-webkit-app-region:no-drag">
+      Save &amp; Recheck
+    </button>
+
+    <div id="saveStatus" style="font-size:11px;text-align:center;margin-top:10px;min-height:16px;font-family:-apple-system,sans-serif"></div>
   </div>
 </div>
 
@@ -268,6 +316,81 @@ document.getElementById('whisper-btn').addEventListener('click', () => {
   setTimeout(() => { btn.textContent = 'Copy install command'; }, 2000);
 });
 
+function setPathStatus(prefix, connected, filePath) {
+  const dot = document.getElementById(prefix + 'StatusDot');
+  const input = document.getElementById(prefix + 'PathInput');
+  const hint = document.getElementById(prefix + 'PathHint');
+  if (connected) {
+    dot.style.background = 'rgba(48,209,88,0.9)';
+    input.style.borderColor = 'rgba(48,209,88,0.3)';
+    hint.style.color = 'rgba(48,209,88,0.6)';
+    hint.textContent = '✓ Connected: ' + filePath;
+  } else {
+    dot.style.background = 'rgba(255,59,48,0.7)';
+    input.style.borderColor = 'rgba(255,59,48,0.3)';
+    hint.style.color = 'rgba(255,59,48,0.5)';
+    hint.textContent = 'Not found — paste path manually or use Browse';
+  }
+}
+
+async function openPathPanel() {
+  const panel = document.getElementById('pathPanel');
+  panel.style.display = 'flex';
+  const stored = await window.electronAPI.getStoredPaths();
+  document.getElementById('claudePathInput').value = stored.claudePath || '';
+  document.getElementById('whisperPathInput').value = stored.whisperPath || '';
+  setPathStatus('claude', !!stored.claudePath, stored.claudePath);
+  setPathStatus('whisper', !!stored.whisperPath, stored.whisperPath);
+}
+
+document.getElementById('settingsBtn').addEventListener('click', openPathPanel);
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('pathPanel').style.display = 'none';
+});
+
+document.getElementById('browseClaudeBtn').addEventListener('click', async () => {
+  const result = await window.electronAPI.browseForBinary();
+  if (result.path) {
+    document.getElementById('claudePathInput').value = result.path;
+    setPathStatus('claude', true, result.path);
+  }
+});
+
+document.getElementById('browseWhisperBtn').addEventListener('click', async () => {
+  const result = await window.electronAPI.browseForBinary();
+  if (result.path) {
+    document.getElementById('whisperPathInput').value = result.path;
+    setPathStatus('whisper', true, result.path);
+  }
+});
+
+document.getElementById('saveRecheckBtn').addEventListener('click', async () => {
+  const status = document.getElementById('saveStatus');
+  const cp = document.getElementById('claudePathInput').value.trim();
+  const wp = document.getElementById('whisperPathInput').value.trim();
+  status.style.color = 'rgba(255,255,255,0.35)';
+  status.textContent = 'Saving...';
+  await window.electronAPI.savePaths({ claudePath: cp, whisperPath: wp });
+  status.textContent = 'Rechecking...';
+  const result = await window.electronAPI.recheckPaths();
+  setPathStatus('claude', result.claude.ok, result.claude.path);
+  setPathStatus('whisper', result.whisper.ok, result.whisper.path);
+  if (result.claude.ok && result.whisper.ok) {
+    status.style.color = 'rgba(48,209,88,0.7)';
+    status.textContent = '✓ All checks passed — launching';
+    await new Promise(r => setTimeout(r, 1000));
+    document.getElementById('pathPanel').style.display = 'none';
+    showReady('All checks passed — launching');
+    await new Promise(r => setTimeout(r, 800));
+    window.electronAPI.splashDone();
+  } else {
+    const failedName = !result.claude.ok ? 'Claude CLI' : 'Whisper';
+    status.style.color = 'rgba(255,59,48,0.7)';
+    status.textContent = failedName + ' path not found — verify and try again';
+  }
+});
+
 async function runChecks() {
   await new Promise(r => setTimeout(r, 1400));
 
@@ -277,6 +400,8 @@ async function runChecks() {
 
   if (!cliResult.ok) {
     setCheck('cli', 'fail');
+    const cliLabel = document.getElementById('label-cli');
+    if (cliLabel) cliLabel.innerHTML = 'Claude CLI <span style="font-size:10px;opacity:0.5;margin-left:4px">tap ⚙ to set path</span>';
     document.getElementById('install-btn').style.display = 'block';
     showReady('Claude CLI not found — install it to continue', true);
     return;
@@ -290,6 +415,8 @@ async function runChecks() {
 
   if (!whisperResult.ok) {
     setCheck('whisper', 'fail');
+    const whisperLabel = document.getElementById('label-whisper');
+    if (whisperLabel) whisperLabel.innerHTML = 'Whisper <span style="font-size:10px;opacity:0.5;margin-left:4px">tap ⚙ to set path</span>';
     document.getElementById('whisper-btn').style.display = 'block';
     showReady('Whisper not found — pip install openai-whisper', true);
     return;

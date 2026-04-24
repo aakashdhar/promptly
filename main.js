@@ -225,6 +225,17 @@ function updateTrayMenu() {
     },
     { type: 'separator' },
     {
+      label: 'Path configuration...',
+      click: () => {
+        if (win && !win.isDestroyed()) {
+          win.show();
+          win.focus();
+          win.webContents.send('open-settings');
+        }
+      },
+    },
+    { type: 'separator' },
+    {
       label: 'Uninstall Promptly...',
       click: () => { handleUninstall(); },
     },
@@ -381,6 +392,13 @@ function registerShortcut() {
   });
   globalShortcut.register('Alt+P', () => {
     winSend('shortcut-pause');
+  });
+  globalShortcut.register('CommandOrControl+,', () => {
+    if (win && !win.isDestroyed()) {
+      win.show();
+      win.focus();
+      winSend('open-settings');
+    }
   });
 }
 

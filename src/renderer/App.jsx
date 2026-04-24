@@ -451,6 +451,10 @@ Mode: ${iterationBase.current.mode}`
       if (stateRef.current === STATES.RECORDING) pauseRecordingRef.current()
       else if (stateRef.current === STATES.PAUSED) resumeRecordingRef.current()
     })
+
+    window.electronAPI.onOpenSettings(() => {
+      console.log('open-settings received — settings panel not yet implemented in main app')
+    })
   }, [])
 
   useEffect(() => {

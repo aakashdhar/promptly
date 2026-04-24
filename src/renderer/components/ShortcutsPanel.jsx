@@ -24,6 +24,7 @@ export default function ShortcutsPanel({ onClose }) {
       color: 'rgba(10,132,255,0.55)',
       items: [
         { desc: 'Open history', keys: ['⌘', 'H'] },
+        { desc: 'Open path settings', keys: ['⌘', ','] },
         { desc: 'Show / hide window', keys: ['⌥', 'Space'] },
         { desc: 'Reset to idle', keys: ['Esc'] },
       ]
