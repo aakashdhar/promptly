@@ -1163,4 +1163,16 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Why**: The two menus had identical templates except for the new item. A single builder eliminates the duplication and ensures they stay in sync.
 - **Alternatives considered**: Duplicate the template in both places — rejected (DRY violation, easy to drift)
 - **Impact on other tasks**: None — tray is null so updateTrayMenu() is a no-op; change is forward-compatible
+
+---
+## — Feature Complete: FEATURE-020 History Panel v2 — 2026-04-24
+> Tasks: HSTV2-001 through HSTV2-009 (9/9 complete)
+> Files changed: `src/renderer/utils/history.js`, `src/renderer/components/HistoryPanel.jsx`
+
+### D-FEATURE-020-001 — History v2: bookmarks + ratings + filters shipped as additive fields
+- **Date**: 2026-04-24 · **Tasks**: HSTV2-001 through HSTV2-008 · **Type**: tech-choice
+- **What was done**: Added `bookmarked`, `rating`, `ratingTag` as optional fields on existing history entries. Tab switcher (All/Saved), filter chips (All/👍/👎/Unrated), stats bar, bookmark toggle button, rating section (thumbs + tag chips), entry-level indicators, and updated footer all ship in HistoryPanel.jsx with no new IPC channels.
+- **Why**: All new state is client-only (localStorage) — no IPC needed. Additive optional fields mean existing history entries without these fields work unchanged (undefined is falsy).
+- **Alternatives considered**: Separate localStorage key for ratings/bookmarks — rejected (join complexity, extra reads). New IPC for rating — rejected (no main-process involvement needed).
+- **Impact**: `promptly_history` entry shape extended; `bookmarkHistoryItem` and `rateHistoryItem` exported from utils/history.js; HistoryPanel.jsx gains hoveredEntry state, handleBookmark, handleRate, handleTag handlers.
 - **Approved by**: agent-autonomous

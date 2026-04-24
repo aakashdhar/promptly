@@ -47,8 +47,8 @@
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
 | `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button (returns to prevState). px-[28px] padding, WebkitAppRegion: no-drag | — |
 | `src/renderer/components/SettingsPanel.jsx` | SETTINGS panel — path configuration UI for Claude + Whisper binary paths; browse (file picker), recheck (re-resolve), save; 128 lines, all styles inline | props: `onClose` |
-| `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime` |
-| `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px scrollable list with search + per-entry delete, right flex:1 scrollable prompt detail with copy + reuse actions | props: `onClose`, `onReuse` |
+| `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime`, `bookmarkHistoryItem`, `rateHistoryItem` |
+| `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px scrollable list with search + per-entry delete + tab switcher (All/Saved) + filter chips (All/👍/👎/Unrated) + stats bar, right flex:1 prompt detail with Save/Saved bookmark toggle + rating section (👍/👎 + tag chips) + copy + reuse | props: `onClose`, `onReuse` |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/bar.css`~~ | ~~.bar glass container + ::before tint + ::after accent~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/states.css`~~ | ~~All per-state layout CSS + @keyframes~~ | deleted — FEATURE-005 |
@@ -215,7 +215,7 @@
 | Key | Written by | Read by | Notes |
 |-----|-----------|---------|-------|
 | `mode` | `useMode.setMode()` | `useMode.mode` — in boot, generate-prompt, regenerate | Default: `'balanced'` |
-| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript. Iteration entries also include optional fields: `isIteration: true` and `basedOn: string` (first 100 chars of original prompt). Polish entries also include optional `polishChanges: string[]` field. |
+| `promptly_history` | `saveToHistory()` in App.jsx / `utils/history.js` | HistoryPanel, App.jsx | JSON array of up to 100 entries `{ id, transcript, prompt, mode, timestamp, title }` — `title` is first 5 words of transcript. Iteration entries also include optional fields: `isIteration: true` and `basedOn: string` (first 100 chars of original prompt). Polish entries also include optional `polishChanges: string[]` field. FEATURE-020 adds optional fields: `bookmarked: boolean`, `rating: 'up' \| 'down' \| null`, `ratingTag: 'Perfect' \| 'Clear' \| 'Detailed' \| 'Too long' \| null`. |
 | `promptly_polish_tone` | `useTone.setPolishTone()` | `useTone.getPolishTone()` | Default: `'formal'`. Persists Formal/Casual tone preference for polish mode. |
 
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
