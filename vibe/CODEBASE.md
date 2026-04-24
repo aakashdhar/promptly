@@ -27,7 +27,7 @@
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording and keyboard concerns delegated to hooks. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleGenerateResult()` (unified polish/non-polish result handler — called by handleTypingSubmit, handleRegenerate, and via `handleGenerateResultRef` by useRecording), `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`. Refs: `transitionRef`, `handleGenerateResultRef`, `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Theme: getTheme + onThemeChanged effect. |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording and keyboard concerns delegated to hooks. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleGenerateResult()` (unified polish/non-polish result handler — called by handleTypingSubmit, handleRegenerate, and via `handleGenerateResultRef` by useRecording), `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `openHistory()` / `closeHistory()` (call setWindowSize + setWindowButtonsVisible + updateMenuBarState + animateToState directly — bypass transition() to allow non-standard window width). Refs: `transitionRef`, `handleGenerateResultRef`, `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Theme: getTheme + onThemeChanged useEffect with cleanup. |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useTone.js` | Polish tone localStorage wrapper — `promptly_polish_tone` key, default `'formal'` | `getPolishTone()`, `setPolishTone()`, `usePolishTone()` → `{ tone, setTone }` |
 | `src/renderer/hooks/usePolishMode.js` | Polish flow hook — owns polishResult, copied, tone state, polishToneRef, handlePolishToneChange | `parsePolishOutput(raw)` (named export), `usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })` → `{ polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }` |
@@ -111,7 +111,7 @@
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
-| `HISTORY` | HistoryPanel | 720px | Split-panel history; window width 746px; setWindowSize(746,720) called atomically in openHistory; closeHistory → setWindowSize(520, IDLE height) → IDLE |
+| `HISTORY` | HistoryPanel | 720px | Split-panel history; window width 746px; setWindowSize(746,720) + updateMenuBarState(HISTORY) called in openHistory; closeHistory → setWindowSize(520, IDLE height) + updateMenuBarState(IDLE) → IDLE |
 | `SHORTCUTS` | ShortcutsPanel | 380px | 8 shortcuts with key chips; Done → previous state; triggered via ⌘? or context menu |
 | `SETTINGS` | SettingsPanel | 322px | Path configuration panel — Claude + Whisper binary paths, browse + recheck; triggered via ⌘, or tray "Path configuration..." |
 
@@ -274,5 +274,6 @@
 
 ## Known issues / watch items
 
-- `eslint main.js preload.js` produces warnings for `console.log` (expected dev logs — clean before release)
-- `index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually; see D-001)
+- `eslint main.js preload.js` — 0 errors, 0 warnings (the intentional `console.error` in uncaughtException has `// eslint-disable-next-line no-console`)
+- `npm audit` — 0 vulnerabilities. 2 low-severity devDep vulns in `@eslint/plugin-kit` (BL-024) — devDep only, not in .dmg, awaiting manual decision on `npm audit fix --force`
+- `src/renderer/index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually; see D-001)

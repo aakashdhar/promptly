@@ -326,26 +326,14 @@
    → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
 
 ## What just happened
-✅ Final review gate passed 2026-04-24 — 0 P0, 0 P1. All three blocking P1 issues resolved (BL-038, BL-031, BL-033). Deploy unlocked.
-→ Full report: vibe/reviews/final-review-2026-04-24.md · Score: 8.0/10 — Grade B
+✅ All backlog items resolved 2026-04-24 — BL-037 BL-039 BL-041–046 BL-051 BL-053 BL-054 BL-055 BL-056 all closed.
+   BL-052 closed as by design. BL-024 (eslint devDep low vulns) is the only remaining open item.
+   Codebase and all documents are fully in sync.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
-→ Full report: vibe/reviews/final-review-2026-04-24.md
+→ Full report: vibe/reviews/final-review-2026-04-24.md · Score: 8.2/10 — Grade B
 
-## Recommended before next release (P2 — non-blocking)
-⬜ P2-001 — TypingState "Switch to voice" silently ignores 'voice' arg — user lands in IDLE not RECORDING
-              File: src/renderer/App.jsx:394 · Fix: if (target === 'voice') startRecording(); else transition(STATES.IDLE)
-⬜ P2-002 — onThemeChanged IPC listener registered without cleanup (leak on hot-reload)
-              File: src/renderer/App.jsx:317 · Fix: store and return unsub from useEffect
-⬜ P2-003 (BL-039) — openHistory/closeHistory bypass transition() — updateMenuBarState never fires for HISTORY
-              File: src/renderer/App.jsx:159-173 · Fix: route through transition() or explicitly call updateMenuBarState
-⬜ P2-004 (BL-041–BL-046) — Documentation drift: ARCHITECTURE.md IPC table (4 missing, 2 stale), state count (9→11), Never list, SettingsPanel absent, CODEBASE.md stale rows + height
-
-## P3 items (optional polish)
-⬜ P3-001 — HistoryPanel uses navigator.clipboard instead of IPC (pattern inconsistency)
-              File: src/renderer/components/HistoryPanel.jsx:83
-⬜ P3-002 — No CSP meta tag in dist-renderer/index.html
-⬜ P3-003 (BL-051) — TASKS.md BUG-017 entry duplicated
-⬜ P3-004 — `canvas` devDependency appears unused (no import found)
-              File: package.json:27
+## Remaining open item
+⬜ BL-024 — 2 low-severity npm audit vulns in eslint devDep (@eslint/plugin-kit) — devDep only, not in .dmg.
+              Fix requires `npm audit fix --force` which upgrades ESLint outside stated dep range — manual decision needed.
