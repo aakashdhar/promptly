@@ -4,6 +4,14 @@ import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime,
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
 
+const FILTER_CHIP_COLORS = {
+  all:     { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' },
+  up:      { bg:'rgba(48,209,88,0.10)',   border:'rgba(48,209,88,0.25)',   text:'rgba(100,220,130,0.8)' },
+  down:    { bg:'rgba(255,59,48,0.10)',   border:'rgba(255,59,48,0.25)',   text:'rgba(255,100,90,0.75)' },
+  unrated: { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' }
+}
+const FILTER_CHIP_INACTIVE = { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', text:'rgba(255,255,255,0.3)' }
+
 function renderPromptSections(prompt) {
   if (!prompt) return null
   const lines = prompt.split('\n')
@@ -112,8 +120,8 @@ export default function HistoryPanel({ onClose, onReuse }) {
 
   function handleBookmark() {
     if (!selected) return
-    bookmarkHistoryItem(selected.id)
-    const updated = { ...selected, bookmarked: !selected.bookmarked }
+    const newBookmarked = bookmarkHistoryItem(selected.id)
+    const updated = { ...selected, bookmarked: newBookmarked }
     setSelected(updated)
     setEntries(prev => prev.map(e => e.id === selected.id ? updated : e))
   }
@@ -126,6 +134,14 @@ export default function HistoryPanel({ onClose, onReuse }) {
   const footerText = savedCount > 0
     ? `${entries.length} prompt${entries.length !== 1 ? 's' : ''} · ${savedCount} saved`
     : `${entries.length} prompt${entries.length !== 1 ? 's' : ''}`
+
+  const allHistory = getHistory()
+  const statsRated = allHistory.reduce((acc, e) => {
+    if (e.rating) { acc.total++; if (e.rating === 'up') acc.up++ }
+    return acc
+  }, { total: 0, up: 0 })
+  const upPct = statsRated.total > 0 ? Math.round(statsRated.up / statsRated.total * 100) : 0
+  const downPct = 100 - upPct
 
   const filteredEntries = tabFiltered.filter(e => {
     if (activeFilter === 'all') return true
@@ -258,14 +274,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
               { id: 'unrated', label: 'Unrated' }
             ].map(f => {
               const isActive = activeFilter === f.id
-              const colors = {
-                all:     { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' },
-                up:      { bg:'rgba(48,209,88,0.10)',   border:'rgba(48,209,88,0.25)',   text:'rgba(100,220,130,0.8)' },
-                down:    { bg:'rgba(255,59,48,0.10)',   border:'rgba(255,59,48,0.25)',   text:'rgba(255,100,90,0.75)' },
-                unrated: { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' }
-              }
-              const inactive = { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', text:'rgba(255,255,255,0.3)' }
-              const c = isActive ? colors[f.id] : inactive
+              const c = isActive ? FILTER_CHIP_COLORS[f.id] : FILTER_CHIP_INACTIVE
               return (
                 <span key={f.id} onClick={() => setActiveFilter(f.id)} style={{
                   padding:'2px 8px', borderRadius:'20px', fontSize:'9px',
@@ -279,33 +288,26 @@ export default function HistoryPanel({ onClose, onReuse }) {
           </div>
 
           {/* Stats bar */}
-          {activeTab === 'all' && (() => {
-            const allHistory = getHistory()
-            const ratedEntries = allHistory.filter(e => e.rating)
-            const upCount = allHistory.filter(e => e.rating === 'up').length
-            const upPct = ratedEntries.length > 0 ? Math.round(upCount / ratedEntries.length * 100) : 0
-            const downPct = 100 - upPct
-            return (
-              <div style={{
-                margin:'0 12px 10px', padding:'8px 10px',
-                background:'rgba(255,255,255,0.03)',
-                border:'0.5px solid rgba(255,255,255,0.06)',
-                borderRadius:'8px', display:'flex',
-                justifyContent:'space-between', alignItems:'center'
-              }}>
-                <span style={{fontSize:'10px', color:'rgba(255,255,255,0.3)'}}>
-                  {allHistory.length} prompt{allHistory.length !== 1 ? 's' : ''}
-                </span>
-                {ratedEntries.length > 0 && (
-                  <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                    <span style={{fontSize:'10px', color:'rgba(100,220,130,0.7)'}}>👍 {upPct}%</span>
-                    <div style={{width:'0.5px', height:'10px', background:'rgba(255,255,255,0.1)'}}/>
-                    <span style={{fontSize:'10px', color:'rgba(255,100,90,0.65)'}}>👎 {downPct}%</span>
-                  </div>
-                )}
-              </div>
-            )
-          })()}
+          {activeTab === 'all' && (
+            <div style={{
+              margin:'0 12px 10px', padding:'8px 10px',
+              background:'rgba(255,255,255,0.03)',
+              border:'0.5px solid rgba(255,255,255,0.06)',
+              borderRadius:'8px', display:'flex',
+              justifyContent:'space-between', alignItems:'center'
+            }}>
+              <span style={{fontSize:'10px', color:'rgba(255,255,255,0.3)'}}>
+                {allHistory.length} prompt{allHistory.length !== 1 ? 's' : ''}
+              </span>
+              {statsRated.total > 0 && (
+                <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                  <span style={{fontSize:'10px', color:'rgba(100,220,130,0.7)'}}>👍 {upPct}%</span>
+                  <div style={{width:'0.5px', height:'10px', background:'rgba(255,255,255,0.1)'}}/>
+                  <span style={{fontSize:'10px', color:'rgba(255,100,90,0.65)'}}>👎 {downPct}%</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Entry list */}
           <div style={{flex:1, overflowY:'auto', minHeight:0}}>
@@ -314,7 +316,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
                 padding:'40px 20px', textAlign:'center',
                 fontSize:'12px', color:'rgba(255,255,255,0.55)'
               }}>
-                {activeTab === 'saved' ? 'No saved prompts yet' : (query ? 'No results found' : 'No history yet')}
+                {activeFilter !== 'all' ? 'No prompts match this filter' : activeTab === 'saved' ? 'No saved prompts yet' : (query ? 'No results found' : 'No history yet')}
               </div>
             )}
             {filteredEntries.map(entry => {
@@ -435,7 +437,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             borderTop:'0.5px solid rgba(255,255,255,0.06)',
             flexShrink:0
           }}>
-            <span style={{fontSize:'10px', color:'rgba(255,255,255,0.2)'}}>
+            <span style={{fontSize:'10px', color:'rgba(255,255,255,0.45)'}}>
               {activeTab === 'saved'
                 ? `${tabFiltered.length} saved prompt${tabFiltered.length !== 1 ? 's' : ''}`
                 : footerText}

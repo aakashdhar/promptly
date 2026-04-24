@@ -51,7 +51,7 @@ export function rateHistoryItem(id, rating, tag) {
   const idx = history.findIndex(h => h.id === id)
   if (idx === -1) return
   history[idx].rating = rating
-  history[idx].ratingTag = tag || null
+  history[idx].ratingTag = tag ?? null
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
 }
 
