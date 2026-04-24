@@ -37,6 +37,24 @@ export function searchHistory(query) {
   )
 }
 
+export function bookmarkHistoryItem(id) {
+  const history = getHistory()
+  const idx = history.findIndex(h => h.id === id)
+  if (idx === -1) return
+  history[idx].bookmarked = !history[idx].bookmarked
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  return history[idx].bookmarked
+}
+
+export function rateHistoryItem(id, rating, tag) {
+  const history = getHistory()
+  const idx = history.findIndex(h => h.id === id)
+  if (idx === -1) return
+  history[idx].rating = rating
+  history[idx].ratingTag = tag || null
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+}
+
 export function formatTime(iso) {
   const diff = Date.now() - new Date(iso).getTime()
   if (diff < 60000) return 'just now'
