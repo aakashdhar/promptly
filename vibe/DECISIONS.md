@@ -1146,6 +1146,16 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 > Tasks: QCPY-001 · QCPY-002 · QCPY-003 · QCPY-004 · QCPY-005 | Estimated: ~2 hours
 > Drift logged below.
 
+---
+## — Feature Start: FEATURE-020 History Panel v2 — 2026-04-24
+> Folder: vibe/features/2026-04-24-history-v2/
+> Adds bookmarks, ratings (👍/👎 + tags), filter chips, stats bar to HistoryPanel.
+> Tasks: HSTV2-001 through HSTV2-009 | Estimated: 14-18 hours
+> Spec review: 0 P0, 2 P1 fixed (delete button collision, stats from getHistory())
+> Report: vibe/spec-reviews/2026-04-24-add-feature-history-v2.md
+> Drift logged below.
+---
+
 ### D-FEATURE-018-001 — buildTrayMenu() shared helper replaces duplicate inline templates
 - **Date**: 2026-04-24 · **Task**: QCPY-001/QCPY-002 · **Type**: tech-choice
 - **What was planned**: Add "Copy last prompt" to createMenuBarIcon right-click inline menu and updateTrayMenu separately
