@@ -59,11 +59,11 @@
       }
     },
     "dmg": {
-      "title": "Promptly",
-      "extraFiles": [
-        { "from": "scripts/uninstall.sh", "to": "uninstall.sh" }
-      ]
+      "title": "Promptly"
     },
+    "extraFiles": [
+      { "from": "scripts/uninstall.sh", "to": "uninstall.sh" }
+    ],
     "files": [
       "main.js",
       "preload.js",
