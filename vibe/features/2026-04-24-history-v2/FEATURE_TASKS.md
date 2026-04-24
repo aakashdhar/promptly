@@ -306,7 +306,7 @@ const downPct = 100 - upPct
 ---
 
 ### HSTV2-005 · Bookmark toggle
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#bookmark-toggle
 - **Dependencies**: HSTV2-004
@@ -416,18 +416,18 @@ The indicator hides when hovering (delete takes over right:12px); shows when not
 This gives a clean, non-overlapping UX.
 
 **Acceptance criteria**:
-- [ ] `bookmarkHistoryItem` imported from utils/history
-- [ ] `hoveredEntry` state added to HistoryPanel
-- [ ] Entry containers have onMouseEnter/onMouseLeave to track hoveredEntry
-- [ ] Delete button visible only on entry hover (opacity:0 → opacity:1 on hover)
-- [ ] Bookmark/rating indicator hidden during hover (delete takes the slot)
-- [ ] Save button appears in right panel YOU SAID header row
-- [ ] Unsaved state: light background, stroke-only SVG, "Save" label
-- [ ] Saved state: amber background, filled SVG, "Saved" label, font-weight 500
-- [ ] Clicking Save button toggles bookmark and updates both selected + entries state
-- [ ] Bookmarked entries show filled amber bookmark SVG top-right in list (when not hovering)
-- [ ] Rated entries show emoji top-right in list (when not hovering)
-- [ ] Bookmark state persists after toggling (checked via Saved tab showing entry)
+- [x] `bookmarkHistoryItem` imported from utils/history
+- [x] `hoveredEntry` state added to HistoryPanel
+- [x] Entry containers have onMouseEnter/onMouseLeave to track hoveredEntry
+- [x] Delete button visible only on entry hover (opacity:0 → opacity:1 on hover)
+- [x] Bookmark/rating indicator hidden during hover (delete takes the slot)
+- [x] Save button appears in right panel YOU SAID header row
+- [x] Unsaved state: light background, stroke-only SVG, "Save" label
+- [x] Saved state: amber background, filled SVG, "Saved" label, font-weight 500
+- [x] Clicking Save button toggles bookmark and updates both selected + entries state
+- [x] Bookmarked entries show filled amber bookmark SVG top-right in list (when not hovering)
+- [x] Rated entries show emoji top-right in list (when not hovering)
+- [x] Bookmark state persists after toggling (checked via Saved tab showing entry)
 
 **Self-verify**: Re-read FEATURE_SPEC.md#bookmark-toggle. Tick every criterion.
 **Test requirement**: Manual — bookmark an entry, confirm indicator shows; hover the entry, confirm delete ✕ shows and indicator hides.
