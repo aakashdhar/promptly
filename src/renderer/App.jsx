@@ -115,6 +115,8 @@ export default function App() {
 
   const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })
 
+  const handleGenerateResultRef = useRef(null)
+
   const {
     recSecs,
     startRecording,
@@ -134,11 +136,25 @@ export default function App() {
     modeRef,
     polishToneRef,
     setThinkTranscript,
-    setGeneratedPrompt,
-    setPolishResult,
+    onGenerateResult: handleGenerateResultRef,
     isIterated,
     originalTranscript,
   })
+
+  const handleGenerateResult = useCallback((genResult, transcript) => {
+    if (mode === 'polish') {
+      const parsed = parsePolishOutput(genResult.prompt)
+      setPolishResult(parsed)
+      setGeneratedPrompt(parsed.polished)
+      saveToHistory({ transcript, prompt: parsed.polished, mode, polishChanges: parsed.changes })
+    } else {
+      setPolishResult(null)
+      setGeneratedPrompt(genResult.prompt)
+      saveToHistory({ transcript, prompt: genResult.prompt, mode })
+    }
+    transitionRef.current(STATES.PROMPT_READY)
+  }, [mode])
+  handleGenerateResultRef.current = handleGenerateResult
 
   function openHistory() {
     prevStateRef.current = stateRef.current
@@ -179,19 +195,8 @@ export default function App() {
       transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
       return
     }
-
-    if (mode === 'polish') {
-      const parsed = parsePolishOutput(genResult.prompt)
-      setPolishResult(parsed)
-      setGeneratedPrompt(parsed.polished)
-      saveToHistory({ transcript: typedText, prompt: parsed.polished, mode, polishChanges: parsed.changes })
-    } else {
-      setPolishResult(null)
-      setGeneratedPrompt(genResult.prompt)
-      saveToHistory({ transcript: typedText, prompt: genResult.prompt, mode })
-    }
-    transition(STATES.PROMPT_READY)
-  }, [mode])
+    handleGenerateResult(genResult, typedText)
+  }, [mode, handleGenerateResult])
 
   const handleRegenerate = useCallback(async () => {
     transition(STATES.THINKING)
@@ -207,19 +212,8 @@ export default function App() {
       transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
       return
     }
-
-    if (mode === 'polish') {
-      const parsed = parsePolishOutput(genResult.prompt)
-      setPolishResult(parsed)
-      setGeneratedPrompt(parsed.polished)
-      saveToHistory({ transcript: originalTranscript.current, prompt: parsed.polished, mode, polishChanges: parsed.changes })
-    } else {
-      setPolishResult(null)
-      setGeneratedPrompt(genResult.prompt)
-      saveToHistory({ transcript: originalTranscript.current, prompt: genResult.prompt, mode })
-    }
-    transition(STATES.PROMPT_READY)
-  }, [mode])
+    handleGenerateResult(genResult, originalTranscript.current)
+  }, [mode, handleGenerateResult])
 
   const handleIterate = useCallback(async () => {
     try {
@@ -397,9 +391,7 @@ Mode: ${iterationBase.current.mode}`
           <>
             <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
             <TypingState
-              onDismiss={(target) => {
-                transition(STATES.IDLE)
-              }}
+              onDismiss={() => transition(STATES.IDLE)}
               onSubmit={handleTypingSubmit}
               resizeWindow={resizeWindow}
             />

@@ -22,14 +22,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showModeMenu: (currentMode) =>
     ipcRenderer.invoke('show-mode-menu', { currentMode }),
 
-  onModeSelected: (callback) =>
-    ipcRenderer.on('mode-selected', (_event, key) => callback(key)),
+  onModeSelected: (callback) => {
+    const cb = (_event, key) => callback(key)
+    ipcRenderer.on('mode-selected', cb)
+    return () => ipcRenderer.removeListener('mode-selected', cb)
+  },
 
   showToneMenu: (currentTone) =>
     ipcRenderer.invoke('show-tone-menu', { currentTone }),
 
-  onToneSelected: (callback) =>
-    ipcRenderer.on('tone-selected', (_event, key) => callback(key)),
+  onToneSelected: (callback) => {
+    const cb = (_event, key) => callback(key)
+    ipcRenderer.on('tone-selected', cb)
+    return () => ipcRenderer.removeListener('tone-selected', cb)
+  },
 
   transcribeAudio: (arrayBuffer) =>
     ipcRenderer.invoke('transcribe-audio', arrayBuffer),
@@ -46,8 +52,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setWindowSize: (width, height) =>
     ipcRenderer.invoke('set-window-size', { width, height }),
 
-  onShowHistory: (callback) =>
-    ipcRenderer.on('show-history', () => callback()),
+  onShowHistory: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('show-history', cb)
+    return () => ipcRenderer.removeListener('show-history', cb)
+  },
 
   // splash → main
   splashDone: () =>
@@ -63,23 +72,36 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('splash-open-url', url),
 
   // main → renderer (on: event listener registration)
-  onShortcutTriggered: (callback) =>
-    ipcRenderer.on('shortcut-triggered', callback),
+  onShortcutTriggered: (callback) => {
+    ipcRenderer.on('shortcut-triggered', callback)
+    return () => ipcRenderer.removeListener('shortcut-triggered', callback)
+  },
 
-  onShowShortcuts: (callback) =>
-    ipcRenderer.on('show-shortcuts', () => callback()),
+  onShowShortcuts: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('show-shortcuts', cb)
+    return () => ipcRenderer.removeListener('show-shortcuts', cb)
+  },
 
-  onShortcutPause: (callback) =>
-    ipcRenderer.on('shortcut-pause', () => callback()),
+  onShortcutPause: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('shortcut-pause', cb)
+    return () => ipcRenderer.removeListener('shortcut-pause', cb)
+  },
 
-  onShortcutConflict: (callback) =>
-    ipcRenderer.on('shortcut-conflict', callback),
+  onShortcutConflict: (callback) => {
+    ipcRenderer.on('shortcut-conflict', callback)
+    return () => ipcRenderer.removeListener('shortcut-conflict', callback)
+  },
 
   getTheme: () =>
     ipcRenderer.invoke('get-theme'),
 
-  onThemeChanged: (callback) =>
-    ipcRenderer.on('theme-changed', (_event, data) => callback(data)),
+  onThemeChanged: (callback) => {
+    const cb = (_event, data) => callback(data)
+    ipcRenderer.on('theme-changed', cb)
+    return () => ipcRenderer.removeListener('theme-changed', cb)
+  },
 
   triggerUninstall: () =>
     ipcRenderer.invoke('uninstall-promptly'),
@@ -96,8 +118,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   recheckPaths: () =>
     ipcRenderer.invoke('recheck-paths'),
 
-  onOpenSettings: (cb) =>
-    ipcRenderer.on('open-settings', () => cb()),
+  onOpenSettings: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('open-settings', cb)
+    return () => ipcRenderer.removeListener('open-settings', cb)
+  },
 
   updateMenuBarState: (state) =>
     ipcRenderer.invoke('update-menubar-state', state),

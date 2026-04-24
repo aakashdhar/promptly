@@ -1,6 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { parsePolishOutput } from './usePolishMode.js'
-import { saveToHistory } from '../utils/history.js'
 
 export default function useRecording({
   STATES,
@@ -8,8 +6,7 @@ export default function useRecording({
   modeRef,
   polishToneRef,
   setThinkTranscript,
-  setGeneratedPrompt,
-  setPolishResult,
+  onGenerateResult,
   isIterated,
   originalTranscript,
 }) {
@@ -98,17 +95,7 @@ export default function useRecording({
         return
       }
 
-      if (mode === 'polish') {
-        const parsed = parsePolishOutput(genResult.prompt)
-        setPolishResult(parsed)
-        setGeneratedPrompt(parsed.polished)
-        saveToHistory({ transcript: text, prompt: parsed.polished, mode, polishChanges: parsed.changes })
-      } else {
-        setPolishResult(null)
-        setGeneratedPrompt(genResult.prompt)
-        saveToHistory({ transcript: text, prompt: genResult.prompt, mode })
-      }
-      transitionRef.current(STATES.PROMPT_READY)
+      onGenerateResult.current(genResult, text)
     }
   }, [])
 

@@ -1,6 +1,7 @@
 'use strict';
 
 process.on('uncaughtException', (err) => {
+  // eslint-disable-next-line no-console
   console.error('[Promptly] Uncaught exception:', err.message, err.stack);
 });
 
@@ -8,7 +9,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nati
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const { deflateSync } = require('zlib');
 
 const configPath = path.join(app.getPath('userData'), 'config.json');
@@ -733,7 +734,6 @@ app.whenReady().then(async () => {
         const tone = options.tone || 'formal';
         systemPrompt = systemPrompt.replace('{TONE}', tone.charAt(0).toUpperCase() + tone.slice(1));
       }
-      const { spawn } = require('child_process');
       const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
       let stdout = '';
       let stderr = '';
@@ -776,7 +776,6 @@ app.whenReady().then(async () => {
         resolve({ success: false, error: 'Claude CLI not found.' });
         return;
       }
-      const { spawn } = require('child_process');
       const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
       let stdout = '', stderr = '', resolved = false;
       const timer = setTimeout(() => {
