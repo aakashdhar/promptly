@@ -1137,3 +1137,20 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **CODEBASE.md update**: Yes — added two new hook rows, updated App.jsx row.
 - **Alternatives considered**: Moving STATES to a shared constants file — deferred (out of scope for this extraction).
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-018 (Quick Copy from Menu Bar) — 2026-04-24
+> Folder: vibe/features/2026-04-24-quick-copy/
+> Adds "Copy last prompt" to menubar right-click menu — copies silently without opening bar.
+> Tasks: QCPY-001 · QCPY-002 · QCPY-003 · QCPY-004 · QCPY-005 | Estimated: ~2 hours
+> Drift logged below.
+
+### D-FEATURE-018-001 — buildTrayMenu() shared helper replaces duplicate inline templates
+- **Date**: 2026-04-24 · **Task**: QCPY-001/QCPY-002 · **Type**: tech-choice
+- **What was planned**: Add "Copy last prompt" to createMenuBarIcon right-click inline menu and updateTrayMenu separately
+- **What was done**: Extracted shared `buildTrayMenu()` function; both `createMenuBarIcon` right-click and `updateTrayMenu()` call it
+- **Why**: The two menus had identical templates except for the new item. A single builder eliminates the duplication and ensures they stay in sync.
+- **Alternatives considered**: Duplicate the template in both places — rejected (DRY violation, easy to drift)
+- **Impact on other tasks**: None — tray is null so updateTrayMenu() is a no-op; change is forward-compatible
+- **Approved by**: agent-autonomous

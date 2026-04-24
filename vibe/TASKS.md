@@ -325,10 +325,17 @@
    [x] MBAR-005 · Docs update — CODEBASE.md + DECISIONS.md + FEATURE_TASKS.md
    → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
 
+✅ **FEATURE-018 — Quick Copy from Menu Bar** (5/5 ✅ COMPLETE 2026-04-24)
+   [x] QCPY-001 · main.js: lastGeneratedPrompt var + set-last-prompt IPC + buildTrayMenu() + wire createMenuBarIcon right-click
+   [x] QCPY-002 · main.js: updateTrayMenu() now uses buildTrayMenu()
+   [x] QCPY-003 · preload.js: expose setLastPrompt via contextBridge
+   [x] QCPY-004 · App.jsx: call setLastPrompt in handleGenerateResult after every successful generation
+   [x] QCPY-005 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md updated
+   → Full specs: vibe/features/2026-04-24-quick-copy/ (agent use)
+
 ## What just happened
-✅ All backlog items resolved 2026-04-24 — BL-037 BL-039 BL-041–046 BL-051 BL-053 BL-054 BL-055 BL-056 all closed.
-   BL-052 closed as by design. BL-024 (eslint devDep low vulns) is the only remaining open item.
-   Codebase and all documents are fully in sync.
+✅ FEATURE-018 complete 2026-04-24 — "Copy last prompt" in menubar right-click, green dot flash ~1200ms, no window open.
+   buildTrayMenu() shared helper eliminates duplicate inline menu templates.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24

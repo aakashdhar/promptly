@@ -659,3 +659,28 @@ Never: fix other bugs noticed · modify preload.js · touch renderer files ·
 
 **Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
 **Between tasks:** "next" → verify acceptance criteria → lint → commit code → commit docs → state next task.
+
+---
+
+### Active Feature: FEATURE-018 (Quick Copy from Menu Bar)
+> Folder: vibe/features/2026-04-24-quick-copy/ | Added: 2026-04-24
+> Status: COMPLETE 2026-04-24
+
+**Feature summary**: "Copy last prompt" in menubar right-click menu — copies silently without opening bar; green dot flash ~1200ms confirms copy.
+**Files in scope**: `main.js`, `preload.js`, `src/renderer/App.jsx`
+**Files out of scope**: All other components, `splash.html`, `entitlements.plist`, `vite.config.js`, `package.json`
+
+**Conventions** (from vibe/ARCHITECTURE.md):
+- `buildTrayMenu()` shared helper — both `createMenuBarIcon` right-click and `updateTrayMenu()` call it
+- `lastGeneratedPrompt` module-scope var — session memory only, not persisted
+- `set-last-prompt` IPC handler follows established `ipcMain.handle` pattern
+- `window.electronAPI?.setLastPrompt?.(prompt)` — optional chain matches App.jsx IPC call pattern
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint before commit · keep changes additive · update CODEBASE.md
+
+Ask first: any new IPC channel beyond set-last-prompt · new localStorage keys
+
+Never: open win on copy · dangerouslySetInnerHTML · localStorage direct access · add runtime npm deps
