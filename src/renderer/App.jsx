@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import useMode from './hooks/useMode.js'
 import usePolishMode, { parsePolishOutput } from './hooks/usePolishMode.js'
 import useWindowResize from './hooks/useWindowResize.js'
+import useRecording from './hooks/useRecording.js'
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -55,20 +57,14 @@ export default function App() {
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
   const prevStateRef = useRef(STATES.IDLE)
-  const mediaRecorderRef = useRef(null)
-  const audioChunksRef = useRef([])
-  const isProcessingRef = useRef(false)
   const generatedPromptRef = useRef('')
-  const isPausedRef = useRef(false)
   const iterationBase = useRef(null)
   const isIterated = useRef(false)
   const iterRecorderRef = useRef(null)
   const iterChunksRef = useRef([])
   const iterIsProcessingRef = useRef(false)
-  const recTimerRef = useRef(null)
   const transitionTimerRef = useRef(null)
   const transitionRef = useRef(null)
-  const [recSecs, setRecSecs] = useState(0)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -99,19 +95,6 @@ export default function App() {
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
 
-  function startTimer() {
-    recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
-  }
-  function pauseTimer() {
-    clearInterval(recTimerRef.current)
-    recTimerRef.current = null
-  }
-  function stopTimer() {
-    clearInterval(recTimerRef.current)
-    recTimerRef.current = null
-    setRecSecs(0)
-  }
-
   function transition(newState, payload = {}) {
     stateRef.current = newState
     setCurrentState(newState)
@@ -132,112 +115,30 @@ export default function App() {
 
   const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })
 
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      const recorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = recorder
-      audioChunksRef.current = []
-      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data)
-      recorder.start()
-      transition(STATES.RECORDING)
-      startTimer()
-    } catch {
-      transition(STATES.ERROR, { message: 'Microphone access denied' })
-    }
-  }, [])
-
-  const stopRecording = useCallback(async () => {
-    const recorder = mediaRecorderRef.current
-    if (!recorder || isProcessingRef.current) return
-    isProcessingRef.current = true
-
-    stopTimer()
-    isPausedRef.current = false
-    recorder.stop()
-    recorder.stream.getTracks().forEach((t) => t.stop())
-
-    recorder.onstop = async () => {
-      isIterated.current = false
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-      const arrayBuffer = await blob.arrayBuffer()
-
-      setThinkTranscript('')
-      transition(STATES.THINKING)
-      isProcessingRef.current = false
-
-      if (!window.electronAPI) {
-        transition(STATES.ERROR, { message: 'Electron API not available' })
-        return
-      }
-
-      const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer)
-      if (!transcribeResult.success) {
-        transition(STATES.ERROR, { message: transcribeResult.error })
-        return
-      }
-
-      const text = transcribeResult.transcript.trim()
-      if (!text) {
-        transition(STATES.IDLE)
-        return
-      }
-
-      originalTranscript.current = text
-      setThinkTranscript(text)
-
-      const genResult = await window.electronAPI.generatePrompt(text, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
-      if (!genResult.success) {
-        transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
-        return
-      }
-
-      if (mode === 'polish') {
-        const parsed = parsePolishOutput(genResult.prompt)
-        setPolishResult(parsed)
-        setGeneratedPrompt(parsed.polished)
-        saveToHistory({ transcript: text, prompt: parsed.polished, mode, polishChanges: parsed.changes })
-      } else {
-        setPolishResult(null)
-        setGeneratedPrompt(genResult.prompt)
-        saveToHistory({ transcript: text, prompt: genResult.prompt, mode })
-      }
-      transition(STATES.PROMPT_READY)
-    }
-  }, [mode])
-
-  const handleDismiss = useCallback(() => {
-    const recorder = mediaRecorderRef.current
-    if (recorder) {
-      recorder.stream.getTracks().forEach((t) => t.stop())
-      mediaRecorderRef.current = null
-    }
-    audioChunksRef.current = []
-    isProcessingRef.current = false
-    isPausedRef.current = false
-    stopTimer()
-    transition(STATES.IDLE)
-  }, [])
-
-  const pauseRecording = useCallback(() => {
-    const recorder = mediaRecorderRef.current
-    if (recorder && recorder.state === 'recording') {
-      pauseTimer()
-      recorder.pause()
-      isPausedRef.current = true
-      transition(STATES.PAUSED)
-    }
-  }, [])
-
-  const resumeRecording = useCallback(() => {
-    const recorder = mediaRecorderRef.current
-    if (recorder && recorder.state === 'paused') {
-      recorder.resume()
-      isPausedRef.current = false
-      startTimer()
-      transition(STATES.RECORDING)
-    }
-  }, [])
+  const {
+    recSecs,
+    startRecording,
+    stopRecording,
+    handleDismiss,
+    pauseRecording,
+    resumeRecording,
+    startRecordingRef,
+    stopRecordingRef,
+    pauseRecordingRef,
+    resumeRecordingRef,
+    startTimer,
+    stopTimer,
+  } = useRecording({
+    STATES,
+    transitionRef,
+    modeRef,
+    polishToneRef,
+    setThinkTranscript,
+    setGeneratedPrompt,
+    setPolishResult,
+    isIterated,
+    originalTranscript,
+  })
 
   function openHistory() {
     prevStateRef.current = stateRef.current
@@ -331,7 +232,6 @@ export default function App() {
       isIterated.current = false
       recorder.start()
       stopTimer()
-      setRecSecs(0)
       startTimer()
       transition(STATES.ITERATING)
     } catch {
@@ -415,109 +315,34 @@ Mode: ${iterationBase.current.mode}`
     transition(STATES.PROMPT_READY)
   }
 
-  const startRecordingRef = useRef(startRecording)
-  const stopRecordingRef = useRef(stopRecording)
-  const pauseRecordingRef = useRef(pauseRecording)
-  const resumeRecordingRef = useRef(resumeRecording)
-  useEffect(() => { startRecordingRef.current = startRecording }, [startRecording])
-  useEffect(() => { stopRecordingRef.current = stopRecording }, [stopRecording])
-  useEffect(() => { pauseRecordingRef.current = pauseRecording }, [pauseRecording])
-  useEffect(() => { resumeRecordingRef.current = resumeRecording }, [resumeRecording])
-
   useEffect(() => {
     if (!window.electronAPI) return
-
     window.electronAPI.getTheme().then(({ dark }) => {
       document.body.classList.toggle('light', !dark)
     })
-
     window.electronAPI.onThemeChanged(({ dark }) => {
       document.body.classList.toggle('light', !dark)
     })
-
-    window.electronAPI.onShortcutTriggered(() => {
-      if (stateRef.current === STATES.IDLE) startRecordingRef.current()
-      else if (stateRef.current === STATES.RECORDING) stopRecordingRef.current()
-      else if (stateRef.current === STATES.SHORTCUTS) startRecordingRef.current()
-    })
-
-    window.electronAPI.onModeSelected((key) => {
-      setMode(key)
-    })
-
-    window.electronAPI.onToneSelected((t) => {
-      setPolishToneValue(t)
-    })
-
-    window.electronAPI.onShowShortcuts(() => {
-      prevStateRef.current = stateRef.current
-      transition(STATES.SHORTCUTS)
-    })
-
-    window.electronAPI.onShowHistory(() => {
-      openHistory()
-    })
-
-    window.electronAPI.onShortcutPause(() => {
-      if (stateRef.current === STATES.RECORDING) pauseRecordingRef.current()
-      else if (stateRef.current === STATES.PAUSED) resumeRecordingRef.current()
-    })
-
-    window.electronAPI.onOpenSettings(() => {
-      openSettings()
-    })
   }, [])
 
-  useEffect(() => {
-    function handleKeyDown(e) {
-      const meta = e.metaKey || e.ctrlKey
-      if (e.key === 'Escape') {
-        if (stateRef.current === STATES.RECORDING) {
-          stopRecordingRef.current()
-        } else if (stateRef.current === STATES.SHORTCUTS) {
-          transition(prevStateRef.current || STATES.IDLE)
-        } else if (stateRef.current === STATES.HISTORY) {
-          closeHistory()
-        } else if (stateRef.current === STATES.SETTINGS) {
-          closeSettings()
-        } else if (stateRef.current !== STATES.IDLE) {
-          transition(STATES.IDLE)
-        }
-        return
-      }
-      if (meta && e.key === 'h' &&
-          stateRef.current !== STATES.RECORDING &&
-          stateRef.current !== STATES.HISTORY) {
-        e.preventDefault()
-        openHistory()
-        return
-      }
-      if (meta && e.key === 't' && stateRef.current === STATES.IDLE) {
-        e.preventDefault()
-        transition(STATES.TYPING)
-        return
-      }
-      if (meta && e.key === 'c' && stateRef.current === STATES.PROMPT_READY) {
-        e.preventDefault()
-        if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPromptRef.current)
-        return
-      }
-      if (meta && e.key === 'e' && stateRef.current === STATES.PROMPT_READY) {
-        e.preventDefault()
-        document.dispatchEvent(new CustomEvent('export-prompt'))
-      }
-      if (meta && e.key === '/') {
-        e.preventDefault()
-        openSettings()
-      }
-      if (meta && e.key === ',' && stateRef.current === STATES.IDLE) {
-        e.preventDefault()
-        if (window.electronAPI) window.electronAPI.showModeMenu(modeRef.current)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  useKeyboardShortcuts({
+    STATES,
+    stateRef,
+    prevStateRef,
+    generatedPromptRef,
+    modeRef,
+    transitionRef,
+    setMode,
+    setPolishToneValue,
+    startRecordingRef,
+    stopRecordingRef,
+    pauseRecordingRef,
+    resumeRecordingRef,
+    openHistory,
+    closeHistory,
+    openSettings,
+    closeSettings,
+  })
 
   const recM = Math.floor(recSecs / 60)
   const recS = recSecs % 60
