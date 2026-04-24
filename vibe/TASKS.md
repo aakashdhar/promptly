@@ -329,8 +329,28 @@
    → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
 
 ## What just happened
-✅ MBAR-002–005 complete — full menu bar state IPC chain wired. Icon shows red dot (pulse) during recording/paused, blue dot (pulse) during thinking/iterating, green dot (steady) when prompt ready, clean mic icon at idle. Tooltip updates match each state. Theme change regenerates icon correctly.
+✅ Full codebase review 2026-04-24 — Score 5.9/D. 0 P0. 3 P1 (1 new: BL-038 window-all-closed bug, 2 carryover: BL-031 xmldom, BL-033 App.jsx SRP). 8 P2 (mostly documentation drift). 5 P3.
+→ Full report: vibe/reviews/full-review-2026-04-24.md
 
-## What's next
-⬜ BL-033 — Extract usePolishMode hook from App.jsx (P1 tech debt)
-⬜ BL-031 — npm audit fix @xmldom/xmldom (P1, run: npm audit fix)
+## 🔴 Review fixes required — Full review gate (0/3)
+Must complete before next distribution.
+
+[x] BL-038 · P1 NEW — Fix window-all-closed: change `!tray` to `!menuBarTray` at main.js:1040
+              File: main.js:1040 · Issue: app quits on forced window close instead of staying in menu bar
+[ ] BL-031 · P1 CARRYOVER — Run `npm audit fix` to resolve @xmldom/xmldom HIGH vulnerability
+              File: package.json (devDep chain) · Issue: DoS + XML injection CVEs
+[ ] BL-033 · P1 CARRYOVER — Extract useKeyboardShortcuts + useRecording hooks from App.jsx (653 lines)
+              File: src/renderer/App.jsx · Issue: SRP violation, too many concerns in one file
+
+## Documentation cleanup (P2 — next batch commit)
+⬜ BL-039 — openHistory/closeHistory bypass transition() — check updateMenuBarState for HISTORY
+⬜ BL-041 — ARCHITECTURE.md IPC table: add 4 missing, remove 2 stale (F-LANGUAGE)
+⬜ BL-042 — ARCHITECTURE.md state machine: update to 11 states, add TYPING + SETTINGS
+⬜ BL-043 — ARCHITECTURE.md Never list: clarify "zero runtime deps", not React/Vite
+⬜ BL-044 — ARCHITECTURE.md + CODEBASE.md: document SettingsPanel + SETTINGS state
+⬜ BL-045 — CODEBASE.md IPC table: remove stale show-language-menu / language-selected rows
+⬜ BL-046 — CODEBASE.md: fix TYPING height 220 → 244
+
+## Full review gate
+🔴 BLOCKED — 3 P1 issues above must be resolved before next distribution
+→ Fix BL-038, BL-031, BL-033 → re-run `review: final` → gate clears

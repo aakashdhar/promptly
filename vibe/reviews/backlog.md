@@ -152,6 +152,43 @@
 
 ---
 
+---
+
+## From Full Codebase Review (2026-04-24)
+
+### Outstanding P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-038~~ | main.js | 1040 | `window-all-closed` checks `!tray` (always null) instead of `!menuBarTray` — app quits on forced window close instead of staying alive in menu bar | ✅ resolved — fix(main) a1ee6e9 |
+| BL-031 | package.json (devDep) | — | @xmldom/xmldom HIGH severity — DoS + XML injection; `npm audit fix` resolves without breaking changes | ⬜ open (carryover — escalated, now confirmed HIGH via latest npm audit) |
+| BL-033 | src/renderer/App.jsx | 1-653 | SRP — 653 lines, 8+ concerns; extract useKeyboardShortcuts + useRecording hooks | ⬜ open (carryover) |
+
+### Outstanding P2 — Fix before deploy (lower priority)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-039 | src/renderer/App.jsx | 242-256 | `openHistory`/`closeHistory` bypass `transition()` — call `setCurrentState()` directly; `updateMenuBarState()` never fires for HISTORY transitions | ⬜ open (NEW) |
+| BL-040 | src/renderer/App.jsx | 150-321 | 9-line polish/non-polish branch duplicated 3× in stopRecording, handleTypingSubmit, handleRegenerate; extract `handleGenerateResult()` helper | ⬜ open (NEW) |
+| BL-041 | vibe/ARCHITECTURE.md | IPC table | Missing 4 channels (show-tone-menu, tone-selected, check-mic-status, open-settings); stale 2 channels (show-language-menu, language-selected — F-LANGUAGE removed) | ⬜ open (NEW) |
+| BL-042 | vibe/ARCHITECTURE.md | State machine | States count says "9 total" — actual is 11; TYPING + SETTINGS states/transitions not listed | ⬜ open (NEW) |
+| BL-043 | vibe/ARCHITECTURE.md | Never list | "Introducing a framework, bundler, or build step (Vite, Webpack, React, etc.)" contradicts the now-mainlined React migration | ⬜ open (NEW) |
+| BL-044 | vibe/ARCHITECTURE.md + CODEBASE.md | — | SettingsPanel.jsx (PCFG-003, 128 lines) and SETTINGS state absent from both architecture docs | ⬜ open (NEW) |
+| BL-045 | vibe/CODEBASE.md | IPC table | show-language-menu / language-selected shown as ✅ registered but not present in code (F-LANGUAGE removed) | ⬜ open (NEW) |
+| BL-046 | vibe/CODEBASE.md | State machine table | STATE_HEIGHTS.TYPING listed as 220px; App.jsx:43 is 244 | ⬜ open (NEW) |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-047 | main.js | 4 | Intentional `console.error` in uncaughtException handler triggers no-console lint warning; add `// eslint-disable-next-line no-console` | ⬜ open (NEW) |
+| BL-048 | main.js | 736, 779 | `const { spawn } = require('child_process')` inside handlers; add to top-level destructure at line 11 | ⬜ open (NEW) |
+| BL-049 | src/renderer/App.jsx | 576 | `onDismiss={(target) => {...}}` — `target` unused; change to `onDismiss={() => ...}` | ⬜ open (NEW) |
+| BL-050 | preload.js | 25-101 | `ipcRenderer.on()` listeners return no cleanup; App never unmounts so not a functional bug, but each `on*` should return `() => ipcRenderer.removeListener(...)` for correctness | ⬜ open (NEW) |
+| BL-051 | vibe/TASKS.md | 253-256 | BUG-017 entry duplicated twice | ⬜ open (NEW) |
+
+---
+
 ## Resolved Issues
 
 | ID | Finding | Resolved in |
