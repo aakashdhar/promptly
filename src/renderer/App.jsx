@@ -13,6 +13,7 @@ import PolishReadyState from './components/PolishReadyState.jsx'
 import ErrorState from './components/ErrorState.jsx'
 import IteratingState from './components/IteratingState.jsx'
 import TypingState from './components/TypingState.jsx'
+import SettingsPanel from './components/SettingsPanel.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -26,6 +27,7 @@ const STATES = {
   HISTORY: 'HISTORY',
   ITERATING: 'ITERATING',
   TYPING: 'TYPING',
+  SETTINGS: 'SETTINGS',
 }
 
 const STATE_HEIGHTS = {
@@ -39,6 +41,7 @@ const STATE_HEIGHTS = {
   HISTORY: 720,
   ITERATING: 200,
   TYPING: 244,
+  SETTINGS: 280,
 }
 
 export default function App() {
@@ -250,6 +253,13 @@ export default function App() {
     if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
     animateToState(STATES.IDLE)
   }
+  function openSettings() {
+    prevStateRef.current = stateRef.current
+    transition(STATES.SETTINGS)
+  }
+  function closeSettings() {
+    transition(prevStateRef.current || STATES.IDLE)
+  }
 
   const handleTypingSubmit = useCallback(async (typedText) => {
     isIterated.current = false
@@ -453,7 +463,7 @@ Mode: ${iterationBase.current.mode}`
     })
 
     window.electronAPI.onOpenSettings(() => {
-      console.log('open-settings received — settings panel not yet implemented in main app')
+      openSettings()
     })
   }, [])
 
@@ -467,6 +477,8 @@ Mode: ${iterationBase.current.mode}`
           transition(prevStateRef.current || STATES.IDLE)
         } else if (stateRef.current === STATES.HISTORY) {
           closeHistory()
+        } else if (stateRef.current === STATES.SETTINGS) {
+          closeSettings()
         } else if (stateRef.current !== STATES.IDLE) {
           transition(STATES.IDLE)
         }
@@ -495,7 +507,7 @@ Mode: ${iterationBase.current.mode}`
       }
       if (meta && e.key === '/') {
         e.preventDefault()
-        console.log('open-settings received — settings panel not yet implemented in main app')
+        openSettings()
       }
       if (meta && e.key === ',' && stateRef.current === STATES.IDLE) {
         e.preventDefault()
@@ -605,6 +617,12 @@ Mode: ${iterationBase.current.mode}`
           <>
             <div className="h-[44px] w-full" style={{WebkitAppRegion:'drag'}} />
             <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
+          </>
+        )}
+        {displayState === STATES.SETTINGS && (
+          <>
+            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+            <SettingsPanel onClose={closeSettings} />
           </>
         )}
         {displayState === STATES.HISTORY && (
