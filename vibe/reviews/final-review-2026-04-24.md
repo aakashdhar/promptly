@@ -1,9 +1,33 @@
 # Final Review — Promptly
-**Date:** 2026-04-24
+**Date:** 2026-04-24 (score updated 2026-04-24 after post-review fixes)
 **Reviewer:** vibe-review skill (final gate)
 **Scope:** Full codebase — production readiness gate
 **Files reviewed:** main.js (1048 lines) · preload.js · src/renderer/App.jsx (470 lines) · index.css · all hooks (5 files) · all components (14 files) · utils/history.js · package.json · entitlements.plist · vite.config.js · splash.html (existence confirmed)
 **Previous final review blocked:** full-review-2026-04-24.md — 3 P1 issues (BL-038, BL-031, BL-033)
+
+---
+
+## Post-Review Fixes (applied after gate passed — all confirmed)
+
+| Item | Finding | Resolution |
+|------|---------|-----------|
+| P2-002 / BL-053 | `onThemeChanged` IPC listener registered without cleanup | ✅ `unsubTheme` stored; returned from useEffect — App.jsx:323–326 |
+| P2-003 / BL-039 | `openHistory`/`closeHistory` bypass `transition()` — menubar not updated | ✅ Both now call `updateMenuBarState?.(STATES.HISTORY/IDLE)` — App.jsx:164,174 |
+| P2-004 / BL-041–046 | ARCHITECTURE.md + CODEBASE.md documentation drift (6 items) | ✅ Fixed in commit `357de9e` — IPC table complete, state count correct, Never list updated |
+| P3-001 / BL-054 | `HistoryPanel` uses `navigator.clipboard` instead of IPC | ✅ Replaced with `window.electronAPI.copyToClipboard()` |
+| P3-002 / BL-055 | No CSP meta tag in Electron renderer | ✅ Added to `src/renderer/index.html:6` — `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;` |
+| P3-004 / BL-056 | Unused `canvas` devDependency | ✅ Removed from `package.json` |
+| P3-005 / BL-037 | Hardcoded hex colors in 7 component files | ✅ All replaced with `var(--color-red/blue/green)` CSS tokens |
+| P3-003 / BL-051 | TASKS.md BUG-017 duplicate entry | ✅ Cleaned up |
+
+**Automated checks (re-run post-fix):**
+- `npm run lint` → 0 errors, 0 warnings ✅
+- `npm run build:renderer` → ✓ 38 modules, 256.61 kB JS / 75 kB gzip, built in 127ms ✅
+- `npm audit` → 0 vulnerabilities ✅
+- No `navigator.clipboard` in renderer components ✅
+- No hardcoded hex values (`#0A84FF`, `#FF3B30`, `#30D158`) in components ✅
+- CSP meta tag present in `src/renderer/index.html` ✅
+- `canvas` devDep absent from `package.json` ✅
 
 ---
 
@@ -278,6 +302,7 @@ All three previously blocking P1 issues (BL-038, BL-031, BL-033) are confirmed r
 
 ## Quality Score
 
+### At time of gate (before post-review fixes)
 ```
 Start:                         10.0
 P0 (× 1.0 each):               0.0   (0 P0 findings)
@@ -286,13 +311,23 @@ P2 (× 0.2 each):              -0.8   (4 P2 findings)
 P3 (× 0.1 each):              -0.5   (5 P3 findings)
 Architecture drift (× 0.5):   -0.5   (1 documented drift cluster — openHistory bypass)
 ─────────────────────────────────────────────────────
-Score:                          8.2 / 10 — Grade B
+Score at gate:                  8.2 / 10 — Grade B
 ```
 
-**Notes:**
-- The 6 documentation drift items (BL-041–BL-046) are collapsed into a single -0.5 drift penalty since they are all one category (doc maintenance).
-- P2-005 (no automated tests) is intentional and documented — counted at 0.2 not 0.5.
-- If only implementation quality is scored (excluding doc drift and intentional gaps): ~9.0/A-.
+### Updated score (after all post-review fixes applied)
+```
+Start:                         10.0
+P0 (× 1.0 each):               0.0   (0 P0 findings)
+P1 (× 0.5 each):               0.0   (0 P1 findings)
+P2 (× 0.2 each):              -0.2   (1 P2 remaining: no automated tests — intentional)
+P3 (× 0.1 each):               0.0   (all P3 items resolved)
+Architecture drift (× 0.5):    0.0   (all drift resolved — docs fully in sync)
+─────────────────────────────────────────────────────
+Updated score:                  9.8 / 10 — Grade A
+```
+
+**Remaining open (intentional):**
+- P2-005 — No automated test suite. Documented in ARCHITECTURE.md as intentional for v1; Playwright planned for v2.
 
 ---
 
@@ -300,17 +335,15 @@ Score:                          8.2 / 10 — Grade B
 
 **✅ DEPLOY UNLOCKED — 0 P0, 0 P1 issues**
 
-All three previously blocking P1 issues are confirmed resolved:
+All previously blocking P1 issues resolved, all P2/P3 items from this review subsequently fixed:
 - ✅ BL-038 — `window-all-closed` now checks `menuBarTray`
 - ✅ BL-031 — `npm audit` returns 0 vulnerabilities
 - ✅ BL-033 — App.jsx extracted to 470 lines; hooks extracted cleanly
-
-**Recommended before next release push:**
-1. Fix P2-002 (onThemeChanged listener leak)
-2. Fix P2-003 (openHistory/closeHistory menuBarTray not updated)
-3. Single docs cleanup commit for P2-004 (BL-041–BL-046)
-
-**Optional (P3 — nice to have):**
-- HistoryPanel clipboard consistency (P3-001)
-- CSP meta tag (P3-002)
-- Remove unused `canvas` devDep (P3-004)
+- ✅ BL-053 — `onThemeChanged` listener cleanup added
+- ✅ BL-039 — `openHistory`/`closeHistory` now call `updateMenuBarState`
+- ✅ BL-041–046 — ARCHITECTURE.md + CODEBASE.md documentation fully in sync
+- ✅ BL-054 — HistoryPanel clipboard uses IPC
+- ✅ BL-055 — CSP meta tag present
+- ✅ BL-056 — Unused `canvas` devDep removed
+- ✅ BL-037 — All hardcoded hex colors replaced with CSS tokens
+- ✅ BL-051 — TASKS.md duplicate entry cleaned up
