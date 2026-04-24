@@ -493,7 +493,7 @@ Mode: ${iterationBase.current.mode}`
         e.preventDefault()
         document.dispatchEvent(new CustomEvent('export-prompt'))
       }
-      if (meta && e.key === ',') {
+      if (meta && e.key === '/') {
         e.preventDefault()
         console.log('open-settings received — settings panel not yet implemented in main app')
       }
