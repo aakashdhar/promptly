@@ -333,9 +333,32 @@
    [x] QCPY-005 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md updated
    → Full specs: vibe/features/2026-04-24-quick-copy/ (agent use)
 
+✅ **BUG-033 — App.jsx SRP violation** (5/5 — COMPLETE 2026-04-24)
+   [x] BUG-033-001 · Baseline smoke test — build + lint + boot confirmed passing
+   [x] BUG-033-002 · Create useRecording.js — extract recording state, refs, callbacks from App.jsx
+   [x] BUG-033-003 · Create useKeyboardShortcuts.js — extract IPC + keydown effects from App.jsx
+   [x] BUG-033-004 · Update App.jsx — import both hooks, recording + keyboard concerns delegated
+   [x] BUG-033-005 · Verify + update docs — lint clean, smoke passed, CODEBASE.md + DECISIONS.md updated
+   → Full specs: vibe/bugs/2026-04-24-bug-033/BUG_TASKS.md (agent use)
+
+🔄 **FEATURE-020 — History Panel v2** (1/9 — IN PROGRESS)
+   Estimated: approx. 14-18 hours (S: 4, M: 4)
+   [x] HSTV2-001 · history.js utility functions — bookmarkHistoryItem + rateHistoryItem added
+   [x] HSTV2-002 · Tab switcher — All / Saved tabs in HistoryPanel.jsx
+   [ ] HSTV2-003 · Filter chips — All, 👍, 👎, Unrated filter row
+   [ ] HSTV2-004 · Stats bar — prompt count + rating percentages
+   [ ] HSTV2-005 · Bookmark toggle — Save button in right panel + hover-only delete
+   [ ] HSTV2-006 · Rating section — thumbs up/down + tag chips
+   [ ] HSTV2-007 · Entry indicators — tag pill in meta row
+   [ ] HSTV2-008 · Footer update — saved count in footer
+   [ ] HSTV2-009 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
+   → Full specs: vibe/features/2026-04-24-history-v2/FEATURE_TASKS.md (agent use)
+
 ## What just happened
 ✅ FEATURE-018 complete 2026-04-24 — "Copy last prompt" in menubar right-click, green dot flash ~1200ms, no window open.
    buildTrayMenu() shared helper eliminates duplicate inline menu templates.
+✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
+🔄 FEATURE-020 in progress — HSTV2-002 done (tab switcher All/Saved, bookmarkHistoryItem imported); HSTV2-003 next.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24

@@ -66,7 +66,7 @@ History entry shape after this task:
 ---
 
 ### HSTV2-002 · Tab switcher
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#tab-switcher
 - **Dependencies**: HSTV2-001
