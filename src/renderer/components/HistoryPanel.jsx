@@ -91,6 +91,14 @@ export default function HistoryPanel({ onClose, onReuse }) {
     ? entries.filter(e => e.bookmarked)
     : entries
 
+  const filteredEntries = tabFiltered.filter(e => {
+    if (activeFilter === 'all') return true
+    if (activeFilter === 'up') return e.rating === 'up'
+    if (activeFilter === 'down') return e.rating === 'down'
+    if (activeFilter === 'unrated') return !e.rating
+    return true
+  })
+
   return (
     <div style={{
       position:'relative', zIndex:1,
@@ -205,9 +213,38 @@ export default function HistoryPanel({ onClose, onReuse }) {
             })}
           </div>
 
+          {/* Filter chips */}
+          <div style={{display:'flex', gap:'4px', padding:'10px 12px', flexWrap:'wrap'}}>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'up', label: '👍' },
+              { id: 'down', label: '👎' },
+              { id: 'unrated', label: 'Unrated' }
+            ].map(f => {
+              const isActive = activeFilter === f.id
+              const colors = {
+                all:     { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' },
+                up:      { bg:'rgba(48,209,88,0.10)',   border:'rgba(48,209,88,0.25)',   text:'rgba(100,220,130,0.8)' },
+                down:    { bg:'rgba(255,59,48,0.10)',   border:'rgba(255,59,48,0.25)',   text:'rgba(255,100,90,0.75)' },
+                unrated: { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' }
+              }
+              const inactive = { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', text:'rgba(255,255,255,0.3)' }
+              const c = isActive ? colors[f.id] : inactive
+              return (
+                <span key={f.id} onClick={() => setActiveFilter(f.id)} style={{
+                  padding:'2px 8px', borderRadius:'20px', fontSize:'9px',
+                  fontWeight:600, cursor:'pointer',
+                  background:c.bg, border:`0.5px solid ${c.border}`, color:c.text
+                }}>
+                  {f.label}
+                </span>
+              )
+            })}
+          </div>
+
           {/* Entry list */}
           <div style={{flex:1, overflowY:'auto', minHeight:0}}>
-            {tabFiltered.length === 0 && (
+            {filteredEntries.length === 0 && (
               <div style={{
                 padding:'40px 20px', textAlign:'center',
                 fontSize:'12px', color:'rgba(255,255,255,0.55)'
@@ -215,7 +252,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
                 {activeTab === 'saved' ? 'No saved prompts yet' : (query ? 'No results found' : 'No history yet')}
               </div>
             )}
-            {tabFiltered.map(entry => {
+            {filteredEntries.map(entry => {
               const isSelected = selected?.id === entry.id
               const isPolish = entry.mode === 'polish'
               return (
