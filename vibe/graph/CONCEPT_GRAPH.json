@@ -347,5 +347,38 @@
     "tasks_total": 1,
     "phase": "Phase 4 — complete 2026-04-20",
     "notes": "POLISH-001–009 applied as a single commit (8cf7ee7). No new IPC channels, no new state. Pure visual layer on top of existing state machine."
+  },
+
+  "quick-copy": {
+    "state": "built",
+    "type": "feature",
+    "description": "Copy last prompt silently from menubar right-click without opening the bar. Green dot flash on tray icon confirms copy.",
+    "files": [
+      { "file": "main.js",                "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "preload.js",             "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/App.jsx",   "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation", "tray"],
+    "depended_on_by": [],
+    "tasks_complete": 4,
+    "tasks_total": 4,
+    "feature_folder": "vibe/features/2026-04-24-quick-copy",
+    "phase": "Phase 4 — complete 2026-04-24"
+  },
+
+  "history-v2": {
+    "state": "partial",
+    "type": "feature",
+    "description": "History panel v2 — tab switcher (All/Saved), filter chips (All/👍/👎/Unrated), stats bar, bookmark toggle, thumbs rating with tags, entry indicators, footer update.",
+    "files": [
+      { "file": "src/renderer/utils/history.js",          "state": "built",   "source": "EXTRACTED", "confidence": 1.0 },
+      { "file": "src/renderer/components/HistoryPanel.jsx","state": "partial", "source": "EXTRACTED", "confidence": 1.0 }
+    ],
+    "depends_on": ["foundation", "history-panel"],
+    "depended_on_by": [],
+    "tasks_complete": 1,
+    "tasks_total": 9,
+    "feature_folder": "vibe/features/2026-04-24-history-v2",
+    "phase": "Phase 4 — in progress"
   }
 }

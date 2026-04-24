@@ -2,44 +2,45 @@
   "version": 2,
   "project": "promptly",
   "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-20T20:00:00Z",
-  "update_count": 6,
-  "update_note": "POLISH-001–009 (UI pass all components); BUG-012/013/014/015/016 (PATH, mic permission, isDestroyed guards, requestMic removal); FEATURE-SIGNING (signing scripts + hardenedRuntime); chore (icon, generate-icon.js). New nodes: scripts/create-cert.sh, scripts/sign-app.sh, scripts/build-signed.sh, scripts/generate-icon.js. New concepts: signing, ui-polish.",
+  "last_updated": "2026-04-24T00:00:00Z",
+  "update_count": 7,
+  "update_note": "QCPY-001–004: quick-copy — buildTrayMenu helper, lastGeneratedPrompt var, set-last-prompt IPC, setLastPrompt preload method (main.js + preload.js + App.jsx). HSTV2-001: bookmarkHistoryItem + rateHistoryItem added to history.js; saveToHistory extended with polishChanges. New concepts: quick-copy (built, 4/4), history-v2 (partial, 1/9).",
   "mode": "incremental",
-  "files_updated_this_run": 23,
+  "files_updated_this_run": 3,
   "inferred_to_extracted_this_run": 0,
   "coverage": {
     "files_indexed": 31,
-    "concepts_mapped": 15,
-    "extracted_edges": 32,
+    "concepts_mapped": 17,
+    "extracted_edges": 34,
     "inferred_edges": 12,
     "ambiguous_edges": 2,
-    "rationale_nodes": 42
+    "rationale_nodes": 45
   },
   "god_nodes": [
     {
       "file": "src/renderer/App.jsx",
-      "connections": 14,
+      "connections": 15,
       "concept": "foundation",
       "type": "react-component",
       "risk": "HIGH",
       "srp_flag": true,
-      "srp_note": "14 connections — root orchestrator; +1 from ui-polish secondary concept; consider splitting iteration logic into useIteration hook if more iteration complexity is added"
+      "srp_note": "15 connections — +1 from setLastPrompt (quick-copy); consider splitting iteration logic into useIteration hook if more iteration complexity is added"
     },
     {
       "file": "main.js",
-      "connections": 8,
+      "connections": 9,
       "concept": "foundation",
       "type": "electron-main",
       "risk": "MEDIUM",
-      "srp_note": "8 connections — +1 from check-mic-status IPC (BUG-016); still manageable"
+      "srp_note": "9 connections — +1 from set-last-prompt IPC + buildTrayMenu helper (quick-copy); still manageable"
     },
     {
       "file": "preload.js",
-      "connections": 4,
+      "connections": 5,
       "concept": "foundation",
       "type": "electron-preload",
-      "risk": "LOW"
+      "risk": "LOW",
+      "srp_note": "+1 from setLastPrompt (quick-copy)"
     }
   ],
   "ambiguous_edges": [

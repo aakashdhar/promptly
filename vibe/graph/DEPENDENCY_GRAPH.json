@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/CODEBASE.md + source files",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-20T20:00:00Z",
-    "update_count": 5,
+    "last_updated": "2026-04-24T00:00:00Z",
+    "update_count": 6,
     "project": "promptly",
-    "update_note": "Incremental update — POLISH-001–009 (UI pass: transitions, typography, hovers, pulse rings, scrollbars); BUG-012 (PATH resolution — resolveWhisperPath, expanded env); BUG-013 (mic permission — session.defaultSession.setPermissionRequestHandler, getUserMedia in splash); BUG-014 (whisper ffmpeg PATH, 90s timeout); BUG-015 (isDestroyed guards, hardenedRuntime, splash-done 1200ms, requestMic removed from preload + App.jsx); BUG-016 (check-mic-status IPC, getMediaAccessStatus); FEATURE-SIGNING (scripts/create-cert.sh, sign-app.sh, build-signed.sh); chore (generate-icon.js, app icon files)"
+    "update_note": "Incremental update — HSTV2-001: bookmarkHistoryItem + rateHistoryItem added to history.js (FEATURE-020); saveToHistory extended with polishChanges field. QCPY-001–004: lastGeneratedPrompt + set-last-prompt IPC + copy-last-prompt tray menu (main.js + App.jsx) — quick-copy from menubar. New concept: history-v2 (planned, 1/9 tasks done)."
   },
 
   "package.json": {
@@ -107,8 +107,8 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.90,
     "concept_evidence": "Electron main process — owns IPC hub, window lifecycle, PATH resolution; touched by multiple features but no single feature owns it",
-    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export", "iteration-mode", "signing", "ui-polish"],
-    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode), request-mic + check-mic-status + session.defaultSession handler (signing/mic permission), remove DevTools (ui-polish)",
+    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export", "iteration-mode", "signing", "ui-polish", "quick-copy"],
+    "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode), request-mic + check-mic-status + session.defaultSession handler (signing/mic permission), remove DevTools (ui-polish), set-last-prompt IPC + lastGeneratedPrompt + copy-last-prompt tray item (quick-copy)",
     "imports": [
       {
         "file": "preload.js",
@@ -138,11 +138,11 @@
       "set-window-buttons-visible", "splash-done", "splash-check-cli",
       "splash-check-whisper", "splash-open-url", "request-mic",
       "get-theme", "save-file", "resize-window-width", "set-window-size",
-      "generate-raw", "check-mic-status"
+      "generate-raw", "check-mic-status", "set-last-prompt"
     ],
     "ipc_sends": ["shortcut-triggered", "shortcut-conflict", "mode-selected", "theme-changed", "show-history", "show-shortcuts"],
-    "key_vars": ["claudePath", "whisperPath", "win", "splashWin", "tray", "PROMPT_TEMPLATE", "MODE_CONFIG"],
-    "key_functions": ["resolveClaudePath", "resolveWhisperPath", "registerShortcut", "createWindow", "createTray", "updateTrayMenu"],
+    "key_vars": ["claudePath", "whisperPath", "win", "splashWin", "tray", "PROMPT_TEMPLATE", "MODE_CONFIG", "lastGeneratedPrompt"],
+    "key_functions": ["resolveClaudePath", "resolveWhisperPath", "registerShortcut", "createWindow", "createTray", "updateTrayMenu", "buildTrayMenu"],
     "rationale": [
       {
         "type": "DECISION",
@@ -202,6 +202,12 @@
         "text": "check-mic-status IPC returns systemPreferences.getMediaAccessStatus('microphone') — lets splash check TCC status before deciding whether to call getUserMedia; avoids redundant mic request if already granted",
         "source": "EXTRACTED",
         "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "buildTrayMenu() refactor (FEATURE-018/QCPY) — shared helper called by both createTray() and updateTrayMenu(), prevents drift between initial and updated tray menus. lastGeneratedPrompt is session-only (not persisted) — set via set-last-prompt IPC after each successful generate-prompt. copy-last-prompt tray item copies silently without opening window.",
+        "source": "EXTRACTED",
+        "added": "2026-04-24"
       }
     ]
   },
@@ -225,7 +231,7 @@
         "file": "src/renderer/App.jsx",
         "source": "EXTRACTED",
         "confidence": 1.0,
-        "evidence": "window.electronAPI.* consumed throughout — resizeWindow, setWindowSize, generatePrompt, transcribeAudio, copyToClipboard, onShortcutTriggered, onShowHistory, onShowShortcuts, setWindowButtonsVisible, getTheme, onThemeChanged, showModeMenu, saveFile"
+        "evidence": "window.electronAPI.* consumed throughout — resizeWindow, setWindowSize, generatePrompt, transcribeAudio, copyToClipboard, onShortcutTriggered, onShowHistory, onShowShortcuts, setWindowButtonsVisible, getTheme, onThemeChanged, showModeMenu, saveFile, setLastPrompt"
       },
       {
         "file": "splash.html",
@@ -241,7 +247,7 @@
       "resizeWindowWidth", "setWindowSize", "onShowHistory",
       "splashDone", "splashCheckCLI", "splashCheckWhisper", "splashOpenURL",
       "onShortcutTriggered", "onShowShortcuts", "onShortcutPause", "onShortcutConflict",
-      "getTheme", "onThemeChanged"
+      "getTheme", "onThemeChanged", "setLastPrompt"
     ],
     "removed_methods": [
       { "method": "requestMic", "removed": "2026-04-20", "reason": "BUG-015 — App.jsx no longer calls requestMic(); splash.html calls getUserMedia() directly; TCC grant handled once at splash time via getUserMedia, not repeated per-recording" }
@@ -488,8 +494,10 @@
       { "file": "src/renderer/App.jsx",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "import { saveToHistory } line 11" },
       { "file": "src/renderer/components/HistoryPanel.jsx","source": "EXTRACTED", "confidence": 1.0, "evidence": "import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime } line 2" }
     ],
-    "exports": ["saveToHistory", "getHistory", "deleteHistoryItem", "clearHistory", "searchHistory", "formatTime"],
+    "exports": ["saveToHistory", "getHistory", "deleteHistoryItem", "clearHistory", "searchHistory", "formatTime", "bookmarkHistoryItem", "rateHistoryItem"],
     "storage_key": "promptly_history",
+    "storage_entry_shape": "{ id, title, transcript, prompt, mode, timestamp, isIteration?, basedOn?, polishChanges?, bookmarked?, rating?, ratingTag? }",
+    "secondary_concepts": ["history-v2"],
     "rationale": [
       {
         "type": "DECISION",
@@ -508,6 +516,12 @@
         "text": "saveToHistory() accepts optional { isIteration, basedOn } fields (FEATURE-012) — isIteration:true marks entry for HistoryPanel badge; basedOn stores first 100 chars of original prompt for provenance display",
         "source": "EXTRACTED",
         "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "text": "bookmarkHistoryItem() toggles bookmarked boolean and returns new value — toggle-pattern matches existing delete approach (mutate array, re-persist). rateHistoryItem() sets rating ('up'|'down'|null) + ratingTag on same entry. Both added for FEATURE-020 (history-v2).",
+        "source": "EXTRACTED",
+        "added": "2026-04-24"
       }
     ]
   },
