@@ -168,7 +168,7 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-039 | src/renderer/App.jsx | 159-173 | `openHistory`/`closeHistory` bypass `transition()` — `updateMenuBarState()` never fires for HISTORY transitions | ⬜ open |
+| ~~BL-039~~ | src/renderer/App.jsx | 159-173 | `openHistory`/`closeHistory` bypass `transition()` — `updateMenuBarState()` never fires for HISTORY transitions | ✅ resolved — fix(backlog) a0d5dbf |
 | ~~BL-040~~ | src/renderer/App.jsx | 150-321 | 9-line polish/non-polish branch duplicated 3× — extract `handleGenerateResult()` helper | ✅ resolved — handleGenerateResult useCallback + onGenerateResult ref pattern |
 | ~~BL-041~~ | vibe/ARCHITECTURE.md | IPC table | Missing channels — 4 named were already present; added 8 more missing (show-shortcuts, shortcut-pause, update-menubar-state, uninstall-promptly, get-stored-paths, save-paths, browse-for-binary, recheck-paths) | ✅ resolved — docs(ARCHITECTURE+CODEBASE) 2026-04-24 |
 | ~~BL-042~~ | vibe/ARCHITECTURE.md | State machine | States count "9 total" / TYPING+SETTINGS missing | ✅ resolved — already correct in file (11 total, TYPING+SETTINGS listed) |
@@ -183,7 +183,7 @@
 |----|------|------|---------|--------|
 | ~~BL-047~~ | main.js | 4 | Intentional `console.error` in uncaughtException handler triggers no-console lint warning | ✅ resolved — 0 warnings in final lint run |
 | ~~BL-048~~ | main.js | 736, 779 | `const { spawn } = require('child_process')` inside handlers | ✅ resolved — spawn in top-level destructure at line 12 |
-| BL-051 | vibe/TASKS.md | 253-256 | BUG-017 entry duplicated twice | ⬜ open |
+| ~~BL-051~~ | vibe/TASKS.md | 253-256 | BUG-017 entry duplicated twice | ✅ resolved — docs(TASKS+reviews) de78276 |
 
 ---
 
@@ -194,15 +194,15 @@
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | ~~BL-052~~ | src/renderer/App.jsx | 394 | TypingState "Switch to voice" silently broken — `onDismiss('voice')` arg discarded; user lands in IDLE not RECORDING | ✅ by design — IDLE landing is intentional; gives user chance to switch mode before recording starts |
-| BL-053 | src/renderer/App.jsx | 317 | `onThemeChanged` IPC listener registered in useEffect with no cleanup return — leak on hot-reload. Fix: store unsub and return from useEffect | ⬜ open (NEW) |
+| ~~BL-053~~ | src/renderer/App.jsx | 317 | `onThemeChanged` IPC listener registered in useEffect with no cleanup return — leak on hot-reload | ✅ resolved — fix(backlog) a0d5dbf |
 
 ### Outstanding P3
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-054 | src/renderer/components/HistoryPanel.jsx | 83 | `navigator.clipboard.writeText()` bypasses `electronAPI.copyToClipboard()` IPC — minor pattern inconsistency | ⬜ open (NEW) |
-| BL-055 | src/renderer/index.html | — | No CSP meta tag in Vite HTML entry | ⬜ open (NEW) |
-| BL-056 | package.json | 27 | `canvas` devDependency (`^3.2.3`) — no import found anywhere in codebase; likely unused | ⬜ open (NEW) |
+| ~~BL-054~~ | src/renderer/components/HistoryPanel.jsx | 83 | `navigator.clipboard.writeText()` bypasses `electronAPI.copyToClipboard()` IPC — minor pattern inconsistency | ✅ resolved — fix(backlog) a0d5dbf |
+| ~~BL-055~~ | src/renderer/index.html | — | No CSP meta tag in Vite HTML entry | ✅ resolved — fix(backlog) a0d5dbf |
+| ~~BL-056~~ | package.json | 27 | `canvas` devDependency unused | ✅ resolved — fix(backlog) a0d5dbf |
 
 ---
 
