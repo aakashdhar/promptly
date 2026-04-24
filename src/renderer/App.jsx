@@ -41,7 +41,7 @@ const STATE_HEIGHTS = {
   HISTORY: 720,
   ITERATING: 200,
   TYPING: 244,
-  SETTINGS: 296,
+  SETTINGS: 312,
 }
 
 export default function App() {
@@ -621,7 +621,7 @@ Mode: ${iterationBase.current.mode}`
         )}
         {displayState === STATES.SETTINGS && (
           <>
-            <div className="h-[44px] w-full" style={{WebkitAppRegion:'drag'}} />
+            <div className="h-[60px] w-full" style={{WebkitAppRegion:'drag'}} />
             <SettingsPanel onClose={closeSettings} />
           </>
         )}
