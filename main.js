@@ -182,6 +182,7 @@ let isQuitting = false;
 let menuBarTray = null;
 let pulseInterval = null;
 let currentIconState = 'idle';
+let lastGeneratedPrompt = null;
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -305,27 +306,7 @@ function createMenuBarIcon() {
     if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
   });
   menuBarTray.on('right-click', () => {
-    const menu = Menu.buildFromTemplate([
-      {
-        label: win && win.isVisible() ? 'Hide Promptly' : 'Show Promptly',
-        click: () => {
-          if (!win || win.isDestroyed()) return;
-          if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
-        },
-      },
-      { type: 'separator' },
-      {
-        label: 'Path configuration...',
-        click: () => {
-          if (win && !win.isDestroyed()) { win.show(); win.focus(); win.webContents.send('open-settings'); }
-        },
-      },
-      { type: 'separator' },
-      { label: 'Uninstall Promptly...', click: () => { handleUninstall(); } },
-      { type: 'separator' },
-      { label: 'Quit Promptly', click: () => app.quit() },
-    ]);
-    menuBarTray.popUpContextMenu(menu);
+    menuBarTray.popUpContextMenu(buildTrayMenu());
   });
 }
 
@@ -389,42 +370,49 @@ async function handleUninstall() {
   return { ok: true };
 }
 
-function updateTrayMenu() {
-  if (!tray) return;
-  const menu = Menu.buildFromTemplate([
+function buildTrayMenu() {
+  const template = [];
+  if (lastGeneratedPrompt) {
+    template.push({
+      label: 'Copy last prompt',
+      click: () => {
+        clipboard.writeText(lastGeneratedPrompt);
+        const prevState = currentIconState;
+        updateMenuBarIcon('ready');
+        setTimeout(() => {
+          if (!menuBarTray || menuBarTray.isDestroyed()) return;
+          updateMenuBarIcon(prevState === 'ready' ? 'idle' : prevState);
+        }, 1200);
+      },
+    });
+    template.push({ type: 'separator' });
+  }
+  template.push(
     {
       label: win && win.isVisible() ? 'Hide Promptly' : 'Show Promptly',
       click: () => {
         if (!win || win.isDestroyed()) return;
         if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
-        updateTrayMenu();
       },
     },
     { type: 'separator' },
     {
       label: 'Path configuration...',
       click: () => {
-        if (win && !win.isDestroyed()) {
-          win.show();
-          win.focus();
-          win.webContents.send('open-settings');
-        }
+        if (win && !win.isDestroyed()) { win.show(); win.focus(); win.webContents.send('open-settings'); }
       },
     },
     { type: 'separator' },
-    {
-      label: 'Uninstall Promptly...',
-      click: () => { handleUninstall(); },
-    },
+    { label: 'Uninstall Promptly...', click: () => { handleUninstall(); } },
     { type: 'separator' },
-    { label: 'Quit Promptly', click: () => app.quit() },
-  ]);
-  tray.setContextMenu(menu);
-  tray.on('click', () => {
-    if (!win || win.isDestroyed()) return;
-    if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
-    updateTrayMenu();
-  });
+    { label: 'Quit Promptly', click: () => { isQuitting = true; app.removeAllListeners('window-all-closed'); app.quit(); } }
+  );
+  return Menu.buildFromTemplate(template);
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+  tray.setContextMenu(buildTrayMenu());
 }
 
 
@@ -1026,6 +1014,10 @@ app.whenReady().then(async () => {
       PROMPT_READY: 'ready',
     };
     updateMenuBarIcon(stateMap[appState] || 'idle');
+  });
+
+  ipcMain.handle('set-last-prompt', (_event, prompt) => {
+    lastGeneratedPrompt = prompt || null;
   });
 });
 

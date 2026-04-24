@@ -126,4 +126,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   updateMenuBarState: (state) =>
     ipcRenderer.invoke('update-menubar-state', state),
+
+  setLastPrompt: (prompt) =>
+    ipcRenderer.invoke('set-last-prompt', prompt),
 });

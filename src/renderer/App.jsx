@@ -146,10 +146,12 @@ export default function App() {
       const parsed = parsePolishOutput(genResult.prompt)
       setPolishResult(parsed)
       setGeneratedPrompt(parsed.polished)
+      window.electronAPI?.setLastPrompt?.(parsed.polished)
       saveToHistory({ transcript, prompt: parsed.polished, mode, polishChanges: parsed.changes })
     } else {
       setPolishResult(null)
       setGeneratedPrompt(genResult.prompt)
+      window.electronAPI?.setLastPrompt?.(genResult.prompt)
       saveToHistory({ transcript, prompt: genResult.prompt, mode })
     }
     transitionRef.current(STATES.PROMPT_READY)
