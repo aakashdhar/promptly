@@ -31,18 +31,32 @@
 
 ```
 promptly/
-├── main.js            # Window config, global shortcut, IPC handlers, PATH resolution
-├── preload.js         # contextBridge — exposes electronAPI to renderer (sandboxed)
-├── index.html         # Entire UI: state machine, waveform, mode system, all styles
-├── package.json       # Electron + electron-builder config, no runtime dependencies
-└── entitlements.plist # Mic permission for hardened runtime (required for notarisation)
+├── main.js             # Window config, global shortcut, IPC handlers, PATH resolution
+├── preload.js          # contextBridge — exposes electronAPI to renderer (sandboxed)
+├── splash.html         # Splash screen BrowserWindow — CLI + mic check, vanilla HTML
+├── package.json        # Electron + electron-builder config, devDeps only
+├── entitlements.plist  # Mic permission for hardened runtime (required for notarisation)
+├── vite.config.js      # Vite build config — root: src/renderer, outDir: dist-renderer/
+├── eslint.config.js    # ESLint 9 flat config for main.js + preload.js
+└── src/
+    └── renderer/
+        ├── index.html  # Vite HTML entry point — <div id="root">
+        ├── index.css   # Tailwind v4 entry — @theme tokens, @keyframes, body reset
+        ├── main.jsx    # React root — ReactDOM.createRoot().render(<App />)
+        ├── App.jsx     # State machine root — transition(), all states, IPC wiring
+        ├── hooks/      # useMode, useRecording, useKeyboardShortcuts, usePolishMode, useWindowResize, useTone
+        ├── components/ # One per state: IdleState, RecordingState, ThinkingState, PromptReadyState, …
+        └── utils/      # history.js — all localStorage history access
 ```
 
 **Rules:**
-- All UI lives in `index.html`. No separate `.css` or `.js` files — the whole renderer is one file.
+- All UI lives in `src/renderer/`. One component per file. Components are functional React components.
 - `main.js` handles only: window creation, IPC, PATH resolution, global shortcut registration.
 - `preload.js` is the only bridge between renderer and main. It exposes `window.electronAPI` exclusively.
 - No new top-level files without a DECISIONS.md entry explaining why.
+- React/Vite/Tailwind are devDeps only — not bundled into the packaged .app.
+
+> 📝 2026-04-19 · Folder structure updated — FEATURE-004 React migration mainlined (see D-FCR in DECISIONS.md)
 
 ---
 
@@ -62,38 +76,42 @@ promptly/
 
 ## State management
 
-**Approach:** In-memory state machine inside `index.html`. Single `currentState` variable.
+**Approach:** React `useState` + `useRef` state machine in `App.jsx`. Single `currentState` (useState) mirrors `stateRef` (useRef) for stale-closure-safe IPC callbacks.
 
-**States (9 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING added via features):**
+**States (11 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS added via features):**
 ```
 FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
                  ↕ PAUSED (FEATURE-011)
                  → ITERATING (FEATURE-012)
+                 → TYPING (FEATURE-014)
 IDLE / PROMPT_READY → SHORTCUTS (FEATURE-006)
 IDLE / PROMPT_READY → HISTORY (FEATURE-009)
+IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
 ```
 
 **Rules:**
-- All state transitions go through a single `setState(newState, payload)` function.
-- `setState` is the only place DOM class changes and element visibility are toggled.
-- No state stored outside `currentState` + `localStorage` (mode only).
-- localStorage accessed only via four wrapper functions: `getMode()`, `setMode()`, `getFirstRunComplete()`, `setFirstRunComplete()` — never `localStorage.*` directly in other code.
-- `transcript` and `generatedPrompt` are plain module-scope variables — not in localStorage, not in DOM attributes.
-- The `originalTranscript` is captured once at recording stop and never mutated — regenerate always uses it.
+- All state transitions go through a single `transition(newState, payload)` function in App.jsx.
+- `transition` is the only function that calls `resizeWindow`, `setWindowButtonsVisible`, `updateMenuBarState`, and `animateToState` — always in sync.
+- No state stored outside React state/refs + `localStorage` (mode, history, tone only).
+- localStorage accessed only via hook wrappers: `useMode()`, `useTone()`, `utils/history.js` — never `localStorage.*` directly in components.
+- `originalTranscript` is a `useRef` — set once in `stopRecording` onstop, never mutated after (exception: iteration flow, see D-ITER-003).
+- `generatedPrompt` is a `useState` + mirrored `generatedPromptRef` (useRef) for stale-closure-safe ⌘C handler.
 
 ---
 
 ## Frontend patterns
 
-**DOM rules:**
-- All elements accessed by `id` — no querySelector chains.
-- Event listeners set once at `DOMContentLoaded`. No dynamic listener attachment.
-- No innerHTML with untrusted data — use `textContent` for user-generated content. Use `innerHTML` only for static structure.
-- Edit mode uses `contenteditable` on the prompt output element. `Escape` cancels (restores), `Done` saves to `generatedPrompt`.
+**React component rules:**
+- One component per file in `src/renderer/components/`. Functional components only.
+- IPC event listeners registered in `useEffect` with empty dep array — mount once, clean up on unmount.
+- No `dangerouslySetInnerHTML` with user/Claude content — use JSX text nodes (equivalent to `textContent`).
+- All dynamic text via JSX text nodes. HTML structure via JSX only.
+- Stable refs (e.g. `transitionRef`, `handleGenerateResultRef`) keep callbacks accessible in IPC onstop handlers without stale closures.
 
 **Styling:**
-- All styles inline in `<style>` block inside `index.html`. No external stylesheets.
-- Design tokens as CSS custom properties at `:root` (dark-glass palette — updated from original iOS-light spec during design pivot):
+- Tailwind v4 utility classes for static layout; inline styles for dynamic/stateful values (e.g. colour from state, conditional dimensions).
+- `index.css` owns all `@theme` design tokens, `@keyframes`, and global body reset. Component files must not redefine tokens.
+- Design tokens as CSS custom properties at `@theme` (dark-glass palette — updated from original iOS-light spec during design pivot):
   - `--blue: #0A84FF` (action colour — iOS dark-mode blue)
   - `--red: #FF3B30` (recording / stop)
   - `--green: #30D158` (success / copy flash)
@@ -134,12 +152,22 @@ IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 | main → renderer | `mode-selected` | Mode key chosen from native menu — sent after show-mode-menu (BUG-002-D) |
 | renderer → main | `get-theme` | Returns `{ dark: boolean }` — current macOS appearance |
 | main → renderer | `theme-changed` | Sent when macOS appearance changes; payload `{ dark: boolean }` |
-| renderer → main | `show-language-menu` | Open native Electron radio menu from passed languages array; sends `language-selected` to renderer on click |
-| main → renderer | `language-selected` | Sent from show-language-menu click handler with selected language code |
+| renderer → main | `show-tone-menu` | Open native Electron radio menu for Formal/Casual tone selection in polish mode; sends `tone-selected` to renderer on click |
+| main → renderer | `tone-selected` | Sent from show-tone-menu click handler with selected tone key |
+| renderer → main | `check-mic-status` | Check microphone permission via systemPreferences.askForMediaAccess; returns { granted: boolean } |
+| main → renderer | `open-settings` | Sent by tray "Path configuration..." item and ⌘, shortcut; triggers SETTINGS state in renderer |
 | renderer → main | `save-file` | Show native save dialog + write file; returns `{ ok, filePath }` — added FEATURE-007 |
 | renderer → main | `resize-window-width` | Resize BrowserWindow width only, preserving height — added FEATURE-009 |
 | main → renderer | `show-history` | Sent by "History ⌘H" context menu item — added FEATURE-009 |
 | renderer → main | `set-window-size` | Set both width and height atomically; updates setMinimumSize/setMaximumSize first — added BUG-011 |
+| main → renderer | `show-shortcuts` | Sent by ⌘? global shortcut or "Keyboard shortcuts ⌘?" context menu item — triggers SHORTCUTS state |
+| main → renderer | `shortcut-pause` | Sent by Alt+P global shortcut — toggles pause/resume in RECORDING/PAUSED states |
+| renderer → main | `update-menubar-state` | Maps STATES enum string → icon state (idle/recording/thinking/ready); drives menubar dot-pulse animation |
+| renderer → main | `uninstall-promptly` | Shows native confirmation dialog, removes all data dirs + TCC entry, quits app |
+| renderer → main | `get-stored-paths` | Returns `{ claudePath, whisperPath }` from `config.json` in userData — used by SettingsPanel |
+| renderer → main | `save-paths` | Saves `{ claudePath, whisperPath }` to `config.json` and updates runtime vars — used by SettingsPanel |
+| renderer → main | `browse-for-binary` | Opens macOS file picker (openFile); returns `{ path }` or `{ path: null }` — used by SettingsPanel |
+| renderer → main | `recheck-paths` | Reruns `resolveClaudePath` + `resolveWhisperPath`; returns `{ claude: { ok, path }, whisper: { ok, path } }` |
 
 ---
 
@@ -326,14 +354,13 @@ Check with the human before doing any of the following:
 
 The following are P0 review findings — they block phase gates:
 
-- [ ] Adding runtime npm dependencies (zero runtime deps is a hard constraint)
+- [ ] Adding runtime npm dependencies — zero runtime deps in the packaged .app is a hard constraint (React, Vite, Tailwind are devDeps that are compiled out; new runtime deps require a DECISIONS.md entry)
 - [ ] Using `nodeIntegration: true` — always use contextBridge/preload instead
-- [ ] Using `innerHTML` with any user-provided or Claude-generated text — use `textContent`
+- [ ] Using `dangerouslySetInnerHTML` with any user-provided or Claude-generated text — use JSX text nodes
 - [ ] Calling `exec('claude ...')` without the cached login-shell-resolved path
 - [ ] Storing any sensitive data (API keys, tokens) — Claude CLI handles auth, nothing in app
-- [ ] Accessing `localStorage` directly outside `getMode()` / `setMode()` wrappers
-- [ ] Introducing a framework, build step, or bundler (Vite, Webpack, React, etc.)
-- [ ] Mutating `originalTranscript` after it is captured — regenerate must always use original
+- [ ] Accessing `localStorage` directly outside the hook wrappers (`useMode`, `useTone`, `utils/history.js`)
+- [ ] Mutating `originalTranscript.current` after it is captured in `stopRecording` — regenerate must always use original
   > Exception: FEATURE-012 iteration flow — `originalTranscript.current = iterText` is set deliberately after a successful iteration so "You said" and Regenerate reflect the user's latest input. See DECISIONS.md D-ITER-003.
 
 ---

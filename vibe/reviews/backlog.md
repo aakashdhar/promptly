@@ -162,30 +162,47 @@
 |----|------|------|---------|--------|
 | ~~BL-038~~ | main.js | 1040 | `window-all-closed` checks `!tray` (always null) instead of `!menuBarTray` — app quits on forced window close instead of staying alive in menu bar | ✅ resolved — fix(main) a1ee6e9 |
 | ~~BL-031~~ | package.json (devDep) | — | @xmldom/xmldom HIGH severity — DoS + XML injection; `npm audit fix` resolves without breaking changes | ✅ resolved — fix(deps) 13e214d |
-| BL-033 | src/renderer/App.jsx | 1-653 | SRP — 653 lines, 8+ concerns; extract useKeyboardShortcuts + useRecording hooks | ⬜ open (carryover) |
+| ~~BL-033~~ | src/renderer/App.jsx | 1-653 | SRP — 653 lines, 8+ concerns; extract useKeyboardShortcuts + useRecording hooks | ✅ resolved — refactor(app) ed3f9b5 · App.jsx now 470 lines |
 
 ### Outstanding P2 — Fix before deploy (lower priority)
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-039 | src/renderer/App.jsx | 242-256 | `openHistory`/`closeHistory` bypass `transition()` — call `setCurrentState()` directly; `updateMenuBarState()` never fires for HISTORY transitions | ⬜ open (NEW) |
-| BL-040 | src/renderer/App.jsx | 150-321 | 9-line polish/non-polish branch duplicated 3× in stopRecording, handleTypingSubmit, handleRegenerate; extract `handleGenerateResult()` helper | ⬜ open (NEW) |
-| BL-041 | vibe/ARCHITECTURE.md | IPC table | Missing 4 channels (show-tone-menu, tone-selected, check-mic-status, open-settings); stale 2 channels (show-language-menu, language-selected — F-LANGUAGE removed) | ⬜ open (NEW) |
-| BL-042 | vibe/ARCHITECTURE.md | State machine | States count says "9 total" — actual is 11; TYPING + SETTINGS states/transitions not listed | ⬜ open (NEW) |
-| BL-043 | vibe/ARCHITECTURE.md | Never list | "Introducing a framework, bundler, or build step (Vite, Webpack, React, etc.)" contradicts the now-mainlined React migration | ⬜ open (NEW) |
-| BL-044 | vibe/ARCHITECTURE.md + CODEBASE.md | — | SettingsPanel.jsx (PCFG-003, 128 lines) and SETTINGS state absent from both architecture docs | ⬜ open (NEW) |
-| BL-045 | vibe/CODEBASE.md | IPC table | show-language-menu / language-selected shown as ✅ registered but not present in code (F-LANGUAGE removed) | ⬜ open (NEW) |
-| BL-046 | vibe/CODEBASE.md | State machine table | STATE_HEIGHTS.TYPING listed as 220px; App.jsx:43 is 244 | ⬜ open (NEW) |
+| BL-039 | src/renderer/App.jsx | 159-173 | `openHistory`/`closeHistory` bypass `transition()` — `updateMenuBarState()` never fires for HISTORY transitions | ⬜ open |
+| ~~BL-040~~ | src/renderer/App.jsx | 150-321 | 9-line polish/non-polish branch duplicated 3× — extract `handleGenerateResult()` helper | ✅ resolved — handleGenerateResult useCallback + onGenerateResult ref pattern |
+| ~~BL-041~~ | vibe/ARCHITECTURE.md | IPC table | Missing channels — 4 named were already present; added 8 more missing (show-shortcuts, shortcut-pause, update-menubar-state, uninstall-promptly, get-stored-paths, save-paths, browse-for-binary, recheck-paths) | ✅ resolved — docs(ARCHITECTURE+CODEBASE) 2026-04-24 |
+| ~~BL-042~~ | vibe/ARCHITECTURE.md | State machine | States count "9 total" / TYPING+SETTINGS missing | ✅ resolved — already correct in file (11 total, TYPING+SETTINGS listed) |
+| ~~BL-043~~ | vibe/ARCHITECTURE.md | Folder structure + Never list | Folder structure referenced old index.html single-file structure; Never list had duplicate + contradicted React | ✅ resolved — docs(ARCHITECTURE) 2026-04-24 |
+| ~~BL-044~~ | vibe/ARCHITECTURE.md + CODEBASE.md | — | SettingsPanel.jsx and SETTINGS state absent | ✅ resolved — already correct in both files |
+| ~~BL-045~~ | vibe/CODEBASE.md | DOM IDs | Stale language-pill DOM ID entry (F-LANGUAGE removed) | ✅ resolved — docs(CODEBASE) 2026-04-24 |
+| ~~BL-046~~ | vibe/CODEBASE.md | State machine table | TYPING height 220px vs actual 244 | ✅ resolved — already correct in file (244–320px) |
 
 ### Outstanding P3
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-047 | main.js | 4 | Intentional `console.error` in uncaughtException handler triggers no-console lint warning; add `// eslint-disable-next-line no-console` | ⬜ open (NEW) |
-| BL-048 | main.js | 736, 779 | `const { spawn } = require('child_process')` inside handlers; add to top-level destructure at line 11 | ⬜ open (NEW) |
-| BL-049 | src/renderer/App.jsx | 576 | `onDismiss={(target) => {...}}` — `target` unused; change to `onDismiss={() => ...}` | ⬜ open (NEW) |
-| BL-050 | preload.js | 25-101 | `ipcRenderer.on()` listeners return no cleanup; App never unmounts so not a functional bug, but each `on*` should return `() => ipcRenderer.removeListener(...)` for correctness | ⬜ open (NEW) |
-| BL-051 | vibe/TASKS.md | 253-256 | BUG-017 entry duplicated twice | ⬜ open (NEW) |
+| ~~BL-047~~ | main.js | 4 | Intentional `console.error` in uncaughtException handler triggers no-console lint warning | ✅ resolved — 0 warnings in final lint run |
+| ~~BL-048~~ | main.js | 736, 779 | `const { spawn } = require('child_process')` inside handlers | ✅ resolved — spawn in top-level destructure at line 12 |
+| BL-051 | vibe/TASKS.md | 253-256 | BUG-017 entry duplicated twice | ⬜ open |
+
+---
+
+## From Final Review (2026-04-24)
+
+### Outstanding P2 — Fix before deploy (lower priority)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-052~~ | src/renderer/App.jsx | 394 | TypingState "Switch to voice" silently broken — `onDismiss('voice')` arg discarded; user lands in IDLE not RECORDING | ✅ by design — IDLE landing is intentional; gives user chance to switch mode before recording starts |
+| BL-053 | src/renderer/App.jsx | 317 | `onThemeChanged` IPC listener registered in useEffect with no cleanup return — leak on hot-reload. Fix: store unsub and return from useEffect | ⬜ open (NEW) |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-054 | src/renderer/components/HistoryPanel.jsx | 83 | `navigator.clipboard.writeText()` bypasses `electronAPI.copyToClipboard()` IPC — minor pattern inconsistency | ⬜ open (NEW) |
+| BL-055 | src/renderer/index.html | — | No CSP meta tag in Vite HTML entry | ⬜ open (NEW) |
+| BL-056 | package.json | 27 | `canvas` devDependency (`^3.2.3`) — no import found anywhere in codebase; likely unused | ⬜ open (NEW) |
 
 ---
 

@@ -7,7 +7,7 @@
 
 ## Current state
 
-**Phase:** Phase 4 in progress — FEATURE-004 React migration active on branch `feat/react-migration`
+**Phase:** All features complete — React migration mainlined, deploy gate unlocked (2026-04-24)
 **Files written:** 7 source files + eslint.config.js + 19 React renderer files
 
 ---
@@ -27,12 +27,12 @@
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording and keyboard concerns delegated to hooks. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`. Refs: `transitionRef`, `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Theme: getTheme + onThemeChanged effect. |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording and keyboard concerns delegated to hooks. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleGenerateResult()` (unified polish/non-polish result handler — called by handleTypingSubmit, handleRegenerate, and via `handleGenerateResultRef` by useRecording), `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`. Refs: `transitionRef`, `handleGenerateResultRef`, `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Theme: getTheme + onThemeChanged effect. |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useTone.js` | Polish tone localStorage wrapper — `promptly_polish_tone` key, default `'formal'` | `getPolishTone()`, `setPolishTone()`, `usePolishTone()` → `{ tone, setTone }` |
 | `src/renderer/hooks/usePolishMode.js` | Polish flow hook — owns polishResult, copied, tone state, polishToneRef, handlePolishToneChange | `parsePolishOutput(raw)` (named export), `usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })` → `{ polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
-| `src/renderer/hooks/useRecording.js` | Recording state + callbacks hook — owns mediaRecorderRef, audioChunksRef, isProcessingRef, isPausedRef, recTimerRef, recSecs. Params: `{ STATES, transitionRef, modeRef, polishToneRef, setThinkTranscript, setGeneratedPrompt, setPolishResult, isIterated, originalTranscript }` | Returns: `{ recSecs, startRecording, stopRecording, handleDismiss, pauseRecording, resumeRecording, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, startTimer, stopTimer }` |
+| `src/renderer/hooks/useRecording.js` | Recording state + callbacks hook — owns mediaRecorderRef, audioChunksRef, isProcessingRef, isPausedRef, recTimerRef, recSecs. Params: `{ STATES, transitionRef, modeRef, polishToneRef, setThinkTranscript, onGenerateResult, isIterated, originalTranscript }` — `onGenerateResult` is a ref to App.jsx's `handleGenerateResult(genResult, transcript)` callback (replaces old `setGeneratedPrompt` + `setPolishResult` params) | Returns: `{ recSecs, startRecording, stopRecording, handleDismiss, pauseRecording, resumeRecording, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, startTimer, stopTimer }` |
 | `src/renderer/hooks/useKeyboardShortcuts.js` | IPC shortcut listeners + keydown handler hook. Params: `{ STATES, stateRef, prevStateRef, generatedPromptRef, modeRef, transitionRef, setMode, setPolishToneValue, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, openHistory, closeHistory, openSettings, closeSettings }` | Returns nothing (side-effects only) |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
@@ -46,6 +46,7 @@
 | `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, direct .md export (handleExport), ⌘E via export-prompt event | `renderPromptOutput()`, `handleExport()` |
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
 | `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button (returns to prevState). px-[28px] padding, WebkitAppRegion: no-drag | — |
+| `src/renderer/components/SettingsPanel.jsx` | SETTINGS panel — path configuration UI for Claude + Whisper binary paths; browse (file picker), recheck (re-resolve), save; 128 lines, all styles inline | props: `onClose` |
 | `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime` |
 | `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px scrollable list with search + per-entry delete, right flex:1 scrollable prompt detail with copy + reuse actions | props: `onClose`, `onReuse` |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
@@ -76,8 +77,6 @@
 | `mode-selected` | main → renderer | ✅ registered — sent from show-mode-menu click handler with mode key |
 | `get-theme` | renderer → main | ✅ registered — returns { dark: boolean } for current macOS appearance |
 | `theme-changed` | main → renderer | ✅ registered — sent by nativeTheme.on('updated') with { dark: boolean } |
-| `show-language-menu` | renderer → main | ✅ registered — builds native radio menu from passed languages array, sends `language-selected` to renderer on click |
-| `language-selected` | main → renderer | ✅ sent from show-language-menu click handler with language code |
 | `show-shortcuts` | main → renderer | ✅ registered — sent by CommandOrControl+Shift+/ global shortcut or "Keyboard shortcuts ⌘?" context menu item |
 | `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut; wired in App.jsx via onShortcutPause — toggles pause/resume |
 | `save-file` | renderer → main | ✅ registered — dialog.showSaveDialog + fs.writeFileSync; returns `{ ok, filePath }` or `{ ok: false }` |
@@ -108,12 +107,13 @@
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
 | `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
 | `ITERATING` | IteratingState | 200px | Blue context banner + blue waveform + timer + blue stop; traffic lights hidden; separate iter MediaRecorder from main recording |
-| `TYPING` | TypingState | 220–320px | h-[28px] traffic light spacer; textarea + submit button; dynamic height: 220 + floor(lines/4)×40, max 320; traffic lights visible |
+| `TYPING` | TypingState | 244–320px | h-[28px] traffic light spacer; textarea + submit button; dynamic height: 244 + floor(lines/4)×40, max 320; traffic lights visible |
 | `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
 | `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
 | `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
 | `HISTORY` | HistoryPanel | 720px | Split-panel history; window width 746px; setWindowSize(746,720) called atomically in openHistory; closeHistory → setWindowSize(520, IDLE height) → IDLE |
 | `SHORTCUTS` | ShortcutsPanel | 380px | 8 shortcuts with key chips; Done → previous state; triggered via ⌘? or context menu |
+| `SETTINGS` | SettingsPanel | 322px | Path configuration panel — Claude + Whisper binary paths, browse + recheck; triggered via ⌘, or tray "Path configuration..." |
 
 > Note: FIRST_RUN state removed from index.html — replaced by splash.html (D-007, FEATURE-001)
 
@@ -257,7 +257,6 @@
 | `btn-history-clear` | HISTORY | click → `clearHistory()` + re-render |
 | `history-btn` | IDLE | click → HISTORY state |
 | `btn-history` | PROMPT_READY | click → HISTORY state |
-| `language-pill` | IDLE | click → `showLanguageMenu`; label updated by `onLanguageSelected` |
 
 ---
 
