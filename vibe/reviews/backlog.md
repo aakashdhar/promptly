@@ -79,7 +79,7 @@
 | ~~BL-021~~ | index.html | 463-528 | Dead code: startMorphAnim, stopMorphAnim, module-scope morphAnimFrame never used as intended (clean up after BL-014 fix) | ✅ resolved — startMorphAnim removed; morphAnimFrame now stores inline RAF handle |
 | ~~BL-022~~ | index.html | 787 | Error message truncated to 60 chars — may hide actionable CLI errors | ✅ resolved — truncation removed |
 | ~~BL-023~~ | splash.html | 217 | inline onclick="openInstall()" — minor deviation from event-listener pattern | ✅ resolved — addEventListener added |
-| BL-024 | package.json | — | 2 low severity npm audit vulns in eslint devDep (@eslint/plugin-kit) — not in .dmg, no runtime risk. Fix: `npm audit fix --force` upgrades eslint to 9.39.4 (outside stated dep range — manual decision needed) | ⬜ open (low priority — devDep only) |
+| ~~BL-024~~ | package.json | — | 2 low severity npm audit vulns in eslint devDep (@eslint/plugin-kit) | ✅ resolved — `npm audit` returns 0 vulnerabilities (resolved as part of BL-031 fix) |
 
 ---
 

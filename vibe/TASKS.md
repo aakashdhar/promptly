@@ -334,6 +334,5 @@
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
 → Full report: vibe/reviews/final-review-2026-04-24.md · Score: 8.2/10 — Grade B
 
-## Remaining open item
-⬜ BL-024 — 2 low-severity npm audit vulns in eslint devDep (@eslint/plugin-kit) — devDep only, not in .dmg.
-              Fix requires `npm audit fix --force` which upgrades ESLint outside stated dep range — manual decision needed.
+## Remaining open items
+✅ BL-024 — npm audit 0 vulnerabilities — resolved as part of BL-031 fix. Backlog fully clear.
