@@ -242,6 +242,35 @@ export default function HistoryPanel({ onClose, onReuse }) {
             })}
           </div>
 
+          {/* Stats bar */}
+          {activeTab === 'all' && (() => {
+            const allHistory = getHistory()
+            const ratedEntries = allHistory.filter(e => e.rating)
+            const upCount = allHistory.filter(e => e.rating === 'up').length
+            const upPct = ratedEntries.length > 0 ? Math.round(upCount / ratedEntries.length * 100) : 0
+            const downPct = 100 - upPct
+            return (
+              <div style={{
+                margin:'0 12px 10px', padding:'8px 10px',
+                background:'rgba(255,255,255,0.03)',
+                border:'0.5px solid rgba(255,255,255,0.06)',
+                borderRadius:'8px', display:'flex',
+                justifyContent:'space-between', alignItems:'center'
+              }}>
+                <span style={{fontSize:'10px', color:'rgba(255,255,255,0.3)'}}>
+                  {allHistory.length} prompt{allHistory.length !== 1 ? 's' : ''}
+                </span>
+                {ratedEntries.length > 0 && (
+                  <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                    <span style={{fontSize:'10px', color:'rgba(100,220,130,0.7)'}}>👍 {upPct}%</span>
+                    <div style={{width:'0.5px', height:'10px', background:'rgba(255,255,255,0.1)'}}/>
+                    <span style={{fontSize:'10px', color:'rgba(255,100,90,0.65)'}}>👎 {downPct}%</span>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           {/* Entry list */}
           <div style={{flex:1, overflowY:'auto', minHeight:0}}>
             {filteredEntries.length === 0 && (
