@@ -252,9 +252,6 @@
 ✅ **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** — fixed 2026-04-23 (5/5 ✅)
    → Specs: vibe/bugs/2026-04-23-bug-017/ | DECISIONS.md D-BUG-017
 
-✅ **BUG-017 — Distribution failures: nvm PATH + Gatekeeper quarantine** — fixed 2026-04-23 (5/5 ✅)
-   → Specs: vibe/bugs/2026-04-23-bug-017/ | DECISIONS.md D-BUG-017
-
 ✅ **FEATURE-014 — Text Input (Type Prompt)** — type a prompt directly without voice (5/5 ✅)
    [x] TXT-001 · Add TYPING state + STATE_HEIGHTS.TYPING=220 to App.jsx
    [x] TXT-002 · Create TypingState.jsx — textarea, submit, dismiss, switch-to-voice, dynamic height
@@ -329,27 +326,26 @@
    → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
 
 ## What just happened
-✅ BL-033 fixed 2026-04-24 — Extracted useRecording.js (171 lines) and useKeyboardShortcuts.js (107 lines) from App.jsx. App.jsx reduced from 654 → 478 lines. Build passes, lint clean.
-
-## 🔴 Review fixes required — Full review gate (2/3 done)
-Must complete before next distribution.
-
-[x] BL-038 · P1 NEW — Fix window-all-closed: change `!tray` to `!menuBarTray` at main.js:1040
-              File: main.js:1040 · Issue: app quits on forced window close instead of staying in menu bar
-[x] BL-031 · P1 CARRYOVER — Run `npm audit fix` to resolve @xmldom/xmldom HIGH vulnerability
-              File: package.json (devDep chain) · Issue: DoS + XML injection CVEs
-[x] BL-033 · P1 CARRYOVER — Extract useKeyboardShortcuts + useRecording hooks from App.jsx (653 lines)
-              File: src/renderer/App.jsx · Issue: SRP violation, too many concerns in one file
-
-## Documentation cleanup (P2 — next batch commit)
-⬜ BL-039 — openHistory/closeHistory bypass transition() — check updateMenuBarState for HISTORY
-⬜ BL-041 — ARCHITECTURE.md IPC table: add 4 missing, remove 2 stale (F-LANGUAGE)
-⬜ BL-042 — ARCHITECTURE.md state machine: update to 11 states, add TYPING + SETTINGS
-⬜ BL-043 — ARCHITECTURE.md Never list: clarify "zero runtime deps", not React/Vite
-⬜ BL-044 — ARCHITECTURE.md + CODEBASE.md: document SettingsPanel + SETTINGS state
-⬜ BL-045 — CODEBASE.md IPC table: remove stale show-language-menu / language-selected rows
-⬜ BL-046 — CODEBASE.md: fix TYPING height 220 → 244
+✅ Final review gate passed 2026-04-24 — 0 P0, 0 P1. All three blocking P1 issues resolved (BL-038, BL-031, BL-033). Deploy unlocked.
+→ Full report: vibe/reviews/final-review-2026-04-24.md · Score: 8.0/10 — Grade B
 
 ## Full review gate
-🔴 BLOCKED — 3 P1 issues above must be resolved before next distribution
-→ Fix BL-038, BL-031, BL-033 → re-run `review: final` → gate clears
+✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
+→ Full report: vibe/reviews/final-review-2026-04-24.md
+
+## Recommended before next release (P2 — non-blocking)
+⬜ P2-001 — TypingState "Switch to voice" silently ignores 'voice' arg — user lands in IDLE not RECORDING
+              File: src/renderer/App.jsx:394 · Fix: if (target === 'voice') startRecording(); else transition(STATES.IDLE)
+⬜ P2-002 — onThemeChanged IPC listener registered without cleanup (leak on hot-reload)
+              File: src/renderer/App.jsx:317 · Fix: store and return unsub from useEffect
+⬜ P2-003 (BL-039) — openHistory/closeHistory bypass transition() — updateMenuBarState never fires for HISTORY
+              File: src/renderer/App.jsx:159-173 · Fix: route through transition() or explicitly call updateMenuBarState
+⬜ P2-004 (BL-041–BL-046) — Documentation drift: ARCHITECTURE.md IPC table (4 missing, 2 stale), state count (9→11), Never list, SettingsPanel absent, CODEBASE.md stale rows + height
+
+## P3 items (optional polish)
+⬜ P3-001 — HistoryPanel uses navigator.clipboard instead of IPC (pattern inconsistency)
+              File: src/renderer/components/HistoryPanel.jsx:83
+⬜ P3-002 — No CSP meta tag in dist-renderer/index.html
+⬜ P3-003 (BL-051) — TASKS.md BUG-017 entry duplicated
+⬜ P3-004 — `canvas` devDependency appears unused (no import found)
+              File: package.json:27
