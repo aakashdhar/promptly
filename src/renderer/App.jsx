@@ -493,6 +493,10 @@ Mode: ${iterationBase.current.mode}`
         e.preventDefault()
         document.dispatchEvent(new CustomEvent('export-prompt'))
       }
+      if (meta && e.key === ',') {
+        e.preventDefault()
+        console.log('open-settings received — settings panel not yet implemented in main app')
+      }
       if (meta && e.key === ',' && stateRef.current === STATES.IDLE) {
         e.preventDefault()
         if (window.electronAPI) window.electronAPI.showModeMenu(modeRef.current)

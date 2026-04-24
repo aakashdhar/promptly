@@ -393,13 +393,6 @@ function registerShortcut() {
   globalShortcut.register('Alt+P', () => {
     winSend('shortcut-pause');
   });
-  globalShortcut.register('CommandOrControl+,', () => {
-    if (win && !win.isDestroyed()) {
-      win.show();
-      win.focus();
-      winSend('open-settings');
-    }
-  });
 }
 
 function createWindow() {
