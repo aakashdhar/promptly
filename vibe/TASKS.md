@@ -345,7 +345,7 @@
    Estimated: approx. 14-18 hours (S: 4, M: 4)
    [x] HSTV2-001 · history.js utility functions — bookmarkHistoryItem + rateHistoryItem added
    [x] HSTV2-002 · Tab switcher — All / Saved tabs in HistoryPanel.jsx
-   [ ] HSTV2-003 · Filter chips — All, 👍, 👎, Unrated filter row
+   [x] HSTV2-003 · Filter chips — All, 👍, 👎, Unrated filter row
    [ ] HSTV2-004 · Stats bar — prompt count + rating percentages
    [ ] HSTV2-005 · Bookmark toggle — Save button in right panel + hover-only delete
    [ ] HSTV2-006 · Rating section — thumbs up/down + tag chips
@@ -355,10 +355,8 @@
    → Full specs: vibe/features/2026-04-24-history-v2/FEATURE_TASKS.md (agent use)
 
 ## What just happened
-✅ FEATURE-018 complete 2026-04-24 — "Copy last prompt" in menubar right-click, green dot flash ~1200ms, no window open.
-   buildTrayMenu() shared helper eliminates duplicate inline menu templates.
 ✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
-🔄 FEATURE-020 in progress — HSTV2-002 done (tab switcher All/Saved, bookmarkHistoryItem imported); HSTV2-003 next.
+🔄 FEATURE-020 in progress — HSTV2-003 done (filter chips All/👍/👎/Unrated, filteredEntries derivation); HSTV2-004 next.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24

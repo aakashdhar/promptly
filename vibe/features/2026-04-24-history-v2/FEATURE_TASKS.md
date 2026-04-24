@@ -163,7 +163,7 @@ Use `tabFiltered` (not `entries`) in the entry map render. Also add empty state 
 ---
 
 ### HSTV2-003 · Filter chips
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#filter-chips
 - **Dependencies**: HSTV2-002
@@ -222,13 +222,13 @@ const filteredEntries = tabFiltered.filter(e => {
 Use `filteredEntries` in the entry map render (replacing `tabFiltered`).
 
 **Acceptance criteria**:
-- [ ] Filter chips render: All, 👍, 👎, Unrated
-- [ ] All chip is active by default with correct styles
-- [ ] Clicking a chip sets it active with correct colour styling
-- [ ] 👍 chip active: green background/border/text
-- [ ] 👎 chip active: red background/border/text
-- [ ] Filter correctly shows only rated-up / rated-down / unrated entries
-- [ ] filteredEntries is used in the entry list render
+- [x] Filter chips render: All, 👍, 👎, Unrated
+- [x] All chip is active by default with correct styles
+- [x] Clicking a chip sets it active with correct colour styling
+- [x] 👍 chip active: green background/border/text
+- [x] 👎 chip active: red background/border/text
+- [x] Filter correctly shows only rated-up / rated-down / unrated entries
+- [x] filteredEntries is used in the entry list render
 
 **Self-verify**: Re-read FEATURE_SPEC.md#filter-chips. Tick every criterion.
 **Test requirement**: Manual — rate entries, switch filters, confirm list updates in real time.
