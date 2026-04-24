@@ -623,6 +623,8 @@ if (!gotTheLock) {
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
 
+Menu.setApplicationMenu(null);
+
 app.whenReady().then(async () => {
   // setPermissionCheckHandler: Chromium asks "do I already have this permission?" before
   // opening any stream. Returning true for 'media' tells Chromium it's already granted —
