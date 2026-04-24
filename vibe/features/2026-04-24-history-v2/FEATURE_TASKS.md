@@ -243,7 +243,7 @@ Use `filteredEntries` in the entry map render (replacing `tabFiltered`).
 ---
 
 ### HSTV2-004 · Stats bar
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#stats-bar
 - **Dependencies**: HSTV2-003
@@ -285,13 +285,13 @@ const downPct = 100 - upPct
 ```
 
 **Acceptance criteria**:
-- [ ] Stats bar renders below filter chips on All tab
-- [ ] Shows correct total prompt count from full history (not search-filtered count)
-- [ ] Shows 👍 and 👎 percentages when at least 1 rated prompt exists
-- [ ] Percentages reflect full history — do not change when search is active
-- [ ] Percentages sum to 100%
-- [ ] Rating percentages hidden when no rated prompts (count only)
-- [ ] Stats bar not rendered on Saved tab
+- [x] Stats bar renders below filter chips on All tab
+- [x] Shows correct total prompt count from full history (not search-filtered count)
+- [x] Shows 👍 and 👎 percentages when at least 1 rated prompt exists
+- [x] Percentages reflect full history — do not change when search is active
+- [x] Percentages sum to 100%
+- [x] Rating percentages hidden when no rated prompts (count only)
+- [x] Stats bar not rendered on Saved tab
 
 **Self-verify**: Re-read FEATURE_SPEC.md#stats-bar. Tick every criterion.
 **Test requirement**: Manual — type a search query, confirm stats bar count doesn't change.
