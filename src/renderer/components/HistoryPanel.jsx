@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime } from '../utils/history'
+import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime, bookmarkHistoryItem } from '../utils/history'
 
 function renderPromptSections(prompt) {
   if (!prompt) return null
@@ -52,6 +52,8 @@ export default function HistoryPanel({ onClose, onReuse }) {
   const [copied, setCopied] = useState(false)
   const [clearHovered, setClearHovered] = useState(false)
   const [doneHovered, setDoneHovered] = useState(false)
+  const [activeTab, setActiveTab] = useState('all')
+  const [activeFilter, setActiveFilter] = useState('all')
 
   function handleSearch(e) {
     setQuery(e.target.value)
@@ -84,6 +86,10 @@ export default function HistoryPanel({ onClose, onReuse }) {
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
   }
+
+  const tabFiltered = activeTab === 'saved'
+    ? entries.filter(e => e.bookmarked)
+    : entries
 
   return (
     <div style={{
@@ -158,18 +164,58 @@ export default function HistoryPanel({ onClose, onReuse }) {
             )}
           </div>
 
+          {/* Tab switcher */}
+          <div style={{display:'flex', padding:'12px 12px 0', gap:'4px'}}>
+            {['all', 'saved'].map(tab => {
+              const isActive = activeTab === tab
+              const isSaved = tab === 'saved'
+              return (
+                <div
+                  key={tab}
+                  onClick={() => { setActiveTab(tab); setActiveFilter('all') }}
+                  style={{
+                    flex:1, height:'28px', borderRadius:'8px', cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:'4px',
+                    background: isActive
+                      ? (isSaved ? 'rgba(255,189,46,0.12)' : 'rgba(10,132,255,0.12)')
+                      : 'rgba(255,255,255,0.04)',
+                    border: `0.5px solid ${isActive
+                      ? (isSaved ? 'rgba(255,189,46,0.28)' : 'rgba(10,132,255,0.25)')
+                      : 'rgba(255,255,255,0.08)'}`
+                  }}>
+                  {isSaved && (
+                    <svg width="10" height="12" viewBox="0 0 10 13" fill="none">
+                      <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z"
+                        fill={isActive ? 'rgba(255,189,46,0.85)' : 'none'}
+                        stroke={isActive ? 'rgba(255,189,46,0.85)' : 'rgba(255,255,255,0.3)'}
+                        strokeWidth="1.2" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  <span style={{
+                    fontSize:'11px',
+                    fontWeight: isActive ? 500 : 400,
+                    color: isActive
+                      ? (isSaved ? 'rgba(255,189,46,0.9)' : 'rgba(100,180,255,0.9)')
+                      : 'rgba(255,255,255,0.35)'
+                  }}>
+                    {tab === 'all' ? 'All' : 'Saved'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
           {/* Entry list */}
           <div style={{flex:1, overflowY:'auto', minHeight:0}}>
-            {entries.length === 0 && (
+            {tabFiltered.length === 0 && (
               <div style={{
                 padding:'40px 20px', textAlign:'center',
-                // POLISH-009: 0.25 → 0.55
                 fontSize:'12px', color:'rgba(255,255,255,0.55)'
               }}>
-                {query ? 'No results found' : 'No history yet'}
+                {activeTab === 'saved' ? 'No saved prompts yet' : (query ? 'No results found' : 'No history yet')}
               </div>
             )}
-            {entries.map(entry => {
+            {tabFiltered.map(entry => {
               const isSelected = selected?.id === entry.id
               const isPolish = entry.mode === 'polish'
               return (
