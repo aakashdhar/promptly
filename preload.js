@@ -83,4 +83,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   triggerUninstall: () =>
     ipcRenderer.invoke('uninstall-promptly'),
+
+  getStoredPaths: () =>
+    ipcRenderer.invoke('get-stored-paths'),
+
+  savePaths: (paths) =>
+    ipcRenderer.invoke('save-paths', paths),
+
+  browseForBinary: () =>
+    ipcRenderer.invoke('browse-for-binary'),
+
+  recheckPaths: () =>
+    ipcRenderer.invoke('recheck-paths'),
+
+  onOpenSettings: (cb) =>
+    ipcRenderer.on('open-settings', () => cb()),
 });

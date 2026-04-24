@@ -10,6 +10,14 @@ const os = require('os');
 const fs = require('fs');
 const { exec } = require('child_process');
 
+const configPath = path.join(app.getPath('userData'), 'config.json');
+function readConfig() {
+  try { return JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch { return {}; }
+}
+function writeConfig(data) {
+  fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
+}
+
 const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 
@@ -243,6 +251,10 @@ function createTray() {
 }
 
 async function resolveClaudePath() {
+  const stored = readConfig().claudePath;
+  if (stored && stored.trim()) {
+    try { if (fs.existsSync(stored.trim())) return stored.trim(); } catch { /* ignore */ }
+  }
   const home = os.homedir();
   const commonPaths = [
     '/usr/local/bin/claude',
@@ -293,6 +305,10 @@ function resolveShimToRealBinary(shimPath) {
 }
 
 async function resolveWhisperPath() {
+  const stored = readConfig().whisperPath;
+  if (stored && stored.trim()) {
+    try { if (fs.existsSync(stored.trim())) return stored.trim(); } catch { /* ignore */ }
+  }
   const commonPaths = [
     '/usr/local/bin/whisper',
     '/usr/bin/whisper',
@@ -771,6 +787,41 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('uninstall-promptly', () => handleUninstall());
+
+  ipcMain.handle('get-stored-paths', () => {
+    const config = readConfig();
+    return {
+      claudePath: claudePath || config.claudePath || '',
+      whisperPath: whisperPath || config.whisperPath || '',
+    };
+  });
+
+  ipcMain.handle('save-paths', async (_event, { claudePath: cp, whisperPath: wp }) => {
+    const config = readConfig();
+    if (cp && cp.trim()) { config.claudePath = cp.trim(); claudePath = cp.trim(); }
+    if (wp && wp.trim()) { config.whisperPath = wp.trim(); whisperPath = wp.trim(); }
+    writeConfig(config);
+    return { ok: true };
+  });
+
+  ipcMain.handle('browse-for-binary', async () => {
+    const target = (splashWin && !splashWin.isDestroyed()) ? splashWin : win;
+    const { canceled, filePaths } = await dialog.showOpenDialog(target, {
+      properties: ['openFile'],
+      message: 'Select the binary file',
+    });
+    if (canceled || !filePaths.length) return { path: null };
+    return { path: filePaths[0] };
+  });
+
+  ipcMain.handle('recheck-paths', async () => {
+    claudePath = await resolveClaudePath();
+    whisperPath = await resolveWhisperPath();
+    return {
+      claude: { ok: !!claudePath, path: claudePath },
+      whisper: { ok: !!whisperPath, path: whisperPath },
+    };
+  });
 });
 
 app.on('will-quit', () => {
