@@ -442,7 +442,7 @@ This gives a clean, non-overlapping UX.
 ---
 
 ### HSTV2-006 · Rating section
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#rating-section
 - **Dependencies**: HSTV2-005
@@ -549,20 +549,20 @@ Rating section JSX — add between prompt content scroll area and action buttons
 ```
 
 **Acceptance criteria**:
-- [ ] `rateHistoryItem` imported from utils/history
-- [ ] POSITIVE_TAGS and ALL_TAGS constants defined at module level
-- [ ] Rating section renders below prompt content, above action buttons
-- [ ] "RATE THIS PROMPT" label in uppercase, correct font-size and color
-- [ ] 👍 button: inactive state correct; active state green highlight
-- [ ] 👎 button: inactive state correct; active state red highlight
-- [ ] Tapping active thumb a second time toggles rating off (null)
-- [ ] Tapping opposite thumb switches rating + clears tag
-- [ ] Tag chips appear only when a rating is selected
-- [ ] Correct tags show: Perfect, Clear, Detailed, Too long
-- [ ] Active tag highlighted in correct colour (green for positive, red for "Too long")
-- [ ] Tapping active tag deselects it (sets ratingTag to null)
-- [ ] Single-select: only one tag active at a time
-- [ ] Rating + tag state persists (checked by closing/reopening history)
+- [x] `rateHistoryItem` imported from utils/history
+- [x] POSITIVE_TAGS and ALL_TAGS constants defined at module level
+- [x] Rating section renders below prompt content, above action buttons
+- [x] "RATE THIS PROMPT" label in uppercase, correct font-size and color
+- [x] 👍 button: inactive state correct; active state green highlight
+- [x] 👎 button: inactive state correct; active state red highlight
+- [x] Tapping active thumb a second time toggles rating off (null)
+- [x] Tapping opposite thumb switches rating + clears tag
+- [x] Tag chips appear only when a rating is selected
+- [x] Correct tags show: Perfect, Clear, Detailed, Too long
+- [x] Active tag highlighted in correct colour (green for positive, red for "Too long")
+- [x] Tapping active tag deselects it (sets ratingTag to null)
+- [x] Single-select: only one tag active at a time
+- [x] Rating + tag state persists (checked by closing/reopening history)
 
 **Self-verify**: Re-read FEATURE_SPEC.md#rating-section. Tick every criterion.
 **Test requirement**: Manual — rate a prompt, select a tag, close and reopen history, confirm rating persists.
