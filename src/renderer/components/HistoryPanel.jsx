@@ -80,7 +80,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
 
   function handleCopy() {
     if (!selected) return
-    navigator.clipboard.writeText(selected.prompt)
+    if (window.electronAPI) window.electronAPI.copyToClipboard(selected.prompt)
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
   }

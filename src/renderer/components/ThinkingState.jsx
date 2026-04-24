@@ -7,8 +7,8 @@ export default function ThinkingState({ transcript }) {
     <div id="panel-thinking" className="relative z-[1]">
       <div className="h-7 [-webkit-app-region:drag]" />
       <div className="h-20 flex items-center gap-[14px]" style={PAD}>
-        <div className="bg-[#0A84FF]/[0.10] border border-[#0A84FF]/[0.20] rounded-full text-[10px] font-medium tracking-[0.04em] flex items-center gap-[6px] flex-shrink-0" style={{padding:'7px 16px', color:'rgba(100,180,255,0.8)'}}>
-          <div className="w-[5px] h-[5px] rounded-full bg-[#0A84FF]/90 shadow-[0_0_6px_rgba(10,132,255,0.7)] animate-pulse" />
+        <div className="bg-[var(--color-blue)]/[0.10] border border-[var(--color-blue)]/[0.20] rounded-full text-[10px] font-medium tracking-[0.04em] flex items-center gap-[6px] flex-shrink-0" style={{padding:'7px 16px', color:'rgba(100,180,255,0.8)'}}>
+          <div className="w-[5px] h-[5px] rounded-full bg-[var(--color-blue)]/90 shadow-[0_0_6px_rgba(10,132,255,0.7)] animate-pulse" />
           Processing
         </div>
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}

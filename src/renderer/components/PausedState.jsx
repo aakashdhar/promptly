@@ -44,7 +44,7 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
         </div>
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] [animation:stop-glow_2s_ease-in-out_infinite]"
-          style={{ background: '#FF3B30' }}
+          style={{ background: 'var(--color-red)' }}
           onClick={onStop}
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">

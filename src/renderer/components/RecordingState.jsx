@@ -46,7 +46,7 @@ export default function RecordingState({ onStop, onDismiss, onPause, duration })
           </svg>
         </div>
         <div
-          className="w-8 h-8 rounded-full bg-[#FF3B30] border-none flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] [animation:stop-glow_2s_ease-in-out_infinite]"
+          className="w-8 h-8 rounded-full bg-[var(--color-red)] border-none flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] [animation:stop-glow_2s_ease-in-out_infinite]"
           id="stopBtn"
           onClick={onStop}
         >

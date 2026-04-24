@@ -158,17 +158,23 @@ export default function App() {
 
   function openHistory() {
     prevStateRef.current = stateRef.current
-    if (window.electronAPI) window.electronAPI.setWindowSize(746, STATE_HEIGHTS.HISTORY)
+    if (window.electronAPI) {
+      window.electronAPI.setWindowSize(746, STATE_HEIGHTS.HISTORY)
+      window.electronAPI.setWindowButtonsVisible(true)
+      window.electronAPI.updateMenuBarState?.(STATES.HISTORY)
+    }
     setCurrentState(STATES.HISTORY)
     stateRef.current = STATES.HISTORY
-    if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
     animateToState(STATES.HISTORY)
   }
   function closeHistory() {
-    if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
+    if (window.electronAPI) {
+      window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
+      window.electronAPI.setWindowButtonsVisible(true)
+      window.electronAPI.updateMenuBarState?.(STATES.IDLE)
+    }
     setCurrentState(STATES.IDLE)
     stateRef.current = STATES.IDLE
-    if (window.electronAPI) window.electronAPI.setWindowButtonsVisible(true)
     animateToState(STATES.IDLE)
   }
   function openSettings() {
@@ -314,9 +320,10 @@ Mode: ${iterationBase.current.mode}`
     window.electronAPI.getTheme().then(({ dark }) => {
       document.body.classList.toggle('light', !dark)
     })
-    window.electronAPI.onThemeChanged(({ dark }) => {
+    const unsubTheme = window.electronAPI.onThemeChanged(({ dark }) => {
       document.body.classList.toggle('light', !dark)
     })
+    return () => unsubTheme?.()
   }, [])
 
   useKeyboardShortcuts({
@@ -464,7 +471,7 @@ Mode: ${iterationBase.current.mode}`
         )}
       </div>
 
-      <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[#FF3B30]/20 to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[var(--color-red)]/20 to-transparent pointer-events-none z-10" />
     </div>
   )
 }

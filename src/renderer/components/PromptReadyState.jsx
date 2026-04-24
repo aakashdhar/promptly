@@ -153,7 +153,7 @@ export default function PromptReadyState({
           className="flex items-center text-[13px] font-medium"
           style={{ gap: '8px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em', WebkitAppRegion: 'no-drag' }}
         >
-          <span style={{ color: '#30D158', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
+          <span style={{ color: 'var(--color-green)', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
           <span>{isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
           {isIterated && (
             <span style={{

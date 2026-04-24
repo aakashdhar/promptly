@@ -8,7 +8,7 @@ export default function ErrorState({ message, onDismiss }) {
         style={{paddingLeft:32, paddingRight:32}}
         onClick={onDismiss}
       >
-        <div className="w-9 h-9 rounded-full bg-[#FF3B30]/[0.10] border border-[#FF3B30]/[0.25] flex items-center justify-center flex-shrink-0 text-[14px] [-webkit-app-region:no-drag]">
+        <div className="w-9 h-9 rounded-full bg-[var(--color-red)]/[0.10] border border-[var(--color-red)]/[0.25] flex items-center justify-center flex-shrink-0 text-[14px] [-webkit-app-region:no-drag]">
           ⚠
         </div>
         <div className="flex-1 [-webkit-app-region:no-drag]" style={{marginLeft:16}}>
