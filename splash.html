@@ -234,46 +234,44 @@ html, body {
     built using vibe-* skills
   </div>
 
-  <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:18px 22px 22px;z-index:20;flex-direction:column">
+  <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);font-family:-apple-system,sans-serif">Path configuration</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.65);font-family:-apple-system,sans-serif">Path configuration</span>
       <button id="backBtn" style="font-size:11px;color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 10px;cursor:pointer;font-family:-apple-system,sans-serif;outline:none;-webkit-app-region:no-drag">← Back</button>
     </div>
 
-    <div style="margin-bottom:16px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:6px;font-family:-apple-system,sans-serif">Claude CLI path</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,sans-serif">Claude CLI path</div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="position:relative;flex:1">
           <input id="claudePathInput" type="text" placeholder="/usr/local/bin/claude"
-            style="width:100%;height:36px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 36px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
+            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
           <div id="claudeStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
         </div>
-        <button id="browseClaudeBtn" style="height:36px;padding:0 12px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
+        <button id="browseClaudeBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
       </div>
-      <div id="claudePathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:5px;font-family:-apple-system,sans-serif;min-height:14px"></div>
+      <div id="claudePathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,sans-serif;min-height:13px"></div>
     </div>
 
-    <div style="margin-bottom:20px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:6px;font-family:-apple-system,sans-serif">Whisper path</div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,sans-serif">Whisper path</div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="position:relative;flex:1">
           <input id="whisperPathInput" type="text" placeholder="/usr/local/bin/whisper"
-            style="width:100%;height:36px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 36px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
+            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
           <div id="whisperStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
         </div>
-        <button id="browseWhisperBtn" style="height:36px;padding:0 12px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
+        <button id="browseWhisperBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
       </div>
-      <div id="whisperPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:5px;font-family:-apple-system,sans-serif;min-height:14px">Paste full path or use Browse to locate the binary</div>
+      <div id="whisperPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,sans-serif;min-height:13px">Paste full path or use Browse to locate the binary</div>
     </div>
 
-    <div style="height:0.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin-bottom:16px"></div>
+    <div style="height:0.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin-bottom:12px"></div>
 
-    <button id="saveRecheckBtn" style="width:100%;height:38px;background:linear-gradient(135deg,rgba(10,132,255,0.85),rgba(10,100,220,0.85));color:white;border:none;border-radius:10px;font-size:13px;font-weight:500;font-family:-apple-system,sans-serif;cursor:pointer;outline:none;-webkit-app-region:no-drag">
-      Save &amp; Recheck
-    </button>
+    <button id="saveRecheckBtn" style="width:100%;height:34px;background:linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9));color:rgba(255,255,255,0.92);border:0.5px solid rgba(10,132,255,0.35);border-radius:9px;font-size:12px;font-weight:500;font-family:-apple-system,sans-serif;cursor:pointer;outline:none;-webkit-app-region:no-drag;display:flex;align-items:center;justify-content:center;letter-spacing:0.01em">Save &amp; Recheck</button>
 
-    <div id="saveStatus" style="font-size:11px;text-align:center;margin-top:10px;min-height:16px;font-family:-apple-system,sans-serif"></div>
+    <div id="saveStatus" style="font-size:10.5px;text-align:center;margin-top:8px;min-height:14px;font-family:-apple-system,sans-serif;color:rgba(255,255,255,0.35)"></div>
   </div>
 </div>
 
