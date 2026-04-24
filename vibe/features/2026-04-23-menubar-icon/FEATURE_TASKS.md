@@ -5,7 +5,7 @@
 ---
 
 ### MBAR-001 · PNG helpers + createMicIcon + createMenuBarIcon in main.js
-- **Status**: `[ ]`
+- **Status**: `[x]` COMPLETE 2026-04-24
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#implementation-notes
 - **Dependencies**: None
@@ -29,12 +29,12 @@
 5. In the `splash-done` ipcMain.handle, after `createTray()`, add `createMenuBarIcon()`
 
 **Acceptance criteria**:
-- [ ] A second Tray instance appears in the macOS menu bar (distinct from system tray)
-- [ ] IDLE icon uses template image — adapts to light/dark menu bar automatically
-- [ ] HIDDEN icon shows a distinct "mic with diagonal slash" template icon
-- [ ] Dot states (recording/thinking/ready) show the mic in white or black depending on theme
-- [ ] Single click shows/hides the floating bar
-- [ ] Right click opens the existing tray context menu
+- [x] A second Tray instance appears in the macOS menu bar (distinct from system tray)
+- [x] IDLE icon uses template image — adapts to light/dark menu bar automatically
+- [x] HIDDEN icon shows a distinct "mic with diagonal slash" template icon
+- [x] Dot states (recording/thinking/ready) show the mic in white or black depending on theme
+- [x] Single click shows/hides the floating bar
+- [x] Right click opens the existing tray context menu
 
 **Self-verify**: Run `npm start`, check menu bar for mic icon.
 **Test requirement**: Manual — launch app, verify mic icon visible, click to show/hide.

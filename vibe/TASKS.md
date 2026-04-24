@@ -320,10 +320,18 @@
    [x] PCFG-008 · CODEBASE.md + DECISIONS.md + TASKS.md updated
    → Full specs: vibe/features/2026-04-23-path-config/FEATURE_TASKS.md (agent use)
 
+⬜ **FEATURE-017 — Persistent Menu Bar Icon** (1/5 in progress)
+   [x] MBAR-001 · PNG helpers (crc32, pngEncode) + createMicIcon + createMenuBarIcon — main.js. 44×44 @2x template PNG mic icon. Single tray instance replaces old createTray(). Click=show/hide, right-click=context menu.
+   [ ] MBAR-002 · update-menubar-state IPC handler — main.js
+   [ ] MBAR-003 · preload.js contextBridge exposure
+   [ ] MBAR-004 · App.jsx state transition calls
+   [ ] MBAR-005 · Docs update
+   → Full specs: vibe/features/2026-04-23-menubar-icon/FEATURE_TASKS.md
+
 ## What just happened
-✅ FEATURE-013 complete — path configuration panel shipped. Gear icon in splash opens editable path inputs with green/red live status. Save & Recheck reruns path resolution without restart. Tray "Path configuration..." + ⌘, shortcut. Paths persist via config.json in userData.
+✅ MBAR-001 complete — mic icon permanently visible in macOS menu bar. 44×44px PNG drawn with Node.js built-in zlib (zero runtime deps). Template image for idle/hidden; diagonal slash + 45% alpha for hidden state. createTray() removed — menuBarTray is the sole Tray instance. eslint.config.js updated with setInterval/clearInterval globals.
 
 ## What's next
-⬜ FEATURE-017 — Menubar icon (spec ready)
+⬜ MBAR-002 — update-menubar-state IPC: red/blue/green dot pulse during recording/thinking/ready states
 ⬜ BL-033 — Extract usePolishMode hook from App.jsx (P1 tech debt)
 ⬜ BL-031 — npm audit fix @xmldom/xmldom (P1, run: npm audit fix)

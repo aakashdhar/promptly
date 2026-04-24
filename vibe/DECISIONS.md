@@ -1095,3 +1095,18 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Why**: Team members on nvm/pyenv/volta installs hit "not found" errors on the splash with no recourse — blocks onboarding and creates support burden.
 - **Implementation**: `readConfig()`/`writeConfig()` using Node.js built-in `fs` + `app.getPath('userData')` — zero runtime npm dependencies. 4 new IPC channels: `get-stored-paths`, `save-paths`, `browse-for-binary`, `recheck-paths`. Tray menu "Path configuration..." + ⌘, shortcut send `open-settings` to renderer (console stub — full SETTINGS state deferred).
 ---
+
+### D-FEATURE-017-MBAR-001 — Menu bar icon: PNG via zlib + single Tray instance
+- **Date**: 2026-04-24 · **Task**: MBAR-001 · **Type**: tech-choice
+- **What was planned**: Second Tray instance alongside existing tray, 44×44 RGBA PNG via zlib.
+- **What was done**: Removed `createTray()` entirely — `menuBarTray` is the sole Tray instance. Context menu rebuilt inline in right-click handler. `createMicIcon()` draws 44×44 RGBA pixels with `nativeImage.createFromBuffer(buf, { scaleFactor: 2.0 })` — critical for correct 22pt display size in menu bar.
+- **Why**: Two tray icons (old dotted circle + new mic) was confusing — user couldn't tell which to use. Single icon with click=show/hide + right-click=context menu matches macOS standard pattern.
+- **Key decisions**:
+  - `scaleFactor: 2.0` required — without it the 44px PNG renders at 44 points (too large, appears invisible or clipped).
+  - `setTemplateImage(true)` on idle/hidden icons — macOS handles light/dark inversion automatically; dot-state icons are non-template with explicit white/black mic body.
+  - Hidden state = 45% alpha (115/255) + diagonal slash — satisfies both "dimmed" and "distinct" acceptance criteria.
+  - `eslint.config.js` updated to add `setInterval`/`clearInterval` globals — were missing, caused lint errors.
+  - `win.on('hide'/'show')` handlers guard with `if (!menuBarTray || menuBarTray.isDestroyed())` — menuBarTray created after splash-done, handlers registered in createWindow() earlier.
+- **Alternatives considered**: Canvas npm package — rejected (zero runtime deps constraint). Two separate tray instances — rejected by user (confusing UX).
+- **Impact on other tasks**: MBAR-002 IPC handler targets `menuBarTray` only (not `tray` which is now null).
+- **Approved by**: human
