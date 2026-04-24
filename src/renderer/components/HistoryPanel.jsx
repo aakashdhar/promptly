@@ -54,6 +54,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
   const [doneHovered, setDoneHovered] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [activeFilter, setActiveFilter] = useState('all')
+  const [hoveredEntry, setHoveredEntry] = useState(null)
 
   function handleSearch(e) {
     setQuery(e.target.value)
@@ -85,6 +86,14 @@ export default function HistoryPanel({ onClose, onReuse }) {
     if (window.electronAPI) window.electronAPI.copyToClipboard(selected.prompt)
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
+  }
+
+  function handleBookmark() {
+    if (!selected) return
+    bookmarkHistoryItem(selected.id)
+    const updated = { ...selected, bookmarked: !selected.bookmarked }
+    setSelected(updated)
+    setEntries(prev => prev.map(e => e.id === selected.id ? updated : e))
   }
 
   const tabFiltered = activeTab === 'saved'
@@ -288,6 +297,8 @@ export default function HistoryPanel({ onClose, onReuse }) {
                 <div
                   key={entry.id}
                   onClick={() => setSelected(entry)}
+                  onMouseEnter={() => setHoveredEntry(entry.id)}
+                  onMouseLeave={() => setHoveredEntry(null)}
                   style={{
                     padding:'12px 16px',
                     borderBottom:'0.5px solid rgba(255,255,255,0.05)',
@@ -335,17 +346,37 @@ export default function HistoryPanel({ onClose, onReuse }) {
                       {formatTime(entry.timestamp)}
                     </span>
                   </div>
-                  {/* Delete button — POLISH-009: 0.20 → 0.50 */}
+                  {/* Delete button — hover only */}
                   <button
                     onClick={(e) => handleDelete(entry.id, e)}
                     style={{
                       position:'absolute', top:'12px', right:'12px',
                       fontSize:'11px', color:'rgba(255,255,255,0.50)',
                       background:'none', border:'none', cursor:'pointer', padding:0,
-                      lineHeight:1
+                      lineHeight:1,
+                      opacity: hoveredEntry === entry.id ? 1 : 0,
+                      transition:'opacity 120ms ease'
                     }}>
                     ✕
                   </button>
+                  {/* Bookmark/rating indicator — shows when not hovering */}
+                  {(entry.bookmarked || entry.rating) && hoveredEntry !== entry.id && (
+                    <div style={{
+                      position:'absolute', top:'10px', right:'12px',
+                      display:'flex', gap:'4px', alignItems:'center'
+                    }}>
+                      {entry.bookmarked && (
+                        <svg width="9" height="11" viewBox="0 0 10 13" fill="rgba(255,189,46,0.8)">
+                          <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z" stroke="rgba(255,189,46,0.8)" strokeWidth="1.2" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                      {entry.rating && (
+                        <span style={{fontSize:'10px'}}>
+                          {entry.rating === 'up' ? '👍' : '👎'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -384,11 +415,35 @@ export default function HistoryPanel({ onClose, onReuse }) {
               <div style={{padding:'20px 24px 16px', flexShrink:0}}>
                 {/* POLISH-009: 0.30 → 0.60 */}
                 <div style={{
-                  fontSize:'10px', fontWeight:700, letterSpacing:'.12em',
-                  textTransform:'uppercase', color:'rgba(255,255,255,0.60)',
+                  display:'flex', justifyContent:'space-between', alignItems:'center',
                   marginBottom:'8px'
                 }}>
-                  You said
+                  <div style={{
+                    fontSize:'10px', fontWeight:700, letterSpacing:'.12em',
+                    textTransform:'uppercase', color:'rgba(255,255,255,0.60)'
+                  }}>
+                    You said
+                  </div>
+                  <button onClick={handleBookmark} style={{
+                    display:'flex', alignItems:'center', gap:'5px',
+                    padding:'3px 8px', borderRadius:'6px', cursor:'pointer',
+                    fontFamily:'inherit',
+                    background: selected.bookmarked ? 'rgba(255,189,46,0.10)' : 'rgba(255,255,255,0.04)',
+                    border: `0.5px solid ${selected.bookmarked ? 'rgba(255,189,46,0.25)' : 'rgba(255,255,255,0.08)'}`
+                  }}>
+                    <svg width="9" height="11" viewBox="0 0 10 13" fill="none">
+                      <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z"
+                        fill={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'none'}
+                        stroke={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(255,255,255,0.3)'}
+                        strokeWidth="1.2" strokeLinejoin="round"/>
+                    </svg>
+                    <span style={{
+                      fontSize:'10px', fontWeight: selected.bookmarked ? 500 : 400,
+                      color: selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(255,255,255,0.35)'
+                    }}>
+                      {selected.bookmarked ? 'Saved' : 'Save'}
+                    </span>
+                  </button>
                 </div>
                 {/* 0.60 stays above threshold */}
                 <div style={{
