@@ -98,4 +98,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onOpenSettings: (cb) =>
     ipcRenderer.on('open-settings', () => cb()),
+
+  updateMenuBarState: (state) =>
+    ipcRenderer.invoke('update-menubar-state', state),
 });

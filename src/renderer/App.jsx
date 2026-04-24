@@ -123,6 +123,7 @@ export default function App() {
         newState !== STATES.PAUSED &&
         newState !== STATES.ITERATING
       )
+      window.electronAPI.updateMenuBarState?.(newState)
     }
     animateToState(newState)
   }

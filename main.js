@@ -180,6 +180,7 @@ let tray = null;
 let isQuitting = false;
 let menuBarTray = null;
 let pulseInterval = null;
+let currentIconState = 'idle';
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -282,12 +283,12 @@ function createMicIcon(state, isDark, showDot = true) {
     }
   }
 
-  // Status dot (bottom-right corner)
+  // Status dot (top-right)
   if (showDot && state !== 'idle' && state !== 'hidden') {
     const [dr, dg, db] = state === 'recording' ? [255, 59, 48]
       : state === 'thinking' ? [10, 132, 255]
       : [52, 199, 89];
-    fillDisk(33, 33, 5, dr, dg, db, 255);
+    fillDisk(30, 9, 7, dr, dg, db, 255);
   }
 
   const img = nativeImage.createFromBuffer(pngEncode(W, H, px), { scaleFactor: 2.0 });
@@ -325,6 +326,32 @@ function createMenuBarIcon() {
     ]);
     menuBarTray.popUpContextMenu(menu);
   });
+}
+
+function updateMenuBarIcon(iconState) {
+  if (!menuBarTray || menuBarTray.isDestroyed()) return;
+  clearInterval(pulseInterval);
+  pulseInterval = null;
+  currentIconState = iconState;
+  const isDark = nativeTheme.shouldUseDarkColors;
+  const tooltips = {
+    idle:      'Promptly — ready',
+    recording: 'Promptly — recording...',
+    thinking:  'Promptly — generating...',
+    ready:     'Promptly — prompt ready',
+  };
+  menuBarTray.setToolTip(tooltips[iconState] || 'Promptly');
+  if (iconState === 'recording' || iconState === 'thinking') {
+    menuBarTray.setImage(createMicIcon(iconState, isDark, true));
+    let dotOn = true;
+    pulseInterval = setInterval(() => {
+      if (!menuBarTray || menuBarTray.isDestroyed()) { clearInterval(pulseInterval); pulseInterval = null; return; }
+      dotOn = !dotOn;
+      menuBarTray.setImage(createMicIcon(iconState, nativeTheme.shouldUseDarkColors, dotOn));
+    }, 600);
+  } else {
+    menuBarTray.setImage(createMicIcon(iconState, isDark));
+  }
 }
 
 async function handleUninstall() {
@@ -585,6 +612,7 @@ function createWindow() {
   });
   nativeTheme.on('updated', () => {
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
+    updateMenuBarIcon(currentIconState);
   });
   return win;
 }
@@ -990,6 +1018,15 @@ app.whenReady().then(async () => {
       claude: { ok: !!claudePath, path: claudePath },
       whisper: { ok: !!whisperPath, path: whisperPath },
     };
+  });
+
+  ipcMain.handle('update-menubar-state', (_event, appState) => {
+    const stateMap = {
+      IDLE: 'idle', RECORDING: 'recording', PAUSED: 'recording',
+      THINKING: 'thinking', ITERATING: 'thinking',
+      PROMPT_READY: 'ready',
+    };
+    updateMenuBarIcon(stateMap[appState] || 'idle');
   });
 });
 
