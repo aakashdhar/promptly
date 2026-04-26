@@ -1207,3 +1207,36 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **ARCHITECTURE.md update**: Yes — added isExpanded layout mode section to state management rules.
 - **Deviations from BUG_PLAN.md**: None.
 - **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-003 — ExpandedView visual polish pass
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-003 · **Type**: drift (visual spec not fully implemented)
+- **Root cause**: Several visual details from the POLISH-TOGGLE spec were not implemented in the BUG-TOGGLE-002 pass: timer was 11px instead of 13px, pause button was conditionally shown instead of always visible, no settings button in right flank, history entries used borderRadius+margin layout instead of border-bottom compact rows, SESSION HISTORY label used fontWeight 500 instead of 700, idle right panel had plain text instead of centred mic icon circle, collapse button was inside the traffic-light row div instead of position absolute in the top-bar, and the breathing ring on the idle mic button was applied as SVG animation instead of a separate border div.
+- **Files changed**: `src/renderer/components/ExpandedView.jsx` only (visual only — no logic changes)
+- **What was fixed**:
+  1. Top bar: confirmed #111113 (already correct)
+  2. Transport row: pause button always visible (amber when recording, neutral otherwise); timer font-size 13px + letter-spacing 0.06em; settings button (sliders icon) added to right flank
+  3. Idle mic button: breathing ring as separate absolutely-positioned div (border 1px rgba(255,255,255,0.06), breathe 3s keyframe); mic icon stroke changed to rgba(255,255,255,0.55)
+  4. History entries: padding 10px 16px, border-bottom 0.5px rgba(255,255,255,0.04), no borderRadius; mode tag pill with per-mode colour (blue/green/purple); title 12.5px rgba(255,255,255,0.48), active rgba(255,255,255,0.82) weight 500
+  5. SESSION HISTORY label: fontWeight 700, letterSpacing 0.12em, border-bottom 0.5px rgba(255,255,255,0.05)
+  6. Right panel idle: centred column (flex, gap 16px) — 56px mic icon circle (rgba(10,132,255,0.08) bg + blue border) + title 16px + hint 12px
+  7. Panel separator: already correct 0.5px rgba(255,255,255,0.06)
+  8. Window height: already 580 in STATE_HEIGHTS
+  9. Collapse button: moved to position absolute (top 14px, right 16px) inside top-bar div (position relative); traffic-light row is now a plain drag spacer with no children
+- **Added keyframes**: breathe (3s ease-in-out, scale 1→1.08 + opacity 0.4→1)
+- **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-004 — Waveform and skeleton visual fixes in ExpandedView
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-004 · **Type**: drift (visual spec not fully implemented)
+- **Root cause**: Five visual issues identified after BUG-TOGGLE-003: waveform canvas stretched full width (no breathing room), pixelated waveform lines due to missing devicePixelRatio scaling, line widths too thick, skeleton bars touched panel edges and lacked section grouping, pulse rings were too aggressive.
+- **Files changed**: `src/renderer/components/WaveformCanvas.jsx`, `src/renderer/components/MorphCanvas.jsx`, `src/renderer/components/ExpandedView.jsx`
+- **What was fixed**:
+  1. **Waveform containment (FIX 1)**: Waveform zone div changed to `display: flex, alignItems: center, justifyContent: center, padding: 0 20%` — both red and blue waveforms now occupy 60% centre with 20% breathing room each side. Canvas `style.width: 100%` fills the inner 60% zone.
+  2. **DPR crisp rendering (FIX 2)**: Both WaveformCanvas and MorphCanvas now read `canvas.offsetWidth` at mount, set `canvas.width = displayW * dpr`, `canvas.height = 36 * dpr`, and call `ctx.scale(dpr, dpr)`. Draw functions use display dimensions (not pixel dimensions). Removes all blocky/8-bit appearance.
+  3. **Line style (FIX 3)**: Red waveform — glow layer lineWidth 3 (was 5) at rgba(200,50,35,0.07), sharp line lineWidth 1 (was 1.5) with gradient rgba(200,50,35,0)→rgba(200,50,35,0.65)→rgba(200,50,35,0). Blue morph — same lineWidth 3/1 pattern, gradient rgba(10,132,255,0)→rgba(10,132,255,0.4)→0, amplitude max ~4px (was ~5.5px).
+  4. **Skeleton sections (FIX 4)**: Thinking state padding changed to `24px 15%`. Three skeleton sections, each with a label bar (8px, width 30%, rgba(100,170,255,0.08)) followed by two content bars (10px, borderRadius 5px, rgba(255,255,255,0.05)) at widths 88%/72%, 94%/65%, 80%/55%. Added `skeleton-pulse` keyframe (opacity 0.6→1→0.6).
+  5. **Pulse rings (FIX 5)**: Replaced `pulse-inner` / `pulse-expand` animations with single `pulse-ring` keyframe (scale 1→1.8, opacity 0.6→0). Ring 1: 1px solid rgba(200,50,35,0.3), 2.2s, no delay. Ring 2: 1px solid rgba(200,50,35,0.15), 2.2s, 0.7s delay. Max scale 1.8 (was implied >2.2).
+- **Approved by**: human

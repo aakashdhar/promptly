@@ -361,8 +361,38 @@
    [x] BUG-TOGGLE-002-005 · Update docs — CODEBASE.md + DECISIONS.md + TASKS.md + ARCHITECTURE.md
    → Specs: vibe/bugs/2026-04-26-bug-toggle-002/ | DECISIONS.md D-BUG-TOGGLE-002
 
+✅ **BUG-TOGGLE-003 — ExpandedView visual polish** (COMPLETE 2026-04-27)
+   [x] Transport row: pause button always visible (amber when recording, neutral otherwise); timer 13px; settings button (sliders icon) added to right flank
+   [x] Idle mic button: breathing ring as separate div (border, breathe 3s keyframe); mic icon rgba(255,255,255,0.55)
+   [x] History entries: compact row layout (10px padding, border-bottom); per-mode colour pills (blue/green/purple); title 12.5px
+   [x] SESSION HISTORY label: fontWeight 700, letterSpacing 0.12em, border-bottom
+   [x] Right panel idle: centred column — 56px mic icon circle + title + hint
+   [x] Collapse button: position absolute in top-bar; traffic-light row → plain drag spacer
+   → DECISIONS.md D-BUG-TOGGLE-003
+
+✅ **BUG-TOGGLE-004 — Waveform and skeleton visual fixes** (COMPLETE 2026-04-27)
+   [x] FIX 1: Waveform zone `padding: 0 20%` — both canvases contained to 60% width, centred
+   [x] FIX 2: DPR-aware canvas sizing in WaveformCanvas + MorphCanvas (offsetWidth × devicePixelRatio, ctx.scale)
+   [x] FIX 3: Red waveform glow lineWidth 3 / sharp line lineWidth 1, corrected gradient colours
+   [x] FIX 4: Blue morph lineWidth 3/1, amplitude max ~4px, gradient peak 0.4 opacity
+   [x] FIX 5: Thinking skeleton `padding: 24px 15%`, three grouped labelled sections, height 10px bars
+   [x] FIX 6: Pulse rings use `pulse-ring` keyframe (scale 1→1.8), borders softened to 1px
+   → DECISIONS.md D-BUG-TOGGLE-004
+
+✅ **ExpandedView history parity** (COMPLETE 2026-04-27)
+   [x] Search: icon → live input + `searchHistory()` → ✕ dismiss
+   [x] All / Saved tabs: filters to `entry.bookmarked`
+   [x] Filter chips: All / 👍 / 👎 / Unrated
+   [x] Stats bar: prompt count + 👍% / 👎% rating breakdown
+   [x] Iteration indicator: ↻ badge on entry row when `entry.isIteration`
+   [x] Title fallback: `entry.title || transcript.slice(0,6)` — no more blank rows
+   [x] Count footer: "X prompts · Y saved" / "X saved"
+   [x] Clear all: destructive footer button with hover state
+   → DECISIONS.md D-BUG-TOGGLE-004 (grouped with visual fixes)
+
 ## What just happened
 ✅ BUG-TOGGLE-002 complete 2026-04-26 — ExpandedIdleView.jsx (wrong generic mic screen) torn down. ExpandedView.jsx built from scratch: top transport bar, left session-history panel, right state-specific content for all states. App.jsx now renders ExpandedView for ALL states when isExpanded=true. Window 760×580. Build + lint clean.
+✅ BUG-TOGGLE-003/004 + history parity complete 2026-04-27 — ExpandedView left panel brought to full parity with HistoryPanel (search, tabs, filters, stats, ↻ badge, title fallback, clear all). Waveform canvases DPR-crisp, contained to 60% width. Pulse rings and skeleton refined.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
