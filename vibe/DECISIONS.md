@@ -1187,3 +1187,11 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: New EXPANDED state — rejected (no new state needed; PROMPT_READY is the expanded view). Width change to 760px — rejected (standard 520px window is correct for PROMPT_READY).
 - **Impact**: IdleState height 118 → 134px. Both PROMPT_READY components gain onCollapse prop. PolishReadyState outer div gains position:relative to anchor absolute collapse button.
 - **Approved by**: agent-autonomous
+
+---
+
+## 2026-04-26 — Spec review: POLISH-TOGGLE (on-demand post-build)
+> P0: 0 · P1: 4 · P2: 5
+> Action: findings logged; code already correct (build review caught what spec missed)
+> Report: vibe/spec-reviews/2026-04-26-toggle.md
+> Key lessons: (1) Every design task needs "Done when:" criteria. (2) "Zero logic changes" is too absolute — qualify as "no business logic". (3) Always spec empty-state UX for buttons that depend on async state.
