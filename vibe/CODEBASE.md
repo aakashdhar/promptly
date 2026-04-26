@@ -104,7 +104,7 @@
 
 | State | Panel ID | Height | Notes |
 |-------|----------|--------|-------|
-| `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint, ⌘? hint |
+| `IDLE` | `panel-idle` | 134px | Mode pill, shortcut hint, ⌘? hint; expand button top-right (POLISH-TOGGLE) |
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
 | `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
 | `ITERATING` | IteratingState | 200px | Blue context banner + blue waveform + timer + blue stop; traffic lights hidden; separate iter MediaRecorder from main recording |

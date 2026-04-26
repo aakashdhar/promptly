@@ -222,3 +222,21 @@
 | BL-004 | copy-to-clipboard SPEC mismatch | Backlog fix |
 | BL-005 | shortcut-conflict no fallback payload | Backlog fix |
 | BL-012 | setState guard truthiness check | Backlog fix |
+
+---
+
+## From POLISH-TOGGLE Review (2026-04-26)
+
+### Outstanding P2 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-057 | vibe/CODEBASE.md | 107 | IDLE height listed as 101px — actual STATE_HEIGHTS.IDLE is now 134px (was already wrong at 118px; this change widens the gap) | ✅ resolved — docs(CODEBASE) 2026-04-26 |
+| BL-058 | src/renderer/App.jsx | 383 | Expand button unconditionally transitions to PROMPT_READY — shows empty UI ("✓ Prompt ready" + empty content) if no prompt generated yet. Fix: hide expand when `generatedPrompt` is empty. | Open |
+| BL-059 | IdleState.jsx:22-41, PromptReadyState.jsx:147-167, PolishReadyState.jsx:11-28 | — | No hover feedback on expand/collapse buttons — inconsistent with existing button pattern (keyboard, Edit, Copy all have onMouseEnter/Leave). | Open |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-060 | src/renderer/components/PolishReadyState.jsx | 31-35 | At narrow widths, top-row tone toggle and collapse button could appear visually crowded — not a bug at 520px, noting for awareness. | Open / monitor |
