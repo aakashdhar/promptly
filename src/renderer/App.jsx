@@ -45,7 +45,7 @@ const STATE_HEIGHTS = {
   ITERATING: 200,
   TYPING: 244,
   SETTINGS: 322,
-  EXPANDED: 580,
+  EXPANDED: 860,
 }
 
 export default function App() {
@@ -118,7 +118,7 @@ export default function App() {
   function handleExpand() {
     isExpandedRef.current = true
     setIsExpanded(true)
-    if (window.electronAPI) window.electronAPI.setWindowSize(760, STATE_HEIGHTS.EXPANDED)
+    if (window.electronAPI) window.electronAPI.setWindowSize(1100, STATE_HEIGHTS.EXPANDED)
   }
 
   function handleCollapse() {
@@ -406,7 +406,7 @@ Mode: ${iterationBase.current.mode}`
             generatedPrompt={generatedPrompt}
             originalTranscript={originalTranscript.current}
             thinkTranscript={thinkTranscript}
-            onStart={() => { if (stateRef.current === STATES.IDLE) startRecording() }}
+            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY) startRecording() }}
             onCollapse={handleCollapse}
             onPause={pauseRecording}
             onStop={stopRecording}

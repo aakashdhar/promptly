@@ -58,10 +58,10 @@ function renderPromptSections(prompt, labelColor) {
     if (isLabel) {
       elements.push(
         <div key={`label-${i}`} style={{
-          fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
+          fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
           textTransform: 'uppercase',
           color: labelColor || 'rgba(100,170,255,0.7)',
-          marginBottom: '6px', marginTop: elements.length ? '14px' : 0,
+          marginBottom: '6px', marginTop: elements.length ? '18px' : 0,
           display: 'block',
         }}>
           {line.replace(':', '').trim()}
@@ -70,8 +70,8 @@ function renderPromptSections(prompt, labelColor) {
     } else {
       elements.push(
         <div key={`text-${i}`} style={{
-          fontSize: '13px', color: 'rgba(255,255,255,0.82)',
-          lineHeight: 1.75, marginBottom: '4px',
+          fontSize: '14px', color: 'rgba(255,255,255,0.82)',
+          lineHeight: 1.8, marginBottom: '4px',
         }}>
           {line}
         </div>
@@ -124,6 +124,7 @@ export default function ExpandedView({
   const [isCopied, setIsCopied] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editHovered, setEditHovered] = useState(false)
+  const [isViewingHistory, setIsViewingHistory] = useState(false)
   const promptRef = useRef(null)
   const preEditValue = useRef('')
 
@@ -131,6 +132,10 @@ export default function ExpandedView({
   useEffect(() => {
     const h = getHistory()
     setHistory(h)
+    // When a new prompt arrives or recording starts, return right panel to current state content
+    if (currentState === STATES.RECORDING || currentState === STATES.THINKING || currentState === STATES.PROMPT_READY) {
+      setIsViewingHistory(false)
+    }
   }, [currentState])
 
   useEffect(() => {
@@ -168,6 +173,7 @@ export default function ExpandedView({
   function handleEntrySelect(entry) {
     setSelected(entry)
     setEntryCopied(false)
+    setIsViewingHistory(true)
   }
 
   function handleSearch(e) {
@@ -256,7 +262,7 @@ export default function ExpandedView({
 
   const isRecording = currentState === STATES.RECORDING
   const isThinking = currentState === STATES.THINKING
-  const showEntryDetail = currentState === STATES.IDLE && selected !== null
+  const showEntryDetail = (currentState === STATES.IDLE || isViewingHistory) && selected !== null
 
   const tabFiltered = activeTab === 'saved' ? history.filter(e => e.bookmarked) : history
   const filteredEntries = tabFiltered.filter(e => {
@@ -310,8 +316,8 @@ export default function ExpandedView({
           onClick={onCollapse}
           title="Collapse"
           style={{
-            position: 'absolute', top: '14px', right: '16px',
-            width: '26px', height: '26px', borderRadius: '7px',
+            position: 'absolute', top: '16px', right: '18px',
+            width: '28px', height: '28px', borderRadius: '7px',
             background: 'rgba(255,255,255,0.05)',
             border: '0.5px solid rgba(255,255,255,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -322,7 +328,7 @@ export default function ExpandedView({
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
         >
-          <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
+          <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
             <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />
             <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />
           </svg>
@@ -332,14 +338,14 @@ export default function ExpandedView({
         <div style={{ height: '36px', WebkitAppRegion: 'drag' }} />
 
         {/* Transport row — symmetric flanking */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '0 20px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '0 20px 12px' }}>
 
           {/* Left flank: pause button + timer */}
-          <div style={{ width: '120px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+          <div style={{ width: '140px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
             <div
               onClick={onPause}
               style={{
-                width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
+                width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
                 background: pauseBtnBg,
                 border: pauseBtnBorder,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -354,7 +360,7 @@ export default function ExpandedView({
               </svg>
             </div>
             <span style={{
-              fontFamily: 'monospace', fontSize: '13px',
+              fontFamily: 'monospace', fontSize: '14px',
               color: 'rgba(255,255,255,0.4)', minWidth: '32px', textAlign: 'right',
               letterSpacing: '0.06em',
               WebkitAppRegion: 'no-drag',
@@ -383,7 +389,7 @@ export default function ExpandedView({
             )}
             {isThinking ? (
               <div style={{
-                width: '52px', height: '52px', borderRadius: '50%',
+                width: '60px', height: '60px', borderRadius: '50%',
                 background: 'rgba(255,255,255,0.06)',
                 border: '0.5px solid rgba(255,255,255,0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -403,7 +409,7 @@ export default function ExpandedView({
               <div
                 onClick={isRecording ? onStop : onStart}
                 style={{
-                  width: '52px', height: '52px', borderRadius: '50%',
+                  width: '60px', height: '60px', borderRadius: '50%',
                   background: isRecording ? 'rgba(200,50,35,0.95)' : 'rgba(255,255,255,0.06)',
                   border: isRecording ? 'none' : '0.5px solid rgba(255,255,255,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -437,11 +443,11 @@ export default function ExpandedView({
           </div>
 
           {/* Right flank: mode pill + settings button */}
-          <div style={{ width: '120px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '10px' }}>
+          <div style={{ width: '140px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '10px' }}>
             <span
               onClick={() => { if (window.electronAPI) window.electronAPI.showModeMenu(mode) }}
               style={{
-                padding: '4px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: 500,
+                padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 500,
                 background: pillBg, border: pillBorder, color: pillColor,
                 cursor: 'pointer', WebkitAppRegion: 'no-drag', whiteSpace: 'nowrap',
               }}
@@ -450,7 +456,7 @@ export default function ExpandedView({
             </span>
             <div
               style={{
-                width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
+                width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
                 background: 'rgba(255,255,255,0.06)',
                 border: '0.5px solid rgba(255,255,255,0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -472,7 +478,7 @@ export default function ExpandedView({
 
         {/* Waveform zone — 60% centre, 20% breathing room each side */}
         <div style={{
-          height: '36px', width: '100%',
+          height: '44px', width: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '0 20%', overflow: 'hidden',
         }}>
@@ -491,7 +497,7 @@ export default function ExpandedView({
 
         {/* ── ZONE 2: LEFT PANEL — session history list ── */}
         <div style={{
-          width: '228px', flexShrink: 0,
+          width: '300px', flexShrink: 0,
           background: '#0e0e0f',
           borderRight: '0.5px solid rgba(255,255,255,0.06)',
           display: 'flex', flexDirection: 'column',
@@ -499,7 +505,7 @@ export default function ExpandedView({
 
           {/* Header: label or search input */}
           <div style={{
-            padding: '12px 14px 10px', flexShrink: 0,
+            padding: '16px 18px 12px', flexShrink: 0,
             borderBottom: '0.5px solid rgba(255,255,255,0.05)',
           }}>
             {searchOpen ? (
@@ -532,7 +538,7 @@ export default function ExpandedView({
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{
-                  fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
+                  fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
                   color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase',
                 }}>
                   Session History
@@ -678,7 +684,7 @@ export default function ExpandedView({
                     onMouseEnter={() => setHoveredId(entry.id)}
                     onMouseLeave={() => setHoveredId(null)}
                     style={{
-                      padding: isActive ? '10px 16px 10px 14px' : '10px 16px',
+                      padding: isActive ? '12px 18px 12px 16px' : '12px 18px',
                       borderBottom: '0.5px solid rgba(255,255,255,0.04)',
                       borderLeft: isActive
                         ? (isEntryPolish ? '2px solid rgba(48,209,88,0.5)' : '2px solid rgba(10,132,255,0.5)')
@@ -694,7 +700,7 @@ export default function ExpandedView({
                     {/* Row 1: timestamp + iteration badge + mode tag */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.22)' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.22)' }}>
                           {ts}
                         </span>
                         {entry.isIteration && (
@@ -702,8 +708,8 @@ export default function ExpandedView({
                         )}
                       </div>
                       <span style={{
-                        fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em',
-                        textTransform: 'uppercase', padding: '1px 6px', borderRadius: '3px',
+                        fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em',
+                        textTransform: 'uppercase', padding: '2px 7px', borderRadius: '3px',
                         background: tagStyle.background, color: tagStyle.color,
                       }}>
                         {entry.mode}
@@ -711,7 +717,7 @@ export default function ExpandedView({
                     </div>
                     {/* Row 2: title */}
                     <div style={{
-                      fontSize: '12.5px',
+                      fontSize: '13.5px',
                       color: isActive ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.48)',
                       fontWeight: isActive ? 500 : 400,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -790,7 +796,7 @@ export default function ExpandedView({
           {showEntryDetail && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               {/* You said row + bookmark */}
-              <div style={{ padding: '18px 20px 14px', flexShrink: 0 }}>
+              <div style={{ padding: '22px 28px 14px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{
                     fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
@@ -823,15 +829,15 @@ export default function ExpandedView({
                     </span>
                   </button>
                 </div>
-                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>
+                <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
                   {selected.transcript}
                 </div>
               </div>
 
-              <div style={{ height: '0.5px', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', margin: '0 20px', flexShrink: 0 }} />
+              <div style={{ height: '0.5px', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', margin: '0 28px', flexShrink: 0 }} />
 
               {/* Prompt content */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px', minHeight: 0 }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '18px 28px', minHeight: 0 }}>
                 {renderPromptSections(selected.prompt, labelColor)}
                 {selected.polishChanges && selected.polishChanges.length > 0 && (
                   <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '8px' }}>
@@ -844,7 +850,7 @@ export default function ExpandedView({
               </div>
 
               {/* Rating section */}
-              <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.06)', padding: '12px 20px', flexShrink: 0 }}>
+              <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.06)', padding: '12px 28px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: selected.rating ? '10px' : 0 }}>
                   <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)' }}>
                     Rate this prompt
@@ -894,12 +900,12 @@ export default function ExpandedView({
               </div>
 
               {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '10px', padding: '12px 20px 16px', borderTop: '0.5px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', borderTop: '0.5px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
                 <button
                   onClick={handleEntryCopy}
                   style={{
-                    flex: 1, height: '36px', borderRadius: '9px',
-                    fontSize: '12px', fontFamily: 'inherit', cursor: 'pointer',
+                    flex: 1, height: '40px', borderRadius: '9px',
+                    fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer',
                     background: entryCopied ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.06)',
                     border: entryCopied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(255,255,255,0.12)',
                     color: entryCopied ? 'rgba(48,209,88,0.9)' : 'rgba(255,255,255,0.72)',
@@ -911,8 +917,8 @@ export default function ExpandedView({
                 <button
                   onClick={handleEntryReuse}
                   style={{
-                    flex: 1, height: '36px', borderRadius: '9px',
-                    fontSize: '12px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                    flex: 1, height: '40px', borderRadius: '9px',
+                    fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                     background: 'linear-gradient(135deg,rgba(10,132,255,0.92),rgba(10,100,220,0.92))',
                     border: 'none', color: 'white',
                     boxShadow: '0 2px 14px rgba(10,132,255,0.35)',
@@ -926,9 +932,9 @@ export default function ExpandedView({
 
           {/* IDLE + no history → centred prompt-to-start placeholder */}
           {currentState === STATES.IDLE && !selected && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
               <div style={{
-                width: '56px', height: '56px', borderRadius: '50%',
+                width: '68px', height: '68px', borderRadius: '50%',
                 background: 'rgba(10,132,255,0.08)', border: '1px solid rgba(10,132,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
@@ -938,10 +944,10 @@ export default function ExpandedView({
                   <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,170,255,0.7)" strokeWidth="1" strokeLinecap="round" />
                 </svg>
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
+              <div style={{ fontSize: '20px', fontWeight: 500, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
                 Speak your prompt
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>
+              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.25)' }}>
                 Press ⌥ Space or click the mic to start
               </div>
             </div>
@@ -997,9 +1003,9 @@ export default function ExpandedView({
           {currentState === STATES.PROMPT_READY && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px 12px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.82)' }}>
-                  <span style={{ color: 'var(--color-green, #30D158)', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
+                  <span style={{ color: 'var(--color-green, #30D158)', fontSize: '17px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
                   <span>Prompt ready</span>
                   {isIterated && (
                     <span style={{
@@ -1009,17 +1015,17 @@ export default function ExpandedView({
                     }}>↻ iterated</span>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: '14px' }}>
-                  <button onClick={onIterate} style={{ fontSize: '11px', color: 'rgba(10,132,255,0.85)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>
-                  <button onClick={onRegenerate} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.50)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>
-                  <button onClick={onReset} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.50)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
+                <div style={{ display: 'flex', gap: '18px' }}>
+                  <button onClick={onIterate} style={{ fontSize: '12px', color: 'rgba(10,132,255,0.85)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>
+                  <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.50)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>
+                  <button onClick={onReset} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.50)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
                 </div>
               </div>
 
-              <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 20px', flexShrink: 0 }} />
+              <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 28px', flexShrink: 0 }} />
 
               {/* Two-column prompt content */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
                 {isEditing ? (
                   <div
                     ref={promptRef}
@@ -1034,28 +1040,28 @@ export default function ExpandedView({
                     {generatedPrompt}
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
                     <div>
                       {leftSections.map((s, i) => (
-                        <div key={i} style={{ marginBottom: i < leftSections.length - 1 ? '16px' : 0 }}>
+                        <div key={i} style={{ marginBottom: i < leftSections.length - 1 ? '18px' : 0 }}>
                           {s.label && (
-                            <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: labelColor, marginBottom: '6px' }}>
+                            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: labelColor, marginBottom: '6px' }}>
                               {s.label}
                             </div>
                           )}
-                          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.75' }}>{s.body}</div>
+                          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.8' }}>{s.body}</div>
                         </div>
                       ))}
                     </div>
                     <div>
                       {rightSections.map((s, i) => (
-                        <div key={i} style={{ marginBottom: i < rightSections.length - 1 ? '16px' : 0 }}>
+                        <div key={i} style={{ marginBottom: i < rightSections.length - 1 ? '18px' : 0 }}>
                           {s.label && (
-                            <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: labelColor, marginBottom: '6px' }}>
+                            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: labelColor, marginBottom: '6px' }}>
                               {s.label}
                             </div>
                           )}
-                          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.75' }}>{s.body}</div>
+                          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.8' }}>{s.body}</div>
                         </div>
                       ))}
                     </div>
@@ -1065,18 +1071,18 @@ export default function ExpandedView({
 
               {/* Action row */}
               <div style={{ flexShrink: 0 }}>
-                <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 20px' }} />
-                <div style={{ display: 'flex', gap: '10px', padding: '12px 20px 16px', alignItems: 'center' }}>
+                <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 28px' }} />
+                <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', alignItems: 'center' }}>
                   <button
                     onClick={handleEdit}
                     onMouseEnter={() => setEditHovered(true)}
                     onMouseLeave={() => setEditHovered(false)}
                     style={{
-                      height: '36px', padding: '0 20px',
+                      height: '40px', padding: '0 20px',
                       border: editHovered ? '0.5px solid rgba(255,255,255,0.16)' : '0.5px solid rgba(255,255,255,0.1)',
                       background: editHovered ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
                       color: 'rgba(255,255,255,0.70)', borderRadius: '8px',
-                      fontSize: '12px', cursor: 'pointer', transition: 'all 150ms ease',
+                      fontSize: '13px', cursor: 'pointer', transition: 'all 150ms ease',
                     }}
                   >
                     {isEditing ? 'Save' : 'Edit'}
@@ -1085,13 +1091,13 @@ export default function ExpandedView({
                   <button
                     onClick={handleCopy}
                     style={{
-                      height: '36px', padding: '0 20px',
+                      height: '40px', padding: '0 32px',
                       border: 'none', borderTop: '0.5px solid rgba(255,255,255,0.20)',
                       background: isCopied
                         ? 'linear-gradient(135deg, rgba(48,209,88,0.85), rgba(30,168,70,0.85))'
                         : 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
                       color: 'white', borderRadius: '8px',
-                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                      fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                       boxShadow: isCopied ? '0 2px 16px rgba(48,209,88,0.35)' : '0 2px 20px rgba(10,132,255,0.4)',
                       transition: 'all 300ms ease',
                     }}
