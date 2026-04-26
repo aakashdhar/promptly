@@ -1,8 +1,9 @@
 # Toggle — Expand/Collapse between minimized bar and expanded view
 
 ## Problem
-No affordance exists to switch between the minimized bar and the expanded
-full view. Users are locked into one state with no way to toggle.
+Power users returning to a previously generated prompt have no affordance
+to switch between the minimized bar and the expanded full view. They are
+locked into one state with no way to toggle between them.
 
 ## Solution
 Two changes only:
@@ -10,13 +11,15 @@ Two changes only:
 2. Expanded view — add collapse button top-right of transport bar
 
 ## IMPORTANT CONSTRAINTS
-- Zero logic changes
+- No new business logic — no new IPC, no new hooks, no new utility functions.
+  Minimal conditional display logic based on existing React state is acceptable
+  (e.g. show/hide button or dim/enable based on `generatedPrompt`).
 - Zero IPC changes
 - Zero hook changes
 - Zero utility changes
 - Only files that may change: App.jsx (STATE_HEIGHTS + toggle handler),
-  IdleState.jsx (expand button + height), the expanded view component
-  (collapse button only)
+  IdleState.jsx (expand button + height), PromptReadyState.jsx and
+  PolishReadyState.jsx (collapse button only)
 - The minimized bar content row must look pixel-perfect identical
   to the current screenshot — mic ring, text, type button, mode pill
   all unchanged
@@ -40,9 +43,20 @@ Button spec:
   background: rgba(255,255,255,0.04)
   border: 0.5px solid rgba(255,255,255,0.09)
   display: flex, align-items: center, justify-content: center
-  cursor: pointer
-  margin-right: 2px
+  cursor: pointer (when enabled) / default (when disabled)
+  margin-right: 14px
   WebkitAppRegion: no-drag
+  transition: background 150ms, opacity 150ms
+
+Hover state (enabled only):
+  onMouseEnter: background → rgba(255,255,255,0.10)
+  onMouseLeave: background → rgba(255,255,255,0.04)
+
+Empty-state behaviour:
+  When generatedPrompt is empty: button is visible but dimmed
+    opacity: 0.35, cursor: default, non-interactive (onExpand = null)
+  When generatedPrompt is non-empty: button is active
+    opacity: 1, cursor: pointer, onClick fires transition
 
 Icon — four-corner expand arrows SVG (10x10, viewBox 0 0 12 12):
   <path d="M1 4.5V1.5A0.5 0.5 0 0 1 1.5 1H4.5" stroke="rgba(255,255,255,0.38)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -57,20 +71,23 @@ This gives the tagline proper clearance from the bottom edge.
 
 ### Traffic lights row layout change
 Current: h-[28px] w-full drag spacer div
-New: flex row, justify-content space-between, align-items center,
-     height 28px, padding 0 14px 0 0
-Left: invisible flex:1 drag area (macOS traffic lights appear here natively)
-Right: expand button (WebkitAppRegion no-drag)
+New: flex row, justify-content flex-end, align-items center,
+     height 28px, WebkitAppRegion: drag on container
+Container: no padding — spacing comes from button's margin-right: 14px
+Left: macOS traffic lights appear natively (OS-rendered, no DOM element)
+Right: expand button with margin-right: 14px (WebkitAppRegion no-drag)
 
 ### onClick behaviour
-onClick on expand button:
-  Call transition(STATES.PROMPT_READY) — pure state change, no new logic
+onClick on expand button (when generatedPrompt is non-empty):
+  Call transition(STATES.PROMPT_READY)
+  Window resizes automatically to STATE_HEIGHTS.PROMPT_READY (560px) via transition()
 
 ## Change 2 — Expanded view (PromptReadyState.jsx + PolishReadyState.jsx)
 
 ### Collapse button
 panel-ready div is already position:relative (className="relative z-[1]").
-Add a collapse button positioned absolute top-right.
+PolishReadyState outer div needs position:relative added.
+Add a collapse button positioned absolute top-right in each component.
 
 Button spec:
   position: absolute
@@ -85,6 +102,11 @@ Button spec:
   cursor: pointer
   z-index: 10
   WebkitAppRegion: no-drag
+  transition: background 150ms
+
+Hover state:
+  onMouseEnter: background → rgba(255,255,255,0.12)
+  onMouseLeave: background → rgba(255,255,255,0.05)
 
 Icon — two horizontal lines suggesting compact bar (12x10, viewBox 0 0 14 10):
   <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
@@ -92,11 +114,14 @@ Icon — two horizontal lines suggesting compact bar (12x10, viewBox 0 0 14 10):
 
 ### onClick behaviour
 onClick on collapse button:
-  Call transition(STATES.IDLE) — resize to IDLE dimensions via existing transition()
+  Call transition(STATES.IDLE)
+  Window resizes automatically to STATE_HEIGHTS.IDLE (134px) via transition()
 
 ### Zero disruption to transport layout
 The collapse button is position:absolute so it does not affect
-the flex layout of the panel at all.
+the flex layout of the panel at all. The transport remains
+perfectly centred as designed.
 
 ## Window sizing
 transition() already calls resizeWindow(STATE_HEIGHTS[newState]) — no extra calls needed.
+Expand → 560px (PROMPT_READY). Collapse → 134px (IDLE).

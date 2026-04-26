@@ -232,11 +232,29 @@
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | BL-057 | vibe/CODEBASE.md | 107 | IDLE height listed as 101px — actual STATE_HEIGHTS.IDLE is now 134px (was already wrong at 118px; this change widens the gap) | ✅ resolved — docs(CODEBASE) 2026-04-26 |
-| BL-058 | src/renderer/App.jsx | 383 | Expand button unconditionally transitions to PROMPT_READY — shows empty UI ("✓ Prompt ready" + empty content) if no prompt generated yet. Fix: hide expand when `generatedPrompt` is empty. | Open |
-| BL-059 | IdleState.jsx:22-41, PromptReadyState.jsx:147-167, PolishReadyState.jsx:11-28 | — | No hover feedback on expand/collapse buttons — inconsistent with existing button pattern (keyboard, Edit, Copy all have onMouseEnter/Leave). | Open |
+| ~~BL-058~~ | src/renderer/App.jsx | 383 | Expand button unconditionally transitions to PROMPT_READY — shows empty UI ("✓ Prompt ready" + empty content) if no prompt generated yet. Fix: hide expand when `generatedPrompt` is empty. | ✅ resolved — `onExpand={generatedPrompt ? () => transition(...) : null}` App.jsx:383 |
+| ~~BL-059~~ | IdleState.jsx:22-41, PromptReadyState.jsx:147-167, PolishReadyState.jsx:11-28 | — | No hover feedback on expand/collapse buttons — inconsistent with existing button pattern (keyboard, Edit, Copy all have onMouseEnter/Leave). | ✅ resolved — onMouseEnter/onMouseLeave added to all three buttons |
 
 ### Outstanding P3
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | BL-060 | src/renderer/components/PolishReadyState.jsx | 31-35 | At narrow widths, top-row tone toggle and collapse button could appear visually crowded — not a bug at 520px, noting for awareness. | Open / monitor |
+
+---
+
+## From POLISH-TOGGLE Spec Review (2026-04-26)
+
+### Spec P1/P2 — All resolved 2026-04-26
+
+| ID | File | Finding | Status |
+|----|------|---------|--------|
+| ~~P1-001~~ | DESIGN_TASKS.md | All 5 tasks had no acceptance criteria | ✅ resolved — "Done when:" blocks added to TOG-001/002/003/005 |
+| ~~P1-002~~ | DESIGN_TASKS.md / DESIGN_PLAN.md | TOG-004 was non-actionable ("no extra code needed") | ✅ resolved — TOG-004 removed; resize verification absorbed into TOG-003 criteria |
+| ~~P1-003~~ | DESIGN_SPEC.md | Empty-state behaviour for expand button undefined | ✅ resolved — opacity 0.35 / cursor default / onExpand null spec added |
+| ~~P1-004~~ | DESIGN_SPEC.md | "Zero logic changes" constraint too absolute | ✅ resolved — replaced with qualified constraint allowing minimal conditional display logic |
+| ~~P2-SR-001~~ | DESIGN_SPEC.md | margin-right: 2px (actual: 14px) | ✅ resolved — updated to 14px |
+| ~~P2-SR-002~~ | DESIGN_SPEC.md | Container padding 0 14px 0 0 (actual: no parent padding) | ✅ resolved — spec updated to match |
+| ~~P2-SR-003~~ | DESIGN_SPEC.md | No hover states specified | ✅ resolved — hover spec added to both buttons |
+| ~~P2-SR-004~~ | DESIGN_TASKS.md | Smoke checklist not embedded in design docs | ✅ resolved — 11-item checklist embedded in DESIGN_TASKS.md |
+| ~~P2-SR-005~~ | DESIGN_SPEC.md | No user type defined | ✅ resolved — "power users returning to a previously generated prompt" added |

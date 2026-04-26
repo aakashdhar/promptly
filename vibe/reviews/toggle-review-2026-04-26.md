@@ -187,3 +187,25 @@ Score:                          9.3 / 10 — Grade A
 Three P2 findings logged to backlog. Recommended to fix P2-TOG-002 (empty expand UX) and P2-TOG-003 (hover states) before merging to main — both are small targeted additions consistent with the existing pattern. P2-TOG-001 (CODEBASE.md height) is a 1-line doc fix.
 
 No blocking issues. Feature branch may merge to main after P2 fixes if desired, or ship as-is.
+
+---
+
+## Post-Review Fixes (applied immediately — all confirmed)
+
+| Item | Finding | Resolution |
+|------|---------|-----------|
+| P2-TOG-001 / BL-057 | CODEBASE.md IDLE height 101px stale | ✅ Updated to 134px — `vibe/CODEBASE.md:107` |
+| P2-TOG-002 / BL-058 | Expand button shows empty PROMPT_READY | ✅ `onExpand` conditioned on `generatedPrompt` — dims + disabled when empty, `App.jsx:383` |
+| P2-TOG-003 / BL-059 | No hover feedback on buttons | ✅ `onMouseEnter`/`onMouseLeave` + `transition: 'background 150ms'` added to all three buttons |
+
+**Updated score (post-fix):**
+```
+Start:                         10.0
+P0:                             0.0
+P1:                             0.0
+P2:                             0.0   (all 3 resolved)
+P3 (× 0.1 each):              -0.1   (BL-060 — visual crowding awareness, monitor only)
+Architecture drift:             0.0
+──────────────────────────────
+Updated score:                  9.9 / 10 — Grade A
+```

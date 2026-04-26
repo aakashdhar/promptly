@@ -11,10 +11,8 @@ TOG-002 (S) — App.jsx: increase STATE_HEIGHTS.IDLE from 118 to 134,
 TOG-003 (S) — PromptReadyState.jsx + PolishReadyState.jsx: add collapse button
   absolute top:14px right:16px, onCollapse prop that returns to IDLE
 
-TOG-004 (S) — verify window resize fires correctly on both transitions
-  (transition() already calls resizeWindow — no extra code needed)
-
-TOG-005 (S) — lint + smoke test both directions, verify content row unchanged
+TOG-005 (S) — lint + smoke test both directions, verify content row unchanged,
+  verify window resize fires: expand → 560px (PROMPT_READY), collapse → 134px (IDLE)
 
 ## Files in scope
 - src/renderer/components/IdleState.jsx
