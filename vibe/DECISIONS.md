@@ -1176,3 +1176,14 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: Separate localStorage key for ratings/bookmarks — rejected (join complexity, extra reads). New IPC for rating — rejected (no main-process involvement needed).
 - **Impact**: `promptly_history` entry shape extended; `bookmarkHistoryItem` and `rateHistoryItem` exported from utils/history.js; HistoryPanel.jsx gains hoveredEntry state, handleBookmark, handleRate, handleTag handlers.
 - **Approved by**: agent-autonomous
+
+---
+
+## D-POLISH-TOGGLE — 2026-04-26 — Expand/Collapse toggle buttons
+- **Type**: tech-choice
+- **Branch**: feat/toggle-expand-collapse
+- **What was done**: Added expand button to IdleState.jsx traffic lights row (top-right, 22×22px, four-corner arrow SVG) and collapse button to PromptReadyState.jsx + PolishReadyState.jsx (top-right, 26×26px, two-bar SVG, position:absolute). STATE_HEIGHTS.IDLE increased from 118 to 134px to give bottom breathing room. Bottom tagline moved from 8px to 10px clearance. Expand → transition(STATES.PROMPT_READY); Collapse → transition(STATES.IDLE). Window resize handled automatically by existing transition().
+- **Why**: No affordance existed to toggle between minimized bar and expanded view. Pure visual change — zero logic, IPC, or hook changes.
+- **Alternatives considered**: New EXPANDED state — rejected (no new state needed; PROMPT_READY is the expanded view). Width change to 760px — rejected (standard 520px window is correct for PROMPT_READY).
+- **Impact**: IdleState height 118 → 134px. Both PROMPT_READY components gain onCollapse prop. PolishReadyState outer div gains position:relative to anchor absolute collapse button.
+- **Approved by**: agent-autonomous
