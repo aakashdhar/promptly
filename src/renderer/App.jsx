@@ -404,7 +404,6 @@ Mode: ${iterationBase.current.mode}`
             modeLabel={modeLabel}
             duration={duration}
             generatedPrompt={generatedPrompt}
-            originalTranscript={originalTranscript.current}
             thinkTranscript={thinkTranscript}
             onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY) startRecording() }}
             onCollapse={handleCollapse}
@@ -419,6 +418,7 @@ Mode: ${iterationBase.current.mode}`
             polishResult={polishResult}
             polishTone={polishTone}
             onPolishToneChange={handlePolishToneChange}
+            onOpenSettings={openSettings}
             onReuse={(entry) => {
               originalTranscript.current = entry.transcript
               setGeneratedPrompt(entry.prompt)
