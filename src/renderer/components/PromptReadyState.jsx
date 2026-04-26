@@ -156,7 +156,10 @@ export default function PromptReadyState({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', zIndex: 10,
           WebkitAppRegion: 'no-drag', padding: 0,
+          transition: 'background 150ms',
         }}
+        onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.12)'}
+        onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}
       >
         <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
           <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>

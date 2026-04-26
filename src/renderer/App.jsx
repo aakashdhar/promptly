@@ -380,7 +380,7 @@ Mode: ${iterationBase.current.mode}`
             onTypePrompt={() => transition(STATES.TYPING)}
             polishTone={polishTone}
             onPolishToneChange={setPolishToneValue}
-            onExpand={() => transition(STATES.PROMPT_READY)}
+            onExpand={generatedPrompt ? () => transition(STATES.PROMPT_READY) : null}
           />
         )}
         {displayState === STATES.RECORDING && (

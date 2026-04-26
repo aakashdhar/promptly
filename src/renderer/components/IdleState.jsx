@@ -27,10 +27,13 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
             background: 'rgba(255,255,255,0.04)',
             border: '0.5px solid rgba(255,255,255,0.09)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', marginRight: '14px',
+            cursor: onExpand ? 'pointer' : 'default', marginRight: '14px',
             WebkitAppRegion: 'no-drag', flexShrink: 0,
-            padding: 0,
+            padding: 0, opacity: onExpand ? 1 : 0.35,
+            transition: 'background 150ms, opacity 150ms',
           }}
+          onMouseEnter={e => { if (onExpand) e.currentTarget.style.background='rgba(255,255,255,0.1)' }}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
         >
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
             <path d="M1 4.5V1.5A0.5 0.5 0 0 1 1.5 1H4.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
