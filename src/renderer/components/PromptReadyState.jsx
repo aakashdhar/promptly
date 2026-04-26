@@ -63,6 +63,7 @@ export default function PromptReadyState({
   mode,
   onIterate,
   isIterated,
+  onCollapse,
 }) {
   const [isCopied, setIsCopied] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -142,6 +143,26 @@ export default function PromptReadyState({
     >
       {/* Traffic light breathing room */}
       <div className="flex-shrink-0" style={{ height: '36px' }} />
+
+      {/* Collapse button — absolute top-right, does not affect flex layout */}
+      <button
+        onClick={onCollapse}
+        title="Collapse"
+        style={{
+          position: 'absolute', top: '14px', right: '16px',
+          width: '26px', height: '26px', borderRadius: '7px',
+          background: 'rgba(255,255,255,0.05)',
+          border: '0.5px solid rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', zIndex: 10,
+          WebkitAppRegion: 'no-drag', padding: 0,
+        }}
+      >
+        <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
+          <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
+          <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
+        </svg>
+      </button>
 
       {/* TOP ROW */}
       <div

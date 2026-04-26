@@ -33,7 +33,7 @@ const STATES = {
 }
 
 const STATE_HEIGHTS = {
-  IDLE: 118,
+  IDLE: 134,
   RECORDING: 89,
   PAUSED: 89,
   THINKING: 320,
@@ -380,6 +380,7 @@ Mode: ${iterationBase.current.mode}`
             onTypePrompt={() => transition(STATES.TYPING)}
             polishTone={polishTone}
             onPolishToneChange={setPolishToneValue}
+            onExpand={() => transition(STATES.PROMPT_READY)}
           />
         )}
         {displayState === STATES.RECORDING && (
@@ -419,6 +420,7 @@ Mode: ${iterationBase.current.mode}`
             mode={mode}
             onIterate={handleIterate}
             isIterated={isIterated.current}
+            onCollapse={() => transition(STATES.IDLE)}
           />
         )}
         {displayState === STATES.PROMPT_READY && mode === 'polish' && (
@@ -435,6 +437,7 @@ Mode: ${iterationBase.current.mode}`
             }}
             copied={copied}
             onToneChange={handlePolishToneChange}
+            onCollapse={() => transition(STATES.IDLE)}
           />
         )}
         {displayState === STATES.ERROR && (
