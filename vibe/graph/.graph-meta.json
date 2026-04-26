@@ -2,29 +2,29 @@
   "version": 2,
   "project": "promptly",
   "created": "2026-04-18T13:36:46Z",
-  "last_updated": "2026-04-24T00:00:00Z",
-  "update_count": 7,
-  "update_note": "QCPY-001–004: quick-copy — buildTrayMenu helper, lastGeneratedPrompt var, set-last-prompt IPC, setLastPrompt preload method (main.js + preload.js + App.jsx). HSTV2-001: bookmarkHistoryItem + rateHistoryItem added to history.js; saveToHistory extended with polishChanges. New concepts: quick-copy (built, 4/4), history-v2 (partial, 1/9).",
+  "last_updated": "2026-04-26T00:00:00Z",
+  "update_count": 8,
+  "update_note": "HSTV2-002\u2013009 + BUG-033 + FEATURE-014/015 + path-config + uninstaller: 7 new files added (useRecording.js, useKeyboardShortcuts.js, useTone.js, usePolishMode.js, PolishReadyState.jsx, TypingState.jsx, SettingsPanel.jsx). App.jsx imports now 18 (up from 12) \u2014 god node connections 19 (was 15, worsened despite BUG-033 extraction). history-v2 concept: partial \u2192 built. 4 new concepts: text-input, polish-mode, path-config, uninstaller.",
   "mode": "incremental",
-  "files_updated_this_run": 3,
-  "inferred_to_extracted_this_run": 0,
+  "files_updated_this_run": 18,
+  "inferred_to_extracted_this_run": 5,
   "coverage": {
-    "files_indexed": 31,
-    "concepts_mapped": 17,
-    "extracted_edges": 34,
-    "inferred_edges": 12,
+    "files_indexed": 37,
+    "concepts_mapped": 25,
+    "extracted_edges": 47,
+    "inferred_edges": 8,
     "ambiguous_edges": 2,
-    "rationale_nodes": 45
+    "rationale_nodes": 52
   },
   "god_nodes": [
     {
       "file": "src/renderer/App.jsx",
-      "connections": 15,
+      "connections": 19,
       "concept": "foundation",
       "type": "react-component",
       "risk": "HIGH",
       "srp_flag": true,
-      "srp_note": "15 connections — +1 from setLastPrompt (quick-copy); consider splitting iteration logic into useIteration hook if more iteration complexity is added"
+      "srp_note": "19 connections \u2014 WORSENED from 15 despite BUG-033 extraction. 3 new components (PolishReadyState, TypingState, SettingsPanel) + 3 new hooks (usePolishMode, useRecording, useKeyboardShortcuts) added since last update. Next SRP action: extract usePolishMode logic is already done; consider useHistory hook for history state if FEATURE-021 is added."
     },
     {
       "file": "main.js",
@@ -32,15 +32,15 @@
       "concept": "foundation",
       "type": "electron-main",
       "risk": "MEDIUM",
-      "srp_note": "9 connections — +1 from set-last-prompt IPC + buildTrayMenu helper (quick-copy); still manageable"
+      "srp_note": "9 connections \u2014 stable"
     },
     {
       "file": "preload.js",
-      "connections": 5,
+      "connections": 3,
       "concept": "foundation",
       "type": "electron-preload",
       "risk": "LOW",
-      "srp_note": "+1 from setLastPrompt (quick-copy)"
+      "srp_note": "stable"
     }
   ],
   "ambiguous_edges": [
@@ -48,22 +48,42 @@
       "id": "AMB-001",
       "file": "src/renderer/components/PromptReadyState.jsx",
       "imports": "window.electronAPI.saveFile",
-      "issue": "saveFile called via window.electronAPI — not a static import, so edge cannot be EXTRACTED from source",
-      "action": "Treat as INFERRED — PromptReadyState depends on preload.js saveFile bridge"
+      "issue": "saveFile called via window.electronAPI \u2014 not a static import, cannot be EXTRACTED from source",
+      "action": "Treat as INFERRED \u2014 PromptReadyState depends on preload.js saveFile bridge"
     },
     {
       "id": "AMB-002",
       "file": "src/renderer/App.jsx",
       "imports": "window.electronAPI.generateRaw",
-      "issue": "generateRaw called via window.electronAPI — runtime IPC call, not a static import; cannot be EXTRACTED",
-      "action": "Treat as INFERRED — App.jsx depends on preload.js generateRaw bridge for iteration"
+      "issue": "generateRaw called via window.electronAPI \u2014 runtime IPC call, not a static import; cannot be EXTRACTED",
+      "action": "Treat as INFERRED \u2014 App.jsx depends on preload.js generateRaw bridge for iteration"
     }
   ],
   "inferred_edges_list": [
-    { "from": "src/renderer/components/ThinkingState.jsx", "to": "src/renderer/components/MorphCanvas.jsx", "confidence": 0.85 },
-    { "from": "src/renderer/components/IdleState.jsx", "to": "src/renderer/hooks/useMode.js", "confidence": 0.85 },
-    { "from": "src/renderer/components/PromptReadyState.jsx", "to": "preload.js", "confidence": 0.80 },
-    { "from": "src/renderer/App.jsx", "to": "src/renderer/hooks/useWindowResize.js", "confidence": 0.90 },
-    { "from": "src/renderer/components/HistoryPanel.jsx", "to": "src/renderer/utils/history.js", "confidence": 0.95 }
+    {
+      "from": "src/renderer/components/ThinkingState.jsx",
+      "to": "src/renderer/components/MorphCanvas.jsx",
+      "confidence": 0.85
+    },
+    {
+      "from": "src/renderer/components/IdleState.jsx",
+      "to": "src/renderer/hooks/useMode.js",
+      "confidence": 0.85
+    },
+    {
+      "from": "src/renderer/components/PromptReadyState.jsx",
+      "to": "preload.js",
+      "confidence": 0.8
+    },
+    {
+      "from": "src/renderer/components/SettingsPanel.jsx",
+      "to": "preload.js",
+      "confidence": 0.75
+    },
+    {
+      "from": "src/renderer/hooks/useKeyboardShortcuts.js",
+      "to": "preload.js",
+      "confidence": 0.8
+    }
   ]
 }

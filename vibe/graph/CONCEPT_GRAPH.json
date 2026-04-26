@@ -6,243 +6,568 @@
     "last_updated": "2026-04-20T20:00:00Z",
     "update_count": 5,
     "project": "promptly",
-    "update_note": "Added signing concept (FEATURE-SIGNING); added ui-polish concept (POLISH-001–009); updated foundation files list (signing scripts); updated first-run to reference BUG-013/015/016 mic-permission fixes"
+    "update_note": "Added signing concept (FEATURE-SIGNING); added ui-polish concept (POLISH-001\u2013009); updated foundation files list (signing scripts); updated first-run to reference BUG-013/015/016 mic-permission fixes"
   },
-
   "foundation": {
     "state": "built",
     "type": "infrastructure",
     "description": "Core Electron shell, IPC wiring, PATH resolution, config, React renderer entry, shared hooks",
     "files": [
-      { "file": "package.json",                      "state": "built", "source": "INFERRED", "confidence": 0.95 },
-      { "file": "entitlements.plist",                "state": "built", "source": "INFERRED", "confidence": 0.95 },
-      { "file": "eslint.config.js",                  "state": "built", "source": "INFERRED", "confidence": 0.90 },
-      { "file": "main.js",                           "state": "built", "source": "INFERRED", "confidence": 0.90 },
-      { "file": "preload.js",                        "state": "built", "source": "INFERRED", "confidence": 0.95 },
-      { "file": "index.html",                        "state": "built", "source": "AMBIGUOUS", "confidence": 0.50, "note": "legacy vanilla JS renderer — not loaded in production" },
-      { "file": "src/renderer/App.jsx",              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/main.jsx",             "state": "built", "source": "INFERRED",  "confidence": 0.95 },
-      { "file": "src/renderer/hooks/useWindowResize.js", "state": "built", "source": "INFERRED", "confidence": 0.90 },
-      { "file": "scripts/generate-icon.js",          "state": "built", "source": "INFERRED", "confidence": 0.80 }
+      {
+        "file": "package.json",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.95
+      },
+      {
+        "file": "entitlements.plist",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.95
+      },
+      {
+        "file": "eslint.config.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.9
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.9
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.95
+      },
+      {
+        "file": "index.html",
+        "state": "built",
+        "source": "AMBIGUOUS",
+        "confidence": 0.5,
+        "note": "legacy vanilla JS renderer \u2014 not loaded in production"
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/main.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.95
+      },
+      {
+        "file": "src/renderer/hooks/useWindowResize.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.9
+      },
+      {
+        "file": "scripts/generate-icon.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      }
     ],
     "depends_on": [],
-    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "first-run", "dark-mode", "tray", "react-migration", "history-panel", "shortcuts", "export", "iteration-mode", "signing", "ui-polish"],
+    "depended_on_by": [
+      "state-machine",
+      "speech-recording",
+      "claude-integration",
+      "actions",
+      "first-run",
+      "dark-mode",
+      "tray",
+      "react-migration",
+      "history-panel",
+      "shortcuts",
+      "export",
+      "iteration-mode",
+      "signing",
+      "ui-polish"
+    ],
     "tasks_complete": 9,
     "tasks_total": 9,
-    "phase": "Phase 1 — complete",
+    "phase": "Phase 1 \u2014 complete",
     "review_score": "7.9/10 (B)"
   },
-
   "react-migration": {
     "state": "built",
     "type": "feature",
     "description": "Renderer migrated from vanilla index.html to React 18 + Vite. All IPC channels preserved. Component-per-state architecture. Tailwind v4 for static classes; inline styles for dynamic layout.",
     "files": [
-      { "file": "vite.config.js",                "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/main.jsx",         "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/index.css",        "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",          "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "vite.config.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/main.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/index.css",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation"],
-    "depended_on_by": ["state-machine", "speech-recording", "claude-integration", "actions", "dark-mode", "history-panel", "shortcuts", "export"],
+    "depends_on": [
+      "foundation"
+    ],
+    "depended_on_by": [
+      "state-machine",
+      "speech-recording",
+      "claude-integration",
+      "actions",
+      "dark-mode",
+      "history-panel",
+      "shortcuts",
+      "export"
+    ],
     "tasks_complete": 14,
     "tasks_total": 14,
-    "phase": "Phase 4 — complete 2026-04-19",
+    "phase": "Phase 4 \u2014 complete 2026-04-19",
     "feature_folder": "vibe/features/2026-04-19-react-migration"
   },
-
   "state-machine": {
     "state": "built",
     "type": "feature",
     "description": "9-state UI state machine (IDLE, RECORDING, PAUSED, ITERATING, THINKING, PROMPT_READY, ERROR, SHORTCUTS, HISTORY), window resize IPC. React implementation in App.jsx via transition() function.",
     "files": [
-      { "file": "src/renderer/App.jsx",          "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/components/IdleState.jsx",       "state": "built", "source": "INFERRED", "confidence": 0.85 },
-      { "file": "src/renderer/components/ErrorState.jsx",      "state": "built", "source": "INFERRED", "confidence": 0.85 },
-      { "file": "src/renderer/components/PausedState.jsx",     "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "PAUSED state added FEATURE-011; PausedState.jsx renders inside state machine" },
-      { "file": "src/renderer/components/IteratingState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "ITERATING state added FEATURE-012; IteratingState.jsx renders inside state machine" },
-      { "file": "main.js",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "resize-window IPC channel" }
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/IdleState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      },
+      {
+        "file": "src/renderer/components/ErrorState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      },
+      {
+        "file": "src/renderer/components/PausedState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "PAUSED state added FEATURE-011; PausedState.jsx renders inside state machine"
+      },
+      {
+        "file": "src/renderer/components/IteratingState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "ITERATING state added FEATURE-012; IteratingState.jsx renders inside state machine"
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "resize-window IPC channel"
+      }
     ],
-    "depends_on": ["foundation", "react-migration"],
-    "depended_on_by": ["speech-recording", "claude-integration", "actions", "first-run", "history-panel", "shortcuts", "pause-resume", "iteration-mode"],
+    "depends_on": [
+      "foundation",
+      "react-migration"
+    ],
+    "depended_on_by": [
+      "speech-recording",
+      "claude-integration",
+      "actions",
+      "first-run",
+      "history-panel",
+      "shortcuts",
+      "pause-resume",
+      "iteration-mode"
+    ],
     "tasks_complete": 5,
     "tasks_total": 5,
-    "phase": "Phase 2 — complete",
+    "phase": "Phase 2 \u2014 complete",
     "feature_folder": "vibe/features/2026-04-18-state-machine"
   },
-
   "first-run": {
     "state": "built",
     "type": "feature",
     "description": "Launch-time splash screen with CLI + Whisper checks before main bar shows; seeds TCC mic grant via getUserMedia; check-mic-status IPC skips redundant grant if already granted. Replaces in-bar FIRST_RUN state (D-007). BUG-013/015/016 hardened the mic permission flow.",
     "files": [
-      { "file": "splash.html", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "splash.html",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "state-machine"],
+    "depends_on": [
+      "foundation",
+      "state-machine"
+    ],
     "depended_on_by": [],
     "tasks_complete": 4,
     "tasks_total": 4,
-    "phase": "Phase 2 — complete",
+    "phase": "Phase 2 \u2014 complete",
     "feature_folder": "vibe/features/2026-04-18-first-run"
   },
-
   "speech-recording": {
     "state": "built",
     "type": "feature",
-    "description": "MediaRecorder audio capture → Whisper CLI transcription (--language en hardcoded) → originalTranscript captured once in stopRecording(); transitions to THINKING. MediaRecorder.pause/resume used by pause-resume feature.",
+    "description": "MediaRecorder audio capture \u2192 Whisper CLI transcription (--language en hardcoded) \u2192 originalTranscript captured once in stopRecording(); transitions to THINKING. MediaRecorder.pause/resume used by pause-resume feature.",
     "files": [
-      { "file": "src/renderer/App.jsx",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "startRecording, stopRecording, mediaRecorderRef, audioChunksRef" },
-      { "file": "src/renderer/components/RecordingState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/components/WaveformCanvas.jsx",  "state": "built", "source": "INFERRED",  "confidence": 0.90 },
-      { "file": "main.js",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribe-audio IPC channel" },
-      { "file": "preload.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "transcribeAudio(arrayBuffer) exposed via contextBridge" }
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "startRecording, stopRecording, mediaRecorderRef, audioChunksRef"
+      },
+      {
+        "file": "src/renderer/components/RecordingState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/WaveformCanvas.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.9
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "transcribe-audio IPC channel"
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "transcribeAudio(arrayBuffer) exposed via contextBridge"
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "react-migration"],
-    "depended_on_by": ["claude-integration", "actions", "pause-resume"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "react-migration"
+    ],
+    "depended_on_by": [
+      "claude-integration",
+      "actions",
+      "pause-resume"
+    ],
     "tasks_complete": 5,
     "tasks_total": 5,
-    "phase": "Phase 2 — complete",
+    "phase": "Phase 2 \u2014 complete",
     "feature_folder": "vibe/features/2026-04-18-speech-recording"
   },
-
   "claude-integration": {
     "state": "built",
     "type": "feature",
     "description": "Claude CLI spawn via generate-prompt IPC; 6 prompt modes (balanced/detailed/concise/chain/code/design); right-click mode context menu; MODE_CONFIG in main.js",
     "files": [
-      { "file": "main.js",                               "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",                  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/components/ThinkingState.jsx", "state": "built", "source": "INFERRED", "confidence": 0.85 },
-      { "file": "src/renderer/components/MorphCanvas.jsx",   "state": "built", "source": "INFERRED", "confidence": 0.80 },
-      { "file": "src/renderer/hooks/useMode.js",             "state": "built", "source": "INFERRED", "confidence": 0.85 }
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/ThinkingState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      },
+      {
+        "file": "src/renderer/components/MorphCanvas.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/hooks/useMode.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "speech-recording"],
-    "depended_on_by": ["actions", "iteration-mode"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "speech-recording"
+    ],
+    "depended_on_by": [
+      "actions",
+      "iteration-mode"
+    ],
     "tasks_complete": 4,
     "tasks_total": 4,
-    "phase": "Phase 2 — complete",
+    "phase": "Phase 2 \u2014 complete",
     "feature_folder": "vibe/features/2026-04-18-claude-integration"
   },
-
   "actions": {
     "state": "built",
     "type": "feature",
     "description": "PROMPT_READY action buttons: Copy (clipboard + green flash 1.8s), Edit (contenteditable + Escape/Done), Regenerate (originalTranscript re-run)",
     "files": [
-      { "file": "src/renderer/components/PromptReadyState.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",                         "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "handleRegenerate" }
+      {
+        "file": "src/renderer/components/PromptReadyState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "handleRegenerate"
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "claude-integration"],
-    "depended_on_by": ["export", "iteration-mode"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "claude-integration"
+    ],
+    "depended_on_by": [
+      "export",
+      "iteration-mode"
+    ],
     "tasks_complete": 4,
     "tasks_total": 4,
-    "phase": "Phase 2 — complete",
+    "phase": "Phase 2 \u2014 complete",
     "feature_folder": "vibe/features/2026-04-18-actions"
   },
-
   "dark-mode": {
     "state": "built",
     "type": "feature",
     "description": "macOS dark/light mode: body.light CSS class, nativeTheme IPC (get-theme + theme-changed), applied at boot and on system change",
     "files": [
-      { "file": "main.js",              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "preload.js",           "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation"],
+    "depends_on": [
+      "foundation"
+    ],
     "depended_on_by": [],
     "tasks_complete": 3,
     "tasks_total": 3,
-    "phase": "Phase 4 — complete 2026-04-19"
+    "phase": "Phase 4 \u2014 complete 2026-04-19"
   },
-
   "tray": {
     "state": "built",
     "type": "feature",
     "description": "macOS menu bar tray icon: Show/Hide + Quit, app alive when window closed, Dock icon hidden",
     "files": [
-      { "file": "main.js", "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation"],
+    "depends_on": [
+      "foundation"
+    ],
     "depended_on_by": [],
     "tasks_complete": 3,
     "tasks_total": 3,
-    "phase": "Phase 4 — complete 2026-04-19"
+    "phase": "Phase 4 \u2014 complete 2026-04-19"
   },
-
   "shortcuts": {
     "state": "built",
     "type": "feature",
-    "description": "Keyboard shortcuts panel (⌘?) with 8 shortcut rows + key chips; global shortcuts via main.js; Escape, ⌘C, ⌘E, ⌘H, ⌘? handlers in App.jsx",
+    "description": "Keyboard shortcuts panel (\u2318?) with 8 shortcut rows + key chips; global shortcuts via main.js; Escape, \u2318C, \u2318E, \u2318H, \u2318? handlers in App.jsx",
     "files": [
-      { "file": "src/renderer/components/ShortcutsPanel.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",                                    "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/components/ShortcutsPanel.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "react-migration"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "react-migration"
+    ],
     "depended_on_by": [],
     "tasks_complete": 5,
     "tasks_total": 5,
-    "phase": "Phase 4 — complete 2026-04-19",
+    "phase": "Phase 4 \u2014 complete 2026-04-19",
     "feature_folder": "vibe/features/2026-04-19-keyboard-shortcuts"
   },
-
   "export": {
     "state": "built",
     "type": "feature",
-    "description": "Single-click .md export from PROMPT_READY via save-file IPC; ⌘E shortcut; native macOS save dialog",
+    "description": "Single-click .md export from PROMPT_READY via save-file IPC; \u2318E shortcut; native macOS save dialog",
     "files": [
-      { "file": "src/renderer/components/PromptReadyState.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",   "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "preload.js","state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/components/PromptReadyState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "actions"],
+    "depends_on": [
+      "foundation",
+      "actions"
+    ],
     "depended_on_by": [],
     "tasks_complete": 4,
     "tasks_total": 4,
-    "phase": "Phase 4 — complete 2026-04-19",
+    "phase": "Phase 4 \u2014 complete 2026-04-19",
     "feature_folder": "vibe/features/2026-04-19-export-formats"
   },
-
   "history-panel": {
     "state": "built",
     "type": "feature",
-    "description": "Split-panel history UI: ⌘H trigger, 746×720px window, left scrollable list with search + per-entry delete, right full prompt detail with copy + reuse. localStorage via utils/history.js.",
+    "description": "Split-panel history UI: \u2318H trigger, 746\u00d7720px window, left scrollable list with search + per-entry delete, right full prompt detail with copy + reuse. localStorage via utils/history.js.",
     "files": [
-      { "file": "src/renderer/utils/history.js",               "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/components/HistoryPanel.jsx",    "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",                                     "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "preload.js",                                  "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/utils/history.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/HistoryPanel.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "react-migration"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "react-migration"
+    ],
     "depended_on_by": [],
     "tasks_complete": 5,
     "tasks_total": 5,
-    "phase": "Phase 4 — complete 2026-04-19",
+    "phase": "Phase 4 \u2014 complete 2026-04-19",
     "feature_folder": "vibe/features/2026-04-19-history-panel",
     "review_score": "8.6/10 (B+)",
-    "notes": "BUG-011 fixed layout — full inline styles, atomic setWindowSize IPC, minWidth/maxWidth constraint discovered and handled"
+    "notes": "BUG-011 fixed layout \u2014 full inline styles, atomic setWindowSize IPC, minWidth/maxWidth constraint discovered and handled"
   },
-
   "history": {
     "state": "deleted",
     "type": "feature",
-    "description": "Original F-HISTORY (vanilla JS) — saveToHistory/loadHistory in index.html, capped at 20, HISTORY state panel. REMOVED before React migration; superseded by history-panel concept (FEATURE-009).",
-    "deletion_reason": "Deferred to React migration — re-implemented as history-panel (FEATURE-009) with split-panel UI, 100-entry cap, search, and utils/history.js module",
+    "description": "Original F-HISTORY (vanilla JS) \u2014 saveToHistory/loadHistory in index.html, capped at 20, HISTORY state panel. REMOVED before React migration; superseded by history-panel concept (FEATURE-009).",
+    "deletion_reason": "Deferred to React migration \u2014 re-implemented as history-panel (FEATURE-009) with split-panel UI, 100-entry cap, search, and utils/history.js module",
     "deletion_date": "2026-04-19",
     "superseded_by": "history-panel",
     "files": [
-      { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "index.html",
+        "state": "deleted",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "state-machine"],
+    "depends_on": [
+      "foundation",
+      "state-machine"
+    ],
     "depended_on_by": [],
     "tasks_complete": 4,
     "tasks_total": 4,
-    "phase": "Phase 4 — removed, superseded by history-panel"
+    "phase": "Phase 4 \u2014 removed, superseded by history-panel"
   },
-
   "language": {
     "state": "deleted",
     "type": "feature",
@@ -250,135 +575,506 @@
     "deletion_reason": "Whisper tiny model non-English transcription quality was unusable",
     "deletion_date": "2026-04-19",
     "files": [
-      { "file": "index.html", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "main.js",    "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "preload.js", "state": "deleted", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "index.html",
+        "state": "deleted",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "main.js",
+        "state": "deleted",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "preload.js",
+        "state": "deleted",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "speech-recording"],
+    "depends_on": [
+      "foundation",
+      "speech-recording"
+    ],
     "depended_on_by": [],
     "tasks_complete": 3,
     "tasks_total": 3,
-    "phase": "Phase 4 — removed before shipping"
+    "phase": "Phase 4 \u2014 removed before shipping"
   },
-
   "iteration-mode": {
     "state": "built",
     "type": "feature",
-    "description": "After PROMPT_READY, ↻ Iterate button launches a fresh voice recording (ITERATING state). New transcript + original prompt are combined into a custom system prompt and sent to Claude via generate-raw IPC. Result replaces the prompt in PROMPT_READY with ↻ iterated badge. Infinite sequential iterations supported.",
+    "description": "After PROMPT_READY, \u21bb Iterate button launches a fresh voice recording (ITERATING state). New transcript + original prompt are combined into a custom system prompt and sent to Claude via generate-raw IPC. Result replaces the prompt in PROMPT_READY with \u21bb iterated badge. Infinite sequential iterations supported.",
     "files": [
-      { "file": "src/renderer/App.jsx",                          "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "ITERATING state, iterationBase/isIterated/iterRecorderRef refs, startIteration, stopIteration, generate-raw IPC call" },
-      { "file": "src/renderer/components/IteratingState.jsx",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "primary owner — sole purpose is ITERATING state UI with violet iterGlow" },
-      { "file": "src/renderer/components/PromptReadyState.jsx",  "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "↻ Iterate button + ↻ iterated badge in prompt header" },
-      { "file": "src/renderer/components/HistoryPanel.jsx",      "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "↻ iterated badge displayed when entry.isIteration === true" },
-      { "file": "src/renderer/utils/history.js",                 "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "saveToHistory extended with { isIteration, basedOn } optional fields" },
-      { "file": "src/renderer/index.css",                        "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "iterGlow @keyframes added" },
-      { "file": "main.js",                                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "generate-raw IPC handle — spawns claude -p with custom systemPrompt via stdin" },
-      { "file": "preload.js",                                    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "generateRaw(systemPrompt) exposed via contextBridge" }
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "ITERATING state, iterationBase/isIterated/iterRecorderRef refs, startIteration, stopIteration, generate-raw IPC call"
+      },
+      {
+        "file": "src/renderer/components/IteratingState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "primary owner \u2014 sole purpose is ITERATING state UI with violet iterGlow"
+      },
+      {
+        "file": "src/renderer/components/PromptReadyState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "\u21bb Iterate button + \u21bb iterated badge in prompt header"
+      },
+      {
+        "file": "src/renderer/components/HistoryPanel.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "\u21bb iterated badge displayed when entry.isIteration === true"
+      },
+      {
+        "file": "src/renderer/utils/history.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "saveToHistory extended with { isIteration, basedOn } optional fields"
+      },
+      {
+        "file": "src/renderer/index.css",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "iterGlow @keyframes added"
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "generate-raw IPC handle \u2014 spawns claude -p with custom systemPrompt via stdin"
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "generateRaw(systemPrompt) exposed via contextBridge"
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "speech-recording", "claude-integration", "actions", "history-panel"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "speech-recording",
+      "claude-integration",
+      "actions",
+      "history-panel"
+    ],
     "depended_on_by": [],
     "tasks_complete": 5,
     "tasks_total": 5,
-    "phase": "Phase 4 — complete 2026-04-20",
+    "phase": "Phase 4 \u2014 complete 2026-04-20",
     "feature_folder": "vibe/features/2026-04-20-iteration-mode",
-    "notes": "generate-raw IPC bypasses PROMPT_TEMPLATE — takes systemPrompt directly, embedding original prompt + new transcript inline. originalTranscript.current updated post-iteration (documented exception D-010 to ARCHITECTURE.md immutability rule)."
+    "notes": "generate-raw IPC bypasses PROMPT_TEMPLATE \u2014 takes systemPrompt directly, embedding original prompt + new transcript inline. originalTranscript.current updated post-iteration (documented exception D-010 to ARCHITECTURE.md immutability rule)."
   },
-
   "pause-resume": {
     "state": "built",
     "type": "feature",
-    "description": "PAUSED state with amber UI — MediaRecorder.pause/resume, timer persists in App.jsx across RECORDING↔PAUSED transitions, Alt+P shortcut (onShortcutPause IPC), PausedState.jsx with flat amber line and resume button",
+    "description": "PAUSED state with amber UI \u2014 MediaRecorder.pause/resume, timer persists in App.jsx across RECORDING\u2194PAUSED transitions, Alt+P shortcut (onShortcutPause IPC), PausedState.jsx with flat amber line and resume button",
     "files": [
-      { "file": "src/renderer/App.jsx",                       "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "PAUSED state, pauseRecording, resumeRecording, recSecs, recTimerRef, isPausedRef, onShortcutPause handler" },
-      { "file": "src/renderer/components/RecordingState.jsx", "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "pause button added; timer removed (now stateless via duration prop)" },
-      { "file": "src/renderer/components/PausedState.jsx",    "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "primary owner — sole purpose is PAUSED state UI" },
-      { "file": "src/renderer/index.css",                     "state": "built", "source": "INFERRED",  "confidence": 0.85, "evidence": "pauseGlow @keyframes added for amber button glow animation" },
-      { "file": "preload.js",                                 "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "onShortcutPause method added to contextBridge" }
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "PAUSED state, pauseRecording, resumeRecording, recSecs, recTimerRef, isPausedRef, onShortcutPause handler"
+      },
+      {
+        "file": "src/renderer/components/RecordingState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "pause button added; timer removed (now stateless via duration prop)"
+      },
+      {
+        "file": "src/renderer/components/PausedState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "primary owner \u2014 sole purpose is PAUSED state UI"
+      },
+      {
+        "file": "src/renderer/index.css",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85,
+        "evidence": "pauseGlow @keyframes added for amber button glow animation"
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "onShortcutPause method added to contextBridge"
+      }
     ],
-    "depends_on": ["foundation", "state-machine", "speech-recording"],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "speech-recording"
+    ],
     "depended_on_by": [],
     "tasks_complete": 3,
     "tasks_total": 3,
-    "phase": "Phase 4 — complete 2026-04-20",
+    "phase": "Phase 4 \u2014 complete 2026-04-20",
     "feature_folder": "vibe/features/2026-04-20-pause-resume",
-    "notes": "Alt+P IPC (shortcut-pause) was stubbed in main.js since FSC-004 (FEATURE-006). onShortcutPause was the missing preload.js link. MediaRecorder handles audio chunk accumulation across pause/resume natively — no custom buffering needed."
+    "notes": "Alt+P IPC (shortcut-pause) was stubbed in main.js since FSC-004 (FEATURE-006). onShortcutPause was the missing preload.js link. MediaRecorder handles audio chunk accumulation across pause/resume natively \u2014 no custom buffering needed."
   },
-
   "signing": {
     "state": "built",
     "type": "feature",
     "description": "Self-signed certificate workflow for persistent TCC mic grant. create-cert.sh generates a macOS Keychain cert; sign-app.sh codesigns dist/mac-universal/Promptly.app with entitlements; build-signed.sh orchestrates the full flow. hardenedRuntime: true in package.json required. BUG-013/015/016 hardened the TCC grant pattern on the Electron side.",
     "files": [
-      { "file": "scripts/create-cert.sh",  "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "scripts/sign-app.sh",     "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "scripts/build-signed.sh", "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "entitlements.plist",      "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "sign-app.sh passes entitlements.plist to codesign" },
-      { "file": "package.json",            "state": "built", "source": "EXTRACTED", "confidence": 1.0, "evidence": "hardenedRuntime: true, gatekeeperAssess: false, dist:signed script" }
+      {
+        "file": "scripts/create-cert.sh",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "scripts/sign-app.sh",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "scripts/build-signed.sh",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "entitlements.plist",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "sign-app.sh passes entitlements.plist to codesign"
+      },
+      {
+        "file": "package.json",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "hardenedRuntime: true, gatekeeperAssess: false, dist:signed script"
+      }
     ],
-    "depends_on": ["foundation"],
+    "depends_on": [
+      "foundation"
+    ],
     "depended_on_by": [],
     "tasks_complete": 2,
     "tasks_total": 2,
-    "phase": "Phase 4 — complete 2026-04-20",
+    "phase": "Phase 4 \u2014 complete 2026-04-20",
     "feature_folder": "vibe/features/2026-04-20-signing",
     "notes": "Self-signed cert approach gives persistent TCC entry without Apple Developer Program. The cert-name 'Promptly Signing' must match across create-cert.sh and sign-app.sh. Broader notarisation (requires paid Developer account) is a future distribution task."
   },
-
   "ui-polish": {
     "state": "built",
     "type": "feature",
-    "description": "POLISH-001–009 premium UI pass: CSS transitions (opacity + translateY on state enter), font-weight calibration, hover states on all interactive elements, pulse ring refinements, custom scrollbar styles for HistoryPanel, text brightness tuning. All via index.css and component inline styles.",
+    "description": "POLISH-001\u2013009 premium UI pass: CSS transitions (opacity + translateY on state enter), font-weight calibration, hover states on all interactive elements, pulse ring refinements, custom scrollbar styles for HistoryPanel, text brightness tuning. All via index.css and component inline styles.",
     "files": [
-      { "file": "src/renderer/index.css",                              "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",                                "state": "built", "source": "INFERRED",  "confidence": 0.85 },
-      { "file": "src/renderer/components/IdleState.jsx",               "state": "built", "source": "INFERRED",  "confidence": 0.85 },
-      { "file": "src/renderer/components/RecordingState.jsx",          "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/PausedState.jsx",             "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/ThinkingState.jsx",           "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/PromptReadyState.jsx",        "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/ErrorState.jsx",              "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/HistoryPanel.jsx",            "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/ShortcutsPanel.jsx",          "state": "built", "source": "INFERRED",  "confidence": 0.80 },
-      { "file": "src/renderer/components/IteratingState.jsx",          "state": "built", "source": "INFERRED",  "confidence": 0.80 }
+      {
+        "file": "src/renderer/index.css",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      },
+      {
+        "file": "src/renderer/components/IdleState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      },
+      {
+        "file": "src/renderer/components/RecordingState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/PausedState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/ThinkingState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/PromptReadyState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/ErrorState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/HistoryPanel.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/ShortcutsPanel.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/components/IteratingState.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      }
     ],
-    "depends_on": ["foundation", "react-migration", "state-machine"],
+    "depends_on": [
+      "foundation",
+      "react-migration",
+      "state-machine"
+    ],
     "depended_on_by": [],
     "tasks_complete": 1,
     "tasks_total": 1,
-    "phase": "Phase 4 — complete 2026-04-20",
-    "notes": "POLISH-001–009 applied as a single commit (8cf7ee7). No new IPC channels, no new state. Pure visual layer on top of existing state machine."
+    "phase": "Phase 4 \u2014 complete 2026-04-20",
+    "notes": "POLISH-001\u2013009 applied as a single commit (8cf7ee7). No new IPC channels, no new state. Pure visual layer on top of existing state machine."
   },
-
   "quick-copy": {
     "state": "built",
     "type": "feature",
     "description": "Copy last prompt silently from menubar right-click without opening the bar. Green dot flash on tray icon confirms copy.",
     "files": [
-      { "file": "main.js",                "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "preload.js",             "state": "built", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/App.jsx",   "state": "built", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "tray"],
+    "depends_on": [
+      "foundation",
+      "tray"
+    ],
     "depended_on_by": [],
     "tasks_complete": 4,
     "tasks_total": 4,
     "feature_folder": "vibe/features/2026-04-24-quick-copy",
-    "phase": "Phase 4 — complete 2026-04-24"
+    "phase": "Phase 4 \u2014 complete 2026-04-24"
   },
-
   "history-v2": {
-    "state": "partial",
+    "state": "built",
     "type": "feature",
-    "description": "History panel v2 — tab switcher (All/Saved), filter chips (All/👍/👎/Unrated), stats bar, bookmark toggle, thumbs rating with tags, entry indicators, footer update.",
+    "description": "History panel v2 \u2014 tab switcher (All/Saved), filter chips (All/\ud83d\udc4d/\ud83d\udc4e/Unrated), stats bar, bookmark toggle, thumbs rating with tags, entry indicators, footer update.",
     "files": [
-      { "file": "src/renderer/utils/history.js",          "state": "built",   "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "src/renderer/components/HistoryPanel.jsx","state": "partial", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/utils/history.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/HistoryPanel.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "depends_on": ["foundation", "history-panel"],
+    "depends_on": [
+      "foundation",
+      "history-panel"
+    ],
     "depended_on_by": [],
-    "tasks_complete": 1,
+    "tasks_complete": 9,
     "tasks_total": 9,
     "feature_folder": "vibe/features/2026-04-24-history-v2",
-    "phase": "Phase 4 — in progress"
+    "phase": "Phase 4 \u2014 in progress"
+  },
+  "text-input": {
+    "state": "built",
+    "type": "feature",
+    "description": "TYPING state \u2014 keyboard icon in IDLE opens textarea; \u2318T shortcut; typed text flows through generate-prompt IPC same as voice",
+    "tasks_complete": 5,
+    "tasks_total": 5,
+    "files": [
+      {
+        "file": "src/renderer/components/TypingState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 0.9
+      }
+    ],
+    "depends_on": [
+      {
+        "concept": "state-machine",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
+    "depended_on_by": []
+  },
+  "polish-mode": {
+    "state": "built",
+    "type": "feature",
+    "description": "Speak rough input \u2192 get clean polished prose + change notes; green accent; Formal/Casual tone toggle",
+    "tasks_complete": 7,
+    "tasks_total": 7,
+    "files": [
+      {
+        "file": "src/renderer/hooks/useTone.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/hooks/usePolishMode.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/PolishReadyState.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 0.9
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 0.9
+      }
+    ],
+    "depends_on": [
+      {
+        "concept": "claude-integration",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "concept": "state-machine",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
+    "depended_on_by": []
+  },
+  "path-config": {
+    "state": "built",
+    "type": "feature",
+    "description": "Gear icon in splash.html + SettingsPanel.jsx in renderer \u2014 stored paths for claude/whisper binaries, browse dialog, re-check",
+    "tasks_complete": 8,
+    "tasks_total": 8,
+    "files": [
+      {
+        "file": "src/renderer/components/SettingsPanel.jsx",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.85
+      },
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      }
+    ],
+    "depends_on": [
+      {
+        "concept": "foundation",
+        "source": "INFERRED",
+        "confidence": 0.9
+      }
+    ],
+    "depended_on_by": [
+      {
+        "concept": "speech-recording",
+        "source": "INFERRED",
+        "confidence": 0.8
+      }
+    ]
+  },
+  "uninstaller": {
+    "state": "built",
+    "type": "feature",
+    "description": "scripts/uninstall.sh \u2014 graceful quit, removes all app data, TCC reset; tray menu item; npm run uninstall",
+    "tasks_complete": 8,
+    "tasks_total": 8,
+    "files": [
+      {
+        "file": "main.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      },
+      {
+        "file": "preload.js",
+        "state": "built",
+        "source": "INFERRED",
+        "confidence": 0.8
+      }
+    ],
+    "depends_on": [
+      {
+        "concept": "tray",
+        "source": "EXTRACTED",
+        "confidence": 0.9
+      }
+    ],
+    "depended_on_by": []
   }
 }

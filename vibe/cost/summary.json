@@ -1,10 +1,10 @@
 {
   "project_name": "Promptly",
-  "generated_at": "2026-04-20T00:00:00",
-  "build_progress_pct": 98,
-  "tasks_remaining": 2,
-  "total_cost_usd": 9.414,
-  "total_sessions": 16,
+  "generated_at": "2026-04-26T00:00:00",
+  "build_progress_pct": 100,
+  "tasks_remaining": 0,
+  "total_cost_usd": 13.569,
+  "total_sessions": 21,
   "phase_summary": [
     {
       "phase": "Phase 1 \u2014 Foundation",
@@ -26,75 +26,80 @@
     },
     {
       "phase": "Phase 4 \u2014 v2 Features",
-      "status": "active",
-      "sessions": 5,
-      "cost_usd": 3.119
+      "status": "complete",
+      "sessions": 10,
+      "cost_usd": 7.274
     }
   ],
   "feature_costs": [
     {
       "label": "Planning and specifications",
-      "cost_usd": 1.516
+      "cost_usd": 1.52
     },
     {
       "label": "Core app foundation",
       "cost_usd": 1.3
     },
     {
-      "label": "UI states and animations",
+      "label": "UI states, animations, and design",
       "cost_usd": 1.45
     },
     {
       "label": "Speech recording and Claude integration",
-      "cost_usd": 0.884
+      "cost_usd": 0.88
     },
     {
-      "label": "Reviews and bug fixing",
-      "cost_usd": 1.145
+      "label": "Bug fixing and hardening",
+      "cost_usd": 1.92
     },
     {
-      "label": "Advanced features (history, export, shortcuts)",
-      "cost_usd": 1.599
+      "label": "Advanced features (history, export, text input, polish mode, iteration)",
+      "cost_usd": 2.95
     },
     {
-      "label": "UI polish and distribution prep",
-      "cost_usd": 1.52
+      "label": "Distribution, menubar, path config, and maintenance",
+      "cost_usd": 3.549
     }
   ],
-  "at_a_glance": "You have spent $9.41 across 16 sessions over 3 days. Today was the most expensive session at ~$1.17, covering 7 work items: the full Iteration Mode feature plus a cluster of packaging and distribution bug fixes (BUG-012 through BUG-016 and FEATURE-SIGNING). The project is 98% complete with only a smoke test and broader distribution work remaining.",
+  "at_a_glance": "You have spent $13.57 across 21 sessions over 9 days to ship Promptly from zero to a scored 9.8/10 final review. Session 20 (2026-04-24) was the heaviest at $1.35, covering the persistent menu bar icon, quick copy, App.jsx refactoring into hooks, and the full History Panel v2 overhaul \u2014 plus the final review gate. DECISIONS.md has grown to 97KB and is now the largest single cost driver in the project; archiving pre-Phase 3 entries would trim ~$0.07\u20130.10 per session.",
   "session_narratives": {
     "2026-04-18-001": "The initial planning session \u2014 brainstorm, architect, and spec review. Expensive per task because these skills read and write large structured documents from scratch.",
     "2026-04-18-002": "The heaviest session at $1.30 \u2014 all 9 Phase 1 foundation tasks plus phase review. Eleven tasks in one run with vibe-parallel orchestration drove the cost up.",
-    "2026-04-18-003": "Pure planning session for F-STATE \u2014 no code committed, just spec generation and review. Cost reflects the reading of BRIEF.md, SPEC.md, and writing detailed FEATURE_TASKS.md.",
+    "2026-04-18-003": "Pure planning session for F-STATE \u2014 no code committed, just spec generation and review. Cost reflects reading BRIEF.md, SPEC.md, and writing detailed FEATURE_TASKS.md.",
     "2026-04-18-004": "F-STATE build \u2014 all 5 state machine tasks completed. Steady $0.10/task average, consistent with medium-complexity UI work.",
     "2026-04-18-005": "F-FIRST-RUN planning session only \u2014 no tasks committed. Feature spec and spec-review drove the cost against a growing context.",
     "2026-04-18-006": "Tiny session \u2014 only FRN-004 (the final first-run task) plus vibe-cost. Context overhead was relatively low.",
     "2026-04-18-007": "Design system implementation plus 6 bug fixes and mode dropdown fix. The large design output (10 code sections) explains the higher output token count.",
     "2026-04-18-008": "DECISION-004 (move recording to main window) + BUG-004 \u2014 a significant architectural refactor that rewrote several IPC channels.",
     "2026-04-18-009": "Vibrancy, BUG-007, and the FEATURE-001 splash screen. The splash implementation was an L-sized task that drove most of the cost.",
-    "2026-04-18-010": "Phase 2 review + all 11 backlog fixes (BL-013 through BL-023). The review itself consumed 80K tokens reading the full codebase.",
+    "2026-04-18-010": "Phase 2 review + all 11 backlog fixes (BL-013 through BL-023). The review itself consumed ~80K tokens reading the full codebase.",
     "2026-04-18-011": "Final review gate + RFX console cleanup. A focused end-of-v1 session \u2014 two tasks, low output.",
     "2026-04-19-012": "Phase 4 kickoff \u2014 dark mode follow-up, language docs, TASKS update, and two feature removals (old history + language). Moderate cost for cleanup work.",
-    "2026-04-19-013": "Session startup only plus vibe-cost. Minimal work \u2014 this was likely a short exploratory session with no committed tasks.",
-    "2026-04-20-014": "FEATURE-011 Pause and Resume \u2014 all 3 tasks plus vibe-add-feature spec. A clean $0.17/task average for medium React component work.",
+    "2026-04-19-013": "Session startup only plus vibe-cost. Minimal work \u2014 likely a short exploratory session with no committed tasks.",
+    "2026-04-20-014": "FEATURE-011 Pause and Resume \u2014 all 3 tasks plus vibe-add-feature spec. Clean $0.17/task average for medium React component work.",
     "2026-04-20-015": "DESIGN-001 vibrancy and ambient glow \u2014 a single S-sized task. Low cost, focused change.",
-    "2026-04-20-016": "The largest Phase 4 session at $1.17 \u2014 FEATURE-012 Iteration Mode (6 subtasks, L), plus a cluster of packaging bug fixes: BUG-012 PATH resolution, BUG-013/014/015 mic and whisper packaging issues, BUG-016 mic dialog cleanup, and FEATURE-SIGNING self-signed cert. DECISIONS.md at 78KB is now the primary context pressure."
+    "2026-04-20-016": "The largest Phase 4 session at $1.17 \u2014 FEATURE-012 Iteration Mode (6 subtasks, L), plus BUG-012 PATH resolution, BUG-013/014/015 mic and whisper fixes, BUG-016 mic dialog cleanup, and FEATURE-SIGNING. DECISIONS.md at 78KB was already the primary context pressure.",
+    "2026-04-23-017": "BUG-017 nvm PATH resolution (L, complex multi-path scan) plus FEATURE-014 Text Input (5 tasks) and its feature-014 review. First session with DECISIONS.md crossing 90KB.",
+    "2026-04-23-018": "FEATURE-015 Polish Mode (7 tasks, includes 2 L-sized React components) plus its review, BUG-018 window lifecycle single-instance lock fix, BUG-019 dock fix (trivial), and POLISH-011 bundle compression. A wide-ranging session.",
+    "2026-04-24-019": "FEATURE-016 Uninstaller (8 tasks: shell script + IPC + DMG extras) and FEATURE-013 Path Config Panel (8 tasks: splash.html JS + gear icon + 4 IPC handlers). Steady $0.05/task throughput.",
+    "2026-04-24-020": "The heaviest session at $1.35 \u2014 FEATURE-017 persistent menu bar icon (PNG helpers + RAF pulse), FEATURE-018 quick copy, BUG-033 App.jsx SRP refactor into useRecording + useKeyboardShortcuts hooks, FEATURE-020 History Panel v2 (9 tasks: bookmarks, ratings, filter chips, stats bar), and the final review gate (9.8/10). DECISIONS.md at 97KB is now the dominant context overhead at ~$0.10/session.",
+    "2026-04-26-021": "Light maintenance session \u2014 remove default Electron application menu from macOS menu bar, fix 6 history panel review issues (footer contrast, stats IIFE, chip colors), create release.sh, and run vibe-cost."
   },
   "recommendations": [
     {
       "code": "CP-01",
-      "title": "DECISIONS.md at 78KB is loaded on every session",
-      "body": "DECISIONS.md has grown to 78KB \u2014 approximately 19,500 tokens \u2014 and is likely read whole on every session startup. This adds roughly $0.06 of pure overhead per session. Consider archiving decisions older than Phase 2 into a DECISIONS_ARCHIVE.md that is never loaded automatically.",
-      "saving": "save ~$0.05\u20130.08/session",
-      "severity": "warn"
+      "title": "DECISIONS.md is 97KB \u2014 largest cost driver in the project",
+      "body": "DECISIONS.md has grown to 97KB (~24,000 tokens) across 9 days of development. It is loaded at every session startup and referenced repeatedly during planning tasks. Entries from Phase 1 and Phase 2 are now historical artefacts \u2014 they will never be revisited. Moving D-001 through D-BUG-008 to a DECISIONS_ARCHIVE.md that is never auto-loaded would reduce per-session input overhead by roughly 15,000 tokens.",
+      "saving": "save ~$0.07\u20130.10/session",
+      "severity": "fix"
     },
     {
       "code": "CP-05",
-      "title": "Prompt caching unused across all 16 sessions",
-      "body": "Cache hit rate is 0% across every session in this project. CLAUDE.md is 21KB of stable content that could be cached \u2014 it rarely changes between sessions. Prompt caching would reduce input costs by 90% on cached tokens. This is the single highest-leverage optimisation available.",
-      "saving": "save ~$0.10\u20130.20/session on large sessions",
-      "severity": "fix"
+      "title": "Prompt caching unused \u2014 0% cache hit rate across all 21 sessions",
+      "body": "Every session reads CLAUDE.md (21KB), ARCHITECTURE.md (24KB), and CODEBASE.md (28KB) from cold \u2014 approximately 18,000 tokens that are never cached. These three files are stable between sessions and ideal candidates for prompt caching. Enabling cache-control on the system prompt would serve these tokens at 10% of the base input cost. This is the highest-leverage optimisation available but requires Claude Code prompt caching support to be active.",
+      "saving": "save ~$0.05\u20130.15/session on large sessions",
+      "severity": "warn"
     }
   ],
-  "forecast_narrative": "Two tasks remain: a manual smoke test (the \u2b1c item in Phase 3 polish) and broader distribution work (notarisation, Sparkle, landing page). The smoke test is an S-task at roughly $0.05\u20130.10. Distribution planning is unscoped \u2014 if it involves vibe-add-feature spec work it could reach $0.30\u20130.50. Total remaining project cost: $0.10\u20130.60 depending on distribution scope."
+  "forecast_narrative": "The project is fully shipped \u2014 153 tasks complete, 0 open, final review score 9.8/10. No further planned development. If new features are added in Phase 5, expect $0.80\u20131.20 per feature session based on the Phase 4 average of $0.73/session. The DECISIONS.md archive fix (CP-01) should be done before any Phase 5 work begins to avoid compounding the overhead."
 }

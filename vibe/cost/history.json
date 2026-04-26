@@ -765,5 +765,488 @@
         "output_tokens": 3000
       }
     }
+  },
+  {
+    "session_id": "2026-04-23-017",
+    "date": "2026-04-23",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 12,
+    "phase": "Phase 4 \u2014 BUG-017 (nvm PATH) + FEATURE-014 (text input) + review",
+    "input_tokens": 170000,
+    "output_tokens": 20000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.81,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "BUG-017-nvm-path": {
+        "size": "L",
+        "cost_usd": 0.3,
+        "input_tokens": 55000,
+        "output_tokens": 7000
+      },
+      "FEATURE-014-spec": {
+        "size": "M",
+        "cost_usd": 0.12,
+        "input_tokens": 22000,
+        "output_tokens": 3000
+      },
+      "TXT-001": {
+        "size": "S",
+        "cost_usd": 0.05,
+        "input_tokens": 10000,
+        "output_tokens": 800
+      },
+      "TXT-002": {
+        "size": "M",
+        "cost_usd": 0.09,
+        "input_tokens": 18000,
+        "output_tokens": 2500
+      },
+      "TXT-003": {
+        "size": "S",
+        "cost_usd": 0.05,
+        "input_tokens": 10000,
+        "output_tokens": 800
+      },
+      "TXT-004": {
+        "size": "M",
+        "cost_usd": 0.09,
+        "input_tokens": 18000,
+        "output_tokens": 2500
+      },
+      "TXT-005": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 8000,
+        "output_tokens": 500
+      },
+      "review-feature-014": {
+        "size": "L",
+        "cost_usd": 0.08,
+        "input_tokens": 29000,
+        "output_tokens": 2900
+      }
+    }
+  },
+  {
+    "session_id": "2026-04-23-018",
+    "date": "2026-04-23",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 13,
+    "phase": "Phase 4 \u2014 FEATURE-015 (polish mode) + BUG-018/019 + POLISH-011",
+    "input_tokens": 180000,
+    "output_tokens": 22000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.87,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "FEATURE-015-spec": {
+        "size": "M",
+        "cost_usd": 0.12,
+        "input_tokens": 22000,
+        "output_tokens": 3000
+      },
+      "POL-001": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "POL-002": {
+        "size": "S",
+        "cost_usd": 0.05,
+        "input_tokens": 10000,
+        "output_tokens": 800
+      },
+      "POL-003": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "POL-004": {
+        "size": "L",
+        "cost_usd": 0.12,
+        "input_tokens": 22000,
+        "output_tokens": 3500
+      },
+      "POL-005": {
+        "size": "L",
+        "cost_usd": 0.12,
+        "input_tokens": 22000,
+        "output_tokens": 3500
+      },
+      "POL-006": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "POL-007": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 700
+      },
+      "review-feature-015": {
+        "size": "M",
+        "cost_usd": 0.07,
+        "input_tokens": 22000,
+        "output_tokens": 2000
+      },
+      "BUG-018-window-lifecycle": {
+        "size": "M",
+        "cost_usd": 0.09,
+        "input_tokens": 18000,
+        "output_tokens": 2500
+      },
+      "BUG-019-dock-fix": {
+        "size": "S",
+        "cost_usd": 0.02,
+        "input_tokens": 4000,
+        "output_tokens": 200
+      },
+      "POLISH-011-bundle-size": {
+        "size": "S",
+        "cost_usd": 0.05,
+        "input_tokens": 7000,
+        "output_tokens": 800
+      }
+    }
+  },
+  {
+    "session_id": "2026-04-24-019",
+    "date": "2026-04-24",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 16,
+    "phase": "Phase 4 \u2014 FEATURE-016 (uninstaller) + FEATURE-013 (path config)",
+    "input_tokens": 185000,
+    "output_tokens": 21000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.87,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "UNIN-001": {
+        "size": "M",
+        "cost_usd": 0.09,
+        "input_tokens": 16000,
+        "output_tokens": 2500
+      },
+      "UNIN-002": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "UNIN-003": {
+        "size": "M",
+        "cost_usd": 0.07,
+        "input_tokens": 13000,
+        "output_tokens": 2000
+      },
+      "UNIN-004": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "UNIN-005": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "UNIN-006": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "UNIN-007": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "UNIN-008": {
+        "size": "S",
+        "cost_usd": 0.02,
+        "input_tokens": 4000,
+        "output_tokens": 300
+      },
+      "PCFG-001": {
+        "size": "L",
+        "cost_usd": 0.14,
+        "input_tokens": 26000,
+        "output_tokens": 4000
+      },
+      "PCFG-002": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "PCFG-003": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "PCFG-004": {
+        "size": "L",
+        "cost_usd": 0.13,
+        "input_tokens": 25000,
+        "output_tokens": 3500
+      },
+      "PCFG-005": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "PCFG-006": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "PCFG-007": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 500
+      },
+      "PCFG-008": {
+        "size": "S",
+        "cost_usd": 0.02,
+        "input_tokens": 4000,
+        "output_tokens": 200
+      }
+    }
+  },
+  {
+    "session_id": "2026-04-24-020",
+    "date": "2026-04-24",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 26,
+    "phase": "Phase 4 \u2014 FEATURE-017/018 + BUG-033 + FEATURE-020 + final review gate",
+    "input_tokens": 270000,
+    "output_tokens": 36000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 1.35,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "MBAR-001": {
+        "size": "L",
+        "cost_usd": 0.16,
+        "input_tokens": 28000,
+        "output_tokens": 4500
+      },
+      "MBAR-002": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "MBAR-003": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 600
+      },
+      "MBAR-004": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 600
+      },
+      "MBAR-005": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 5000,
+        "output_tokens": 400
+      },
+      "QCPY-001-002": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "QCPY-003-004-005": {
+        "size": "S",
+        "cost_usd": 0.05,
+        "input_tokens": 10000,
+        "output_tokens": 1000
+      },
+      "BUG-033-001": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 400
+      },
+      "BUG-033-002": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "BUG-033-003": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2000
+      },
+      "BUG-033-004": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 700
+      },
+      "BUG-033-005": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 5000,
+        "output_tokens": 400
+      },
+      "HSTV2-001": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 700
+      },
+      "HSTV2-002": {
+        "size": "M",
+        "cost_usd": 0.07,
+        "input_tokens": 13000,
+        "output_tokens": 2000
+      },
+      "HSTV2-003": {
+        "size": "M",
+        "cost_usd": 0.07,
+        "input_tokens": 13000,
+        "output_tokens": 2000
+      },
+      "HSTV2-004": {
+        "size": "M",
+        "cost_usd": 0.07,
+        "input_tokens": 13000,
+        "output_tokens": 2000
+      },
+      "HSTV2-005": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2500
+      },
+      "HSTV2-006": {
+        "size": "M",
+        "cost_usd": 0.08,
+        "input_tokens": 15000,
+        "output_tokens": 2500
+      },
+      "HSTV2-007": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 700
+      },
+      "HSTV2-008": {
+        "size": "S",
+        "cost_usd": 0.04,
+        "input_tokens": 8000,
+        "output_tokens": 700
+      },
+      "HSTV2-009": {
+        "size": "S",
+        "cost_usd": 0.03,
+        "input_tokens": 6000,
+        "output_tokens": 400
+      },
+      "final-review-gate": {
+        "size": "L",
+        "cost_usd": 0.19,
+        "input_tokens": 38000,
+        "output_tokens": 5500
+      },
+      "post-review-fixes": {
+        "size": "M",
+        "cost_usd": 0.09,
+        "input_tokens": 18000,
+        "output_tokens": 2500
+      },
+      "context-overhead": {
+        "size": "S",
+        "cost_usd": 0.1,
+        "input_tokens": 35000,
+        "output_tokens": 0
+      }
+    }
+  },
+  {
+    "session_id": "2026-04-26-021",
+    "date": "2026-04-26",
+    "mode": "estimate",
+    "trigger": "manual",
+    "model": "claude-sonnet-4-6",
+    "tasks_completed": 3,
+    "phase": "Phase 4 \u2014 maintenance (Electron menu fix + history fixes + release.sh)",
+    "input_tokens": 50000,
+    "output_tokens": 7000,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.255,
+    "is_estimate": true,
+    "patterns_detected": [
+      "CP-01",
+      "CP-05"
+    ],
+    "task_breakdown": {
+      "fix-electron-menu": {
+        "size": "S",
+        "cost_usd": 0.08,
+        "input_tokens": 16000,
+        "output_tokens": 1500
+      },
+      "fix-history-review": {
+        "size": "M",
+        "cost_usd": 0.12,
+        "input_tokens": 24000,
+        "output_tokens": 4000
+      },
+      "release-sh": {
+        "size": "S",
+        "cost_usd": 0.055,
+        "input_tokens": 10000,
+        "output_tokens": 1500
+      }
+    }
   }
 ]

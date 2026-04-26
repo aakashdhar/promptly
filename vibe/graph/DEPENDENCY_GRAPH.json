@@ -6,17 +6,18 @@
     "last_updated": "2026-04-24T00:00:00Z",
     "update_count": 6,
     "project": "promptly",
-    "update_note": "Incremental update — HSTV2-001: bookmarkHistoryItem + rateHistoryItem added to history.js (FEATURE-020); saveToHistory extended with polishChanges field. QCPY-001–004: lastGeneratedPrompt + set-last-prompt IPC + copy-last-prompt tray menu (main.js + App.jsx) — quick-copy from menubar. New concept: history-v2 (planned, 1/9 tasks done)."
+    "update_note": "Incremental update \u2014 HSTV2-001: bookmarkHistoryItem + rateHistoryItem added to history.js (FEATURE-020); saveToHistory extended with polishChanges field. QCPY-001\u2013004: lastGeneratedPrompt + set-last-prompt IPC + copy-last-prompt tray menu (main.js + App.jsx) \u2014 quick-copy from menubar. New concept: history-v2 (planned, 1/9 tasks done)."
   },
-
   "package.json": {
     "state": "built",
     "type": "config",
     "concept": "foundation",
     "concept_source": "INFERRED",
     "concept_confidence": 0.95,
-    "concept_evidence": "Core project manifest — no feature folder owns it",
-    "secondary_concepts": ["signing"],
+    "concept_evidence": "Core project manifest \u2014 no feature folder owns it",
+    "secondary_concepts": [
+      "signing"
+    ],
     "imports": [],
     "imported_by": [
       {
@@ -29,27 +30,33 @@
     "rationale": [
       {
         "type": "DECISION",
-        "text": "hardenedRuntime: true + gatekeeperAssess: false added (BUG-015/FEATURE-SIGNING) — hardenedRuntime is required for the self-signed cert approach to grant persistent TCC entry; gatekeeperAssess: false skips Gatekeeper check for unsigned builds so dev installs work",
+        "text": "hardenedRuntime: true + gatekeeperAssess: false added (BUG-015/FEATURE-SIGNING) \u2014 hardenedRuntime is required for the self-signed cert approach to grant persistent TCC entry; gatekeeperAssess: false skips Gatekeeper check for unsigned builds so dev installs work",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "dist:unsigned script added — runs electron-builder without signing; useful for CI/dev when no cert is set up; dist:signed (FEATURE-SIGNING) orchestrates create-cert + electron-builder + sign-app",
+        "text": "dist:unsigned script added \u2014 runs electron-builder without signing; useful for CI/dev when no cert is set up; dist:signed (FEATURE-SIGNING) orchestrates create-cert + electron-builder + sign-app",
         "source": "EXTRACTED",
         "added": "2026-04-20"
+      },
+      {
+        "type": "NOTE",
+        "note": "v1.4.0 \u2014 added release script, signIgnore for uninstall.sh"
       }
-    ]
+    ],
+    "version": "1.4.0"
   },
-
   "entitlements.plist": {
     "state": "built",
     "type": "config",
     "concept": "foundation",
     "concept_source": "INFERRED",
     "concept_confidence": 0.95,
-    "concept_evidence": "macOS distribution entitlement — no feature folder owns it",
-    "secondary_concepts": ["signing"],
+    "concept_evidence": "macOS distribution entitlement \u2014 no feature folder owns it",
+    "secondary_concepts": [
+      "signing"
+    ],
     "imports": [],
     "imported_by": [
       {
@@ -62,52 +69,61 @@
     "rationale": [
       {
         "type": "DECISION",
-        "text": "com.apple.security.network.client added (BUG-015) — required for hardenedRuntime: true; without it, any outbound network call (even to localhost) is blocked by the hardened sandbox",
+        "text": "com.apple.security.network.client added (BUG-015) \u2014 required for hardenedRuntime: true; without it, any outbound network call (even to localhost) is blocked by the hardened sandbox",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "eslint.config.js": {
     "state": "built",
     "type": "config",
     "concept": "foundation",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.90,
-    "concept_evidence": "ESLint 9 flat config — dev tooling, no feature ownership",
+    "concept_confidence": 0.9,
+    "concept_evidence": "ESLint 9 flat config \u2014 dev tooling, no feature ownership",
     "imports": [],
     "imported_by": [],
     "rationale": []
   },
-
   "vite.config.js": {
     "state": "built",
     "type": "config",
     "concept": "react-migration",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "Vite build config — root: src/renderer, outDir: dist-renderer/, plugins: react() + tailwindcss()",
+    "concept_evidence": "Vite build config \u2014 root: src/renderer, outDir: dist-renderer/, plugins: react() + tailwindcss()",
     "imports": [],
     "imported_by": [],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "base: './' — dist-renderer loaded via file:// protocol by Electron; absolute paths would break asset loading",
+        "text": "base: './' \u2014 dist-renderer loaded via file:// protocol by Electron; absolute paths would break asset loading",
         "source": "INFERRED",
         "added": "2026-04-19"
       }
     ]
   },
-
   "main.js": {
     "state": "built",
     "type": "electron-main",
     "concept": "foundation",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.90,
-    "concept_evidence": "Electron main process — owns IPC hub, window lifecycle, PATH resolution; touched by multiple features but no single feature owns it",
-    "secondary_concepts": ["speech-recording", "claude-integration", "first-run", "dark-mode", "tray", "history-panel", "export", "iteration-mode", "signing", "ui-polish", "quick-copy"],
+    "concept_confidence": 0.9,
+    "concept_evidence": "Electron main process \u2014 owns IPC hub, window lifecycle, PATH resolution; touched by multiple features but no single feature owns it",
+    "secondary_concepts": [
+      "speech-recording",
+      "claude-integration",
+      "first-run",
+      "dark-mode",
+      "tray",
+      "history-panel",
+      "export",
+      "iteration-mode",
+      "signing",
+      "ui-polish",
+      "quick-copy"
+    ],
     "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode), request-mic + check-mic-status + session.defaultSession handler (signing/mic permission), remove DevTools (ui-polish), set-last-prompt IPC + lastGeneratedPrompt + copy-last-prompt tray item (quick-copy)",
     "imports": [
       {
@@ -133,92 +149,128 @@
     ],
     "imported_by": [],
     "ipc_handles": [
-      "generate-prompt", "copy-to-clipboard", "check-claude-path",
-      "resize-window", "transcribe-audio", "show-mode-menu",
-      "set-window-buttons-visible", "splash-done", "splash-check-cli",
-      "splash-check-whisper", "splash-open-url", "request-mic",
-      "get-theme", "save-file", "resize-window-width", "set-window-size",
-      "generate-raw", "check-mic-status", "set-last-prompt"
+      "generate-prompt",
+      "copy-to-clipboard",
+      "check-claude-path",
+      "resize-window",
+      "transcribe-audio",
+      "show-mode-menu",
+      "set-window-buttons-visible",
+      "splash-done",
+      "splash-check-cli",
+      "splash-check-whisper",
+      "splash-open-url",
+      "request-mic",
+      "get-theme",
+      "save-file",
+      "resize-window-width",
+      "set-window-size",
+      "generate-raw",
+      "check-mic-status",
+      "set-last-prompt"
     ],
-    "ipc_sends": ["shortcut-triggered", "shortcut-conflict", "mode-selected", "theme-changed", "show-history", "show-shortcuts"],
-    "key_vars": ["claudePath", "whisperPath", "win", "splashWin", "tray", "PROMPT_TEMPLATE", "MODE_CONFIG", "lastGeneratedPrompt"],
-    "key_functions": ["resolveClaudePath", "resolveWhisperPath", "registerShortcut", "createWindow", "createTray", "updateTrayMenu", "buildTrayMenu"],
+    "ipc_sends": [
+      "shortcut-triggered",
+      "shortcut-conflict",
+      "mode-selected",
+      "theme-changed",
+      "show-history",
+      "show-shortcuts"
+    ],
+    "key_vars": [
+      "claudePath",
+      "whisperPath",
+      "win",
+      "splashWin",
+      "tray",
+      "PROMPT_TEMPLATE",
+      "MODE_CONFIG",
+      "lastGeneratedPrompt"
+    ],
+    "key_functions": [
+      "resolveClaudePath",
+      "resolveWhisperPath",
+      "registerShortcut",
+      "createWindow",
+      "createTray",
+      "updateTrayMenu",
+      "buildTrayMenu"
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "PATH resolution uses 'zsh -lc \"which claude\"' — claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment",
+        "text": "PATH resolution uses 'zsh -lc \"which claude\"' \u2014 claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment",
         "source": "EXTRACTED"
       },
       {
         "type": "DECISION",
-        "text": "transcript passed via stdin to claude spawn (not shell arg) — avoids shell injection and arg length limits",
+        "text": "transcript passed via stdin to claude spawn (not shell arg) \u2014 avoids shell injection and arg length limits",
         "source": "INFERRED",
         "evidence": "child.stdin.end() with systemPrompt containing transcript embedded via PROMPT_TEMPLATE"
       },
       {
         "type": "DECISION",
-        "text": "nativeTheme.on('updated') fires theme-changed IPC to renderer; get-theme handler returns initial state at boot — renderer needs both: initial value on load + live updates",
+        "text": "nativeTheme.on('updated') fires theme-changed IPC to renderer; get-theme handler returns initial state at boot \u2014 renderer needs both: initial value on load + live updates",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "app.dock.hide() called in createTray() — app lives in menu bar only; dock entry would be confusing for a persistent floating tool",
+        "text": "app.dock.hide() called in createTray() \u2014 app lives in menu bar only; dock entry would be confusing for a persistent floating tool",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "BrowserWindow has minWidth:520, maxWidth:520 — overridden at runtime by set-window-size IPC which calls setMinimumSize/setMaximumSize before setSize. Any resize that needs a non-520 width must use set-window-size, not resize-window-width alone.",
+        "text": "BrowserWindow has minWidth:520, maxWidth:520 \u2014 overridden at runtime by set-window-size IPC which calls setMinimumSize/setMaximumSize before setSize. Any resize that needs a non-520 width must use set-window-size, not resize-window-width alone.",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "set-window-size IPC added (BUG-011) — separate width+height calls had a race condition: resize-window (RAF-deferred) read win.getSize() before resize-window-width had applied, clamping width back to 520",
+        "text": "set-window-size IPC added (BUG-011) \u2014 separate width+height calls had a race condition: resize-window (RAF-deferred) read win.getSize() before resize-window-width had applied, clamping width back to 520",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "resolveWhisperPath() added (BUG-012) — whisper binary resolves via 'zsh -lc \"which whisper\"' then symlink-followed to real binary; pyenv/conda shims would resolve to wrong env otherwise",
+        "text": "resolveWhisperPath() added (BUG-012) \u2014 whisper binary resolves via 'zsh -lc \"which whisper\"' then symlink-followed to real binary; pyenv/conda shims would resolve to wrong env otherwise",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "session.defaultSession.setPermissionRequestHandler grants mic automatically (BUG-013) — prevents repeated OS dialog in packaged builds; TCC entry is seeded once in splash via getUserMedia, then Electron's handler bypasses subsequent native prompts",
+        "text": "session.defaultSession.setPermissionRequestHandler grants mic automatically (BUG-013) \u2014 prevents repeated OS dialog in packaged builds; TCC entry is seeded once in splash via getUserMedia, then Electron's handler bypasses subsequent native prompts",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "isDestroyed() guards on every win/splashWin access (BUG-015) — splash-done timeout extended to 1200ms; without guards, async callbacks racing window destruction threw 'Object has been destroyed' errors",
+        "text": "isDestroyed() guards on every win/splashWin access (BUG-015) \u2014 splash-done timeout extended to 1200ms; without guards, async callbacks racing window destruction threw 'Object has been destroyed' errors",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "check-mic-status IPC returns systemPreferences.getMediaAccessStatus('microphone') — lets splash check TCC status before deciding whether to call getUserMedia; avoids redundant mic request if already granted",
+        "text": "check-mic-status IPC returns systemPreferences.getMediaAccessStatus('microphone') \u2014 lets splash check TCC status before deciding whether to call getUserMedia; avoids redundant mic request if already granted",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "buildTrayMenu() refactor (FEATURE-018/QCPY) — shared helper called by both createTray() and updateTrayMenu(), prevents drift between initial and updated tray menus. lastGeneratedPrompt is session-only (not persisted) — set via set-last-prompt IPC after each successful generate-prompt. copy-last-prompt tray item copies silently without opening window.",
+        "text": "buildTrayMenu() refactor (FEATURE-018/QCPY) \u2014 shared helper called by both createTray() and updateTrayMenu(), prevents drift between initial and updated tray menus. lastGeneratedPrompt is session-only (not persisted) \u2014 set via set-last-prompt IPC after each successful generate-prompt. copy-last-prompt tray item copies silently without opening window.",
         "source": "EXTRACTED",
         "added": "2026-04-24"
       }
     ]
   },
-
   "preload.js": {
     "state": "built",
     "type": "electron-preload",
     "concept": "foundation",
     "concept_source": "INFERRED",
     "concept_confidence": 0.95,
-    "concept_evidence": "contextBridge IPC bridge — shared by all renderer windows, no single feature owns it",
+    "concept_evidence": "contextBridge IPC bridge \u2014 shared by all renderer windows, no single feature owns it",
     "imports": [],
     "imported_by": [
       {
@@ -231,7 +283,7 @@
         "file": "src/renderer/App.jsx",
         "source": "EXTRACTED",
         "confidence": 1.0,
-        "evidence": "window.electronAPI.* consumed throughout — resizeWindow, setWindowSize, generatePrompt, transcribeAudio, copyToClipboard, onShortcutTriggered, onShowHistory, onShowShortcuts, setWindowButtonsVisible, getTheme, onThemeChanged, showModeMenu, saveFile, setLastPrompt"
+        "evidence": "window.electronAPI.* consumed throughout \u2014 resizeWindow, setWindowSize, generatePrompt, transcribeAudio, copyToClipboard, onShortcutTriggered, onShowHistory, onShowShortcuts, setWindowButtonsVisible, getTheme, onThemeChanged, showModeMenu, saveFile, setLastPrompt"
       },
       {
         "file": "splash.html",
@@ -241,45 +293,65 @@
       }
     ],
     "exposes": [
-      "generatePrompt", "copyToClipboard", "checkClaudePath", "resizeWindow",
-      "setWindowButtonsVisible", "showModeMenu", "onModeSelected",
-      "transcribeAudio", "generateRaw", "saveFile",
-      "resizeWindowWidth", "setWindowSize", "onShowHistory",
-      "splashDone", "splashCheckCLI", "splashCheckWhisper", "splashOpenURL",
-      "onShortcutTriggered", "onShowShortcuts", "onShortcutPause", "onShortcutConflict",
-      "getTheme", "onThemeChanged", "setLastPrompt"
+      "generatePrompt",
+      "copyToClipboard",
+      "checkClaudePath",
+      "resizeWindow",
+      "setWindowButtonsVisible",
+      "showModeMenu",
+      "onModeSelected",
+      "transcribeAudio",
+      "generateRaw",
+      "saveFile",
+      "resizeWindowWidth",
+      "setWindowSize",
+      "onShowHistory",
+      "splashDone",
+      "splashCheckCLI",
+      "splashCheckWhisper",
+      "splashOpenURL",
+      "onShortcutTriggered",
+      "onShowShortcuts",
+      "onShortcutPause",
+      "onShortcutConflict",
+      "getTheme",
+      "onThemeChanged",
+      "setLastPrompt"
     ],
     "removed_methods": [
-      { "method": "requestMic", "removed": "2026-04-20", "reason": "BUG-015 — App.jsx no longer calls requestMic(); splash.html calls getUserMedia() directly; TCC grant handled once at splash time via getUserMedia, not repeated per-recording" }
+      {
+        "method": "requestMic",
+        "removed": "2026-04-20",
+        "reason": "BUG-015 \u2014 App.jsx no longer calls requestMic(); splash.html calls getUserMedia() directly; TCC grant handled once at splash time via getUserMedia, not repeated per-recording"
+      }
     ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "nodeIntegration: false + contextIsolation: true always — security boundary between renderer and Node.js; all IPC via window.electronAPI only",
+        "text": "nodeIntegration: false + contextIsolation: true always \u2014 security boundary between renderer and Node.js; all IPC via window.electronAPI only",
         "source": "INFERRED",
         "evidence": "contextBridge pattern enforces this; ARCHITECTURE.md rule"
       },
       {
         "type": "DECISION",
-        "text": "onShortcutPause added (FEATURE-011) — shortcut-pause IPC channel existed since FSC-004 (Alt+P stub) but was never wired to renderer via contextBridge until pause/resume was implemented",
+        "text": "onShortcutPause added (FEATURE-011) \u2014 shortcut-pause IPC channel existed since FSC-004 (Alt+P stub) but was never wired to renderer via contextBridge until pause/resume was implemented",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "generateRaw added (FEATURE-012) — separate from generatePrompt; takes { systemPrompt } directly (no PROMPT_TEMPLATE wrapper) to support iteration's custom combined prompt; IPC channel is 'generate-raw'",
+        "text": "generateRaw added (FEATURE-012) \u2014 separate from generatePrompt; takes { systemPrompt } directly (no PROMPT_TEMPLATE wrapper) to support iteration's custom combined prompt; IPC channel is 'generate-raw'",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "requestMic removed (BUG-015) — App.jsx was calling requestMic() at startRecording, causing repeated mic dialogs on every recording. TCC grant is now a one-time splash responsibility via getUserMedia. preload no longer exposes this method.",
+        "text": "requestMic removed (BUG-015) \u2014 App.jsx was calling requestMic() at startRecording, causing repeated mic dialogs on every recording. TCC grant is now a one-time splash responsibility via getUserMedia. preload no longer exposes this method.",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "splash.html": {
     "state": "built",
     "type": "renderer-html",
@@ -303,30 +375,34 @@
         "evidence": "splashWin.loadFile('splash.html')"
       }
     ],
-    "key_functions": ["runChecks", "setCheck", "showReady", "openInstall"],
+    "key_functions": [
+      "runChecks",
+      "setCheck",
+      "showReady",
+      "openInstall"
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "getUserMedia() called directly in splash.html renderer (BUG-013) — seeds the TCC microphone grant once per app install; session.defaultSession permission handler in main.js then auto-grants subsequent requests so recordings never trigger a repeated dialog",
+        "text": "getUserMedia() called directly in splash.html renderer (BUG-013) \u2014 seeds the TCC microphone grant once per app install; session.defaultSession permission handler in main.js then auto-grants subsequent requests so recordings never trigger a repeated dialog",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "check-mic-status IPC checked before getUserMedia (BUG-016) — if TCC status is already 'granted', splash skips the getUserMedia call entirely; avoids redundant mic UI flash on every launch after first use",
+        "text": "check-mic-status IPC checked before getUserMedia (BUG-016) \u2014 if TCC status is already 'granted', splash skips the getUserMedia call entirely; avoids redundant mic UI flash on every launch after first use",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "index.html": {
     "state": "built",
     "type": "renderer-html",
     "concept": "foundation",
     "concept_source": "AMBIGUOUS",
-    "concept_confidence": 0.50,
-    "concept_evidence": "Legacy vanilla JS renderer — stays on main branch as reference; replaced by React build (dist-renderer/) on live app",
+    "concept_confidence": 0.5,
+    "concept_evidence": "Legacy vanilla JS renderer \u2014 stays on main branch as reference; replaced by React build (dist-renderer/) on live app",
     "review_note": "index.html is the legacy monolithic UI file. The live app loads dist-renderer/index.html (built from src/renderer/). This file is kept for reference only.",
     "imports": [
       {
@@ -340,148 +416,258 @@
     "rationale": [
       {
         "type": "DECISION",
-        "text": "index.html retained on main branch as legacy reference after React migration (FEATURE-004). Not loaded by Electron in production — main.js loads dist-renderer/index.html instead.",
+        "text": "index.html retained on main branch as legacy reference after React migration (FEATURE-004). Not loaded by Electron in production \u2014 main.js loads dist-renderer/index.html instead.",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       }
     ]
   },
-
   "src/renderer/main.jsx": {
     "state": "built",
     "type": "react-entry",
     "concept": "react-migration",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "React root entry — ReactDOM.createRoot().render(<App />)",
+    "concept_evidence": "React root entry \u2014 ReactDOM.createRoot().render(<App />)",
     "imports": [
-      { "file": "src/renderer/index.css", "source": "EXTRACTED", "confidence": 1.0, "evidence": "import './index.css'" },
-      { "file": "src/renderer/App.jsx",   "source": "EXTRACTED", "confidence": 1.0, "evidence": "import App from './App'" }
+      {
+        "file": "src/renderer/index.css",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import './index.css'"
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import App from './App'"
+      }
     ],
     "imported_by": [],
     "rationale": []
   },
-
   "src/renderer/index.css": {
     "state": "built",
     "type": "stylesheet",
     "concept": "react-migration",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "Tailwind v4 entry — @import 'tailwindcss', @theme tokens, @keyframes, body reset",
-    "secondary_concepts": ["pause-resume", "iteration-mode", "ui-polish"],
+    "concept_evidence": "Tailwind v4 entry \u2014 @import 'tailwindcss', @theme tokens, @keyframes, body reset",
+    "secondary_concepts": [
+      "pause-resume",
+      "iteration-mode",
+      "ui-polish"
+    ],
     "imports": [],
     "imported_by": [
-      { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/main.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "pauseGlow @keyframes added (FEATURE-011) — amber glow animation for pause/resume buttons; inline animation: property references this keyframe name directly since Tailwind @theme token generates [animation:pauseGlow_2s_ease-in-out_infinite] class",
+        "text": "pauseGlow @keyframes added (FEATURE-011) \u2014 amber glow animation for pause/resume buttons; inline animation: property references this keyframe name directly since Tailwind @theme token generates [animation:pauseGlow_2s_ease-in-out_infinite] class",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "iterGlow @keyframes added (FEATURE-012) — violet/indigo glow animation for IteratingState; IteratingState.jsx references it inline as animation:'iterGlow 2s ease-in-out infinite' (no Tailwind class)",
+        "text": "iterGlow @keyframes added (FEATURE-012) \u2014 violet/indigo glow animation for IteratingState; IteratingState.jsx references it inline as animation:'iterGlow 2s ease-in-out infinite' (no Tailwind class)",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "POLISH-001–009 — state transitions added (opacity + translateY), font-weight tuning, hover states on all interactive elements, pulse ring enhancements, custom scrollbar styles for HistoryPanel, text brightness calibration; all via Tailwind utility classes or CSS tokens",
+        "text": "POLISH-001\u2013009 \u2014 state transitions added (opacity + translateY), font-weight tuning, hover states on all interactive elements, pulse ring enhancements, custom scrollbar styles for HistoryPanel, text brightness calibration; all via Tailwind utility classes or CSS tokens",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "src/renderer/App.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "foundation",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "Root state machine — owns STATES, STATE_HEIGHTS, transition(), all IPC listeners, recording flow, theme wiring",
-    "secondary_concepts": ["speech-recording", "claude-integration", "dark-mode", "history-panel", "shortcuts", "export", "pause-resume", "iteration-mode", "ui-polish"],
+    "concept_evidence": "Root state machine \u2014 owns STATES, STATE_HEIGHTS, transition(), all IPC listeners, recording flow, theme wiring",
+    "secondary_concepts": [
+      "speech-recording",
+      "claude-integration",
+      "dark-mode",
+      "history-panel",
+      "shortcuts",
+      "export",
+      "pause-resume",
+      "iteration-mode",
+      "ui-polish"
+    ],
     "imports": [
-      { "file": "src/renderer/hooks/useMode.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 2" },
-      { "file": "src/renderer/hooks/useWindowResize.js",            "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 3" },
-      { "file": "src/renderer/components/IdleState.jsx",            "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 4" },
-      { "file": "src/renderer/components/ShortcutsPanel.jsx",       "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 5" },
-      { "file": "src/renderer/components/HistoryPanel.jsx",         "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 6" },
-      { "file": "src/renderer/components/RecordingState.jsx",       "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 7" },
-      { "file": "src/renderer/components/PausedState.jsx",          "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 8 — added FEATURE-011" },
-      { "file": "src/renderer/components/ThinkingState.jsx",        "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 9" },
-      { "file": "src/renderer/components/PromptReadyState.jsx",     "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 10" },
-      { "file": "src/renderer/components/ErrorState.jsx",           "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 11" },
-      { "file": "src/renderer/components/IteratingState.jsx",       "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 12 — added FEATURE-012" },
-      { "file": "src/renderer/utils/history.js",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 13 — saveToHistory" }
+      {
+        "file": "src/renderer/hooks/useMode.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 2
+      },
+      {
+        "file": "src/renderer/hooks/usePolishMode.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 3
+      },
+      {
+        "file": "src/renderer/hooks/useWindowResize.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 4
+      },
+      {
+        "file": "src/renderer/hooks/useRecording.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 5
+      },
+      {
+        "file": "src/renderer/hooks/useKeyboardShortcuts.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 6
+      },
+      {
+        "file": "src/renderer/components/IdleState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 7
+      },
+      {
+        "file": "src/renderer/components/ShortcutsPanel.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 8
+      },
+      {
+        "file": "src/renderer/components/HistoryPanel.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 9
+      },
+      {
+        "file": "src/renderer/components/RecordingState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 10
+      },
+      {
+        "file": "src/renderer/components/PausedState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 11
+      },
+      {
+        "file": "src/renderer/components/ThinkingState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 12
+      },
+      {
+        "file": "src/renderer/components/PromptReadyState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 13
+      },
+      {
+        "file": "src/renderer/components/PolishReadyState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 14
+      },
+      {
+        "file": "src/renderer/components/ErrorState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 15
+      },
+      {
+        "file": "src/renderer/components/IteratingState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 16
+      },
+      {
+        "file": "src/renderer/components/TypingState.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 17
+      },
+      {
+        "file": "src/renderer/components/SettingsPanel.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 18
+      },
+      {
+        "file": "src/renderer/utils/history.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 19
+      }
     ],
     "imported_by": [
-      { "file": "src/renderer/main.jsx", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/main.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
-    "key_vars": ["STATES", "STATE_HEIGHTS", "recSecs", "recTimerRef", "isPausedRef", "iterationBase", "isIterated", "iterRecorderRef", "iterChunksRef", "iterIsProcessingRef"],
-    "key_functions": ["transition", "startRecording", "stopRecording", "pauseRecording", "resumeRecording", "handleDismiss", "handleRegenerate", "openHistory", "closeHistory", "startTimer", "pauseTimer", "stopTimer", "startIteration", "stopIteration"],
-    "ipc_consumed": ["window.electronAPI.*"],
+    "key_vars": [
+      "STATES",
+      "STATE_HEIGHTS",
+      "recSecs",
+      "recTimerRef",
+      "isPausedRef",
+      "iterationBase",
+      "isIterated",
+      "iterRecorderRef",
+      "iterChunksRef",
+      "iterIsProcessingRef"
+    ],
+    "key_functions": [
+      "transition",
+      "startRecording",
+      "stopRecording",
+      "pauseRecording",
+      "resumeRecording",
+      "handleDismiss",
+      "handleRegenerate",
+      "openHistory",
+      "closeHistory",
+      "startTimer",
+      "pauseTimer",
+      "stopTimer",
+      "startIteration",
+      "stopIteration"
+    ],
+    "ipc_consumed": [
+      "window.electronAPI.*"
+    ],
     "rationale": [
       {
-        "type": "DECISION",
-        "text": "openHistory/closeHistory use setWindowSize (atomic width+height) instead of separate resizeWindowWidth + transition calls — avoids RAF race condition where resize-window reads stale width before resize-window-width has applied",
-        "source": "EXTRACTED",
-        "added": "2026-04-19"
+        "type": "WHY",
+        "note": "Central state machine \u2014 transition() is the only function that mutates UI state"
       },
       {
         "type": "DECISION",
-        "text": "closeHistory always transitions to IDLE (not prevState) — user-approved during BUG-011; HISTORY is a browsing mode, not a temporary overlay",
-        "source": "EXTRACTED",
-        "added": "2026-04-19"
+        "note": "BUG-033: recording + keyboard concerns extracted to useRecording.js + useKeyboardShortcuts.js but App.jsx still imports 18 files \u2014 god node status worsened as features were added"
       },
       {
-        "type": "DECISION",
-        "text": "Root div uses inline style width:100% instead of Tailwind w-[520px] — Tailwind JIT/purge was not generating the dynamic width class in HISTORY state; inline style is immune to purge",
-        "source": "EXTRACTED",
-        "added": "2026-04-19"
-      },
-      {
-        "type": "DECISION",
-        "text": "Timer (recSecs) lifted from RecordingState to App.jsx — FEATURE-011 pause/resume requires timer to persist across RECORDING↔PAUSED state transitions; component unmount/mount would reset local useState to 0",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
-      },
-      {
-        "type": "DECISION",
-        "text": "transition() hides traffic lights for both RECORDING and PAUSED — PAUSED state must not show window chrome; same UX rationale as RECORDING",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
-      },
-      {
-        "type": "DECISION",
-        "text": "Separate iterRecorderRef for iteration recording — FEATURE-012 spec rule: never reuse mediaRecorderRef for iteration to avoid overwriting a running main recording session state",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
-      },
-      {
-        "type": "DECISION",
-        "text": "iterationBase useRef stores { transcript, prompt, mode } snapshot at ↻ tap — generate-raw IPC needs original prompt + new iter text combined; snapshot prevents stale closure over generatedPrompt state",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
-      },
-      {
-        "type": "DECISION",
-        "text": "originalTranscript.current updated to iterText after successful iteration — allows infinite chained iterations; each iter becomes the base for the next; deliberately mutates the ref (exception to the ARCHITECTURE.md immutability rule, documented in DECISIONS.md D-010)",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
-      },
-      {
-        "type": "DECISION",
-        "text": "requestMic() removed from startRecording and handleIterate (BUG-015) — was causing repeated OS mic dialogs every time recording started; TCC grant is now handled once in splash.html via getUserMedia, not repeated per-recording",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
+        "type": "HACK",
+        "note": "stateRef mirrors currentState for stale-closure-safe IPC callbacks \u2014 IPC handlers registered once at mount can't see useState updates"
       }
     ]
   },
-
   "src/renderer/utils/history.js": {
     "state": "built",
     "type": "utility",
@@ -491,41 +677,67 @@
     "concept_evidence": "vibe/features/2026-04-19-history-panel/ Touches field: HIST-001",
     "imports": [],
     "imported_by": [
-      { "file": "src/renderer/App.jsx",                    "source": "EXTRACTED", "confidence": 1.0, "evidence": "import { saveToHistory } line 11" },
-      { "file": "src/renderer/components/HistoryPanel.jsx","source": "EXTRACTED", "confidence": 1.0, "evidence": "import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime } line 2" }
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { saveToHistory } line 11"
+      },
+      {
+        "file": "src/renderer/components/HistoryPanel.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { getHistory, deleteHistoryItem, clearHistory, searchHistory, formatTime } line 2"
+      },
+      {
+        "file": "src/renderer/hooks/usePolishMode.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 3
+      }
     ],
-    "exports": ["saveToHistory", "getHistory", "deleteHistoryItem", "clearHistory", "searchHistory", "formatTime", "bookmarkHistoryItem", "rateHistoryItem"],
+    "exports": [
+      "saveToHistory",
+      "getHistory",
+      "deleteHistoryItem",
+      "clearHistory",
+      "searchHistory",
+      "formatTime",
+      "bookmarkHistoryItem",
+      "rateHistoryItem"
+    ],
     "storage_key": "promptly_history",
     "storage_entry_shape": "{ id, title, transcript, prompt, mode, timestamp, isIteration?, basedOn?, polishChanges?, bookmarked?, rating?, ratingTag? }",
-    "secondary_concepts": ["history-v2"],
+    "secondary_concepts": [
+      "history-v2"
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "All localStorage history access gated through this module — ARCHITECTURE.md rule: no direct localStorage.* calls outside wrapper functions",
+        "text": "All localStorage history access gated through this module \u2014 ARCHITECTURE.md rule: no direct localStorage.* calls outside wrapper functions",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "getHistory() wraps JSON.parse in try/catch returning [] — corrupted or missing key is a silent no-op, not a crash",
+        "text": "getHistory() wraps JSON.parse in try/catch returning [] \u2014 corrupted or missing key is a silent no-op, not a crash",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "saveToHistory() accepts optional { isIteration, basedOn } fields (FEATURE-012) — isIteration:true marks entry for HistoryPanel badge; basedOn stores first 100 chars of original prompt for provenance display",
+        "text": "saveToHistory() accepts optional { isIteration, basedOn } fields (FEATURE-012) \u2014 isIteration:true marks entry for HistoryPanel badge; basedOn stores first 100 chars of original prompt for provenance display",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "bookmarkHistoryItem() toggles bookmarked boolean and returns new value — toggle-pattern matches existing delete approach (mutate array, re-persist). rateHistoryItem() sets rating ('up'|'down'|null) + ratingTag on same entry. Both added for FEATURE-020 (history-v2).",
+        "text": "bookmarkHistoryItem() toggles bookmarked boolean and returns new value \u2014 toggle-pattern matches existing delete approach (mutate array, re-persist). rateHistoryItem() sets rating ('up'|'down'|null) + ratingTag on same entry. Both added for FEATURE-020 (history-v2).",
         "source": "EXTRACTED",
         "added": "2026-04-24"
       }
     ]
   },
-
   "src/renderer/components/HistoryPanel.jsx": {
     "state": "built",
     "type": "react-component",
@@ -534,129 +746,196 @@
     "concept_confidence": 1.0,
     "concept_evidence": "vibe/features/2026-04-19-history-panel/ Touches field: HIST-002",
     "imports": [
-      { "file": "src/renderer/utils/history.js", "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 2" }
+      {
+        "file": "src/renderer/utils/history.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 2"
+      }
     ],
     "imported_by": [
-      { "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 6" }
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 6"
+      }
     ],
-    "props": ["onClose", "onReuse"],
-    "local_state": ["entries", "selected", "searchOpen", "query", "copied"],
+    "props": [
+      "onClose",
+      "onReuse"
+    ],
+    "local_state": [
+      "entries",
+      "selected",
+      "searchOpen",
+      "query",
+      "copied"
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "Full inline styles — no Tailwind classes. Tailwind layout classes were not applying in HISTORY state (purge/JIT issue). Inline styles are immune and explicit.",
+        "text": "Full inline styles \u2014 no Tailwind classes. Tailwind layout classes were not applying in HISTORY state (purge/JIT issue). Inline styles are immune and explicit.",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "Right panel has minHeight:0 on the flex container — without it, flex items don't shrink below content size and overflowY:auto on the inner prompt div never activates",
+        "text": "Right panel has minHeight:0 on the flex container \u2014 without it, flex items don't shrink below content size and overflowY:auto on the inner prompt div never activates",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       },
       {
         "type": "DECISION",
-        "text": "↻ iterated badge shown on history entry when entry.isIteration === true (FEATURE-012) — distinguishes AI-refined iterations from original recordings in the history list",
+        "text": "\u21bb iterated badge shown on history entry when entry.isIteration === true (FEATURE-012) \u2014 distinguishes AI-refined iterations from original recordings in the history list",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "src/renderer/hooks/useMode.js": {
     "state": "built",
     "type": "react-hook",
     "concept": "claude-integration",
     "concept_source": "INFERRED",
     "concept_confidence": 0.85,
-    "concept_evidence": "Wraps localStorage mode key — directly supports mode selection feature",
+    "concept_evidence": "Wraps localStorage mode key \u2014 directly supports mode selection feature",
     "imports": [],
     "imported_by": [
-      { "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
     "rationale": []
   },
-
   "src/renderer/hooks/useWindowResize.js": {
     "state": "built",
     "type": "react-hook",
     "concept": "foundation",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.90,
-    "concept_evidence": "Wraps resizeWindow IPC — shared infrastructure, no single feature owns it",
+    "concept_confidence": 0.9,
+    "concept_evidence": "Wraps resizeWindow IPC \u2014 shared infrastructure, no single feature owns it",
     "imports": [],
     "imported_by": [
-      { "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "resizeWindow wrapped in requestAnimationFrame — defers IPC call until after React render to avoid visual flash during state transition",
+        "text": "resizeWindow wrapped in requestAnimationFrame \u2014 defers IPC call until after React render to avoid visual flash during state transition",
         "source": "EXTRACTED",
         "added": "2026-04-19"
       }
     ]
   },
-
   "src/renderer/components/IdleState.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "state-machine",
     "concept_source": "INFERRED",
     "concept_confidence": 0.85,
-    "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
-    "rationale": []
-  },
-
-  "src/renderer/components/RecordingState.jsx": {
-    "state": "built",
-    "type": "react-component",
-    "concept": "speech-recording",
-    "concept_source": "INFERRED",
-    "concept_confidence": 0.90,
-    "secondary_concepts": ["pause-resume"],
-    "imports": [
-      { "file": "src/renderer/components/WaveformCanvas.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "import WaveformCanvas line 1" }
+    "secondary_concepts": [
+      "ui-polish"
     ],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
-    "props": ["onStop", "onDismiss", "onPause", "duration"],
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "Internal timer (useState + setInterval) removed in FEATURE-011 — duration now flows down as prop from App.jsx; required for timer to survive RECORDING→PAUSED→RECORDING transitions without resetting to 0",
+        "text": "'built using vibe-* skills' footer added \u2014 attribution line; renders below the \u2318? hint chip in IDLE state",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
+  "src/renderer/components/RecordingState.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "speech-recording",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.9,
+    "secondary_concepts": [
+      "pause-resume"
+    ],
+    "imports": [
+      {
+        "file": "src/renderer/components/WaveformCanvas.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import WaveformCanvas line 1"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
+    "props": [
+      "onStop",
+      "onDismiss",
+      "onPause",
+      "duration"
+    ],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "text": "Internal timer (useState + setInterval) removed in FEATURE-011 \u2014 duration now flows down as prop from App.jsx; required for timer to survive RECORDING\u2192PAUSED\u2192RECORDING transitions without resetting to 0",
+        "source": "EXTRACTED",
+        "added": "2026-04-20"
+      }
+    ]
+  },
   "src/renderer/components/PausedState.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "pause-resume",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "vibe/features/2026-04-20-pause-resume/ — PAUZ-002 Touches field; sole purpose is to render PAUSED state UI",
+    "concept_evidence": "vibe/features/2026-04-20-pause-resume/ \u2014 PAUZ-002 Touches field; sole purpose is to render PAUSED state UI",
     "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 8" }],
-    "props": ["duration", "onResume", "onStop", "onDismiss"],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 8"
+      }
+    ],
+    "props": [
+      "duration",
+      "onResume",
+      "onStop",
+      "onDismiss"
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "Flat amber gradient line instead of WaveformCanvas — waveform animation would need to be frozen-in-place; a static ambient line communicates 'paused' more clearly with zero complexity",
+        "text": "Flat amber gradient line instead of WaveformCanvas \u2014 waveform animation would need to be frozen-in-place; a static ambient line communicates 'paused' more clearly with zero complexity",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "Stop button retained in PAUSED state — MediaRecorder.stop() works natively from 'paused' state; user should not need to resume before stopping",
+        "text": "Stop button retained in PAUSED state \u2014 MediaRecorder.stop() works natively from 'paused' state; user should not need to resume before stopping",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "src/renderer/components/WaveformCanvas.jsx": {
     "state": "built",
     "type": "react-component",
@@ -665,11 +944,14 @@
     "concept_confidence": 0.85,
     "imports": [],
     "imported_by": [
-      { "file": "src/renderer/components/RecordingState.jsx", "source": "INFERRED", "confidence": 0.90 }
+      {
+        "file": "src/renderer/components/RecordingState.jsx",
+        "source": "INFERRED",
+        "confidence": 0.9
+      }
     ],
     "rationale": []
   },
-
   "src/renderer/components/ThinkingState.jsx": {
     "state": "built",
     "type": "react-component",
@@ -677,63 +959,92 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.85,
     "imports": [
-      { "file": "src/renderer/components/MorphCanvas.jsx", "source": "INFERRED", "confidence": 0.90 }
+      {
+        "file": "src/renderer/components/MorphCanvas.jsx",
+        "source": "INFERRED",
+        "confidence": 0.9
+      }
     ],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
     "rationale": []
   },
-
   "src/renderer/components/MorphCanvas.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "claude-integration",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.80,
+    "concept_confidence": 0.8,
     "imports": [],
     "imported_by": [
-      { "file": "src/renderer/components/ThinkingState.jsx", "source": "INFERRED", "confidence": 0.90 }
+      {
+        "file": "src/renderer/components/ThinkingState.jsx",
+        "source": "INFERRED",
+        "confidence": 0.9
+      }
     ],
     "rationale": []
   },
-
   "src/renderer/components/PromptReadyState.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "actions",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.90,
-    "secondary_concepts": ["export", "iteration-mode"],
+    "concept_confidence": 0.9,
+    "secondary_concepts": [
+      "export",
+      "iteration-mode"
+    ],
     "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
     "rationale": []
   },
-
   "src/renderer/components/IteratingState.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "iteration-mode",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "vibe/features/2026-04-20-iteration-mode/ — ITR-002 Touches field; sole purpose is ITERATING state UI",
+    "concept_evidence": "vibe/features/2026-04-20-iteration-mode/ \u2014 ITR-002 Touches field; sole purpose is ITERATING state UI",
     "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0, "evidence": "line 12" }],
-    "props": ["onStop", "onDismiss"],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "line 12"
+      }
+    ],
+    "props": [
+      "onStop",
+      "onDismiss"
+    ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "All styles inline — no Tailwind classes, matching HistoryPanel.jsx pattern; avoids Tailwind JIT purge issues for rarely-activated ITERATING state",
+        "text": "All styles inline \u2014 no Tailwind classes, matching HistoryPanel.jsx pattern; avoids Tailwind JIT purge issues for rarely-activated ITERATING state",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       },
       {
         "type": "DECISION",
-        "text": "Uses iterGlow @keyframes from index.css inline — violet/indigo colour distinguishes ITERATING from RECORDING (blue waveform) and PAUSED (amber); visual hierarchy: new input=violet, prev recording=blue",
+        "text": "Uses iterGlow @keyframes from index.css inline \u2014 violet/indigo colour distinguishes ITERATING from RECORDING (blue waveform) and PAUSED (amber); visual hierarchy: new input=violet, prev recording=blue",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "src/renderer/components/ErrorState.jsx": {
     "state": "built",
     "type": "react-component",
@@ -741,102 +1052,283 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.85,
     "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
     "rationale": []
   },
-
   "src/renderer/components/ShortcutsPanel.jsx": {
     "state": "built",
     "type": "react-component",
     "concept": "shortcuts",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.90,
-    "secondary_concepts": ["ui-polish"],
+    "concept_confidence": 0.9,
+    "secondary_concepts": [
+      "ui-polish"
+    ],
     "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
     "rationale": []
   },
-
-  "src/renderer/components/IdleState.jsx": {
-    "state": "built",
-    "type": "react-component",
-    "concept": "state-machine",
-    "concept_source": "INFERRED",
-    "concept_confidence": 0.85,
-    "secondary_concepts": ["ui-polish"],
-    "imports": [],
-    "imported_by": [{ "file": "src/renderer/App.jsx", "source": "EXTRACTED", "confidence": 1.0 }],
-    "rationale": [
-      {
-        "type": "DECISION",
-        "text": "'built using vibe-* skills' footer added — attribution line; renders below the ⌘? hint chip in IDLE state",
-        "source": "EXTRACTED",
-        "added": "2026-04-20"
-      }
-    ]
-  },
-
   "scripts/create-cert.sh": {
     "state": "built",
     "type": "shell-script",
     "concept": "signing",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "FEATURE-SIGNING — creates a self-signed code signing certificate in the macOS Keychain for persistent TCC mic grant",
+    "concept_evidence": "FEATURE-SIGNING \u2014 creates a self-signed code signing certificate in the macOS Keychain for persistent TCC mic grant",
     "imports": [],
     "imported_by": [
-      { "file": "scripts/build-signed.sh", "source": "EXTRACTED", "confidence": 1.0, "evidence": "build-signed.sh orchestrates create-cert.sh + electron-builder + sign-app.sh" }
+      {
+        "file": "scripts/build-signed.sh",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "build-signed.sh orchestrates create-cert.sh + electron-builder + sign-app.sh"
+      }
     ],
     "rationale": [
       {
         "type": "DECISION",
-        "text": "Legacy PKCS12 fallback included — security import -f pkcs12 works on older macOS where newer API unavailable; tmpdir used for intermediate files and cleaned up on exit",
+        "text": "Legacy PKCS12 fallback included \u2014 security import -f pkcs12 works on older macOS where newer API unavailable; tmpdir used for intermediate files and cleaned up on exit",
         "source": "EXTRACTED",
         "added": "2026-04-20"
       }
     ]
   },
-
   "scripts/sign-app.sh": {
     "state": "built",
     "type": "shell-script",
     "concept": "signing",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "FEATURE-SIGNING — codesigns dist/mac-universal/Promptly.app with self-signed cert + entitlements.plist",
+    "concept_evidence": "FEATURE-SIGNING \u2014 codesigns dist/mac-universal/Promptly.app with self-signed cert + entitlements.plist",
     "imports": [
-      { "file": "entitlements.plist", "source": "EXTRACTED", "confidence": 1.0, "evidence": "codesign --entitlements entitlements.plist" }
+      {
+        "file": "entitlements.plist",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "codesign --entitlements entitlements.plist"
+      }
     ],
     "imported_by": [
-      { "file": "scripts/build-signed.sh", "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "scripts/build-signed.sh",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
     "rationale": []
   },
-
   "scripts/build-signed.sh": {
     "state": "built",
     "type": "shell-script",
     "concept": "signing",
     "concept_source": "EXTRACTED",
     "concept_confidence": 1.0,
-    "concept_evidence": "FEATURE-SIGNING — orchestration script: create-cert → npm run dist → sign-app; maps to 'dist:signed' npm script",
+    "concept_evidence": "FEATURE-SIGNING \u2014 orchestration script: create-cert \u2192 npm run dist \u2192 sign-app; maps to 'dist:signed' npm script",
     "imports": [
-      { "file": "scripts/create-cert.sh", "source": "EXTRACTED", "confidence": 1.0 },
-      { "file": "scripts/sign-app.sh",    "source": "EXTRACTED", "confidence": 1.0 }
+      {
+        "file": "scripts/create-cert.sh",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "scripts/sign-app.sh",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
     ],
     "imported_by": [],
     "rationale": []
   },
-
   "scripts/generate-icon.js": {
     "state": "built",
     "type": "node-script",
     "concept": "foundation",
     "concept_source": "INFERRED",
-    "concept_confidence": 0.80,
-    "concept_evidence": "Build tooling — generates build/icon.icns from build/icon.png; one-time dev utility",
+    "concept_confidence": 0.8,
+    "concept_evidence": "Build tooling \u2014 generates build/icon.icns from build/icon.png; one-time dev utility",
     "imports": [],
     "imported_by": [],
     "rationale": []
+  },
+  "src/renderer/hooks/useRecording.js": {
+    "type": "react-hook",
+    "state": "built",
+    "concept": "foundation",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 5
+      }
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Extracted from App.jsx by BUG-033 to resolve SRP violation \u2014 recording state (mediaRecorderRef, chunksRef, recSecsRef, isProcessingRef) + callbacks delegated here"
+      }
+    ],
+    "hash": null
+  },
+  "src/renderer/hooks/useKeyboardShortcuts.js": {
+    "type": "react-hook",
+    "state": "built",
+    "concept": "foundation",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 6
+      }
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Extracted from App.jsx by BUG-033 \u2014 IPC listeners (onShowHistory, onOpenSettings, onShowShortcuts) + keydown handler delegated here to keep App.jsx focused on state machine"
+      }
+    ],
+    "hash": null
+  },
+  "src/renderer/hooks/useTone.js": {
+    "type": "react-hook",
+    "state": "built",
+    "concept": "polish-mode",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/hooks/usePolishMode.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 2
+      }
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "localStorage wrapper for promptly_polish_tone \u2014 never access localStorage directly per CLAUDE.md rule"
+      }
+    ],
+    "hash": null
+  },
+  "src/renderer/hooks/usePolishMode.js": {
+    "type": "react-hook",
+    "state": "built",
+    "concept": "polish-mode",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "imports": [
+      {
+        "file": "src/renderer/hooks/useTone.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 2
+      },
+      {
+        "file": "src/renderer/utils/history.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 3
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 3
+      }
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Encapsulates polish mode state: polishResult, polishTone, parsePolishOutput \u2014 extracted to keep App.jsx SRP"
+      }
+    ],
+    "hash": null
+  },
+  "src/renderer/components/PolishReadyState.jsx": {
+    "type": "react-component",
+    "state": "built",
+    "concept": "polish-mode",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 14
+      }
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Separate component for polish output \u2014 different layout (polished text + changes section) than PromptReadyState; green accent throughout"
+      }
+    ],
+    "hash": null
+  },
+  "src/renderer/components/TypingState.jsx": {
+    "type": "react-component",
+    "state": "built",
+    "concept": "text-input",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 17
+      }
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Controlled textarea for typed prompts \u2014 resizeWindow prop passed from App.jsx (not hook) per FEATURE-014 convention; dynamic height on content"
+      }
+    ],
+    "hash": null
+  },
+  "src/renderer/components/SettingsPanel.jsx": {
+    "type": "react-component",
+    "state": "built",
+    "concept": "path-config",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.85,
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 18
+      }
+    ],
+    "rationale": [],
+    "hash": null
   }
 }

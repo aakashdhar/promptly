@@ -356,6 +356,9 @@
 ## What just happened
 ✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
 ✅ FEATURE-020 complete 2026-04-24 — History Panel v2: bookmarks, ratings (👍/👎 + tags), filter chips, stats bar, hover-only delete, entry indicators, updated footer.
+💰 Cost tracked — Session #21 · 2026-04-26 · $0.26 est
+   Project total: $13.57 (21 sessions, 9 days) · Trend: ↓ maintenance mode
+   vibe/cost/report-2026-04-26-vibe-cost.md
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
