@@ -34,6 +34,7 @@
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/hooks/useRecording.js` | Recording state + callbacks hook — owns mediaRecorderRef, audioChunksRef, isProcessingRef, isPausedRef, recTimerRef, recSecs. Params: `{ STATES, transitionRef, modeRef, polishToneRef, setThinkTranscript, onGenerateResult, isIterated, originalTranscript }` — `onGenerateResult` is a ref to App.jsx's `handleGenerateResult(genResult, transcript)` callback (replaces old `setGeneratedPrompt` + `setPolishResult` params) | Returns: `{ recSecs, startRecording, stopRecording, handleDismiss, pauseRecording, resumeRecording, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, startTimer, stopTimer }` |
 | `src/renderer/hooks/useKeyboardShortcuts.js` | IPC shortcut listeners + keydown handler hook. Params: `{ STATES, stateRef, prevStateRef, generatedPromptRef, modeRef, transitionRef, setMode, setPolishToneValue, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, openHistory, closeHistory, openSettings, closeSettings }` | Returns nothing (side-effects only) |
+| `src/renderer/components/ExpandedView.jsx` | Three-zone expanded layout mode (POLISH-TOGGLE / BUG-TOGGLE-002) — top transport bar (record/stop/pause/waveform), left session-history panel (scrollable, getHistory()), right state-content panel (IDLE/RECORDING/THINKING/PROMPT_READY). Rendered by App.jsx when `isExpanded=true`, replacing all per-state components. | props: `currentState`, `mode`, `modeLabel`, `duration`, `generatedPrompt`, `originalTranscript`, `thinkTranscript`, `onStart`, `onCollapse`, `onPause`, `onStop`, `onRegenerate`, `onReset`, `onIterate`, `isIterated`, `setGeneratedPrompt`, `isPolishMode`, `polishResult`, `polishTone`, `onPolishToneChange` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
 | `src/renderer/components/PausedState.jsx` | PAUSED panel — dismiss, flat amber line, amber timer, resume (▶), stop, status text | props: duration, onResume, onStop, onDismiss |
@@ -105,6 +106,7 @@
 | State | Panel ID | Height | Notes |
 |-------|----------|--------|-------|
 | `IDLE` | `panel-idle` | 134px | Mode pill, shortcut hint, ⌘? hint; expand button top-right (POLISH-TOGGLE) |
+| `EXPANDED` | `ExpandedView` | 580px | isExpanded=true layout mode; window 760×580; three-zone: top bar / left history / right state-content (BUG-TOGGLE-002) |
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
 | `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
 | `ITERATING` | IteratingState | 200px | Blue context banner + blue waveform + timer + blue stop; traffic lights hidden; separate iter MediaRecorder from main recording |

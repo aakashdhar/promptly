@@ -1195,3 +1195,15 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 > Action: findings logged; code already correct (build review caught what spec missed)
 > Report: vibe/spec-reviews/2026-04-26-toggle.md
 > Key lessons: (1) Every design task needs "Done when:" criteria. (2) "Zero logic changes" is too absolute — qualify as "no business logic". (3) Always spec empty-state UX for buttons that depend on async state.
+
+---
+
+### D-BUG-TOGGLE-002 — Tear down ExpandedIdleView, rebuild as three-zone ExpandedView
+- **Date**: 2026-04-26 · **Task**: BUG-TOGGLE-002 · **Type**: drift (wrong implementation)
+- **Root cause**: Previous agent built `ExpandedIdleView.jsx` as a generic centred mic screen (reskin of IdleState) instead of the specified three-zone layout. App.jsx only gated IDLE state on `isExpanded`; RECORDING/THINKING/PROMPT_READY all rendered their normal components in the 760px window, ignoring the layout mode. Window height was also 560 instead of specified 580.
+- **Files in scope**: `src/renderer/components/ExpandedView.jsx` (new), `src/renderer/App.jsx`
+- **Fix approach**: Created `ExpandedView.jsx` with three zones — top transport bar (record/stop/pause/waveform), left session-history panel (228px, getHistory()), right state-content panel (IDLE/RECORDING/THINKING/PROMPT_READY content). App.jsx: when `isExpanded=true`, renders `<ExpandedView>` as the sole renderer for ALL states. Fixed height 560→580 (STATE_HEIGHTS.EXPANDED=580). Removed inline collapse button (moved into ExpandedView top bar). Deleted `ExpandedIdleView.jsx`.
+- **CODEBASE.md update**: Yes — added ExpandedView.jsx row, removed ExpandedIdleView.jsx, added EXPANDED=580 to state heights table.
+- **ARCHITECTURE.md update**: Yes — added isExpanded layout mode section to state management rules.
+- **Deviations from BUG_PLAN.md**: None.
+- **Approved by**: human

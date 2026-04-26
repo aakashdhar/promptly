@@ -353,12 +353,16 @@
    [x] HSTV2-009 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
    → Full specs: vibe/features/2026-04-24-history-v2/FEATURE_TASKS.md (agent use)
 
+✅ **BUG-TOGGLE-002 — Expanded view three-zone layout** (5/5 — COMPLETE 2026-04-26)
+   [x] BUG-TOGGLE-002-001 · Regression baseline — bug confirmed, lint clean, build passing
+   [x] BUG-TOGGLE-002-002 · Create ExpandedView.jsx — full three-zone layout (top bar / left history / right state-content)
+   [x] BUG-TOGGLE-002-003 · Update App.jsx — swap import, gate ALL states on isExpanded, fix height 560→580, remove inline collapse button
+   [x] BUG-TOGGLE-002-004 · Verify — build success, lint 0 errors, smoke checklist passed
+   [x] BUG-TOGGLE-002-005 · Update docs — CODEBASE.md + DECISIONS.md + TASKS.md + ARCHITECTURE.md
+   → Specs: vibe/bugs/2026-04-26-bug-toggle-002/ | DECISIONS.md D-BUG-TOGGLE-002
+
 ## What just happened
-✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
-✅ FEATURE-020 complete 2026-04-24 — History Panel v2: bookmarks, ratings (👍/👎 + tags), filter chips, stats bar, hover-only delete, entry indicators, updated footer.
-💰 Cost tracked — Session #21 · 2026-04-26 · $0.26 est
-   Project total: $13.57 (21 sessions, 9 days) · Trend: ↓ maintenance mode
-   vibe/cost/report-2026-04-26-vibe-cost.md
+✅ BUG-TOGGLE-002 complete 2026-04-26 — ExpandedIdleView.jsx (wrong generic mic screen) torn down. ExpandedView.jsx built from scratch: top transport bar, left session-history panel, right state-specific content for all states. App.jsx now renders ExpandedView for ALL states when isExpanded=true. Window 760×580. Build + lint clean.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
