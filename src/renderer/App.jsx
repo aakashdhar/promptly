@@ -419,6 +419,16 @@ Mode: ${iterationBase.current.mode}`
             polishResult={polishResult}
             polishTone={polishTone}
             onPolishToneChange={handlePolishToneChange}
+            onReuse={(entry) => {
+              originalTranscript.current = entry.transcript
+              setGeneratedPrompt(entry.prompt)
+              if (entry.mode === 'polish') {
+                setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })
+              } else {
+                setPolishResult(null)
+              }
+              transition(STATES.PROMPT_READY)
+            }}
           />
         ) : (
           <>
