@@ -20,19 +20,18 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
         }}
       >
         <button
-          onClick={(e) => { e.stopPropagation(); onExpand && onExpand() }}
+          onClick={(e) => { e.stopPropagation(); onExpand() }}
           title="Expand"
           style={{
             width: '22px', height: '22px', borderRadius: '6px',
             background: 'rgba(255,255,255,0.04)',
             border: '0.5px solid rgba(255,255,255,0.09)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: onExpand ? 'pointer' : 'default', marginRight: '14px',
+            cursor: 'pointer', marginRight: '14px',
             WebkitAppRegion: 'no-drag', flexShrink: 0,
-            padding: 0, opacity: onExpand ? 1 : 0.35,
-            transition: 'background 150ms, opacity 150ms',
+            padding: 0, transition: 'background 150ms',
           }}
-          onMouseEnter={e => { if (onExpand) e.currentTarget.style.background='rgba(255,255,255,0.1)' }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'}
           onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
         >
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
