@@ -393,6 +393,7 @@
 ## What just happened
 ✅ BUG-TOGGLE-002 complete 2026-04-26 — ExpandedIdleView.jsx (wrong generic mic screen) torn down. ExpandedView.jsx built from scratch: top transport bar, left session-history panel, right state-specific content for all states. App.jsx now renders ExpandedView for ALL states when isExpanded=true. Window 760×580. Build + lint clean.
 ✅ BUG-TOGGLE-003/004 + history parity complete 2026-04-27 — ExpandedView left panel brought to full parity with HistoryPanel (search, tabs, filters, stats, ↻ badge, title fallback, clear all). Waveform canvases DPR-crisp, contained to 60% width. Pulse rings and skeleton refined.
+✅ BUG-TOGGLE-005 complete 2026-04-27 — ExpandedView scaled to 1100×860 (Claude app dimensions). All zones, text, buttons, and padding scaled proportionally: left panel 300px, mic 60px, flanking 38px, section labels 10px, body 14px, action buttons 40px, two-column gap 28px. Build clean.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24

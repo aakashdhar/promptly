@@ -1240,3 +1240,33 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   4. **Skeleton sections (FIX 4)**: Thinking state padding changed to `24px 15%`. Three skeleton sections, each with a label bar (8px, width 30%, rgba(100,170,255,0.08)) followed by two content bars (10px, borderRadius 5px, rgba(255,255,255,0.05)) at widths 88%/72%, 94%/65%, 80%/55%. Added `skeleton-pulse` keyframe (opacity 0.6→1→0.6).
   5. **Pulse rings (FIX 5)**: Replaced `pulse-inner` / `pulse-expand` animations with single `pulse-ring` keyframe (scale 1→1.8, opacity 0.6→0). Ring 1: 1px solid rgba(200,50,35,0.3), 2.2s, no delay. Ring 2: 1px solid rgba(200,50,35,0.15), 2.2s, 0.7s delay. Max scale 1.8 (was implied >2.2).
 - **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-005 — ExpandedView resize to 1100×860 (Claude app dimensions)
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-005 · **Type**: design (scale-up to match Claude desktop app window)
+- **Root cause**: ExpandedView was 760×580 — too small relative to the Claude desktop app window users will compare it against. All elements felt cramped at that size.
+- **Files changed**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx` (visual only — no logic changes)
+- **What was changed**:
+  1. **Window dimensions**: `STATE_HEIGHTS.EXPANDED` 580 → 860; `setWindowSize` 760×580 → 1100×860
+  2. **Left panel width**: 228px → 300px
+  3. **Top bar transport controls**: Mic/stop button 52px → 60px; flanking buttons (pause, settings) 34px → 38px; flanking group width 120px → 140px; timer 13px → 14px; mode pill 10px/4px 12px → 12px/6px 16px; waveform zone height 36px → 44px; transport row bottom padding 10px → 12px
+  4. **Collapse button**: 26×26 → 28×28, positioned top 16px right 18px; SVG 12px → 13px
+  5. **SESSION HISTORY label**: padding 12px 14px 10px → 16px 18px 12px; font-size 9px → 10px
+  6. **History entries**: padding 10px 16px → 12px 18px; timestamp 10px → 11px; title 12.5px → 13.5px; mode tag 9px/1px 6px → 10px/2px 7px
+  7. **Right panel idle**: mic circle 56px → 68px; title 16px → 20px; hint 12px → 13px; gap 16px → 20px
+  8. **PROMPT_READY header**: padding 16px 20px 12px → 16px 24px 12px; green ✓ 15px → 17px; action links 11px/gap 14px → 12px/gap 18px
+  9. **Two-column content**: grid gap 20px → 28px; content padding 16px 20px → 22px 28px; section label 9px → 10px; body 13px/1.75 → 14px/1.8; section gap 16px → 18px
+  10. **Action row (PROMPT_READY)**: padding 12px 20px 16px → 14px 24px 20px; buttons 36px/12px → 40px/13px; copy button padding 0 20px → 0 32px; divider margin 0 20px → 0 28px
+  11. **Entry detail right panel**: "You said" padding 18px 20px 14px → 22px 28px 14px; divider margin 0 20px → 0 28px; prompt content padding 14px 20px → 18px 28px; rating section 12px 20px → 12px 28px; action row padding 12px 20px 16px → 14px 24px 20px; buttons 36px/12px → 40px/13px
+  12. **renderPromptSections**: label 9px → 10px, gap 14px → 18px; body 13px/1.75 → 14px/1.8; transcript text 13px/1.65 → 14px/1.7
+- **Approved by**: human
+
+---
+
+### D-BUG-REC-001 — ExpandedView mic button dead after first recording
+- **Date**: 2026-04-27 · **Type**: drift (guard condition too narrow)
+- **Root cause**: `onStart` prop passed to `ExpandedView` had guard `stateRef.current === STATES.IDLE` — but after the first recording completes, state is `PROMPT_READY`. Transport bar mic is always visible in expanded mode, so clicking it from `PROMPT_READY` silently no-ops.
+- **Files changed**: `src/renderer/App.jsx` (1 line — `onStart` prop for ExpandedView only)
+- **Fix**: Guard changed to `s === STATES.IDLE || s === STATES.PROMPT_READY` — allows starting a new recording from either idle or prompt-ready state. IdleState's `onStart` (line 439) left unchanged — it is only ever rendered in IDLE state anyway.
+- **Approved by**: human
