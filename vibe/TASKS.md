@@ -401,3 +401,22 @@
 
 ## Remaining open items
 ✅ BL-024 — npm audit 0 vulnerabilities — resolved as part of BL-031 fix. Backlog fully clear.
+
+---
+
+## ExpandedView review — 2026-04-27
+
+✅ Expanded View review fixes — COMPLETE (5/5 — 2026-04-27)
+   [x] RFX-EXP-001 · ExpandedTransportBar.jsx extracted — 217 lines, 9 props
+   [x] RFX-EXP-002 · ExpandedHistoryList.jsx extracted — 359 lines, 3 props
+   [x] RFX-EXP-003 · ExpandedDetailPanel.jsx extracted — 496 lines (was ExpandedStatePanel)
+   [x] RFX-EXP-004 · parseSections + getModeTagStyle moved to src/renderer/utils/promptUtils.js
+   [x] RFX-EXP-005 · spin/breathe/pulse-ring/skeleton-pulse @keyframes moved to index.css
+   → P2-EXP-003 (settings button wired), P2-EXP-004 (ITERATING/TYPING panels added) also fixed
+   → Full report: vibe/reviews/expanded-view-review-2026-04-27.md
+
+## What just happened
+✅ Expanded View review fixes complete 2026-04-27 — ExpandedView.jsx split from 1131 lines into four files: ExpandedView orchestrator (92), ExpandedTransportBar (217), ExpandedHistoryList (359), ExpandedDetailPanel (496). All P0/P1/P2 review findings resolved. Build clean.
+
+## What's next
+Branch feat/toggle-expand-collapse is ready to merge to main. Run `review: expanded view final` or merge.

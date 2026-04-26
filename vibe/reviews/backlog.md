@@ -243,6 +243,38 @@
 
 ---
 
+## From Expanded View Review (2026-04-27)
+
+### P0 — Blocks merge (tracked in TASKS.md)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P0-EXP-001 | src/renderer/components/ExpandedView.jsx | 1–1131 | SRP CRITICAL — 1131 lines, 4 concerns. Fix: extract ExpandedTransportBar + ExpandedHistoryList + ExpandedStatePanel. | ✅ resolved — refactor(expanded) 1d900d8 |
+
+### P1 — Fix before deploy (tracked in TASKS.md)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P1-ARCH-001 | src/renderer/components/ExpandedView.jsx | 1114–1128 | Architecture drift — `<style>` block defines spin/breathe/pulse-ring/skeleton-pulse @keyframes. Move to index.css. | ✅ resolved — refactor(expanded) 1d900d8 |
+| P1-EXP-001 | src/renderer/components/ExpandedView.jsx | 91–115 | ISP — 23 props (threshold 10). Resolves as part of P0-EXP-001 split. | ✅ resolved — refactor(expanded) 1d900d8 |
+
+### P2 — Should fix
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P2-EXP-001 | src/renderer/components/ExpandedView.jsx | 6–12 | STATES constant silently duplicated (5 keys vs App.jsx 12). Export from src/renderer/constants.js. | ✅ resolved — sub-components now use string literals, no local STATES constant |
+| P2-EXP-002 | src/renderer/components/ExpandedView.jsx | 17–83 | parseSections parsing logic duplicated vs PromptReadyState.jsx. Extract to utils/promptUtils.js. Resolves with RFX-EXP-004. | ✅ resolved — utils/promptUtils.js created; ExpandedDetailPanel imports parseSections |
+| P2-EXP-003 | src/renderer/components/ExpandedView.jsx | 457–475 | Settings button (sliders icon) has no onClick — non-functional UI element. Wire or remove. | ✅ resolved — wired to onOpenSettings prop in ExpandedTransportBar.jsx |
+| P2-EXP-004 | src/renderer/components/ExpandedView.jsx | 933–1110 | ITERATING and TYPING states produce blank right panel in expanded mode. Add placeholder divs. | ✅ resolved — ExpandedDetailPanel.jsx handles both states with content |
+
+### P3 — Minor / tracking
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P3-EXP-001 | src/renderer/components/HistoryPanel.jsx | 1–663 | 663 lines — pre-existing above P1 threshold (500). Schedule refactor when ExpandedView split creates opportunity. | Open |
+
+---
+
 ## From POLISH-TOGGLE Spec Review (2026-04-26)
 
 ### Spec P1/P2 — All resolved 2026-04-26
