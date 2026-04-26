@@ -1,6 +1,6 @@
 {
   "name": "promptly",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "macOS floating bar that turns speech into structured Claude prompts",
   "author": {
     "name": "Aakash Dhar",
@@ -18,7 +18,8 @@
     "create-cert": "bash scripts/create-cert.sh",
     "sign-app": "bash scripts/sign-app.sh",
     "dist:signed": "bash scripts/build-signed.sh",
-    "uninstall": "bash scripts/uninstall.sh"
+    "uninstall": "bash scripts/uninstall.sh",
+    "release": "bash scripts/release.sh"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -57,7 +58,10 @@
       ],
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Promptly needs microphone access to record your voice for prompt generation."
-      }
+      },
+      "signIgnore": [
+        "uninstall\\.sh$"
+      ]
     },
     "dmg": {
       "title": "Promptly"
