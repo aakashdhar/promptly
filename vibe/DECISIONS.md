@@ -1302,3 +1302,15 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   3. `Math.max(..., dy)` — prevent over-correction from pushing top edge off screen
 - **Constraints**: Horizontal centering from BUG-TOGGLE-006 unchanged. No renderer changes. `animate: false` preserved. `preExpandBounds` store/restore unchanged.
 - **Approved by**: human
+
+---
+### D-BUG-RELEASE-NODE-PATH — Bug fix: release.sh fails with "env: node: No such file or directory" on nvm machines
+- **Date**: 2026-04-28 · **Type**: drift (bug)
+- **Folder**: vibe/bugs/2026-04-28-bug-release-node-path/
+- **Root cause**: `release.sh` called `node -e "..."` and `npx electron-builder` without sourcing nvm first. Running `bash release.sh` skips `.zshrc`, so nvm's shim dir is not in PATH → `/usr/bin/env node: No such file or directory`.
+- **Files in scope**: `scripts/release.sh`
+- **Fix approach**: Added nvm init block + preflight `command -v node/npx` checks at top of script, before arg check. Same pattern as `main.js` resolveClaudePath().
+- **ARCHITECTURE.md update**: Yes — added shell scripts rule to PATH resolution section.
+- **CODEBASE.md update**: No — release.sh is not in the file map.
+- **Deviations from BUG_PLAN.md**: None.
+- **Approved by**: human

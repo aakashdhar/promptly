@@ -184,6 +184,13 @@ IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
 
 **Rule:** Both `claude` and `whisper` binaries MUST be resolved via expanded search at startup, then cached. In packaged `.app` / `.dmg` builds the process environment does not load the user's shell PATH, so a direct `which` call is unreliable.
 
+**Shell scripts rule (BUG-RELEASE-NODE-PATH — 2026-04-28):** `scripts/release.sh` (and any future dev scripts that call `node`/`npx`/`npm`) MUST source nvm at the top before any node calls. Running `bash <script>` skips `.zshrc`/`.bashrc`, so nvm's shim directory is not in PATH. Pattern:
+```bash
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+command -v node >/dev/null 2>&1 || fail "node not found"
+```
+
 **Pattern (BUG-012 + BUG-017 — 2026-04-23):**
 ```js
 // 1. Check static common paths (fs.existsSync — no shell needed)

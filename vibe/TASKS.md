@@ -463,5 +463,10 @@ Remaining open items (BL-077, BL-075, BL-076, BL-078 — all P2/P3):
 ## Phase gates
 Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy not blocked — 1 P2 + 3 P3 logged to backlog
 
+✅ **BUG-RELEASE-NODE-PATH — release.sh fails on nvm-managed machines** (FIXED 2026-04-28)
+   Root cause: `bash release.sh` skips .zshrc → nvm not loaded → `node`/`npx` not in PATH → "env: node: No such file or directory"
+   Fix: nvm init block + preflight checks added to top of release.sh (same pattern as main.js resolveClaudePath)
+   → Specs: vibe/bugs/2026-04-28-bug-release-node-path/ | DECISIONS.md D-BUG-RELEASE-NODE-PATH
+
 ## What's next
 Fix BL-077 (3 stale line counts in CODEBASE.md — trivial). Then close out BL-078 + BL-075 + BL-076 for a clean 10/10.
