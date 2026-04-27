@@ -10,6 +10,17 @@ ok()   { echo "  ✓ $1"; }
 fail() { echo "  ✗ $1"; exit 1; }
 step() { echo ""; echo "▸ $1"; }
 
+# ── nvm init ───────────────────────────────────────────────────────────────────
+# nvm installs node into a versioned shim dir that only loads in login shells.
+# Running `bash release.sh` skips .zshrc, so node/npx are invisible to PATH.
+# Source nvm explicitly — same pattern as main.js resolveClaudePath().
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+# ── preflight ──────────────────────────────────────────────────────────────────
+command -v node >/dev/null 2>&1 || fail "node not found — install Node.js or ensure nvm is configured"
+command -v npx  >/dev/null 2>&1 || fail "npx not found — ensure npm is installed alongside node"
+
 # ── arg check ──────────────────────────────────────────────────────────────────
 VERSION="$1"
 if [ -z "$VERSION" ]; then
