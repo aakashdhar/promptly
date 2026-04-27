@@ -487,5 +487,15 @@ Fix BL-077 (3 stale line counts in CODEBASE.md — trivial). Then close out BL-0
    [x] IMG-010 · Docs update — CODEBASE.md (2 new components, IPC passthrough note), DECISIONS.md (D-IMAGE-001, D-IMAGE-002), TASKS.md
    → Full specs: vibe/features/2026-04-27-image-builder/FEATURE_TASKS.md (agent use)
 
+## FEATURE-IMAGE-BUILDER review — 2026-04-27
+✅ PASS — Score 8.6/10 — Grade B+ — 0 P0, 0 P1 (all fixed at review time)
+→ Full report: vibe/reviews/feature-image-builder-review.md
+
+Review fixes applied (2 P1 + 1 P2 + docs):
+   [x] handleImageSkip stale async state — newAnswers computed sync, passed directly to assembleImagePrompt
+   [x] IdleState image mode identity — purple ring, shadow, subtitle "Speak your image idea", purple mode pill
+   [x] ImageBuilderDoneState unused onCopy prop removed
+   [x] CODEBASE.md: IMAGE_BUILDER + IMAGE_BUILDER_DONE added to state table; App.jsx line count 466→621; ExpandedDetailPanel + ExpandedView line counts corrected
+
 ## What just happened
 ✅ FEATURE-IMAGE-BUILDER complete 2026-04-27 — All 10 tasks implemented. New "Image" mode adds a 3-tier guided interview (13 questions) after speech recording. Claude assembles a natural language image generation prompt via generate-raw IPC. Compact bar and expanded view (4-col grid + progress bar) both supported. Build clean, lint 0 errors.

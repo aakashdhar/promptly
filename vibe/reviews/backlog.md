@@ -343,3 +343,13 @@
 | ~~P2-SR-003~~ | DESIGN_SPEC.md | No hover states specified | ✅ resolved — hover spec added to both buttons |
 | ~~P2-SR-004~~ | DESIGN_TASKS.md | Smoke checklist not embedded in design docs | ✅ resolved — 11-item checklist embedded in DESIGN_TASKS.md |
 | ~~P2-SR-005~~ | DESIGN_SPEC.md | No user type defined | ✅ resolved — "power users returning to a previously generated prompt" added |
+
+---
+
+## From FEATURE-IMAGE-BUILDER Review (2026-04-27)
+
+### P3 — Monitor / future cleanup
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-IMG-001 | src/renderer/App.jsx | 230–300 | Image builder question flow logic (8 handlers + assembleImagePrompt + calcImageBuilderHeight) adds ~90 lines to App.jsx. Extractable to `useImageBuilder()` hook for SRP. Not blocking — logic is cohesive. | Open / monitor |
