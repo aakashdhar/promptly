@@ -1372,3 +1372,12 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Spec review findings fixed**: P0-001 subjectDetail row missing; P0-002 single-select picker behavior; P1-001 IPC channel naming; P1-002 thinkingLabel mechanism; P1-003 removedByUser state for merge; P1-004 IMG-009 scope correction
 - **Report**: vibe/spec-reviews/2026-04-27-image-builder-redesign.md
 - **Approved by**: human
+
+---
+
+### D-BUG-001 — Trivial fix: blank screen after Confirm & generate →
+- **Date**: 2026-04-27 · **Type**: drift (trivial bug)
+- **Root cause**: `win.on('blur')` handler called `win.hide()` for any `currentIconState !== 'recording'`. The animated window resize (IMAGE_BUILDER 520px → THINKING 320px via `win.setSize(w, h, true)`) emits a spurious macOS blur event, hiding the window before IMAGE_BUILDER_DONE could display. Additionally IMAGE_BUILDER/IMAGE_BUILDER_DONE were missing from the stateMap, so they fell back to 'idle' — meaning any accidental blur while reviewing params also hid the window.
+- **Fix**: Added 'thinking' and 'builder' exclusions to the blur guard; added IMAGE_BUILDER/IMAGE_BUILDER_DONE → 'builder' to the stateMap in `update-menubar-state` IPC handler.
+- **File**: main.js — 2 hunks, 4 additions, 2 deletions
+- **Approved by**: human
