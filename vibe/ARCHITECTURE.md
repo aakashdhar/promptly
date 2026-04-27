@@ -93,10 +93,10 @@ IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
 - `isExpanded` (useState boolean, mirrored as `isExpandedRef`) is NOT a state machine state — it is a layout mode.
 - When `isExpanded=true`, App.jsx renders a single `<ExpandedView>` component that covers all states.
 - When `isExpanded=false`, App.jsx renders the existing per-state components normally.
-- `handleExpand()`: sets `isExpanded=true`, calls `setWindowSize(760, 580)`. `transition()` skips `resizeWindow` while expanded (guarded by `isExpandedRef.current`).
+- `handleExpand()`: sets `isExpanded=true`, calls `setWindowSize(1100, 860)` (BUG-TOGGLE-005). `transition()` skips `resizeWindow` while expanded (guarded by `isExpandedRef.current`).
 - `handleCollapse()`: sets `isExpanded=false`, resets state to IDLE, calls `setWindowSize(520, IDLE_HEIGHT)`.
 - `ExpandedView` owns: top transport bar (record/stop/pause/waveform), left session-history panel, right state-content panel. All state-driving callbacks (onStart, onStop, onPause, onRegenerate, onReset, onIterate) are passed as props from App.jsx — no new IPC channels.
-- `STATE_HEIGHTS.EXPANDED = 580` — window height in expanded mode.
+- `STATE_HEIGHTS.EXPANDED = 860` — window height in expanded mode. Window width: 1100px (scaled from 760×580 to 1100×860 in BUG-TOGGLE-005 for Claude-app-scale layout).
 
 **Rules:**
 - All state transitions go through a single `transition(newState, payload)` function in App.jsx.
@@ -227,6 +227,41 @@ async function resolveXPath() {
 - If resolution fails → send `check-claude-path` error to renderer → transition to ERROR state.
 - All subsequent `claude -p` calls use the cached `claudePath`.
 - If `claudePath` is null at call time → ERROR state, message: "Claude CLI not found."
+
+---
+
+## Window lifecycle (BUG-018 — 2026-04-23)
+
+**Rule:** The app window must never be destroyed when the user closes it — it must hide instead. A single-instance lock prevents multiple app copies.
+
+### Four required patterns (all in `main.js`):
+
+1. **`isQuitting` flag** — module-scope boolean, default `false`.
+   ```js
+   let isQuitting = false
+   app.on('before-quit', () => { isQuitting = true })
+   ```
+
+2. **`win.on('close')` hide-intercept** — in `createWindow()`, after `win` is created:
+   ```js
+   win.on('close', (e) => {
+     if (!isQuitting) { e.preventDefault(); win.hide() }
+   })
+   ```
+   Without this, clicking ✕ destroys `win` and crashes on the next tray-icon click.
+
+3. **Single-instance lock** — before `app.whenReady()`:
+   ```js
+   if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0) }
+   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus() } })
+   ```
+
+4. **`win.on('blur')` auto-hide** — hides the floating bar when user clicks outside it:
+   ```js
+   win.on('blur', () => { if (!isQuitting && win && !win.isDestroyed()) win.hide() })
+   ```
+
+**Tray quit:** Tray "Quit" item must call `app.quit()` (not `win.destroy()`). `before-quit` sets `isQuitting=true` before the `close` event fires, allowing the window to close normally.
 
 ---
 

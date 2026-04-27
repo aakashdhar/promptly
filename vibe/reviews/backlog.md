@@ -277,6 +277,30 @@
 
 ---
 
+## From Full Project Review (2026-04-27)
+
+### Outstanding P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-061 | src/renderer/hooks/useKeyboardShortcuts.js | 21-55 | IPC listener accumulation on HMR — 7 listeners registered, no cleanup returned. Discards unsubscribe returns from all `on*` calls. Add cleanup: capture unsubs array + return `() => unsubs.forEach(fn => fn?.())`. Production unaffected; dev-only issue. | Open |
+| BL-062 | vibe/ARCHITECTURE.md | 96-99 | ExpandedView dimensions stale — still says `setWindowSize(760, 580)` + `STATE_HEIGHTS.EXPANDED = 580`. Actual since BUG-TOGGLE-005: `setWindowSize(1100, 860)`, `STATE_HEIGHTS.EXPANDED = 860`. | Open |
+| BL-063 | vibe/ARCHITECTURE.md | — | Window lifecycle section absent — BUG-018-004 deliverable not completed. Missing: `isQuitting`, `win.on('close')` hide-intercept, `requestSingleInstanceLock()`, `before-quit`, `win.on('blur')` auto-hide. | Open |
+| BL-064 | vibe/CODEBASE.md | 37 | ExpandedView.jsx props list missing `onTypingSubmit`, `onSwitchToVoice`, `onTypePrompt` (3 props added post-BUG-TOGGLE); line count stale at 92 (actual 100). | Open |
+| BL-065 | vibe/CODEBASE.md | IPC table | `splash-check-whisper` and `check-mic-status` absent from CODEBASE.md IPC table (both present in ARCHITECTURE.md and main.js). | Open |
+| BL-066 | vibe/CODEBASE.md | 96 | `open-settings` row notes "stub console.log in App.jsx" — stub was removed; App.jsx calls openSettings() via useKeyboardShortcuts.js:52-54. | Open |
+| BL-067 | CLAUDE.md | 163-685 | ~17 completed "Active Feature/Bug" sections (~520 lines) still present. All marked COMPLETE or fully ticked. Add context noise + superseded constraints. Should be trimmed per CP-01. | Open |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-068 | src/renderer/App.jsx | 1-548 | 548 lines — approaching P1 threshold (500). Growth driven by isExpanded/handleExpand/handleCollapse + ExpandedView wiring. Monitor; extract useExpandedView hook if next feature pushes past 500. | Open / monitor |
+| BL-069 | src/renderer/components/ExpandedDetailPanel.jsx | 1-645 | 645 lines — above P1 threshold. State-content boundary necessity. No blocking action. | Open |
+| BL-070 | — | — | No automated test suite. Pure functions (`parsePolishOutput`, `parseSections`, `formatTime`, `getModeTagStyle`) are prime candidates for Vitest. Recommended for v1.5. | Open |
+
+---
+
 ## From POLISH-TOGGLE Spec Review (2026-04-26)
 
 ### Spec P1/P2 — All resolved 2026-04-26

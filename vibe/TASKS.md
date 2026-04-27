@@ -432,5 +432,19 @@
    Project total: $14.79 · Trend: ↑ +47% vs 5-session avg (expected — review subagent + large refactor)
    vibe/cost/report-2026-04-27-session22.md
 
+## Full project review — 2026-04-27
+✅ COMPLETE — Score 7.4/10 — Grade B — 0 P0, 0 P1, 8 P2, 5 P3
+→ Full report: vibe/reviews/full-project-review-2026-04-27.md
+
+✅ **Full project review P2 fixes** (COMPLETE 2026-04-27)
+   [x] P2-001 · useKeyboardShortcuts.js — IPC listener cleanup: capture all unsubs, return cleanup fn
+   [x] P2-002 · ARCHITECTURE.md — ExpandedView dimensions updated: 760×580 → 1100×860 (BUG-TOGGLE-005)
+   [x] P2-003 · ARCHITECTURE.md — Window lifecycle section added: isQuitting, win.on('close') hide-intercept, single-instance lock, win.on('blur') auto-hide
+   [x] P2-004 · CODEBASE.md — ExpandedView props corrected: 3 missing props added (onTypingSubmit, onSwitchToVoice, onTypePrompt), line count 92 → 100
+   [x] P2-005 · CODEBASE.md — Two missing IPC channels added: splash-check-whisper, check-mic-status
+   [x] P2-006 · CODEBASE.md — ExpandedTransportBar onTypePrompt keyboard icon button described
+   [x] P2-007 · CODEBASE.md — open-settings row: stale "stub console.log" → accurate description
+   [x] P2-008 · CLAUDE.md — 13 stale completed feature/bug sections removed (~530 lines); Never list preserved; archive note added
+
 ## What's next
 Manual smoke test: expanded view → iterate → confirm blue stop button stops iteration correctly.
