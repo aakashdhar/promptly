@@ -417,6 +417,16 @@ function updateTrayMenu() {
 }
 
 
+// Claude CLI is a Node.js script (#!/usr/bin/env node). In a packaged .app,
+// process.env.PATH is minimal and excludes nvm's bin dir. Passing PATH enriched
+// with the directory that contains the claude binary ensures 'node' is findable
+// when the shebang is resolved by macOS.
+function makeClaudeEnv(binPath) {
+  const binDir = path.dirname(binPath);
+  const base = process.env.PATH || '/usr/local/bin:/usr/bin:/bin';
+  return { ...process.env, PATH: base.includes(binDir) ? base : binDir + ':' + base };
+}
+
 async function resolveClaudePath() {
   const stored = readConfig().claudePath;
   if (stored && stored.trim()) {
@@ -729,7 +739,7 @@ app.whenReady().then(async () => {
         const tone = options.tone || 'formal';
         systemPrompt = systemPrompt.replace('{TONE}', tone.charAt(0).toUpperCase() + tone.slice(1));
       }
-      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
+      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
       let stdout = '';
       let stderr = '';
       let resolved = false;
@@ -771,7 +781,7 @@ app.whenReady().then(async () => {
         resolve({ success: false, error: 'Claude CLI not found.' });
         return;
       }
-      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6']);
+      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
       let stdout = '', stderr = '', resolved = false;
       const timer = setTimeout(() => {
         resolved = true; child.kill();
