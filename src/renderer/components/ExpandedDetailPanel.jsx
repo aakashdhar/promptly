@@ -1,17 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { bookmarkHistoryItem, rateHistoryItem, formatTime } from '../utils/history.js'
-import { parseSections } from '../utils/promptUtils.js'
-
-const MODE_DESCRIPTIONS = {
-  balanced: 'Balanced mode — output includes role, task, context, constraints and output format',
-  code: 'Code mode — output includes role, task, language, architecture, constraints and output format',
-  design: 'Design mode — output includes role, task, visual personality, layout, motion and what to avoid',
-  refine: 'Refine mode — output includes current state, problem, desired outcome and constraints',
-  polish: 'Polish mode — output returns polished prose with a summary of what changed',
-  detailed: 'Detailed mode — output includes persona, examples, step breakdown and full context',
-  concise: 'Concise mode — minimal, direct prompt with no extra structure',
-  chain: 'Chain mode — output includes numbered reasoning steps for complex tasks',
-}
+import ExpandedTypingContent from './ExpandedTypingContent.jsx'
+import ExpandedPromptReadyContent from './ExpandedPromptReadyContent.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -74,51 +64,9 @@ export default function ExpandedDetailPanel({
   onSwitchToVoice,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
-  const [isCopied, setIsCopied] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editHovered, setEditHovered] = useState(false)
-  const [typingText, setTypingText] = useState('')
-  const promptRef = useRef(null)
-  const preEditValue = useRef('')
-  const typingTextareaRef = useRef(null)
 
   const isRefine = mode === 'refine'
   const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
-
-  useEffect(() => {
-    if (currentState === 'PROMPT_READY') {
-      setIsEditing(false)
-      setIsCopied(false)
-    }
-    if (currentState === 'TYPING') {
-      setTimeout(() => typingTextareaRef.current?.focus(), 50)
-    } else {
-      setTypingText('')
-    }
-  }, [currentState])
-
-  useEffect(() => {
-    if (isEditing && promptRef.current) {
-      promptRef.current.focus()
-      const range = document.createRange()
-      range.selectNodeContents(promptRef.current)
-      range.collapse(false)
-      const sel = window.getSelection()
-      sel.removeAllRanges()
-      sel.addRange(range)
-    }
-  }, [isEditing])
-
-  useEffect(() => {
-    function onKey(e) {
-      if (e.key === 'Escape' && isEditing) {
-        if (promptRef.current) promptRef.current.textContent = preEditValue.current
-        setIsEditing(false)
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [isEditing])
 
   // ── entry detail handlers ──
 
@@ -154,33 +102,7 @@ export default function ExpandedDetailPanel({
     onEntryChange({ ...selected, ratingTag: newTag })
   }
 
-  // ── PROMPT_READY handlers ──
-
-  function handleCopy() {
-    const text = isPolishMode ? (polishResult?.polished || generatedPrompt) : generatedPrompt
-    if (window.electronAPI) window.electronAPI.copyToClipboard(text)
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), 1800)
-  }
-
-  function handleEdit() {
-    if (!isEditing) {
-      preEditValue.current = generatedPrompt
-      setIsEditing(true)
-    } else {
-      if (promptRef.current) setGeneratedPrompt(promptRef.current.textContent)
-      setIsEditing(false)
-    }
-  }
-
-  // ── derived ──
-
   const showEntryDetail = (currentState === 'IDLE' || isViewingHistory) && selected !== null
-
-  const sections = parseSections(generatedPrompt)
-  const mid = Math.ceil(sections.length / 2)
-  const leftSections = sections.slice(0, mid)
-  const rightSections = sections.slice(mid)
 
   return (
     <div style={{ flex: 1, minWidth: 0, background: 'transparent', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
@@ -366,139 +288,11 @@ export default function ExpandedDetailPanel({
       )}
 
       {currentState === 'TYPING' && !isViewingHistory && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          {/* Header row */}
-          <div style={{
-            padding: '16px 28px 14px',
-            borderBottom: '0.5px solid rgba(255,255,255,0.05)',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            flexShrink: 0,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
-                <line x1="3" y1="6" x2="8" y2="6" stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeLinecap="round"/>
-                <line x1="3" y1="8.5" x2="11" y2="8.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeLinecap="round"/>
-              </svg>
-              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Type your prompt</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div
-                onClick={onSwitchToVoice}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '5px 12px', borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '0.5px solid rgba(255,255,255,0.08)',
-                  cursor: 'pointer', WebkitAppRegion: 'no-drag',
-                }}
-              >
-                <svg width="11" height="13" viewBox="0 0 12 16" fill="none">
-                  <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
-                  <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeLinecap="round"/>
-                </svg>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.38)' }}>Switch to voice</span>
-              </div>
-              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.18)' }}>⌘↵ to generate</span>
-            </div>
-          </div>
-
-          {/* Textarea area */}
-          <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: 0 }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <textarea
-                ref={typingTextareaRef}
-                value={typingText}
-                onChange={e => setTypingText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && e.metaKey && typingText.trim()) {
-                    onTypingSubmit(typingText.trim())
-                  }
-                }}
-                placeholder="Describe what you want Claude to build, design, or write..."
-                style={{
-                  width: '100%', height: '100%', minHeight: '320px',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '0.5px solid rgba(10,132,255,0.2)',
-                  borderRadius: '14px',
-                  padding: '20px 22px',
-                  fontSize: '15px',
-                  color: 'rgba(255,255,255,0.75)',
-                  lineHeight: 1.75,
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  resize: 'none',
-                  WebkitAppRegion: 'no-drag',
-                  boxSizing: 'border-box',
-                }}
-              />
-              <span style={{
-                position: 'absolute', bottom: '14px', right: '16px',
-                fontSize: '11px', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace',
-                pointerEvents: 'none',
-              }}>
-                {typingText.length} chars
-              </span>
-            </div>
-
-            {/* Mode context bar */}
-            <div style={{
-              padding: '12px 16px',
-              background: 'rgba(10,132,255,0.04)',
-              border: '0.5px solid rgba(10,132,255,0.1)',
-              borderRadius: '10px',
-              display: 'flex', alignItems: 'center', gap: '10px',
-              flexShrink: 0,
-            }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(10,132,255,0.7)', flexShrink: 0 }} />
-              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-                {MODE_DESCRIPTIONS[mode] || `Output will be structured for ${mode} mode`}
-              </span>
-            </div>
-          </div>
-
-          {/* Action row */}
-          <div style={{
-            padding: '14px 24px 20px',
-            borderTop: '0.5px solid rgba(255,255,255,0.05)',
-            display: 'flex', gap: '10px', alignItems: 'center',
-            flexShrink: 0,
-          }}>
-            <button
-              onClick={() => setTypingText('')}
-              style={{
-                height: '40px', padding: '0 20px',
-                border: '0.5px solid rgba(255,255,255,0.1)',
-                borderRadius: '10px',
-                background: 'rgba(255,255,255,0.04)',
-                fontSize: '13px', color: 'rgba(255,255,255,0.38)',
-                cursor: 'pointer', fontFamily: 'inherit',
-                WebkitAppRegion: 'no-drag',
-              }}
-            >
-              Clear
-            </button>
-            <div style={{ flex: 1 }} />
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.18)' }}>or press ⌘↵</span>
-            <button
-              onClick={() => typingText.trim() && onTypingSubmit(typingText.trim())}
-              disabled={!typingText.trim()}
-              style={{
-                height: '40px', padding: '0 32px',
-                background: 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
-                color: 'white', border: 'none', borderRadius: '10px',
-                fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',
-                boxShadow: '0 2px 16px rgba(10,132,255,0.3)',
-                cursor: typingText.trim() ? 'pointer' : 'default',
-                opacity: typingText.trim() ? 1 : 0.4,
-                WebkitAppRegion: 'no-drag',
-                transition: 'opacity 200ms',
-              }}
-            >
-              Generate prompt
-            </button>
-          </div>
-        </div>
+        <ExpandedTypingContent
+          mode={mode}
+          onTypingSubmit={onTypingSubmit}
+          onSwitchToVoice={onSwitchToVoice}
+        />
       )}
 
       {currentState === 'THINKING' && !isViewingHistory && (
@@ -534,111 +328,18 @@ export default function ExpandedDetailPanel({
         </div>
       )}
 
-      {/* PROMPT_READY */}
       {currentState === 'PROMPT_READY' && !isViewingHistory && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px 12px', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.82)' }}>
-              <span style={{ color: 'var(--color-green, #30D158)', fontSize: '17px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
-              <span>Prompt ready</span>
-              {isIterated && (
-                <span style={{
-                  fontSize: '10px', color: 'rgba(10,132,255,0.72)',
-                  background: 'rgba(10,132,255,0.08)', border: '0.5px solid rgba(10,132,255,0.2)',
-                  borderRadius: '20px', padding: '1px 8px', letterSpacing: '.04em',
-                }}>↻ iterated</span>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '18px' }}>
-              <button onClick={onIterate} style={{ fontSize: '12px', color: 'rgba(10,132,255,0.85)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>
-              <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.50)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>
-              <button onClick={onReset} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.50)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
-            </div>
-          </div>
-
-          <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 28px', flexShrink: 0 }} />
-
-          <div style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
-            {isEditing ? (
-              <div
-                ref={promptRef}
-                contentEditable
-                suppressContentEditableWarning
-                style={{
-                  fontSize: '13px', lineHeight: '1.75', color: 'rgba(255,255,255,0.78)',
-                  whiteSpace: 'pre-wrap', outline: '1.5px solid rgba(10,132,255,0.6)',
-                  outlineOffset: '4px', borderRadius: '6px', minHeight: '100px',
-                }}
-              >
-                {generatedPrompt}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
-                <div>
-                  {leftSections.map((s, i) => (
-                    <div key={i} style={{ marginBottom: i < leftSections.length - 1 ? '18px' : 0 }}>
-                      {s.label && (
-                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: labelColor, marginBottom: '6px' }}>
-                          {s.label}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.8' }}>{s.body}</div>
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  {rightSections.map((s, i) => (
-                    <div key={i} style={{ marginBottom: i < rightSections.length - 1 ? '18px' : 0 }}>
-                      {s.label && (
-                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: labelColor, marginBottom: '6px' }}>
-                          {s.label}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.78)', lineHeight: '1.8' }}>{s.body}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 28px' }} />
-            <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', alignItems: 'center' }}>
-              <button
-                onClick={handleEdit}
-                onMouseEnter={() => setEditHovered(true)}
-                onMouseLeave={() => setEditHovered(false)}
-                style={{
-                  height: '40px', padding: '0 20px',
-                  border: editHovered ? '0.5px solid rgba(255,255,255,0.16)' : '0.5px solid rgba(255,255,255,0.1)',
-                  background: editHovered ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-                  color: 'rgba(255,255,255,0.70)', borderRadius: '8px',
-                  fontSize: '13px', cursor: 'pointer', transition: 'all 150ms ease',
-                }}
-              >
-                {isEditing ? 'Save' : 'Edit'}
-              </button>
-              <div style={{ flex: 1 }} />
-              <button
-                onClick={handleCopy}
-                style={{
-                  height: '40px', padding: '0 32px',
-                  border: 'none', borderTop: '0.5px solid rgba(255,255,255,0.20)',
-                  background: isCopied
-                    ? 'linear-gradient(135deg, rgba(48,209,88,0.85), rgba(30,168,70,0.85))'
-                    : 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
-                  color: 'white', borderRadius: '8px',
-                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                  boxShadow: isCopied ? '0 2px 16px rgba(48,209,88,0.35)' : '0 2px 20px rgba(10,132,255,0.4)',
-                  transition: 'all 300ms ease',
-                }}
-              >
-                {isCopied ? '✓ Copied' : 'Copy prompt'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ExpandedPromptReadyContent
+          generatedPrompt={generatedPrompt}
+          setGeneratedPrompt={setGeneratedPrompt}
+          isPolishMode={isPolishMode}
+          polishResult={polishResult}
+          mode={mode}
+          onIterate={onIterate}
+          onRegenerate={onRegenerate}
+          onReset={onReset}
+          isIterated={isIterated}
+        />
       )}
     </div>
   )

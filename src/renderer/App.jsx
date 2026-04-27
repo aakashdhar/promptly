@@ -4,6 +4,7 @@ import usePolishMode, { parsePolishOutput } from './hooks/usePolishMode.js'
 import useWindowResize from './hooks/useWindowResize.js'
 import useRecording from './hooks/useRecording.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
+import useIteration from './hooks/useIteration.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -62,11 +63,7 @@ export default function App() {
   const stateRef = useRef(STATES.IDLE)
   const prevStateRef = useRef(STATES.IDLE)
   const generatedPromptRef = useRef('')
-  const iterationBase = useRef(null)
   const isIterated = useRef(false)
-  const iterRecorderRef = useRef(null)
-  const iterChunksRef = useRef([])
-  const iterIsProcessingRef = useRef(false)
   const transitionTimerRef = useRef(null)
   const transitionRef = useRef(null)
 
@@ -181,6 +178,21 @@ export default function App() {
   }, [mode])
   handleGenerateResultRef.current = handleGenerateResult
 
+  const { iterationBase, handleIterate, stopIterating, dismissIterating } = useIteration({
+    STATES,
+    transitionRef,
+    resizeWindow,
+    isExpandedRef,
+    generatedPromptRef,
+    modeRef,
+    isIterated,
+    originalTranscript,
+    setThinkTranscript,
+    setGeneratedPrompt,
+    startTimer,
+    stopTimer,
+  })
+
   function openHistory() {
     isExpandedRef.current = false
     setIsExpanded(false)
@@ -247,100 +259,6 @@ export default function App() {
     }
     handleGenerateResult(genResult, originalTranscript.current)
   }, [mode, handleGenerateResult])
-
-  const handleIterate = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      const recorder = new MediaRecorder(stream)
-      iterRecorderRef.current = recorder
-      iterChunksRef.current = []
-      recorder.ondataavailable = (e) => iterChunksRef.current.push(e.data)
-      iterationBase.current = { transcript: originalTranscript.current, prompt: generatedPrompt, mode }
-      isIterated.current = false
-      recorder.start()
-      stopTimer()
-      startTimer()
-      transition(STATES.ITERATING)
-    } catch {
-      transition(STATES.ERROR, { message: 'Microphone access denied' })
-    }
-  }, [generatedPrompt, mode])
-
-  const stopIterating = useCallback(async () => {
-    const recorder = iterRecorderRef.current
-    if (!recorder || iterIsProcessingRef.current) return
-    iterIsProcessingRef.current = true
-    stopTimer()
-    recorder.stop()
-    recorder.stream.getTracks().forEach((t) => t.stop())
-
-    recorder.onstop = async () => {
-      const blob = new Blob(iterChunksRef.current, { type: 'audio/webm' })
-      const arrayBuffer = await blob.arrayBuffer()
-      iterIsProcessingRef.current = false
-
-      if (!window.electronAPI) {
-        transition(STATES.ERROR, { message: 'Electron API not available' })
-        return
-      }
-      const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer)
-      if (!transcribeResult.success) {
-        transition(STATES.ERROR, { message: transcribeResult.error })
-        return
-      }
-      const iterText = transcribeResult.transcript.trim()
-      if (!iterText) {
-        transition(STATES.PROMPT_READY)
-        return
-      }
-      setThinkTranscript(iterText)
-      transition(STATES.THINKING)
-      if (!isExpandedRef.current) resizeWindow(320)
-
-      const iterationSystemPrompt = `You are an expert Claude prompt engineer. You have a previously generated prompt and the user has spoken a refinement.
-
-Your job is to produce an improved version of the original prompt that incorporates the user's new input precisely.
-
-Rules:
-1. Output ONLY the improved prompt. No preamble. No explanation.
-2. Preserve everything from the original prompt that the user did not ask to change.
-3. Apply the user's new input as precisely as possible.
-4. Keep the same structure and section labels as the original prompt.
-5. If the new input contradicts the original, the new input wins.
-6. Do not add new sections unless the new input clearly calls for them.
-
-Original prompt:
-${iterationBase.current.prompt}
-
-User's new input:
-"${iterText}"
-
-Mode: ${iterationBase.current.mode}`
-
-      const genResult = await window.electronAPI.generateRaw(iterationSystemPrompt)
-      if (!genResult.success) {
-        transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
-        return
-      }
-      isIterated.current = true
-      originalTranscript.current = iterText
-      setGeneratedPrompt(genResult.prompt)
-      saveToHistory({ transcript: iterText, prompt: genResult.prompt, mode, isIteration: true, basedOn: iterationBase.current.prompt.slice(0, 100) })
-      transition(STATES.PROMPT_READY)
-    }
-  }, [mode])
-
-  function dismissIterating() {
-    const recorder = iterRecorderRef.current
-    if (recorder) {
-      recorder.stream.getTracks().forEach((t) => t.stop())
-      iterRecorderRef.current = null
-    }
-    iterChunksRef.current = []
-    iterIsProcessingRef.current = false
-    stopTimer()
-    transition(STATES.PROMPT_READY)
-  }
 
   useEffect(() => {
     if (!window.electronAPI) return

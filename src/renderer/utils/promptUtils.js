@@ -14,7 +14,7 @@ export function parseSections(text) {
   }
 
   for (const line of lines) {
-    const m = line.trim().match(/^([A-Za-z][A-Za-z\s]*):\s*$/)
+    const m = line.trim().match(/^([A-Za-z][A-Za-z\s/]*):\s*$/)
     if (m) {
       flush()
       current = m[1].trim()
