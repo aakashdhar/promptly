@@ -64,7 +64,7 @@ export default function ExpandedView({
         onPause={onPause}
         onCollapse={onCollapse}
         onOpenSettings={onOpenSettings}
-        onTypePrompt={onTypePrompt}
+        onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
