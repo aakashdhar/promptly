@@ -15,6 +15,7 @@ export default function ExpandedView({
   onCollapse,
   onPause,
   onStop,
+  onStopIterate,
   onRegenerate,
   onReset,
   onIterate,
@@ -26,13 +27,16 @@ export default function ExpandedView({
   onPolishToneChange,
   onReuse,
   onOpenSettings,
+  onTypingSubmit,
+  onSwitchToVoice,
+  onTypePrompt,
 }) {
   const [selected, setSelected] = useState(() => { const h = getHistory(); return h.length > 0 ? h[0] : null })
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
-  // Return right panel to current state content when recording/thinking/result arrives
+  // Return right panel to current state content when active state arrives
   useEffect(() => {
-    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY') {
+    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY' || currentState === 'TYPING') {
       setIsViewingHistory(false)
     }
   }, [currentState])
@@ -56,9 +60,11 @@ export default function ExpandedView({
         modeLabel={modeLabel}
         onStart={onStart}
         onStop={onStop}
+        onStopIterate={onStopIterate}
         onPause={onPause}
         onCollapse={onCollapse}
         onOpenSettings={onOpenSettings}
+        onTypePrompt={onTypePrompt}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
@@ -85,6 +91,8 @@ export default function ExpandedView({
           onPolishToneChange={onPolishToneChange}
           onReuse={onReuse}
           onEntryChange={handleEntryChange}
+          onTypingSubmit={onTypingSubmit}
+          onSwitchToVoice={onSwitchToVoice}
         />
       </div>
     </div>

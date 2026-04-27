@@ -409,6 +409,7 @@ Mode: ${iterationBase.current.mode}`
             onCollapse={handleCollapse}
             onPause={pauseRecording}
             onStop={stopRecording}
+            onStopIterate={stopIterating}
             onRegenerate={handleRegenerate}
             onReset={() => transition(STATES.IDLE)}
             onIterate={handleIterate}
@@ -419,6 +420,9 @@ Mode: ${iterationBase.current.mode}`
             polishTone={polishTone}
             onPolishToneChange={handlePolishToneChange}
             onOpenSettings={openSettings}
+            onTypingSubmit={handleTypingSubmit}
+            onSwitchToVoice={() => transition(STATES.IDLE)}
+            onTypePrompt={() => transition(STATES.TYPING)}
             onReuse={(entry) => {
               originalTranscript.current = entry.transcript
               setGeneratedPrompt(entry.prompt)
