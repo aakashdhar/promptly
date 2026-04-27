@@ -54,7 +54,7 @@
   Touches: src/renderer/components/ExpandedDetailPanel.jsx
   Depends: IMG-003, IMG-005
 
-- [ ] IMG-010 — docs update (re-run after redesign tasks complete)
+- [x] IMG-010 — docs update (re-run after redesign tasks complete)
   Touches: vibe/CODEBASE.md, vibe/DECISIONS.md, vibe/TASKS.md, vibe/ARCHITECTURE.md
   Depends: IMG-001 through IMG-009, IMG-011, IMG-012
 

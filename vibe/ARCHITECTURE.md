@@ -78,7 +78,7 @@ promptly/
 
 **Approach:** React `useState` + `useRef` state machine in `App.jsx`. Single `currentState` (useState) mirrors `stateRef` (useRef) for stale-closure-safe IPC callbacks.
 
-**States (11 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS added via features):**
+**States (13 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS, IMAGE_BUILDER, IMAGE_BUILDER_DONE added via features):**
 ```
 FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
                  ↕ PAUSED (FEATURE-011)
@@ -87,6 +87,7 @@ FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
 IDLE / PROMPT_READY → SHORTCUTS (FEATURE-006)
 IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
+RECORDING (image mode) → THINKING → IMAGE_BUILDER → THINKING → IMAGE_BUILDER_DONE (FEATURE-IMAGE-BUILDER)
 ```
 
 **`isExpanded` — layout mode flag (POLISH-TOGGLE / BUG-TOGGLE-002):**
@@ -316,6 +317,7 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 | Design | `design` | Standalone 12-section design-director prompt; bypasses PROMPT_TEMPLATE |
 | Refine | `refine` | Standalone 4-section design feedback prompt (Current state, Problem, Desired outcome, Constraints); purple accent in UI; bypasses PROMPT_TEMPLATE |
 | Polish | `polish` | Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; `{TONE}` replaced via `options.tone`; green accent in UI |
+| Image | `image` | Two-phase flow: generate-prompt passthrough → Phase 1 generate-raw (Claude pre-selects all params as JSON → imageDefaults) → IMAGE_BUILDER review screen → Phase 2 generate-raw (Claude assembles final natural-language prompt) → IMAGE_BUILDER_DONE; purple accent in UI |
 
 - Mode is selected via right-click context menu on the bar.
 - Active mode persisted in localStorage via `getMode()` / `setMode()`.

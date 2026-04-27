@@ -469,7 +469,7 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    → Specs: vibe/bugs/2026-04-28-bug-release-node-path/ | DECISIONS.md D-BUG-RELEASE-NODE-PATH
 
 ## What's next
-Fix BL-077 (3 stale line counts in CODEBASE.md — trivial). Then close out BL-078 + BL-075 + BL-076 for a clean 10/10.
+IMAGE-BUILDER redesign complete. Only IMG-010 (docs) remaining — done now.
 
 ---
 
@@ -499,3 +499,28 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 
 ## What just happened
 ✅ FEATURE-IMAGE-BUILDER complete 2026-04-27 — All 10 tasks implemented. New "Image" mode adds a 3-tier guided interview (13 questions) after speech recording. Claude assembles a natural language image generation prompt via generate-raw IPC. Compact bar and expanded view (4-col grid + progress bar) both supported. Build clean, lint 0 errors.
+
+---
+
+## FEATURE-IMAGE-BUILDER redesign — 2026-04-27
+
+> Spec: vibe/features/2026-04-27-image-builder/ | DECISIONS.md D-IMG-REDESIGN
+
+**Redesign**: tier-based 17-question interview replaced with two-phase THINKING + all-params review screen pre-filled by Claude.
+
+✅ **Redesign tasks (9/9 ✅)**
+   [x] IMG-001 · useMode.js image mode + purple accent (from v1)
+   [x] IMG-002 · main.js MODE_CONFIG + show-mode-menu (from v1)
+   [x] IMG-003 · ImageBuilderState.jsx full rewrite — 18-param all-params review screen, AI chips (purple dot), user chips, inline picker dropdown, custom text inputs, advanced toggle
+   [x] IMG-004 · ImageBuilderDoneState.jsx (from v1, unchanged)
+   [x] IMG-005 · App.jsx two-phase THINKING — thinkingLabel state, handleGenerateResult image branch calls runPreSelection, useImageBuilder moved before handleGenerateResult
+   [x] IMG-006 · App.jsx chip handlers wired — handleChipRemove/Add/ParamChange/OpenPicker/ClosePicker/ToggleAdvanced/Confirm/CopyNow
+   [x] IMG-007 · STATE_HEIGHTS.IMAGE_BUILDER = 520 (scrollable)
+   [x] IMG-008 · History saving (from v1, unchanged)
+   [x] IMG-009 · ExpandedDetailPanel updated with new imageBuilderProps bundle
+   [x] IMG-010 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md, ARCHITECTURE.md (state count 11→13, image mode entry added)
+   [x] IMG-011 · Option picker inline dropdown (implemented in IMG-003 pass)
+   [x] IMG-012 · Reiterate merge logic — user chips preserved, AI chips refreshed, removedByUser respected
+
+## What just happened
+✅ IMAGE-BUILDER redesign complete 2026-04-27 — Tier-based 17-question interview replaced with all-params review screen. Claude pre-fills all 18 parameters via Phase 1 generate-raw call; user reviews and edits; Phase 2 assembles final natural-language prompt. Inline option picker, custom text inputs, reiterate merge logic all implemented. Build clean.
