@@ -222,3 +222,73 @@
 | BL-004 | copy-to-clipboard SPEC mismatch | Backlog fix |
 | BL-005 | shortcut-conflict no fallback payload | Backlog fix |
 | BL-012 | setState guard truthiness check | Backlog fix |
+
+---
+
+## From POLISH-TOGGLE Review (2026-04-26)
+
+### Outstanding P2 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-057 | vibe/CODEBASE.md | 107 | IDLE height listed as 101px — actual STATE_HEIGHTS.IDLE is now 134px (was already wrong at 118px; this change widens the gap) | ✅ resolved — docs(CODEBASE) 2026-04-26 |
+| ~~BL-058~~ | src/renderer/App.jsx | 383 | Expand button unconditionally transitions to PROMPT_READY — shows empty UI ("✓ Prompt ready" + empty content) if no prompt generated yet. Fix: hide expand when `generatedPrompt` is empty. | ✅ resolved — `onExpand={generatedPrompt ? () => transition(...) : null}` App.jsx:383 |
+| ~~BL-059~~ | IdleState.jsx:22-41, PromptReadyState.jsx:147-167, PolishReadyState.jsx:11-28 | — | No hover feedback on expand/collapse buttons — inconsistent with existing button pattern (keyboard, Edit, Copy all have onMouseEnter/Leave). | ✅ resolved — onMouseEnter/onMouseLeave added to all three buttons |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-060 | src/renderer/components/PolishReadyState.jsx | 31-35 | At narrow widths, top-row tone toggle and collapse button could appear visually crowded — not a bug at 520px, noting for awareness. | Open / monitor |
+
+---
+
+## From Expanded View Review (2026-04-27)
+
+### P0 — Blocks merge (tracked in TASKS.md)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P0-EXP-001 | src/renderer/components/ExpandedView.jsx | 1–1131 | SRP CRITICAL — 1131 lines, 4 concerns. Fix: extract ExpandedTransportBar + ExpandedHistoryList + ExpandedStatePanel. | ✅ resolved — refactor(expanded) 1d900d8 |
+
+### P1 — Fix before deploy (tracked in TASKS.md)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P1-ARCH-001 | src/renderer/components/ExpandedView.jsx | 1114–1128 | Architecture drift — `<style>` block defines spin/breathe/pulse-ring/skeleton-pulse @keyframes. Move to index.css. | ✅ resolved — refactor(expanded) 1d900d8 |
+| P1-EXP-001 | src/renderer/components/ExpandedView.jsx | 91–115 | ISP — 23 props (threshold 10). Resolves as part of P0-EXP-001 split. | ✅ resolved — refactor(expanded) 1d900d8 |
+
+### P2 — Should fix
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P2-EXP-001 | src/renderer/components/ExpandedView.jsx | 6–12 | STATES constant silently duplicated (5 keys vs App.jsx 12). Export from src/renderer/constants.js. | ✅ resolved — sub-components now use string literals, no local STATES constant |
+| P2-EXP-002 | src/renderer/components/ExpandedView.jsx | 17–83 | parseSections parsing logic duplicated vs PromptReadyState.jsx. Extract to utils/promptUtils.js. Resolves with RFX-EXP-004. | ✅ resolved — utils/promptUtils.js created; ExpandedDetailPanel imports parseSections |
+| P2-EXP-003 | src/renderer/components/ExpandedView.jsx | 457–475 | Settings button (sliders icon) has no onClick — non-functional UI element. Wire or remove. | ✅ resolved — wired to onOpenSettings prop in ExpandedTransportBar.jsx |
+| P2-EXP-004 | src/renderer/components/ExpandedView.jsx | 933–1110 | ITERATING and TYPING states produce blank right panel in expanded mode. Add placeholder divs. | ✅ resolved — ExpandedDetailPanel.jsx handles both states with content |
+
+### P3 — Minor / tracking
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P3-EXP-001 | src/renderer/components/HistoryPanel.jsx | 1–663 | 663 lines — pre-existing above P1 threshold (500). Schedule refactor when ExpandedView split creates opportunity. | Open |
+| P3-EXP-002 | src/renderer/components/ExpandedDetailPanel.jsx + ExpandedView.jsx | props | ISP — 17 props each (threshold 10). Boundary layer necessity; consider per-state child components in future refactor. | Open |
+| P3-EXP-003 | src/renderer/components/ExpandedDetailPanel.jsx | 8–42 | renderPromptSections partially duplicates parseSections regex from promptUtils.js. Could unify if shared JSX renderer warranted. | Open |
+
+---
+
+## From POLISH-TOGGLE Spec Review (2026-04-26)
+
+### Spec P1/P2 — All resolved 2026-04-26
+
+| ID | File | Finding | Status |
+|----|------|---------|--------|
+| ~~P1-001~~ | DESIGN_TASKS.md | All 5 tasks had no acceptance criteria | ✅ resolved — "Done when:" blocks added to TOG-001/002/003/005 |
+| ~~P1-002~~ | DESIGN_TASKS.md / DESIGN_PLAN.md | TOG-004 was non-actionable ("no extra code needed") | ✅ resolved — TOG-004 removed; resize verification absorbed into TOG-003 criteria |
+| ~~P1-003~~ | DESIGN_SPEC.md | Empty-state behaviour for expand button undefined | ✅ resolved — opacity 0.35 / cursor default / onExpand null spec added |
+| ~~P1-004~~ | DESIGN_SPEC.md | "Zero logic changes" constraint too absolute | ✅ resolved — replaced with qualified constraint allowing minimal conditional display logic |
+| ~~P2-SR-001~~ | DESIGN_SPEC.md | margin-right: 2px (actual: 14px) | ✅ resolved — updated to 14px |
+| ~~P2-SR-002~~ | DESIGN_SPEC.md | Container padding 0 14px 0 0 (actual: no parent padding) | ✅ resolved — spec updated to match |
+| ~~P2-SR-003~~ | DESIGN_SPEC.md | No hover states specified | ✅ resolved — hover spec added to both buttons |
+| ~~P2-SR-004~~ | DESIGN_TASKS.md | Smoke checklist not embedded in design docs | ✅ resolved — 11-item checklist embedded in DESIGN_TASKS.md |
+| ~~P2-SR-005~~ | DESIGN_SPEC.md | No user type defined | ✅ resolved — "power users returning to a previously generated prompt" added |

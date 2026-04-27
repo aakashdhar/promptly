@@ -1,4 +1,4 @@
-export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, polishTone, onPolishToneChange }) {
+export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, polishTone, onPolishToneChange, onExpand }) {
   const isRefine = mode === 'refine'
   const isPolish = mode === 'polish'
 
@@ -12,8 +12,36 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
   const micStrokeFaded = isRefine ? 'rgba(200,160,255,0.8)' : 'rgba(100,180,255,0.85)'
 
   return (
-    <div id="panel-idle" className="relative z-[1]" style={{height:'118px'}}>
-      <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+    <div id="panel-idle" className="relative z-[1]" style={{height:'134px'}}>
+      <div
+        style={{
+          height: '28px', display: 'flex', justifyContent: 'flex-end',
+          alignItems: 'center', WebkitAppRegion: 'drag',
+        }}
+      >
+        <button
+          onClick={(e) => { e.stopPropagation(); onExpand() }}
+          title="Expand"
+          style={{
+            width: '22px', height: '22px', borderRadius: '6px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '0.5px solid rgba(255,255,255,0.09)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', marginRight: '14px',
+            WebkitAppRegion: 'no-drag', flexShrink: 0,
+            padding: 0, transition: 'background 150ms',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+        >
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+            <path d="M1 4.5V1.5A0.5 0.5 0 0 1 1.5 1H4.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M7.5 1H10.5A0.5 0.5 0 0 1 11 1.5V4.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 7.5V10.5A0.5 0.5 0 0 1 10.5 11H7.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4.5 11H1.5A0.5 0.5 0 0 1 1 10.5V7.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
       <div
         className="relative flex items-center justify-center h-[90px]"
         id="idle-area"
@@ -167,7 +195,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
       </div>
       <div style={{
         position: 'absolute',
-        bottom: '8px',
+        bottom: '10px',
         left: 0,
         right: 0,
         textAlign: 'center',

@@ -89,6 +89,15 @@ IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
 ```
 
+**`isExpanded` — layout mode flag (POLISH-TOGGLE / BUG-TOGGLE-002):**
+- `isExpanded` (useState boolean, mirrored as `isExpandedRef`) is NOT a state machine state — it is a layout mode.
+- When `isExpanded=true`, App.jsx renders a single `<ExpandedView>` component that covers all states.
+- When `isExpanded=false`, App.jsx renders the existing per-state components normally.
+- `handleExpand()`: sets `isExpanded=true`, calls `setWindowSize(760, 580)`. `transition()` skips `resizeWindow` while expanded (guarded by `isExpandedRef.current`).
+- `handleCollapse()`: sets `isExpanded=false`, resets state to IDLE, calls `setWindowSize(520, IDLE_HEIGHT)`.
+- `ExpandedView` owns: top transport bar (record/stop/pause/waveform), left session-history panel, right state-content panel. All state-driving callbacks (onStart, onStop, onPause, onRegenerate, onReset, onIterate) are passed as props from App.jsx — no new IPC channels.
+- `STATE_HEIGHTS.EXPANDED = 580` — window height in expanded mode.
+
 **Rules:**
 - All state transitions go through a single `transition(newState, payload)` function in App.jsx.
 - `transition` is the only function that calls `resizeWindow`, `setWindowButtonsVisible`, `updateMenuBarState`, and `animateToState` — always in sync.

@@ -1,7 +1,7 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-23
+> Last updated: 2026-04-27
 
 ---
 
@@ -34,20 +34,25 @@
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
 | `src/renderer/hooks/useRecording.js` | Recording state + callbacks hook — owns mediaRecorderRef, audioChunksRef, isProcessingRef, isPausedRef, recTimerRef, recSecs. Params: `{ STATES, transitionRef, modeRef, polishToneRef, setThinkTranscript, onGenerateResult, isIterated, originalTranscript }` — `onGenerateResult` is a ref to App.jsx's `handleGenerateResult(genResult, transcript)` callback (replaces old `setGeneratedPrompt` + `setPolishResult` params) | Returns: `{ recSecs, startRecording, stopRecording, handleDismiss, pauseRecording, resumeRecording, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, startTimer, stopTimer }` |
 | `src/renderer/hooks/useKeyboardShortcuts.js` | IPC shortcut listeners + keydown handler hook. Params: `{ STATES, stateRef, prevStateRef, generatedPromptRef, modeRef, transitionRef, setMode, setPolishToneValue, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, openHistory, closeHistory, openSettings, closeSettings }` | Returns nothing (side-effects only) |
+| `src/renderer/components/ExpandedView.jsx` | Thin orchestrator for expanded layout mode — owns `selected` + `isViewingHistory` state; renders ExpandedTransportBar + ExpandedHistoryList + ExpandedDetailPanel. Rendered by App.jsx when `isExpanded=true`. 92 lines. | props: `currentState`, `mode`, `modeLabel`, `duration`, `generatedPrompt`, `thinkTranscript`, `onStart`, `onCollapse`, `onPause`, `onStop`, `onStopIterate`, `onRegenerate`, `onReset`, `onIterate`, `isIterated`, `setGeneratedPrompt`, `isPolishMode`, `polishResult`, `polishTone`, `onPolishToneChange`, `onOpenSettings`, `onReuse` |
+| `src/renderer/components/ExpandedTransportBar.jsx` | Top bar of expanded view — traffic light drag spacer, transport row (pause+timer, mic/stop circle, mode pill+settings), waveform zone (60% width). Handles RECORDING (red stop), ITERATING (blue stop → onStopIterate, MorphCanvas wave, blue pulse rings), THINKING (MorphCanvas), TYPING (dimmed controls). | props: `currentState`, `duration`, `mode`, `modeLabel`, `onStart`, `onStop`, `onStopIterate`, `onPause`, `onCollapse`, `onOpenSettings`, `onTypePrompt` |
+| `src/renderer/components/ExpandedHistoryList.jsx` | Left panel of expanded view — session history list with search, All/Saved tabs, filter chips, stats bar, entry rows, count footer, clear all. Owns its own history/filter state; syncs bookmark/rating display from `selected` prop. 359 lines. | props: `currentState`, `selected`, `onSelect(entry\|null)` |
+| `src/renderer/components/ExpandedDetailPanel.jsx` | Right panel of expanded view — history entry detail when `isViewingHistory`; per-state content (IDLE, RECORDING, PAUSED, ITERATING, TYPING, THINKING, PROMPT_READY) otherwise. Imports `parseSections` from `utils/promptUtils.js`. 496 lines. | props: `selected`, `isViewingHistory`, `currentState`, `generatedPrompt`, `thinkTranscript`, `mode`, `onRegenerate`, `onReset`, `onIterate`, `isIterated`, `setGeneratedPrompt`, `isPolishMode`, `polishResult`, `polishTone`, `onPolishToneChange`, `onReuse`, `onEntryChange` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
 | `src/renderer/components/PausedState.jsx` | PAUSED panel — dismiss, flat amber line, amber timer, resume (▶), stop, status text | props: duration, onResume, onStop, onDismiss |
 | `src/renderer/components/IteratingState.jsx` | ITERATING state panel — blue context banner showing previous transcript, blue animated waveform (RAF loop with cleanup), timer, blue glow stop button (iterGlow). All styles inline. | props: contextText, duration, onStop, onDismiss |
 | `src/renderer/components/TypingState.jsx` | TYPING state panel — textarea, ⌘↵ submit, × dismiss, switch-to-voice, dynamic height 220–320px. All styles inline. | props: onDismiss, onSubmit, resizeWindow |
 | `src/renderer/components/PolishReadyState.jsx` | POLISH mode PROMPT_READY panel — polished text + change notes + tone toggle + copy. All styles inline. | props: `polished`, `changes`, `transcript`, `tone`, `onReset`, `onCopy`, `copied`, `onToneChange` |
-| `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup | — |
+| `src/renderer/components/WaveformCanvas.jsx` | Red sine-wave canvas — RAF loop with cleanup. BUG-TOGGLE-004: DPR-aware sizing (`canvas.width = offsetWidth * dpr`, `ctx.scale(dpr, dpr)`); glow layer lineWidth 3 at rgba(200,50,35,0.07), sharp line lineWidth 1 with red gradient. | — |
 | `src/renderer/components/ThinkingState.jsx` | THINKING panel — status badge, morph wave, YOU SAID | — |
-| `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup | — |
+| `src/renderer/components/MorphCanvas.jsx` | Blue breathing-wave canvas — RAF loop with cleanup. BUG-TOGGLE-004: DPR-aware sizing; glow layer lineWidth 3, sharp line lineWidth 1, amplitude max ~4px, blue gradient peaks at 0.4 opacity. | — |
 | `src/renderer/components/PromptReadyState.jsx` | PROMPT_READY panel — copy flash, edit/done, regenerate, reset, direct .md export (handleExport), ⌘E via export-prompt event | `renderPromptOutput()`, `handleExport()` |
 | `src/renderer/components/ErrorState.jsx` | ERROR panel — error badge + tap-to-dismiss | — |
 | `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button (returns to prevState). px-[28px] padding, WebkitAppRegion: no-drag | — |
 | `src/renderer/components/SettingsPanel.jsx` | SETTINGS panel — path configuration UI for Claude + Whisper binary paths; browse (file picker), recheck (re-resolve), save; 128 lines, all styles inline | props: `onClose` |
 | `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime`, `bookmarkHistoryItem`, `rateHistoryItem` |
+| `src/renderer/utils/promptUtils.js` | Shared prompt-rendering utilities — extracted from ExpandedView.jsx refactor | `parseSections(text)` → `[{label, body}]`; `getModeTagStyle(mode)` → `{background, color}` |
 | `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px scrollable list with search + per-entry delete + tab switcher (All/Saved) + filter chips (All/👍/👎/Unrated) + stats bar, right flex:1 prompt detail with Save/Saved bookmark toggle + rating section (👍/👎 + tag chips) + copy + reuse | props: `onClose`, `onReuse` |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/bar.css`~~ | ~~.bar glass container + ::before tint + ::after accent~~ | deleted — FEATURE-005 |
@@ -104,7 +109,8 @@
 
 | State | Panel ID | Height | Notes |
 |-------|----------|--------|-------|
-| `IDLE` | `panel-idle` | 101px | Mode pill, shortcut hint, ⌘? hint |
+| `IDLE` | `panel-idle` | 134px | Mode pill, shortcut hint, ⌘? hint; expand button top-right (POLISH-TOGGLE) |
+| `EXPANDED` | `ExpandedView` | 860px | isExpanded=true layout mode; window 1100×860; three-zone: top bar / left history / right state-content (BUG-TOGGLE-005) |
 | `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
 | `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
 | `ITERATING` | IteratingState | 200px | Blue context banner + blue waveform + timer + blue stop; traffic lights hidden; separate iter MediaRecorder from main recording |

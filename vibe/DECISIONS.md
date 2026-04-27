@@ -1176,3 +1176,129 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: Separate localStorage key for ratings/bookmarks — rejected (join complexity, extra reads). New IPC for rating — rejected (no main-process involvement needed).
 - **Impact**: `promptly_history` entry shape extended; `bookmarkHistoryItem` and `rateHistoryItem` exported from utils/history.js; HistoryPanel.jsx gains hoveredEntry state, handleBookmark, handleRate, handleTag handlers.
 - **Approved by**: agent-autonomous
+
+---
+
+## D-POLISH-TOGGLE — 2026-04-26 — Expand/Collapse toggle buttons
+- **Type**: tech-choice
+- **Branch**: feat/toggle-expand-collapse
+- **What was done**: Added expand button to IdleState.jsx traffic lights row (top-right, 22×22px, four-corner arrow SVG) and collapse button to PromptReadyState.jsx + PolishReadyState.jsx (top-right, 26×26px, two-bar SVG, position:absolute). STATE_HEIGHTS.IDLE increased from 118 to 134px to give bottom breathing room. Bottom tagline moved from 8px to 10px clearance. Expand → transition(STATES.PROMPT_READY); Collapse → transition(STATES.IDLE). Window resize handled automatically by existing transition().
+- **Why**: No affordance existed to toggle between minimized bar and expanded view. Pure visual change — zero logic, IPC, or hook changes.
+- **Alternatives considered**: New EXPANDED state — rejected (no new state needed; PROMPT_READY is the expanded view). Width change to 760px — rejected (standard 520px window is correct for PROMPT_READY).
+- **Impact**: IdleState height 118 → 134px. Both PROMPT_READY components gain onCollapse prop. PolishReadyState outer div gains position:relative to anchor absolute collapse button.
+- **Approved by**: agent-autonomous
+
+---
+
+## 2026-04-26 — Spec review: POLISH-TOGGLE (on-demand post-build)
+> P0: 0 · P1: 4 · P2: 5
+> Action: findings logged; code already correct (build review caught what spec missed)
+> Report: vibe/spec-reviews/2026-04-26-toggle.md
+> Key lessons: (1) Every design task needs "Done when:" criteria. (2) "Zero logic changes" is too absolute — qualify as "no business logic". (3) Always spec empty-state UX for buttons that depend on async state.
+
+---
+
+### D-BUG-TOGGLE-002 — Tear down ExpandedIdleView, rebuild as three-zone ExpandedView
+- **Date**: 2026-04-26 · **Task**: BUG-TOGGLE-002 · **Type**: drift (wrong implementation)
+- **Root cause**: Previous agent built `ExpandedIdleView.jsx` as a generic centred mic screen (reskin of IdleState) instead of the specified three-zone layout. App.jsx only gated IDLE state on `isExpanded`; RECORDING/THINKING/PROMPT_READY all rendered their normal components in the 760px window, ignoring the layout mode. Window height was also 560 instead of specified 580.
+- **Files in scope**: `src/renderer/components/ExpandedView.jsx` (new), `src/renderer/App.jsx`
+- **Fix approach**: Created `ExpandedView.jsx` with three zones — top transport bar (record/stop/pause/waveform), left session-history panel (228px, getHistory()), right state-content panel (IDLE/RECORDING/THINKING/PROMPT_READY content). App.jsx: when `isExpanded=true`, renders `<ExpandedView>` as the sole renderer for ALL states. Fixed height 560→580 (STATE_HEIGHTS.EXPANDED=580). Removed inline collapse button (moved into ExpandedView top bar). Deleted `ExpandedIdleView.jsx`.
+- **CODEBASE.md update**: Yes — added ExpandedView.jsx row, removed ExpandedIdleView.jsx, added EXPANDED=580 to state heights table.
+- **ARCHITECTURE.md update**: Yes — added isExpanded layout mode section to state management rules.
+- **Deviations from BUG_PLAN.md**: None.
+- **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-003 — ExpandedView visual polish pass
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-003 · **Type**: drift (visual spec not fully implemented)
+- **Root cause**: Several visual details from the POLISH-TOGGLE spec were not implemented in the BUG-TOGGLE-002 pass: timer was 11px instead of 13px, pause button was conditionally shown instead of always visible, no settings button in right flank, history entries used borderRadius+margin layout instead of border-bottom compact rows, SESSION HISTORY label used fontWeight 500 instead of 700, idle right panel had plain text instead of centred mic icon circle, collapse button was inside the traffic-light row div instead of position absolute in the top-bar, and the breathing ring on the idle mic button was applied as SVG animation instead of a separate border div.
+- **Files changed**: `src/renderer/components/ExpandedView.jsx` only (visual only — no logic changes)
+- **What was fixed**:
+  1. Top bar: confirmed #111113 (already correct)
+  2. Transport row: pause button always visible (amber when recording, neutral otherwise); timer font-size 13px + letter-spacing 0.06em; settings button (sliders icon) added to right flank
+  3. Idle mic button: breathing ring as separate absolutely-positioned div (border 1px rgba(255,255,255,0.06), breathe 3s keyframe); mic icon stroke changed to rgba(255,255,255,0.55)
+  4. History entries: padding 10px 16px, border-bottom 0.5px rgba(255,255,255,0.04), no borderRadius; mode tag pill with per-mode colour (blue/green/purple); title 12.5px rgba(255,255,255,0.48), active rgba(255,255,255,0.82) weight 500
+  5. SESSION HISTORY label: fontWeight 700, letterSpacing 0.12em, border-bottom 0.5px rgba(255,255,255,0.05)
+  6. Right panel idle: centred column (flex, gap 16px) — 56px mic icon circle (rgba(10,132,255,0.08) bg + blue border) + title 16px + hint 12px
+  7. Panel separator: already correct 0.5px rgba(255,255,255,0.06)
+  8. Window height: already 580 in STATE_HEIGHTS
+  9. Collapse button: moved to position absolute (top 14px, right 16px) inside top-bar div (position relative); traffic-light row is now a plain drag spacer with no children
+- **Added keyframes**: breathe (3s ease-in-out, scale 1→1.08 + opacity 0.4→1)
+- **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-004 — Waveform and skeleton visual fixes in ExpandedView
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-004 · **Type**: drift (visual spec not fully implemented)
+- **Root cause**: Five visual issues identified after BUG-TOGGLE-003: waveform canvas stretched full width (no breathing room), pixelated waveform lines due to missing devicePixelRatio scaling, line widths too thick, skeleton bars touched panel edges and lacked section grouping, pulse rings were too aggressive.
+- **Files changed**: `src/renderer/components/WaveformCanvas.jsx`, `src/renderer/components/MorphCanvas.jsx`, `src/renderer/components/ExpandedView.jsx`
+- **What was fixed**:
+  1. **Waveform containment (FIX 1)**: Waveform zone div changed to `display: flex, alignItems: center, justifyContent: center, padding: 0 20%` — both red and blue waveforms now occupy 60% centre with 20% breathing room each side. Canvas `style.width: 100%` fills the inner 60% zone.
+  2. **DPR crisp rendering (FIX 2)**: Both WaveformCanvas and MorphCanvas now read `canvas.offsetWidth` at mount, set `canvas.width = displayW * dpr`, `canvas.height = 36 * dpr`, and call `ctx.scale(dpr, dpr)`. Draw functions use display dimensions (not pixel dimensions). Removes all blocky/8-bit appearance.
+  3. **Line style (FIX 3)**: Red waveform — glow layer lineWidth 3 (was 5) at rgba(200,50,35,0.07), sharp line lineWidth 1 (was 1.5) with gradient rgba(200,50,35,0)→rgba(200,50,35,0.65)→rgba(200,50,35,0). Blue morph — same lineWidth 3/1 pattern, gradient rgba(10,132,255,0)→rgba(10,132,255,0.4)→0, amplitude max ~4px (was ~5.5px).
+  4. **Skeleton sections (FIX 4)**: Thinking state padding changed to `24px 15%`. Three skeleton sections, each with a label bar (8px, width 30%, rgba(100,170,255,0.08)) followed by two content bars (10px, borderRadius 5px, rgba(255,255,255,0.05)) at widths 88%/72%, 94%/65%, 80%/55%. Added `skeleton-pulse` keyframe (opacity 0.6→1→0.6).
+  5. **Pulse rings (FIX 5)**: Replaced `pulse-inner` / `pulse-expand` animations with single `pulse-ring` keyframe (scale 1→1.8, opacity 0.6→0). Ring 1: 1px solid rgba(200,50,35,0.3), 2.2s, no delay. Ring 2: 1px solid rgba(200,50,35,0.15), 2.2s, 0.7s delay. Max scale 1.8 (was implied >2.2).
+- **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-005 — ExpandedView resize to 1100×860 (Claude app dimensions)
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-005 · **Type**: design (scale-up to match Claude desktop app window)
+- **Root cause**: ExpandedView was 760×580 — too small relative to the Claude desktop app window users will compare it against. All elements felt cramped at that size.
+- **Files changed**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx` (visual only — no logic changes)
+- **What was changed**:
+  1. **Window dimensions**: `STATE_HEIGHTS.EXPANDED` 580 → 860; `setWindowSize` 760×580 → 1100×860
+  2. **Left panel width**: 228px → 300px
+  3. **Top bar transport controls**: Mic/stop button 52px → 60px; flanking buttons (pause, settings) 34px → 38px; flanking group width 120px → 140px; timer 13px → 14px; mode pill 10px/4px 12px → 12px/6px 16px; waveform zone height 36px → 44px; transport row bottom padding 10px → 12px
+  4. **Collapse button**: 26×26 → 28×28, positioned top 16px right 18px; SVG 12px → 13px
+  5. **SESSION HISTORY label**: padding 12px 14px 10px → 16px 18px 12px; font-size 9px → 10px
+  6. **History entries**: padding 10px 16px → 12px 18px; timestamp 10px → 11px; title 12.5px → 13.5px; mode tag 9px/1px 6px → 10px/2px 7px
+  7. **Right panel idle**: mic circle 56px → 68px; title 16px → 20px; hint 12px → 13px; gap 16px → 20px
+  8. **PROMPT_READY header**: padding 16px 20px 12px → 16px 24px 12px; green ✓ 15px → 17px; action links 11px/gap 14px → 12px/gap 18px
+  9. **Two-column content**: grid gap 20px → 28px; content padding 16px 20px → 22px 28px; section label 9px → 10px; body 13px/1.75 → 14px/1.8; section gap 16px → 18px
+  10. **Action row (PROMPT_READY)**: padding 12px 20px 16px → 14px 24px 20px; buttons 36px/12px → 40px/13px; copy button padding 0 20px → 0 32px; divider margin 0 20px → 0 28px
+  11. **Entry detail right panel**: "You said" padding 18px 20px 14px → 22px 28px 14px; divider margin 0 20px → 0 28px; prompt content padding 14px 20px → 18px 28px; rating section 12px 20px → 12px 28px; action row padding 12px 20px 16px → 14px 24px 20px; buttons 36px/12px → 40px/13px
+  12. **renderPromptSections**: label 9px → 10px, gap 14px → 18px; body 13px/1.75 → 14px/1.8; transcript text 13px/1.65 → 14px/1.7
+- **Approved by**: human
+
+---
+
+### D-BUG-REC-001 — ExpandedView mic button dead after first recording
+- **Date**: 2026-04-27 · **Type**: drift (guard condition too narrow)
+- **Root cause**: `onStart` prop passed to `ExpandedView` had guard `stateRef.current === STATES.IDLE` — but after the first recording completes, state is `PROMPT_READY`. Transport bar mic is always visible in expanded mode, so clicking it from `PROMPT_READY` silently no-ops.
+- **Files changed**: `src/renderer/App.jsx` (1 line — `onStart` prop for ExpandedView only)
+- **Fix**: Guard changed to `s === STATES.IDLE || s === STATES.PROMPT_READY` — allows starting a new recording from either idle or prompt-ready state. IdleState's `onStart` (line 439) left unchanged — it is only ever rendered in IDLE state anyway.
+- **Approved by**: human
+
+---
+
+## D-TYPING-EXPANDED — Typing state added to expanded view right panel
+
+- **Date**: 2026-04-27 · **Type**: feature (visual — no logic changes)
+- **Decision**: Implement full TYPING state UI in ExpandedDetailPanel.jsx right panel. Local `typingText` state owned by ExpandedDetailPanel — not lifted to App.jsx — since it is pure UI state. Two new props threaded from App.jsx → ExpandedView → ExpandedDetailPanel: `onTypingSubmit` (= existing `handleTypingSubmit`) and `onSwitchToVoice` (= `() => transition(STATES.IDLE)`). Transport bar dims mic (0.5), flanking buttons (0.35), and timer (0.2) via `isTyping = currentState === 'TYPING'` opacity — no new props, uses existing `currentState` prop.
+- **Files changed**: `ExpandedDetailPanel.jsx`, `ExpandedTransportBar.jsx`, `ExpandedView.jsx`, `App.jsx`
+- **Approved by**: human
+
+---
+
+### D-BUG-ITER-STOP — Iterating stop button missing in expanded view
+- **Date**: 2026-04-27 · **Type**: drift (bug)
+- **Root cause**: `ExpandedTransportBar.jsx` had no `isIterating` check — `isRecording` was `false` during ITERATING, so centre button called `onStart` (new recording) instead of `stopIterating`. `ExpandedView` never forwarded `stopIterating` from App.jsx.
+- **Files changed**: `App.jsx` (add `onStopIterate` prop), `ExpandedView.jsx` (forward `onStopIterate`), `ExpandedTransportBar.jsx` (add `isIterating` + blue stop UI + MorphCanvas waveform)
+- **Fix**: Added `onStopIterate` prop chain (App → ExpandedView → ExpandedTransportBar). In transport bar: `isIterating = currentState === 'ITERATING'`; centre button shows blue stop square + calls `onStopIterate`; blue pulse rings + `iterGlow` animation; MorphCanvas renders in waveform zone; pause/timer dimmed.
+- **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-007 — Vertical clamping on expand: bottom edge clipped by screen boundary
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-007 · **Type**: drift (positioning bug)
+- **Root cause**: BUG-TOGGLE-006 centred the window horizontally but preserved `preExpandBounds.y` unchanged. If the compact bar was near the bottom of the screen, the 860px expanded window overflowed below the work area bottom edge.
+- **Files changed**: `main.js` (set-window-size IPC handler, expand branch only)
+- **Fix**: In the expand branch of `set-window-size`, compute `maxY = workArea.y + workArea.height - height` (lowest y where window fits fully). Apply `newY = Math.max(Math.min(currentY, maxY), workArea.y)` — shifts up only as much as needed; also clamps top edge to work area top. Collapse still restores `preExpandBounds.y` exactly (clamping is expand-only).
+- **Logic**:
+  1. `maxY` = bottom of workArea minus expanded window height
+  2. `Math.min(currentY, maxY)` — keep current y if it fits, otherwise shift up just enough
+  3. `Math.max(..., dy)` — prevent over-correction from pushing top edge off screen
+- **Constraints**: Horizontal centering from BUG-TOGGLE-006 unchanged. No renderer changes. `animate: false` preserved. `preExpandBounds` store/restore unchanged.
+- **Approved by**: human

@@ -16,6 +16,7 @@ import ErrorState from './components/ErrorState.jsx'
 import IteratingState from './components/IteratingState.jsx'
 import TypingState from './components/TypingState.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
+import ExpandedView from './components/ExpandedView.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -33,7 +34,7 @@ const STATES = {
 }
 
 const STATE_HEIGHTS = {
-  IDLE: 118,
+  IDLE: 134,
   RECORDING: 89,
   PAUSED: 89,
   THINKING: 320,
@@ -44,6 +45,7 @@ const STATE_HEIGHTS = {
   ITERATING: 200,
   TYPING: 244,
   SETTINGS: 322,
+  EXPANDED: 860,
 }
 
 export default function App() {
@@ -51,6 +53,8 @@ export default function App() {
   const [displayState, setDisplayState] = useState(STATES.IDLE)
   const [stateClass, setStateClass] = useState('')
   const [generatedPrompt, setGeneratedPrompt] = useState('')
+  const [isExpanded, setIsExpanded] = useState(false)
+  const isExpandedRef = useRef(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
 
@@ -99,7 +103,7 @@ export default function App() {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
-    resizeWindow(STATE_HEIGHTS[newState])
+    if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
         newState !== STATES.RECORDING &&
@@ -109,6 +113,25 @@ export default function App() {
       window.electronAPI.updateMenuBarState?.(newState)
     }
     animateToState(newState)
+  }
+
+  function handleExpand() {
+    isExpandedRef.current = true
+    setIsExpanded(true)
+    if (window.electronAPI) window.electronAPI.setWindowSize(1100, STATE_HEIGHTS.EXPANDED)
+  }
+
+  function handleCollapse() {
+    isExpandedRef.current = false
+    setIsExpanded(false)
+    stateRef.current = STATES.IDLE
+    setCurrentState(STATES.IDLE)
+    if (window.electronAPI) {
+      window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
+      window.electronAPI.setWindowButtonsVisible(true)
+      window.electronAPI.updateMenuBarState?.(STATES.IDLE)
+    }
+    animateToState(STATES.IDLE)
   }
 
   transitionRef.current = transition
@@ -159,6 +182,8 @@ export default function App() {
   handleGenerateResultRef.current = handleGenerateResult
 
   function openHistory() {
+    isExpandedRef.current = false
+    setIsExpanded(false)
     prevStateRef.current = stateRef.current
     if (window.electronAPI) {
       window.electronAPI.setWindowSize(746, STATE_HEIGHTS.HISTORY)
@@ -270,7 +295,7 @@ export default function App() {
       }
       setThinkTranscript(iterText)
       transition(STATES.THINKING)
-      resizeWindow(320)
+      if (!isExpandedRef.current) resizeWindow(320)
 
       const iterationSystemPrompt = `You are an expert Claude prompt engineer. You have a previously generated prompt and the user has spoken a refinement.
 
@@ -372,103 +397,147 @@ Mode: ${iterationBase.current.mode}`
         className={stateClass}
         style={{flex:1, display:'flex', flexDirection:'column', position:'relative', minHeight:0, overflow:'hidden'}}
       >
-        {displayState === STATES.IDLE && (
-          <IdleState
+        {isExpanded ? (
+          <ExpandedView
+            currentState={displayState}
             mode={mode}
             modeLabel={modeLabel}
-            onStart={() => { if (stateRef.current === STATES.IDLE) startRecording() }}
-            onTypePrompt={() => transition(STATES.TYPING)}
-            polishTone={polishTone}
-            onPolishToneChange={setPolishToneValue}
-          />
-        )}
-        {displayState === STATES.RECORDING && (
-          <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
-        )}
-        {displayState === STATES.PAUSED && (
-          <PausedState duration={duration} onResume={resumeRecording} onStop={stopRecording} onDismiss={handleDismiss} />
-        )}
-        {displayState === STATES.ITERATING && (
-          <IteratingState
-            contextText={iterationBase.current?.transcript || ''}
             duration={duration}
-            onStop={stopIterating}
-            onDismiss={dismissIterating}
-          />
-        )}
-        {displayState === STATES.TYPING && (
-          <>
-            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
-            <TypingState
-              onDismiss={() => transition(STATES.IDLE)}
-              onSubmit={handleTypingSubmit}
-              resizeWindow={resizeWindow}
-            />
-          </>
-        )}
-        {displayState === STATES.THINKING && (
-          <ThinkingState transcript={thinkTranscript} />
-        )}
-        {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
-          <PromptReadyState
-            originalTranscript={originalTranscript.current}
             generatedPrompt={generatedPrompt}
-            setGeneratedPrompt={setGeneratedPrompt}
+            thinkTranscript={thinkTranscript}
+            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY) startRecording() }}
+            onCollapse={handleCollapse}
+            onPause={pauseRecording}
+            onStop={stopRecording}
+            onStopIterate={stopIterating}
             onRegenerate={handleRegenerate}
             onReset={() => transition(STATES.IDLE)}
-            mode={mode}
             onIterate={handleIterate}
             isIterated={isIterated.current}
-          />
-        )}
-        {displayState === STATES.PROMPT_READY && mode === 'polish' && (
-          <PolishReadyState
-            polished={polishResult?.polished || generatedPrompt}
-            changes={polishResult?.changes || []}
-            transcript={originalTranscript.current}
-            tone={polishTone}
-            onReset={() => { setCopied(false); transition(STATES.IDLE) }}
-            onCopy={() => {
-              if (window.electronAPI) window.electronAPI.copyToClipboard(polishResult?.polished || generatedPrompt)
-              setCopied(true)
-              setTimeout(() => setCopied(false), 1800)
+            setGeneratedPrompt={setGeneratedPrompt}
+            isPolishMode={mode === 'polish'}
+            polishResult={polishResult}
+            polishTone={polishTone}
+            onPolishToneChange={handlePolishToneChange}
+            onOpenSettings={openSettings}
+            onTypingSubmit={handleTypingSubmit}
+            onSwitchToVoice={() => transition(STATES.IDLE)}
+            onTypePrompt={() => transition(STATES.TYPING)}
+            onReuse={(entry) => {
+              originalTranscript.current = entry.transcript
+              setGeneratedPrompt(entry.prompt)
+              if (entry.mode === 'polish') {
+                setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })
+              } else {
+                setPolishResult(null)
+              }
+              transition(STATES.PROMPT_READY)
             }}
-            copied={copied}
-            onToneChange={handlePolishToneChange}
           />
-        )}
-        {displayState === STATES.ERROR && (
-          <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
-        )}
-        {displayState === STATES.SHORTCUTS && (
+        ) : (
           <>
-            <div className="h-[44px] w-full" style={{WebkitAppRegion:'drag'}} />
-            <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
-          </>
-        )}
-        {displayState === STATES.SETTINGS && (
-          <>
-            <div className="h-[70px] w-full" style={{WebkitAppRegion:'drag'}} />
-            <SettingsPanel onClose={closeSettings} />
-          </>
-        )}
-        {displayState === STATES.HISTORY && (
-          <>
-            <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
-            <HistoryPanel
-              onClose={closeHistory}
-              onReuse={(entry) => {
-                originalTranscript.current = entry.transcript
-                setGeneratedPrompt(entry.prompt)
-                if (entry.mode === 'polish') {
-                  setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })
-                } else {
-                  setPolishResult(null)
-                }
-                if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.PROMPT_READY)
-                transition(STATES.PROMPT_READY)
-              }}
-            />
+            {displayState === STATES.IDLE && (
+              <IdleState
+                mode={mode}
+                modeLabel={modeLabel}
+                onStart={() => { if (stateRef.current === STATES.IDLE) startRecording() }}
+                onTypePrompt={() => transition(STATES.TYPING)}
+                polishTone={polishTone}
+                onPolishToneChange={setPolishToneValue}
+                onExpand={handleExpand}
+              />
+            )}
+            {displayState === STATES.RECORDING && (
+              <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
+            )}
+            {displayState === STATES.PAUSED && (
+              <PausedState duration={duration} onResume={resumeRecording} onStop={stopRecording} onDismiss={handleDismiss} />
+            )}
+            {displayState === STATES.ITERATING && (
+              <IteratingState
+                contextText={iterationBase.current?.transcript || ''}
+                duration={duration}
+                onStop={stopIterating}
+                onDismiss={dismissIterating}
+              />
+            )}
+            {displayState === STATES.TYPING && (
+              <>
+                <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+                <TypingState
+                  onDismiss={() => transition(STATES.IDLE)}
+                  onSubmit={handleTypingSubmit}
+                  resizeWindow={resizeWindow}
+                />
+              </>
+            )}
+            {displayState === STATES.THINKING && (
+              <ThinkingState transcript={thinkTranscript} />
+            )}
+            {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
+              <PromptReadyState
+                originalTranscript={originalTranscript.current}
+                generatedPrompt={generatedPrompt}
+                setGeneratedPrompt={setGeneratedPrompt}
+                onRegenerate={handleRegenerate}
+                onReset={() => transition(STATES.IDLE)}
+                mode={mode}
+                onIterate={handleIterate}
+                isIterated={isIterated.current}
+                onCollapse={handleCollapse}
+              />
+            )}
+            {displayState === STATES.PROMPT_READY && mode === 'polish' && (
+              <PolishReadyState
+                polished={polishResult?.polished || generatedPrompt}
+                changes={polishResult?.changes || []}
+                transcript={originalTranscript.current}
+                tone={polishTone}
+                onReset={() => { setCopied(false); transition(STATES.IDLE) }}
+                onCopy={() => {
+                  if (window.electronAPI) window.electronAPI.copyToClipboard(polishResult?.polished || generatedPrompt)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1800)
+                }}
+                copied={copied}
+                onToneChange={handlePolishToneChange}
+                onCollapse={handleCollapse}
+              />
+            )}
+            {displayState === STATES.ERROR && (
+              <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
+            )}
+            {displayState === STATES.SHORTCUTS && (
+              <>
+                <div className="h-[44px] w-full" style={{WebkitAppRegion:'drag'}} />
+                <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
+              </>
+            )}
+            {displayState === STATES.SETTINGS && (
+              <>
+                <div className="h-[70px] w-full" style={{WebkitAppRegion:'drag'}} />
+                <SettingsPanel onClose={closeSettings} />
+              </>
+            )}
+            {displayState === STATES.HISTORY && (
+              <>
+                <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
+                <HistoryPanel
+                  onClose={closeHistory}
+                  onReuse={(entry) => {
+                    originalTranscript.current = entry.transcript
+                    setGeneratedPrompt(entry.prompt)
+                    if (entry.mode === 'polish') {
+                      setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })
+                    } else {
+                      setPolishResult(null)
+                    }
+                    if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.PROMPT_READY)
+                    transition(STATES.PROMPT_READY)
+                  }}
+                />
+              </>
+            )}
           </>
         )}
       </div>

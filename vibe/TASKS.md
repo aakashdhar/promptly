@@ -353,12 +353,47 @@
    [x] HSTV2-009 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
    → Full specs: vibe/features/2026-04-24-history-v2/FEATURE_TASKS.md (agent use)
 
+✅ **BUG-TOGGLE-002 — Expanded view three-zone layout** (5/5 — COMPLETE 2026-04-26)
+   [x] BUG-TOGGLE-002-001 · Regression baseline — bug confirmed, lint clean, build passing
+   [x] BUG-TOGGLE-002-002 · Create ExpandedView.jsx — full three-zone layout (top bar / left history / right state-content)
+   [x] BUG-TOGGLE-002-003 · Update App.jsx — swap import, gate ALL states on isExpanded, fix height 560→580, remove inline collapse button
+   [x] BUG-TOGGLE-002-004 · Verify — build success, lint 0 errors, smoke checklist passed
+   [x] BUG-TOGGLE-002-005 · Update docs — CODEBASE.md + DECISIONS.md + TASKS.md + ARCHITECTURE.md
+   → Specs: vibe/bugs/2026-04-26-bug-toggle-002/ | DECISIONS.md D-BUG-TOGGLE-002
+
+✅ **BUG-TOGGLE-003 — ExpandedView visual polish** (COMPLETE 2026-04-27)
+   [x] Transport row: pause button always visible (amber when recording, neutral otherwise); timer 13px; settings button (sliders icon) added to right flank
+   [x] Idle mic button: breathing ring as separate div (border, breathe 3s keyframe); mic icon rgba(255,255,255,0.55)
+   [x] History entries: compact row layout (10px padding, border-bottom); per-mode colour pills (blue/green/purple); title 12.5px
+   [x] SESSION HISTORY label: fontWeight 700, letterSpacing 0.12em, border-bottom
+   [x] Right panel idle: centred column — 56px mic icon circle + title + hint
+   [x] Collapse button: position absolute in top-bar; traffic-light row → plain drag spacer
+   → DECISIONS.md D-BUG-TOGGLE-003
+
+✅ **BUG-TOGGLE-004 — Waveform and skeleton visual fixes** (COMPLETE 2026-04-27)
+   [x] FIX 1: Waveform zone `padding: 0 20%` — both canvases contained to 60% width, centred
+   [x] FIX 2: DPR-aware canvas sizing in WaveformCanvas + MorphCanvas (offsetWidth × devicePixelRatio, ctx.scale)
+   [x] FIX 3: Red waveform glow lineWidth 3 / sharp line lineWidth 1, corrected gradient colours
+   [x] FIX 4: Blue morph lineWidth 3/1, amplitude max ~4px, gradient peak 0.4 opacity
+   [x] FIX 5: Thinking skeleton `padding: 24px 15%`, three grouped labelled sections, height 10px bars
+   [x] FIX 6: Pulse rings use `pulse-ring` keyframe (scale 1→1.8), borders softened to 1px
+   → DECISIONS.md D-BUG-TOGGLE-004
+
+✅ **ExpandedView history parity** (COMPLETE 2026-04-27)
+   [x] Search: icon → live input + `searchHistory()` → ✕ dismiss
+   [x] All / Saved tabs: filters to `entry.bookmarked`
+   [x] Filter chips: All / 👍 / 👎 / Unrated
+   [x] Stats bar: prompt count + 👍% / 👎% rating breakdown
+   [x] Iteration indicator: ↻ badge on entry row when `entry.isIteration`
+   [x] Title fallback: `entry.title || transcript.slice(0,6)` — no more blank rows
+   [x] Count footer: "X prompts · Y saved" / "X saved"
+   [x] Clear all: destructive footer button with hover state
+   → DECISIONS.md D-BUG-TOGGLE-004 (grouped with visual fixes)
+
 ## What just happened
-✅ BUG-033 complete 2026-04-24 — useRecording.js + useKeyboardShortcuts.js extracted; App.jsx delegating both concerns; smoke passed.
-✅ FEATURE-020 complete 2026-04-24 — History Panel v2: bookmarks, ratings (👍/👎 + tags), filter chips, stats bar, hover-only delete, entry indicators, updated footer.
-💰 Cost tracked — Session #21 · 2026-04-26 · $0.26 est
-   Project total: $13.57 (21 sessions, 9 days) · Trend: ↓ maintenance mode
-   vibe/cost/report-2026-04-26-vibe-cost.md
+✅ BUG-TOGGLE-002 complete 2026-04-26 — ExpandedIdleView.jsx (wrong generic mic screen) torn down. ExpandedView.jsx built from scratch: top transport bar, left session-history panel, right state-specific content for all states. App.jsx now renders ExpandedView for ALL states when isExpanded=true. Window 760×580. Build + lint clean.
+✅ BUG-TOGGLE-003/004 + history parity complete 2026-04-27 — ExpandedView left panel brought to full parity with HistoryPanel (search, tabs, filters, stats, ↻ badge, title fallback, clear all). Waveform canvases DPR-crisp, contained to 60% width. Pulse rings and skeleton refined.
+✅ BUG-TOGGLE-005 complete 2026-04-27 — ExpandedView scaled to 1100×860 (Claude app dimensions). All zones, text, buttons, and padding scaled proportionally: left panel 300px, mic 60px, flanking 38px, section labels 10px, body 14px, action buttons 40px, two-column gap 28px. Build clean.
 
 ## Full review gate
 ✅ DEPLOY UNLOCKED — 0 P0, 0 P1 — reviewed 2026-04-24
@@ -366,3 +401,32 @@
 
 ## Remaining open items
 ✅ BL-024 — npm audit 0 vulnerabilities — resolved as part of BL-031 fix. Backlog fully clear.
+
+---
+
+## ExpandedView review — 2026-04-27
+
+✅ Expanded View review fixes — COMPLETE (5/5 — 2026-04-27)
+   [x] RFX-EXP-001 · ExpandedTransportBar.jsx extracted — 217 lines, 9 props
+   [x] RFX-EXP-002 · ExpandedHistoryList.jsx extracted — 359 lines, 3 props
+   [x] RFX-EXP-003 · ExpandedDetailPanel.jsx extracted — 496 lines (was ExpandedStatePanel)
+   [x] RFX-EXP-004 · parseSections + getModeTagStyle moved to src/renderer/utils/promptUtils.js
+   [x] RFX-EXP-005 · spin/breathe/pulse-ring/skeleton-pulse @keyframes moved to index.css
+   → P2-EXP-003 (settings button wired), P2-EXP-004 (ITERATING/TYPING panels added) also fixed
+   → Full report: vibe/reviews/expanded-view-review-2026-04-27.md
+
+## What just happened
+✅ Expanded View review fixes complete 2026-04-27 — ExpandedView.jsx split from 1131 lines into four files: ExpandedView orchestrator (92), ExpandedTransportBar (217), ExpandedHistoryList (359), ExpandedDetailPanel (496). All P0/P1/P2 review findings resolved. Build clean.
+
+## Post-refactor verification review — 2026-04-27
+✅ PASS — Score 9.7/10 — Grade A — 0 P0, 0 P1, 0 P2
+→ 3 P3 findings logged to backlog (boundary-layer ISP, renderPromptSections duplication, HistoryPanel.jsx carry)
+→ Full report: vibe/reviews/expanded-view-postfix-review-2026-04-27.md
+
+✅ **BUG-ITER-STOP — Iterating stop button missing in expanded view** (FIXED 2026-04-27)
+   Root cause: ExpandedTransportBar had no ITERATING check — centre button called onStart instead of stopIterating; no blue waveform shown.
+   Fix: Added onStopIterate prop chain (App → ExpandedView → ExpandedTransportBar). Transport bar now shows blue stop button + blue pulse rings + MorphCanvas waveform + iterGlow animation during ITERATING. Lint + build clean.
+   → Specs: vibe/bugs/2026-04-27-bug-iterating-stop/ | DECISIONS.md D-BUG-ITER-STOP
+
+## What's next
+Manual smoke test: expanded view → iterate → confirm blue stop button stops iteration correctly.
