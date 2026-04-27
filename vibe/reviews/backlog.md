@@ -272,6 +272,8 @@
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | P3-EXP-001 | src/renderer/components/HistoryPanel.jsx | 1–663 | 663 lines — pre-existing above P1 threshold (500). Schedule refactor when ExpandedView split creates opportunity. | Open |
+| P3-EXP-002 | src/renderer/components/ExpandedDetailPanel.jsx + ExpandedView.jsx | props | ISP — 17 props each (threshold 10). Boundary layer necessity; consider per-state child components in future refactor. | Open |
+| P3-EXP-003 | src/renderer/components/ExpandedDetailPanel.jsx | 8–42 | renderPromptSections partially duplicates parseSections regex from promptUtils.js. Could unify if shared JSX renderer warranted. | Open |
 
 ---
 

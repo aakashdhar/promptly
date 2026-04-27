@@ -418,5 +418,10 @@
 ## What just happened
 ✅ Expanded View review fixes complete 2026-04-27 — ExpandedView.jsx split from 1131 lines into four files: ExpandedView orchestrator (92), ExpandedTransportBar (217), ExpandedHistoryList (359), ExpandedDetailPanel (496). All P0/P1/P2 review findings resolved. Build clean.
 
+## Post-refactor verification review — 2026-04-27
+✅ PASS — Score 9.7/10 — Grade A — 0 P0, 0 P1, 0 P2
+→ 3 P3 findings logged to backlog (boundary-layer ISP, renderPromptSections duplication, HistoryPanel.jsx carry)
+→ Full report: vibe/reviews/expanded-view-postfix-review-2026-04-27.md
+
 ## What's next
-Branch feat/toggle-expand-collapse is ready to merge to main. Run `review: expanded view final` or merge.
+Branch feat/toggle-expand-collapse is clear for merge to main. All P0/P1/P2 verified resolved.
