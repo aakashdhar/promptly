@@ -194,7 +194,9 @@ export default function App() {
 
   const {
     imageAnswers,
+    setImageAnswers,
     imageQuestionIndex,
+    setImageQuestionIndex,
     imageBuiltPrompt,
     handleImageSelect,
     handleImageNext,
