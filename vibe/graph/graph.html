@@ -4,813 +4,109 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Promptly — Dependency Graph</title>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; overflow: hidden; }
-
     #canvas { width: 100vw; height: 100vh; display: block; }
-
     #controls {
       position: fixed; top: 16px; left: 16px;
       background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
       display: flex; gap: 10px; align-items: center; flex-wrap: wrap; z-index: 10;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4); max-width: 520px;
     }
     #controls h2 { font-size: 13px; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; margin-right: 4px; }
-    #search {
-      background: #0f172a; border: 1px solid #334155; border-radius: 6px;
-      color: #e2e8f0; padding: 5px 10px; font-size: 12px; width: 180px; outline: none;
-    }
+    #search { background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 5px 10px; font-size: 12px; width: 160px; outline: none; }
     #search:focus { border-color: #6366f1; }
-    button {
-      background: #334155; border: none; border-radius: 6px;
-      color: #e2e8f0; padding: 5px 12px; font-size: 12px; cursor: pointer;
-    }
+    button { background: #334155; border: none; border-radius: 6px; color: #e2e8f0; padding: 5px 12px; font-size: 12px; cursor: pointer; }
     button:hover { background: #475569; }
     button.active { background: #6366f1; }
-    select {
-      background: #0f172a; border: 1px solid #334155; border-radius: 6px;
-      color: #e2e8f0; padding: 5px 8px; font-size: 12px; outline: none;
-    }
-    #stats { font-size: 11px; color: #64748b; white-space: nowrap; }
-
-    #sidebar {
-      position: fixed; right: 0; top: 0; bottom: 0; width: 340px;
-      background: #1e293b; border-left: 1px solid #334155; padding: 20px;
-      overflow-y: auto; transform: translateX(100%); transition: transform 0.2s ease;
-      z-index: 20;
-    }
-    #sidebar.open { transform: translateX(0); }
-    #sidebar-close {
-      position: absolute; top: 14px; right: 14px;
-      background: #334155; border: none; border-radius: 50%; width: 24px; height: 24px;
-      color: #94a3b8; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
-    }
-    #sidebar-close:hover { background: #475569; }
-    #node-name { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; word-break: break-all; }
-    .node-type-badge {
-      display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
-      padding: 2px 8px; border-radius: 10px; margin-bottom: 14px; text-transform: uppercase;
-    }
-    .section-title { font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.08em; text-transform: uppercase; margin: 14px 0 6px; }
-    .detail-row { font-size: 12px; color: #94a3b8; margin: 3px 0; display: flex; gap: 6px; }
-    .detail-row strong { color: #cbd5e1; min-width: 80px; }
-    .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin: 2px 2px 2px 0; }
-    .tag-extracted { background: #052e16; color: #4ade80; border: 1px solid #166534; }
-    .tag-inferred  { background: #1e1b4b; color: #a5b4fc; border: 1px solid #3730a3; }
-    .tag-ambiguous { background: #431407; color: #fb923c; border: 1px solid #9a3412; }
-    .conn-list { list-style: none; }
-    .conn-list li { font-size: 12px; color: #94a3b8; padding: 4px 0; border-bottom: 1px solid #1e293b; display: flex; gap: 6px; align-items: center; }
-    .conn-list li .arrow { color: #475569; }
-    .conn-list li .fname { color: #e2e8f0; font-family: monospace; font-size: 11px; }
-    .rationale-block { font-size: 11px; color: #94a3b8; padding: 8px; background: #0f172a; border-radius: 6px; margin: 4px 0; border-left: 3px solid #334155; }
-    .rationale-block .r-type { font-weight: 700; color: #6366f1; font-size: 10px; text-transform: uppercase; margin-bottom: 3px; }
-    .concept-pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; margin: 2px; }
-    .ambiguous-warning { background: #431407; border: 1px solid #9a3412; border-radius: 6px; padding: 8px; font-size: 11px; color: #fb923c; margin: 8px 0; }
-
-    /* Legend */
     #legend {
+      position: fixed; top: 16px; right: 16px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px;
+      z-index: 10; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    #legend h3 { font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.08em; margin-bottom: 8px; text-transform: uppercase; }
+    #god-nodes {
       position: fixed; bottom: 16px; left: 16px;
-      background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-      padding: 10px 14px; z-index: 10;
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px;
+      z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
-    #legend-title { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-    .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 11px; color: #94a3b8; }
-    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .legend-edge-solid { width: 20px; height: 2px; flex-shrink: 0; }
-    .legend-edge-dashed { width: 20px; height: 2px; flex-shrink: 0; border-top: 2px dashed; }
-
-    .tooltip {
-      position: fixed; background: #1e293b; border: 1px solid #334155; border-radius: 6px;
-      padding: 6px 10px; font-size: 11px; color: #e2e8f0; pointer-events: none;
-      z-index: 100; white-space: nowrap; display: none;
+    #god-nodes h3 { font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.08em; margin-bottom: 8px; text-transform: uppercase; }
+    #stats {
+      position: fixed; bottom: 16px; right: 16px;
+      background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px;
+      font-size: 11px; color: #64748b; z-index: 10;
     }
+    #stats span { color: #94a3b8; }
   </style>
 </head>
 <body>
-
+<div id="canvas"></div>
 <div id="controls">
-  <h2>PROMPTLY</h2>
-  <input type="text" id="search" placeholder="Search files…" />
-  <button id="toggle-view">Concept view</button>
-  <select id="filter-concept">
-    <option value="all">All concepts</option>
-    <option value="foundation">foundation</option>
-    <option value="react-migration">react-migration</option>
-    <option value="state-machine">state-machine</option>
-    <option value="speech-recording">speech-recording</option>
-    <option value="claude-integration">claude-integration</option>
-    <option value="actions">actions</option>
-    <option value="first-run">first-run</option>
-    <option value="dark-mode">dark-mode</option>
-    <option value="tray">tray</option>
-    <option value="shortcuts">shortcuts</option>
-    <option value="export">export</option>
-    <option value="history-panel">history-panel</option>
-    <option value="pause-resume">pause-resume</option>
-  </select>
-  <span id="stats"></span>
+  <h2>Promptly · Dep Graph</h2>
+  <input id="search" placeholder="Search node..." type="text">
+  <button id="btn-reset" onclick="network.fit()">Reset view</button>
+  <button id="btn-extracted" onclick="toggleExtracted()">EXTRACTED only</button>
+  <button id="btn-god" onclick="focusGodNode()">God node</button>
 </div>
-
-<svg id="canvas">
-  <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
-            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M1 1L9 5L1 9" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-    <marker id="arrow-inferred" viewBox="0 0 10 10" refX="9" refY="5"
-            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M1 1L9 5L1 9" fill="none" stroke="#334155" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-  </defs>
-</svg>
-
-<div id="sidebar">
-  <button id="sidebar-close">×</button>
-  <div id="node-name"></div>
-  <div id="node-type-badge-wrap"></div>
-  <div id="node-details"></div>
-</div>
-
 <div id="legend">
-  <div id="legend-title">Legend</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#94a3b8"></div> config</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#6366f1"></div> electron-main</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#22c55e"></div> electron-preload</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#f97316"></div> renderer-html</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div> react-component</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#06b6d4"></div> react-hook</div>
-  <div class="legend-row"><div class="legend-dot" style="background:#a78bfa"></div> utility</div>
-  <div class="legend-row"><div class="legend-edge-solid" style="background:#475569"></div> EXTRACTED</div>
-  <div class="legend-row"><div class="legend-edge-dashed" style="border-color:#334155"></div> INFERRED</div>
+  <h3>Concepts</h3>
+  <div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#64748b;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">foundation</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">state-machine</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">react-migration</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">speech-recording</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">claude-integration</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">actions</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#06b6d4;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">first-run</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#6366f1;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">dark-mode</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#84cc16;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">tray</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#f97316;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">history-panel</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#ec4899;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">shortcuts</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#14b8a6;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">export</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#a855f7;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">iteration-mode</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#fb923c;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">pause-resume</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#94a3b8;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">signing</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#fbbf24;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">ui-polish</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#34d399;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">quick-copy</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#fb7185;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">history-v2</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#60a5fa;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">text-input</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#4ade80;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">polish-mode</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#c084fc;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">path-config</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#f87171;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">uninstaller</span></div><div style="display:flex;align-items:center;gap:6px;margin:2px 0"><div style="width:10px;height:10px;border-radius:50%;background:#38bdf8;flex-shrink:0"></div><span style="font-size:11px;color:#94a3b8">expanded-view</span></div>
+  <div style="margin-top:10px;border-top:1px solid #334155;padding-top:8px">
+    <div style="font-size:10px;color:#64748b;margin:2px 0">— solid = EXTRACTED edge</div>
+    <div style="font-size:10px;color:#64748b;margin:2px 0">- - dashed = INFERRED edge</div>
+    <div style="font-size:10px;color:#64748b;margin:2px 0">◆ diamond = god node</div>
+    <div style="font-size:10px;color:#64748b;margin:2px 0">▭ box = utility/config</div>
+    <div style="font-size:10px;color:#475569;margin:2px 0">faded = deleted</div>
+  </div>
 </div>
-
-<div class="tooltip" id="tooltip"></div>
-
+<div id="god-nodes">
+  <h3>God Nodes (highest coupling)</h3>
+  <div style="margin:4px 0;font-size:11px"><span style="color:#ef4444">⚠️ App.jsx</span> <span style="color:#64748b">20c [HIGH]</span></div><div style="margin:4px 0;font-size:11px"><span style="color:#94a3b8">ExpandedView.jsx</span> <span style="color:#64748b">5c [LOW]</span></div><div style="margin:4px 0;font-size:11px"><span style="color:#94a3b8">preload.js</span> <span style="color:#64748b">3c [LOW]</span></div><div style="margin:4px 0;font-size:11px"><span style="color:#94a3b8">history.js</span> <span style="color:#64748b">3c [LOW]</span></div><div style="margin:4px 0;font-size:11px"><span style="color:#94a3b8">usePolishMode.js</span> <span style="color:#64748b">3c [LOW]</span></div>
+</div>
+<div id="stats">
+  <span>42</span> nodes · <span>43</span> edges · updated <span>2026-04-27</span>
+</div>
 <script>
-const DEPENDENCY_GRAPH = {
-  "package.json": {
-    "state": "built", "type": "config", "concept": "foundation",
-    "concept_source": "INFERRED", "concept_confidence": 0.95,
-    "imports": [],
-    "imported_by": [{"file":"entitlements.plist","source":"INFERRED","confidence":0.85}],
-    "rationale": []
-  },
-  "entitlements.plist": {
-    "state": "built", "type": "config", "concept": "foundation",
-    "concept_source": "INFERRED", "concept_confidence": 0.95,
-    "imports": [],
-    "imported_by": [{"file":"package.json","source":"INFERRED","confidence":0.85}],
-    "rationale": []
-  },
-  "eslint.config.js": {
-    "state": "built", "type": "config", "concept": "foundation",
-    "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "imports": [], "imported_by": [], "rationale": []
-  },
-  "vite.config.js": {
-    "state": "built", "type": "config", "concept": "react-migration",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "imports": [], "imported_by": [],
-    "rationale": [{"type":"DECISION","text":"base: './' — dist-renderer loaded via file:// protocol by Electron; absolute paths would break asset loading","source":"INFERRED"}]
-  },
-  "main.js": {
-    "state": "built", "type": "electron-main", "concept": "foundation",
-    "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "secondary_concepts": ["speech-recording","claude-integration","first-run","dark-mode","tray","history-panel","export"],
-    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0,"evidence":"webPreferences.preload for both win and splashWin"}],
-    "loads": [
-      {"file":"dist-renderer/index.html","source":"EXTRACTED","confidence":1.0},
-      {"file":"splash.html","source":"EXTRACTED","confidence":1.0}
-    ],
-    "imported_by": [],
-    "ipc_handles": ["generate-prompt","copy-to-clipboard","check-claude-path","resize-window","transcribe-audio","show-mode-menu","set-window-buttons-visible","splash-done","splash-check-cli","splash-check-whisper","splash-open-url","request-mic","get-theme","save-file","resize-window-width","set-window-size"],
-    "ipc_sends": ["shortcut-triggered","shortcut-conflict","mode-selected","theme-changed","show-history","show-shortcuts"],
-    "key_vars": ["claudePath","whisperPath","win","splashWin","tray","PROMPT_TEMPLATE","MODE_CONFIG"],
-    "key_functions": ["resolveClaudePath","registerShortcut","createWindow","createTray","updateTrayMenu"],
-    "rationale": [
-      {"type":"DECISION","text":"PATH resolution uses 'zsh -lc \"which claude\"' — claude binary lives in shell PATH set by .zshrc/.zprofile; plain exec('claude') would miss it in Electron's restricted environment","source":"EXTRACTED"},
-      {"type":"DECISION","text":"BrowserWindow has minWidth:520, maxWidth:520 — overridden at runtime by set-window-size IPC which calls setMinimumSize/setMaximumSize before setSize","source":"EXTRACTED"},
-      {"type":"DECISION","text":"set-window-size IPC added (BUG-011) — separate width+height calls had a race condition: RAF-deferred resize-window read stale width before resize-window-width applied","source":"EXTRACTED"}
-    ]
-  },
-  "preload.js": {
-    "state": "built", "type": "electron-preload", "concept": "foundation",
-    "concept_source": "INFERRED", "concept_confidence": 0.95,
-    "imports": [],
-    "imported_by": [
-      {"file":"main.js","source":"EXTRACTED","confidence":1.0},
-      {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"window.electronAPI.* consumed throughout"},
-      {"file":"splash.html","source":"EXTRACTED","confidence":1.0}
-    ],
-    "exposes": ["generatePrompt","copyToClipboard","checkClaudePath","resizeWindow","setWindowButtonsVisible","showModeMenu","onModeSelected","transcribeAudio","splashDone","splashCheckCLI","splashCheckWhisper","splashOpenURL","requestMic","onShortcutTriggered","onShortcutConflict","getTheme","onThemeChanged","onShowShortcuts","saveFile","resizeWindowWidth","setWindowSize","onShowHistory","onShortcutPause"],
-    "rationale": [
-      {"type":"DECISION","text":"nodeIntegration:false + contextIsolation:true always — security boundary; all IPC via window.electronAPI only","source":"INFERRED"},
-      {"type":"DECISION","text":"onShortcutPause added FEATURE-011 — shortcut-pause IPC existed since FSC-004 (Alt+P stub) but was never exposed via contextBridge until pause/resume was implemented","source":"EXTRACTED","added":"2026-04-20"}
-    ]
-  },
-  "splash.html": {
-    "state": "built", "type": "renderer-html", "concept": "first-run",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0}],
-    "imported_by": [{"file":"main.js","source":"EXTRACTED","confidence":1.0}],
-    "key_functions": ["runChecks","setCheck","showReady","openInstall"],
-    "rationale": []
-  },
-  "index.html": {
-    "state": "built", "type": "renderer-html", "concept": "foundation",
-    "concept_source": "AMBIGUOUS", "concept_confidence": 0.50,
-    "concept_evidence": "Legacy vanilla JS renderer — stays on main branch as reference; replaced by React build in production",
-    "secondary_concepts": ["state-machine","speech-recording","claude-integration","actions"],
-    "imports": [{"file":"preload.js","source":"EXTRACTED","confidence":1.0}],
-    "imported_by": [],
-    "rationale": [{"type":"DECISION","text":"Legacy file — retained after React migration (FEATURE-004). Not loaded by Electron in production.","source":"EXTRACTED"}]
-  },
-  "src/renderer/main.jsx": {
-    "state": "built", "type": "react-entry", "concept": "react-migration",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "imports": [
-      {"file":"src/renderer/index.css","source":"EXTRACTED","confidence":1.0},
-      {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}
-    ],
-    "imported_by": [], "rationale": []
-  },
-  "src/renderer/index.css": {
-    "state": "built", "type": "stylesheet", "concept": "react-migration",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "secondary_concepts": ["pause-resume"],
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/main.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": [
-      {"type":"DECISION","text":"@keyframes pauseGlow added FEATURE-011 — amber pulse animation shared between RecordingState pause button and PausedState resume button; defined once in global CSS","source":"EXTRACTED","added":"2026-04-20"}
-    ]
-  },
-  "src/renderer/App.jsx": {
-    "state": "built", "type": "react-component", "concept": "foundation",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "secondary_concepts": ["speech-recording","claude-integration","dark-mode","history-panel","shortcuts","export","pause-resume"],
-    "imports": [
-      {"file":"src/renderer/hooks/useMode.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 2"},
-      {"file":"src/renderer/hooks/useWindowResize.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 3"},
-      {"file":"src/renderer/components/IdleState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 4"},
-      {"file":"src/renderer/components/ShortcutsPanel.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 5"},
-      {"file":"src/renderer/components/HistoryPanel.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 6"},
-      {"file":"src/renderer/components/RecordingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 7"},
-      {"file":"src/renderer/components/PausedState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 8 — added FEATURE-011"},
-      {"file":"src/renderer/components/ThinkingState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 9"},
-      {"file":"src/renderer/components/PromptReadyState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 10"},
-      {"file":"src/renderer/components/ErrorState.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 11"},
-      {"file":"src/renderer/utils/history.js","source":"EXTRACTED","confidence":1.0,"evidence":"line 12"}
-    ],
-    "imported_by": [{"file":"src/renderer/main.jsx","source":"EXTRACTED","confidence":1.0}],
-    "key_vars": ["STATES","STATE_HEIGHTS","recSecs","recTimerRef","isPausedRef"],
-    "key_functions": ["transition","startRecording","stopRecording","pauseRecording","resumeRecording","handleDismiss","handleRegenerate","openHistory","closeHistory","startTimer","pauseTimer","stopTimer"],
-    "rationale": [
-      {"type":"DECISION","text":"openHistory/closeHistory use setWindowSize (atomic) instead of separate calls — avoids RAF race condition where resize-window reads stale width","source":"EXTRACTED"},
-      {"type":"DECISION","text":"closeHistory always transitions to IDLE (not prevState) — HISTORY is a browsing mode, not a temporary overlay","source":"EXTRACTED"},
-      {"type":"DECISION","text":"Root div uses inline style width:100% instead of Tailwind w-[520px] — Tailwind JIT/purge was not generating the dynamic width class","source":"EXTRACTED"},
-      {"type":"DECISION","text":"Timer (recSecs) lifted from RecordingState to App.jsx — FEATURE-011: timer must survive RECORDING→PAUSED→RECORDING; component unmount would reset local useState(0)","source":"EXTRACTED","added":"2026-04-20"},
-      {"type":"DECISION","text":"transition() hides traffic lights for both RECORDING and PAUSED — PAUSED must not show window chrome; same UX as RECORDING","source":"EXTRACTED","added":"2026-04-20"}
-    ]
-  },
-  "src/renderer/utils/history.js": {
-    "state": "built", "type": "utility", "concept": "history-panel",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "imports": [],
-    "imported_by": [
-      {"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0},
-      {"file":"src/renderer/components/HistoryPanel.jsx","source":"EXTRACTED","confidence":1.0}
-    ],
-    "exports": ["saveToHistory","getHistory","deleteHistoryItem","clearHistory","searchHistory","formatTime"],
-    "rationale": [
-      {"type":"DECISION","text":"All localStorage history access gated through this module — no direct localStorage.* calls elsewhere","source":"EXTRACTED"}
-    ]
-  },
-  "src/renderer/components/HistoryPanel.jsx": {
-    "state": "built", "type": "react-component", "concept": "history-panel",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "imports": [{"file":"src/renderer/utils/history.js","source":"EXTRACTED","confidence":1.0}],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "props": ["onClose","onReuse"],
-    "rationale": [
-      {"type":"DECISION","text":"Full inline styles — Tailwind layout classes not applying in HISTORY state (purge/JIT issue). Inline styles are immune and explicit.","source":"EXTRACTED"},
-      {"type":"DECISION","text":"Right panel has minHeight:0 on flex container — without it overflowY:auto on inner prompt div never activates","source":"EXTRACTED"}
-    ]
-  },
-  "src/renderer/hooks/useMode.js": {
-    "state": "built", "type": "react-hook", "concept": "claude-integration",
-    "concept_source": "INFERRED", "concept_confidence": 0.85,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
-  },
-  "src/renderer/hooks/useWindowResize.js": {
-    "state": "built", "type": "react-hook", "concept": "foundation",
-    "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": [{"type":"DECISION","text":"resizeWindow wrapped in requestAnimationFrame — defers IPC call until after React render to avoid visual flash","source":"EXTRACTED"}]
-  },
-  "src/renderer/components/IdleState.jsx": {
-    "state": "built", "type": "react-component", "concept": "state-machine",
-    "concept_source": "INFERRED", "concept_confidence": 0.85,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
-  },
-  "src/renderer/components/RecordingState.jsx": {
-    "state": "built", "type": "react-component", "concept": "speech-recording",
-    "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "secondary_concepts": ["pause-resume"],
-    "imports": [{"file":"src/renderer/components/WaveformCanvas.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"import WaveformCanvas at line 1"}],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "props": ["onStop","onDismiss","onPause","duration"],
-    "rationale": [
-      {"type":"DECISION","text":"Timer state removed from RecordingState — FEATURE-011: timer lifted to App.jsx so recSecs persists across RECORDING↔PAUSED transitions without reset","source":"EXTRACTED","added":"2026-04-20"}
-    ]
-  },
-  "src/renderer/components/PausedState.jsx": {
-    "state": "built", "type": "react-component", "concept": "pause-resume",
-    "concept_source": "EXTRACTED", "concept_confidence": 1.0,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0,"evidence":"line 8 — added FEATURE-011"}],
-    "props": ["duration","onResume","onStop","onDismiss"],
-    "rationale": [
-      {"type":"DECISION","text":"Flat amber gradient line (no canvas) — PAUSED is a static state; waveform animation would imply active recording","source":"EXTRACTED","added":"2026-04-20"},
-      {"type":"DECISION","text":"pauseGlow animation reused on resume button — same @keyframes as pause button in RecordingState; amber pulse signals interactivity","source":"EXTRACTED","added":"2026-04-20"}
-    ]
-  },
-  "src/renderer/components/WaveformCanvas.jsx": {
-    "state": "built", "type": "react-component", "concept": "speech-recording",
-    "concept_source": "INFERRED", "concept_confidence": 0.85,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/components/RecordingState.jsx","source":"INFERRED","confidence":0.90}],
-    "rationale": []
-  },
-  "src/renderer/components/ThinkingState.jsx": {
-    "state": "built", "type": "react-component", "concept": "claude-integration",
-    "concept_source": "INFERRED", "concept_confidence": 0.85,
-    "imports": [{"file":"src/renderer/components/MorphCanvas.jsx","source":"INFERRED","confidence":0.90}],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
-  },
-  "src/renderer/components/MorphCanvas.jsx": {
-    "state": "built", "type": "react-component", "concept": "claude-integration",
-    "concept_source": "INFERRED", "concept_confidence": 0.80,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/components/ThinkingState.jsx","source":"INFERRED","confidence":0.90}],
-    "rationale": []
-  },
-  "src/renderer/components/PromptReadyState.jsx": {
-    "state": "built", "type": "react-component", "concept": "actions",
-    "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "secondary_concepts": ["export"],
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
-  },
-  "src/renderer/components/ErrorState.jsx": {
-    "state": "built", "type": "react-component", "concept": "state-machine",
-    "concept_source": "INFERRED", "concept_confidence": 0.85,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
-  },
-  "src/renderer/components/ShortcutsPanel.jsx": {
-    "state": "built", "type": "react-component", "concept": "shortcuts",
-    "concept_source": "INFERRED", "concept_confidence": 0.90,
-    "imports": [],
-    "imported_by": [{"file":"src/renderer/App.jsx","source":"EXTRACTED","confidence":1.0}],
-    "rationale": []
-  }
+const nodes = new vis.DataSet([{"id": 0, "label": "package.json", "title": "package.json", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 1, "label": "entitlements.plist", "title": "entitlements.plist", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 2, "label": "eslint.config.js", "title": "eslint.config.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 3, "label": "vite.config.js", "title": "vite.config.js", "color": {"background": "#8b5cf6", "border": "#8b5cf6", "highlight": {"background": "#8b5cf6", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 4, "label": "main.js", "title": "main.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 5, "label": "preload.js", "title": "preload.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "diamond", "opacity": 1.0}, {"id": 6, "label": "splash.html", "title": "splash.html", "color": {"background": "#06b6d4", "border": "#06b6d4", "highlight": {"background": "#06b6d4", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 7, "label": "index.html", "title": "index.html", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 8, "label": "main.jsx", "title": "src/renderer/main.jsx", "color": {"background": "#8b5cf6", "border": "#8b5cf6", "highlight": {"background": "#8b5cf6", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 9, "label": "index.css", "title": "src/renderer/index.css", "color": {"background": "#8b5cf6", "border": "#8b5cf6", "highlight": {"background": "#8b5cf6", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 10, "label": "App.jsx", "title": "src/renderer/App.jsx", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "diamond", "opacity": 1.0}, {"id": 11, "label": "history.js", "title": "src/renderer/utils/history.js", "color": {"background": "#f97316", "border": "#f97316", "highlight": {"background": "#f97316", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "diamond", "opacity": 1.0}, {"id": 12, "label": "HistoryPanel.jsx", "title": "src/renderer/components/HistoryPanel.jsx", "color": {"background": "#f97316", "border": "#f97316", "highlight": {"background": "#f97316", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 13, "label": "useMode.js", "title": "src/renderer/hooks/useMode.js", "color": {"background": "#f59e0b", "border": "#f59e0b", "highlight": {"background": "#f59e0b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 14, "label": "useWindowResize.js", "title": "src/renderer/hooks/useWindowResize.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 15, "label": "IdleState.jsx", "title": "src/renderer/components/IdleState.jsx", "color": {"background": "#3b82f6", "border": "#3b82f6", "highlight": {"background": "#3b82f6", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 16, "label": "RecordingState.jsx", "title": "src/renderer/components/RecordingState.jsx", "color": {"background": "#ef4444", "border": "#ef4444", "highlight": {"background": "#ef4444", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 17, "label": "PausedState.jsx", "title": "src/renderer/components/PausedState.jsx", "color": {"background": "#fb923c", "border": "#fb923c", "highlight": {"background": "#fb923c", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 18, "label": "WaveformCanvas.jsx", "title": "src/renderer/components/WaveformCanvas.jsx", "color": {"background": "#ef4444", "border": "#ef4444", "highlight": {"background": "#ef4444", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 19, "label": "ThinkingState.jsx", "title": "src/renderer/components/ThinkingState.jsx", "color": {"background": "#f59e0b", "border": "#f59e0b", "highlight": {"background": "#f59e0b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 20, "label": "MorphCanvas.jsx", "title": "src/renderer/components/MorphCanvas.jsx", "color": {"background": "#f59e0b", "border": "#f59e0b", "highlight": {"background": "#f59e0b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 21, "label": "PromptReadyState.jsx", "title": "src/renderer/components/PromptReadyState.jsx", "color": {"background": "#10b981", "border": "#10b981", "highlight": {"background": "#10b981", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 22, "label": "IteratingState.jsx", "title": "src/renderer/components/IteratingState.jsx", "color": {"background": "#a855f7", "border": "#a855f7", "highlight": {"background": "#a855f7", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 23, "label": "ErrorState.jsx", "title": "src/renderer/components/ErrorState.jsx", "color": {"background": "#3b82f6", "border": "#3b82f6", "highlight": {"background": "#3b82f6", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 24, "label": "ShortcutsPanel.jsx", "title": "src/renderer/components/ShortcutsPanel.jsx", "color": {"background": "#ec4899", "border": "#ec4899", "highlight": {"background": "#ec4899", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 25, "label": "create-cert.sh", "title": "scripts/create-cert.sh", "color": {"background": "#94a3b8", "border": "#94a3b8", "highlight": {"background": "#94a3b8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 26, "label": "sign-app.sh", "title": "scripts/sign-app.sh", "color": {"background": "#94a3b8", "border": "#94a3b8", "highlight": {"background": "#94a3b8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 27, "label": "build-signed.sh", "title": "scripts/build-signed.sh", "color": {"background": "#94a3b8", "border": "#94a3b8", "highlight": {"background": "#94a3b8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 28, "label": "generate-icon.js", "title": "scripts/generate-icon.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 29, "label": "useRecording.js", "title": "src/renderer/hooks/useRecording.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 30, "label": "useKeyboardShortcuts.js", "title": "src/renderer/hooks/useKeyboardShortcuts.js", "color": {"background": "#64748b", "border": "#64748b", "highlight": {"background": "#64748b", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 31, "label": "useTone.js", "title": "src/renderer/hooks/useTone.js", "color": {"background": "#4ade80", "border": "#4ade80", "highlight": {"background": "#4ade80", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 32, "label": "usePolishMode.js", "title": "src/renderer/hooks/usePolishMode.js", "color": {"background": "#4ade80", "border": "#4ade80", "highlight": {"background": "#4ade80", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "diamond", "opacity": 1.0}, {"id": 33, "label": "PolishReadyState.jsx", "title": "src/renderer/components/PolishReadyState.jsx", "color": {"background": "#4ade80", "border": "#4ade80", "highlight": {"background": "#4ade80", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 34, "label": "TypingState.jsx", "title": "src/renderer/components/TypingState.jsx", "color": {"background": "#60a5fa", "border": "#60a5fa", "highlight": {"background": "#60a5fa", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 35, "label": "SettingsPanel.jsx", "title": "src/renderer/components/SettingsPanel.jsx", "color": {"background": "#c084fc", "border": "#c084fc", "highlight": {"background": "#c084fc", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 36, "label": "promptUtils.js", "title": "src/renderer/utils/promptUtils.js", "color": {"background": "#38bdf8", "border": "#38bdf8", "highlight": {"background": "#38bdf8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "box", "opacity": 1.0}, {"id": 37, "label": "ExpandedView.jsx", "title": "src/renderer/components/ExpandedView.jsx", "color": {"background": "#38bdf8", "border": "#38bdf8", "highlight": {"background": "#38bdf8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "diamond", "opacity": 1.0}, {"id": 38, "label": "ExpandedTransportBar.jsx", "title": "src/renderer/components/ExpandedTransportBar.jsx", "color": {"background": "#38bdf8", "border": "#38bdf8", "highlight": {"background": "#38bdf8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 39, "label": "ExpandedHistoryList.jsx", "title": "src/renderer/components/ExpandedHistoryList.jsx", "color": {"background": "#38bdf8", "border": "#38bdf8", "highlight": {"background": "#38bdf8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 40, "label": "ExpandedDetailPanel.jsx", "title": "src/renderer/components/ExpandedDetailPanel.jsx", "color": {"background": "#38bdf8", "border": "#38bdf8", "highlight": {"background": "#38bdf8", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 1.0}, {"id": 41, "label": "ExpandedIdleView.jsx", "title": "src/renderer/components/ExpandedIdleView.jsx", "color": {"background": "#374151", "border": "#4b5563", "highlight": {"background": "#374151", "border": "#fff"}}, "font": {"color": "#f8fafc", "size": 11}, "shape": "ellipse", "opacity": 0.4}]);
+const edges = new vis.DataSet([{"id": 0, "from": 4, "to": 5, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 1, "from": 4, "to": 6, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 2, "from": 6, "to": 5, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 3, "from": 7, "to": 5, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 4, "from": 8, "to": 9, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 5, "from": 8, "to": 10, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 6, "from": 10, "to": 13, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 7, "from": 10, "to": 32, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 8, "from": 10, "to": 14, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 9, "from": 10, "to": 29, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 10, "from": 10, "to": 30, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 11, "from": 10, "to": 15, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 12, "from": 10, "to": 24, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 13, "from": 10, "to": 12, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 14, "from": 10, "to": 16, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 15, "from": 10, "to": 17, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 16, "from": 10, "to": 19, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 17, "from": 10, "to": 21, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 18, "from": 10, "to": 33, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 19, "from": 10, "to": 23, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 20, "from": 10, "to": 22, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 21, "from": 10, "to": 34, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 22, "from": 10, "to": 35, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 23, "from": 10, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 24, "from": 10, "to": 37, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 25, "from": 12, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 26, "from": 16, "to": 18, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 27, "from": 19, "to": 20, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 28, "from": 26, "to": 1, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 29, "from": 27, "to": 25, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 30, "from": 27, "to": 26, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 31, "from": 32, "to": 31, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 32, "from": 32, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 33, "from": 37, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 34, "from": 37, "to": 38, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 35, "from": 37, "to": 39, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 36, "from": 37, "to": 40, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 37, "from": 38, "to": 18, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 38, "from": 38, "to": 20, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 39, "from": 39, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 40, "from": 39, "to": 36, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 41, "from": 40, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 42, "from": 40, "to": 36, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}]);
+const container = document.getElementById('canvas');
+const data = { nodes, edges };
+const options = {
+  physics: { stabilization: { iterations: 200 }, barnesHut: { gravitationalConstant: -6000, springLength: 120, springConstant: 0.04 }, minVelocity: 0.75 },
+  edges: { smooth: { type: 'continuous', roundness: 0.3 }, font: { size: 9, color: '#64748b' } },
+  nodes: { borderWidth: 1.5, borderWidthSelected: 2.5, font: { face: 'system-ui' } },
+  interaction: { hover: true, tooltipDelay: 200, navigationButtons: false },
 };
+const network = new vis.Network(container, data, options);
 
-const CONCEPT_GRAPH = {
-  "foundation":         { "state":"built","files":["package.json","entitlements.plist","eslint.config.js","main.js","preload.js","index.html","src/renderer/App.jsx","src/renderer/main.jsx","src/renderer/hooks/useWindowResize.js"],"depends_on":[],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","first-run","dark-mode","tray","react-migration","history-panel","shortcuts","export"],"tasks_complete":9,"tasks_total":9 },
-  "react-migration":    { "state":"built","files":["vite.config.js","src/renderer/main.jsx","src/renderer/index.css","src/renderer/App.jsx"],"depends_on":["foundation"],"depended_on_by":["state-machine","speech-recording","claude-integration","actions","dark-mode","history-panel","shortcuts","export"],"tasks_complete":14,"tasks_total":14 },
-  "state-machine":      { "state":"built","files":["src/renderer/App.jsx","main.js","src/renderer/components/IdleState.jsx","src/renderer/components/ErrorState.jsx","src/renderer/components/PausedState.jsx"],"depends_on":["foundation","react-migration"],"depended_on_by":["speech-recording","claude-integration","actions","first-run","history-panel","shortcuts","pause-resume"],"tasks_complete":5,"tasks_total":5 },
-  "first-run":          { "state":"built","files":["splash.html","main.js"],"depends_on":["foundation","state-machine"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
-  "speech-recording":   { "state":"built","files":["src/renderer/App.jsx","main.js","preload.js","src/renderer/components/RecordingState.jsx","src/renderer/components/WaveformCanvas.jsx"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":["claude-integration","actions","pause-resume"],"tasks_complete":5,"tasks_total":5 },
-  "claude-integration": { "state":"built","files":["main.js","src/renderer/App.jsx","src/renderer/components/ThinkingState.jsx","src/renderer/components/MorphCanvas.jsx","src/renderer/hooks/useMode.js"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":["actions"],"tasks_complete":4,"tasks_total":4 },
-  "actions":            { "state":"built","files":["src/renderer/components/PromptReadyState.jsx","src/renderer/App.jsx"],"depends_on":["foundation","state-machine","claude-integration"],"depended_on_by":["export"],"tasks_complete":4,"tasks_total":4 },
-  "dark-mode":          { "state":"built","files":["main.js","preload.js","src/renderer/App.jsx"],"depends_on":["foundation"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 },
-  "tray":               { "state":"built","files":["main.js"],"depends_on":["foundation"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 },
-  "shortcuts":          { "state":"built","files":["src/renderer/components/ShortcutsPanel.jsx","src/renderer/App.jsx","main.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 },
-  "export":             { "state":"built","files":["src/renderer/components/PromptReadyState.jsx","main.js","preload.js"],"depends_on":["foundation","actions"],"depended_on_by":[],"tasks_complete":4,"tasks_total":4 },
-  "history-panel":      { "state":"built","files":["src/renderer/utils/history.js","src/renderer/components/HistoryPanel.jsx","src/renderer/App.jsx","main.js","preload.js"],"depends_on":["foundation","state-machine","react-migration"],"depended_on_by":[],"tasks_complete":5,"tasks_total":5 },
-  "pause-resume":       { "state":"built","files":["src/renderer/App.jsx","src/renderer/components/PausedState.jsx","src/renderer/components/RecordingState.jsx","src/renderer/index.css","preload.js"],"depends_on":["foundation","state-machine","speech-recording"],"depended_on_by":[],"tasks_complete":3,"tasks_total":3 }
-};
-
-// ── Colour map ──────────────────────────────────────────────────────────────
-const TYPE_COLOURS = {
-  "config":           "#94a3b8",
-  "electron-main":    "#6366f1",
-  "electron-preload": "#22c55e",
-  "renderer-html":    "#f97316",
-  "react-entry":      "#fb923c",
-  "react-component":  "#3b82f6",
-  "react-hook":       "#06b6d4",
-  "utility":          "#a78bfa",
-  "stylesheet":       "#f472b6",
-  "feature":          "#3b82f6",
-  "infrastructure":   "#64748b"
-};
-const CONCEPT_COLOURS = {
-  "foundation":         "#64748b",
-  "react-migration":    "#fb923c",
-  "state-machine":      "#6366f1",
-  "first-run":          "#a855f7",
-  "speech-recording":   "#3b82f6",
-  "claude-integration": "#06b6d4",
-  "actions":            "#22c55e",
-  "dark-mode":          "#475569",
-  "tray":               "#78716c",
-  "shortcuts":          "#eab308",
-  "export":             "#10b981",
-  "history-panel":      "#f43f5e",
-  "pause-resume":       "#f59e0b"
-};
-
-// ── State ───────────────────────────────────────────────────────────────────
-let currentView = 'file';
-let selectedNode = null;
-let filterConcept = 'all';
-let searchQuery = '';
-
-const svg = document.getElementById('canvas');
-let W = window.innerWidth, H = window.innerHeight;
-
-// ── Force simulation ─────────────────────────────────────────────────────────
-function buildFileGraph() {
-  const nodes = Object.entries(DEPENDENCY_GRAPH).map(([id, d]) => ({
-    id, ...d,
-    x: W/2 + (Math.random()-0.5)*300,
-    y: H/2 + (Math.random()-0.5)*300,
-    vx: 0, vy: 0,
-    r: degreeOf(id) >= 3 ? 22 : degreeOf(id) >= 1 ? 16 : 12
-  }));
-  const edges = [];
-  for (const [src, d] of Object.entries(DEPENDENCY_GRAPH)) {
-    for (const imp of (d.imports||[])) edges.push({ source:src, target:imp.file, source_tag:imp.source });
-    for (const ld of (d.loads||[]))   edges.push({ source:src, target:ld.file,  source_tag:ld.source });
-  }
-  return { nodes, edges };
-}
-
-function buildConceptGraph() {
-  const nodes = Object.entries(CONCEPT_GRAPH).map(([id, d]) => ({
-    id, type: d.state === 'built' ? 'feature' : 'feature',
-    concept: id, state: d.state,
-    files: d.files, tasks_complete: d.tasks_complete, tasks_total: d.tasks_total,
-    x: W/2 + (Math.random()-0.5)*350,
-    y: H/2 + (Math.random()-0.5)*350,
-    vx: 0, vy: 0,
-    r: 14 + (d.files||[]).length * 3
-  }));
-  const edges = [];
-  for (const [id, d] of Object.entries(CONCEPT_GRAPH)) {
-    for (const dep of (d.depends_on||[])) edges.push({ source:id, target:dep, source_tag:'EXTRACTED' });
-  }
-  return { nodes, edges };
-}
-
-function degreeOf(id) {
-  const d = DEPENDENCY_GRAPH[id] || {};
-  return (d.imports||[]).length + (d.imported_by||[]).length + (d.loads||[]).length;
-}
-
-function simulate(nodes, edges, iters=400) {
-  const REPEL = 9000, SPRING = 130, SPRING_K = 0.04, DAMP = 0.88, ALPHA_DECAY = 0.997;
-  let alpha = 1;
-  for (let t = 0; t < iters; t++) {
-    alpha *= ALPHA_DECAY;
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i+1; j < nodes.length; j++) {
-        const a = nodes[i], b = nodes[j];
-        const dx = b.x-a.x, dy = b.y-a.y;
-        const d2 = dx*dx+dy*dy || 1;
-        const f = REPEL / d2;
-        const nx = f*dx/Math.sqrt(d2), ny = f*dy/Math.sqrt(d2);
-        a.vx -= nx; a.vy -= ny; b.vx += nx; b.vy += ny;
-      }
-    }
-    for (const e of edges) {
-      const a = nodes.find(n=>n.id===e.source), b = nodes.find(n=>n.id===e.target);
-      if (!a||!b) continue;
-      const dx=b.x-a.x, dy=b.y-a.y, dist=Math.sqrt(dx*dx+dy*dy)||1;
-      const f=(dist-SPRING)*SPRING_K;
-      const nx=f*dx/dist, ny=f*dy/dist;
-      a.vx+=nx; a.vy+=ny; b.vx-=nx; b.vy-=ny;
-    }
-    // Centre gravity
-    for (const n of nodes) {
-      n.vx += (W/2 - n.x) * 0.003;
-      n.vy += (H/2 - n.y) * 0.003;
-      n.x += n.vx * alpha;
-      n.y += n.vy * alpha;
-      n.vx *= DAMP; n.vy *= DAMP;
-      n.x = Math.max(50, Math.min(W-50, n.x));
-      n.y = Math.max(50, Math.min(H-50, n.y));
-    }
+let extractedOnly = false;
+function toggleExtracted() {
+  extractedOnly = !extractedOnly;
+  document.getElementById('btn-extracted').classList.toggle('active', extractedOnly);
+  const allEdges = [{"id": 0, "from": 4, "to": 5, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 1, "from": 4, "to": 6, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 2, "from": 6, "to": 5, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 3, "from": 7, "to": 5, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 4, "from": 8, "to": 9, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 5, "from": 8, "to": 10, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 6, "from": 10, "to": 13, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 7, "from": 10, "to": 32, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 8, "from": 10, "to": 14, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 9, "from": 10, "to": 29, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 10, "from": 10, "to": 30, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 11, "from": 10, "to": 15, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 12, "from": 10, "to": 24, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 13, "from": 10, "to": 12, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 14, "from": 10, "to": 16, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 15, "from": 10, "to": 17, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 16, "from": 10, "to": 19, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 17, "from": 10, "to": 21, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 18, "from": 10, "to": 33, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 19, "from": 10, "to": 23, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 20, "from": 10, "to": 22, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 21, "from": 10, "to": 34, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 22, "from": 10, "to": 35, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 23, "from": 10, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 24, "from": 10, "to": 37, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 25, "from": 12, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 26, "from": 16, "to": 18, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 27, "from": 19, "to": 20, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 28, "from": 26, "to": 1, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 29, "from": 27, "to": 25, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 30, "from": 27, "to": 26, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 31, "from": 32, "to": 31, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 32, "from": 32, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 33, "from": 37, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 34, "from": 37, "to": 38, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 35, "from": 37, "to": 39, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 36, "from": 37, "to": 40, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 37, "from": 38, "to": 18, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 38, "from": 38, "to": 20, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 39, "from": 39, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 40, "from": 39, "to": 36, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 41, "from": 40, "to": 11, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}, {"id": 42, "from": 40, "to": 36, "dashes": false, "color": {"color": "#6366f1", "opacity": 0.6}, "arrows": "to", "width": 1.5}];
+  if (extractedOnly) {
+    edges.clear();
+    edges.add(allEdges.filter(e => !e.dashes));
+  } else {
+    edges.clear();
+    edges.add(allEdges);
   }
 }
 
-// ── Render ───────────────────────────────────────────────────────────────────
-function svgEl(tag, attrs) {
-  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
-  return el;
+function focusGodNode() {
+  const godNode = nodes.get().find(n => n.shape === 'diamond');
+  if (godNode) network.focus(godNode.id, { scale: 1.2, animation: { duration: 600, easingFunction: 'easeInOutQuad' } });
 }
 
-function render() {
-  W = window.innerWidth; H = window.innerHeight;
-  svg.innerHTML = `<defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/></marker>
-    <marker id="arrow-inferred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="#334155" stroke-width="1.5" stroke-linecap="round"/></marker>
-    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>`;
-
-  const { nodes, edges } = currentView === 'file' ? buildFileGraph() : buildConceptGraph();
-  simulate(nodes, edges);
-
-  // Apply filters
-  const visible = nodes.filter(n => {
-    if (filterConcept !== 'all') {
-      const c = n.concept || n.id;
-      const sec = DEPENDENCY_GRAPH[n.id]?.secondary_concepts || [];
-      if (c !== filterConcept && !sec.includes(filterConcept)) return false;
-    }
-    if (searchQuery && !n.id.toLowerCase().includes(searchQuery)) return false;
-    return true;
-  });
-  const visibleIds = new Set(visible.map(n=>n.id));
-
-  // Edge layer
-  const edgeG = svgEl('g', { class:'edges' });
-  svg.appendChild(edgeG);
-  for (const e of edges) {
-    if (!visibleIds.has(e.source) || !visibleIds.has(e.target)) continue;
-    const a = nodes.find(n=>n.id===e.source), b = nodes.find(n=>n.id===e.target);
-    if (!a||!b) continue;
-    const dx=b.x-a.x, dy=b.y-a.y, dist=Math.sqrt(dx*dx+dy*dy)||1;
-    const mx=a.x+dx/2, my=a.y+dy/2;
-    const path = svgEl('path', {
-      d: `M${a.x},${a.y} Q${mx+(dy*0.15)},${my-(dx*0.15)} ${b.x},${b.y}`,
-      fill: 'none',
-      stroke: e.source_tag==='EXTRACTED' ? '#475569' : '#2d3748',
-      'stroke-width': e.source_tag==='EXTRACTED' ? '1.5' : '1',
-      'stroke-dasharray': e.source_tag==='EXTRACTED' ? 'none' : '5 3',
-      'marker-end': `url(#${e.source_tag==='EXTRACTED' ? 'arrow' : 'arrow-inferred'})`,
-      opacity: '0.7'
-    });
-    edgeG.appendChild(path);
-  }
-
-  // Node layer
-  const nodeG = svgEl('g', { class:'nodes' });
-  svg.appendChild(nodeG);
-  for (const n of visible) {
-    const colour = currentView === 'file'
-      ? (TYPE_COLOURS[n.type] || '#64748b')
-      : (CONCEPT_COLOURS[n.id] || '#6366f1');
-
-    const g = svgEl('g', { transform:`translate(${n.x},${n.y})`, style:'cursor:pointer' });
-    g.dataset.id = n.id;
-
-    // Outer glow for selected
-    if (selectedNode === n.id) {
-      const glow = svgEl('circle', { r: n.r+6, fill: colour, opacity: '0.25' });
-      g.appendChild(glow);
-    }
-
-    const circle = svgEl('circle', {
-      r: n.r,
-      fill: colour,
-      opacity: n.state==='built' ? '1' : '0.5',
-      stroke: n.concept_source==='AMBIGUOUS' ? '#fb923c' : (selectedNode===n.id ? '#fff' : 'rgba(255,255,255,0.15)'),
-      'stroke-width': selectedNode===n.id ? '2' : '1',
-      'stroke-dasharray': n.state==='planned' ? '4 2' : 'none'
-    });
-    g.appendChild(circle);
-
-    // Label
-    const fname = n.id.split('/').pop();
-    const label = svgEl('text', {
-      y: n.r + 14, 'text-anchor': 'middle',
-      fill: '#cbd5e1', 'font-size': '11', 'font-family': 'monospace',
-      'pointer-events': 'none'
-    });
-    label.textContent = fname;
-    g.appendChild(label);
-
-    // Concept badge for file view
-    if (currentView === 'file') {
-      const badgeC = CONCEPT_COLOURS[n.concept] || '#64748b';
-      const badge = svgEl('circle', { r: 5, cx: n.r-3, cy: -(n.r-3), fill: badgeC, stroke: '#0f172a', 'stroke-width': '1.5' });
-      g.appendChild(badge);
-    }
-
-    // IPC count for main.js
-    if (n.ipc_handles) {
-      const txt = svgEl('text', {
-        y: 4, 'text-anchor': 'middle', fill: '#e2e8f0', 'font-size': '10',
-        'font-weight': '700', 'pointer-events': 'none'
-      });
-      txt.textContent = n.ipc_handles.length;
-      g.appendChild(txt);
-    }
-
-    // Tasks badge for concept view
-    if (currentView === 'concept' && n.tasks_total) {
-      const pct = Math.round((n.tasks_complete/n.tasks_total)*100);
-      const txt = svgEl('text', { y:4, 'text-anchor':'middle', fill:'#fff', 'font-size':'10', 'font-weight':'700', 'pointer-events':'none' });
-      txt.textContent = `${pct}%`;
-      g.appendChild(txt);
-    }
-
-    g.addEventListener('click', () => showSidebar(n.id));
-    g.addEventListener('mouseenter', (e) => {
-      showTooltip(e, n.id);
-      highlightConnected(n.id, nodes, edges, nodeG, edgeG);
-    });
-    g.addEventListener('mouseleave', () => {
-      hideTooltip();
-      clearHighlight(nodeG, edgeG);
-    });
-
-    nodeG.appendChild(g);
-  }
-
-  // Stats
-  document.getElementById('stats').textContent = `${visible.length} nodes · ${edges.filter(e=>visibleIds.has(e.source)&&visibleIds.has(e.target)).length} edges`;
-}
-
-function highlightConnected(id, nodes, edges, nodeG, edgeG) {
-  const connected = new Set([id]);
-  for (const e of edges) {
-    if (e.source===id) connected.add(e.target);
-    if (e.target===id) connected.add(e.source);
-  }
-  for (const g of nodeG.children) {
-    g.style.opacity = connected.has(g.dataset.id) ? '1' : '0.15';
-  }
-  for (const p of edgeG.children) {
-    p.style.opacity = '0.15';
-  }
-}
-function clearHighlight(nodeG, edgeG) {
-  for (const g of nodeG.children) g.style.opacity = '1';
-  for (const p of edgeG.children) p.style.opacity = '0.7';
-}
-
-// ── Tooltip ──────────────────────────────────────────────────────────────────
-const tooltip = document.getElementById('tooltip');
-function showTooltip(e, id) {
-  const d = DEPENDENCY_GRAPH[id] || CONCEPT_GRAPH[id];
-  if (!d) return;
-  const lines = [id];
-  if (d.type) lines.push(`type: ${d.type}`);
-  if (d.concept) lines.push(`concept: ${d.concept}`);
-  if (d.concept_source) lines.push(`source: ${d.concept_source} (${d.concept_confidence||'?'})`);
-  tooltip.textContent = lines.join(' · ');
-  tooltip.style.display = 'block';
-  tooltip.style.left = (e.clientX+14)+'px';
-  tooltip.style.top  = (e.clientY-8)+'px';
-}
-function hideTooltip() { tooltip.style.display = 'none'; }
-svg.addEventListener('mousemove', e => { if (tooltip.style.display==='block') { tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY-8)+'px'; } });
-
-// ── Sidebar ──────────────────────────────────────────────────────────────────
-function showSidebar(id) {
-  selectedNode = id;
-  const d = DEPENDENCY_GRAPH[id] || CONCEPT_GRAPH[id];
-  if (!d) return;
-
-  document.getElementById('node-name').textContent = id;
-
-  const colour = TYPE_COLOURS[d.type] || CONCEPT_COLOURS[id] || '#64748b';
-  const badgeWrap = document.getElementById('node-type-badge-wrap');
-  badgeWrap.innerHTML = '';
-  const badge = document.createElement('span');
-  badge.className = 'node-type-badge';
-  badge.style.background = colour + '20';
-  badge.style.color = colour;
-  badge.style.border = `1px solid ${colour}40`;
-  badge.textContent = d.type || 'concept';
-  badgeWrap.appendChild(badge);
-
-  const details = document.getElementById('node-details');
-  details.innerHTML = '';
-
-  const addSection = (title, html) => {
-    const h = document.createElement('div');
-    h.className = 'section-title';
-    h.textContent = title;
-    details.appendChild(h);
-    const c = document.createElement('div');
-    c.innerHTML = html;
-    details.appendChild(c);
-  };
-
-  // Concept
-  if (d.concept) {
-    const src = d.concept_source || 'INFERRED';
-    const tagClass = src==='EXTRACTED' ? 'tag-extracted' : src==='AMBIGUOUS' ? 'tag-ambiguous' : 'tag-inferred';
-    const conf = d.concept_confidence ? ` · ${d.concept_confidence}` : '';
-    addSection('Concept', `<span class="concept-pill" style="border-color:${CONCEPT_COLOURS[d.concept]||'#334155'}">${d.concept}</span> <span class="tag ${tagClass}">${src}${conf}</span>`);
-  }
-
-  // Ambiguous warning
-  if (d.concept_source === 'AMBIGUOUS') {
-    const w = document.createElement('div');
-    w.className = 'ambiguous-warning';
-    w.textContent = `⚠️ Ambiguous: ${d.concept_evidence||'Multiple features own this file'}`;
-    details.appendChild(w);
-  }
-
-  // Secondary concepts
-  if (d.secondary_concepts?.length) {
-    addSection('Also used by', d.secondary_concepts.map(c => `<span class="concept-pill" style="border-color:${CONCEPT_COLOURS[c]||'#334155'}">${c}</span>`).join(' '));
-  }
-
-  // State
-  addSection('State', `<div class="detail-row"><strong>state</strong><span style="color:${d.state==='built'?'#4ade80':'#94a3b8'}">${d.state}</span></div>`);
-
-  // Connections
-  const allConns = [
-    ...(d.imports||[]).map(i=>({dir:'→',file:i.file,src:i.source,conf:i.confidence,ev:i.evidence})),
-    ...(d.loads||[]).map(i=>({dir:'loads',file:i.file,src:i.source,conf:i.confidence,ev:i.evidence})),
-    ...(d.imported_by||[]).map(i=>({dir:'←',file:i.file,src:i.source,conf:i.confidence,ev:i.evidence}))
-  ];
-  if (allConns.length) {
-    const tagClass = s => s==='EXTRACTED'?'tag-extracted':s==='AMBIGUOUS'?'tag-ambiguous':'tag-inferred';
-    addSection('Connections', '<ul class="conn-list">' + allConns.map(c =>
-      `<li><span class="arrow">${c.dir}</span><span class="fname">${c.file}</span><span class="tag ${tagClass(c.src)}">${c.src}</span></li>`
-    ).join('') + '</ul>');
-  }
-
-  // IPC
-  if (d.ipc_handles?.length) {
-    addSection('IPC handles', d.ipc_handles.map(ch=>`<code style="font-size:10px;color:#94a3b8;display:block;padding:1px 0">${ch}</code>`).join(''));
-  }
-  if (d.ipc_sends?.length) {
-    addSection('IPC sends', d.ipc_sends.map(ch=>`<code style="font-size:10px;color:#94a3b8;display:block;padding:1px 0">${ch}</code>`).join(''));
-  }
-
-  // Key functions
-  if (d.key_functions?.length) {
-    addSection('Key functions', d.key_functions.map(f=>`<code style="font-size:10px;color:#a5b4fc;display:inline-block;padding:1px 4px;background:#1e1b4b;border-radius:3px;margin:1px">${f}()</code>`).join(' '));
-  }
-
-  // Rationale
-  if (d.rationale?.length) {
-    addSection('Rationale', d.rationale.map(r => `<div class="rationale-block"><div class="r-type">${r.type} ${r.source ? `· ${r.source}` : ''}</div>${r.text}</div>`).join(''));
-  }
-
-  // Concept view: files list
-  if (d.files?.length && currentView==='concept') {
-    addSection(`Files (${d.files.length})`, d.files.map(f=>`<code style="font-size:10px;color:#94a3b8;display:block;padding:1px 0">${f}</code>`).join(''));
-    if (d.tasks_total) {
-      const pct = Math.round((d.tasks_complete/d.tasks_total)*100);
-      details.appendChild(Object.assign(document.createElement('div'), {
-        className:'detail-row', style:'margin-top:8px',
-        innerHTML:`<strong>Tasks</strong><span style="color:#4ade80">${d.tasks_complete}/${d.tasks_total} (${pct}%)</span>`
-      }));
-    }
-  }
-
-  document.getElementById('sidebar').classList.add('open');
-  render();
-}
-
-document.getElementById('sidebar-close').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.remove('open');
-  selectedNode = null;
-  render();
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  const matches = nodes.get().filter(n => n.title.toLowerCase().includes(q) || n.label.toLowerCase().includes(q));
+  if (matches.length === 1) network.focus(matches[0].id, { scale: 1.5, animation: { duration: 500 } });
+  else if (matches.length > 1) network.fit({ nodes: matches.map(n => n.id), animation: true });
 });
-
-// ── Controls ─────────────────────────────────────────────────────────────────
-document.getElementById('toggle-view').addEventListener('click', function() {
-  currentView = currentView==='file' ? 'concept' : 'file';
-  this.textContent = currentView==='file' ? 'Concept view' : 'File view';
-  this.classList.toggle('active', currentView==='concept');
-  render();
-});
-
-document.getElementById('filter-concept').addEventListener('change', function() {
-  filterConcept = this.value;
-  render();
-});
-
-document.getElementById('search').addEventListener('input', function() {
-  searchQuery = this.value.toLowerCase();
-  render();
-});
-
-window.addEventListener('resize', render);
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-render();
 </script>
 </body>
 </html>

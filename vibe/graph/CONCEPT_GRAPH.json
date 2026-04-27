@@ -3,10 +3,10 @@
     "version": 2,
     "built_from": "vibe/TASKS.md + feature folders + CODEBASE.md",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-20T20:00:00Z",
-    "update_count": 5,
+    "last_updated": "2026-04-27T00:00:00Z",
+    "update_count": 6,
     "project": "promptly",
-    "update_note": "Added signing concept (FEATURE-SIGNING); added ui-polish concept (POLISH-001\u2013009); updated foundation files list (signing scripts); updated first-run to reference BUG-013/015/016 mic-permission fixes"
+    "update_note": "Added expanded-view concept (BUG-TOGGLE series). Updated history-v2 to complete. Updated foundation hook files list."
   },
   "foundation": {
     "state": "built",
@@ -73,6 +73,18 @@
         "state": "built",
         "source": "INFERRED",
         "confidence": 0.8
+      },
+      {
+        "file": "src/renderer/hooks/useRecording.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/hooks/useKeyboardShortcuts.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
       }
     ],
     "depends_on": [],
@@ -536,7 +548,9 @@
       "state-machine",
       "react-migration"
     ],
-    "depended_on_by": [],
+    "depended_on_by": [
+      "expanded-view"
+    ],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 4 \u2014 complete 2026-04-19",
@@ -673,7 +687,9 @@
       "actions",
       "history-panel"
     ],
-    "depended_on_by": [],
+    "depended_on_by": [
+      "expanded-view"
+    ],
     "tasks_complete": 5,
     "tasks_total": 5,
     "phase": "Phase 4 \u2014 complete 2026-04-20",
@@ -920,11 +936,13 @@
       "foundation",
       "history-panel"
     ],
-    "depended_on_by": [],
+    "depended_on_by": [
+      "expanded-view"
+    ],
     "tasks_complete": 9,
     "tasks_total": 9,
     "feature_folder": "vibe/features/2026-04-24-history-v2",
-    "phase": "Phase 4 \u2014 in progress"
+    "phase": "Phase 4 \u2014 complete 2026-04-24"
   },
   "text-input": {
     "state": "built",
@@ -1076,5 +1094,66 @@
       }
     ],
     "depended_on_by": []
+  },
+  "expanded-view": {
+    "state": "built",
+    "type": "feature",
+    "description": "Full-width 1100\u00d7860 three-zone layout: ExpandedTransportBar (top), ExpandedHistoryList (left 300px), ExpandedDetailPanel (right flex:1). Toggle via expand button in IDLE/PROMPT_READY. Scaled proportionally at BUG-TOGGLE-005. History parity: search, tabs, filters, stats, \u21bb badge, clear all.",
+    "files": [
+      {
+        "file": "src/renderer/components/ExpandedView.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/ExpandedTransportBar.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/ExpandedHistoryList.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/components/ExpandedDetailPanel.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/utils/promptUtils.js",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/App.jsx",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      },
+      {
+        "file": "src/renderer/index.css",
+        "state": "built",
+        "source": "EXTRACTED",
+        "confidence": 0.9
+      }
+    ],
+    "depends_on": [
+      "foundation",
+      "state-machine",
+      "history-panel",
+      "history-v2",
+      "iteration-mode"
+    ],
+    "depended_on_by": [],
+    "tasks_complete": 8,
+    "tasks_total": 8,
+    "phase": "Phase 4 \u2014 complete 2026-04-27",
+    "notes": "BUG-TOGGLE-002: ExpandedIdleView torn down, three-zone ExpandedView built. BUG-TOGGLE-003/004: visual polish + DPR-aware waveforms. BUG-TOGGLE-005: scaled to 1100\u00d7860. Refactored 1131-line monolith \u2192 4 files (RFX-EXP-001 through 005). BUG-ITER-STOP: ITERATING stop button wired in ExpandedTransportBar."
   }
 }

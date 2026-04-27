@@ -3,10 +3,49 @@
     "version": 2,
     "built_from": "vibe/CODEBASE.md + source files",
     "built_at": "2026-04-18T13:36:46Z",
-    "last_updated": "2026-04-24T00:00:00Z",
-    "update_count": 6,
+    "last_updated": "2026-04-27T00:00:00Z",
+    "update_count": 7,
     "project": "promptly",
-    "update_note": "Incremental update \u2014 HSTV2-001: bookmarkHistoryItem + rateHistoryItem added to history.js (FEATURE-020); saveToHistory extended with polishChanges field. QCPY-001\u2013004: lastGeneratedPrompt + set-last-prompt IPC + copy-last-prompt tray menu (main.js + App.jsx) \u2014 quick-copy from menubar. New concept: history-v2 (planned, 1/9 tasks done)."
+    "update_note": "Incremental update \u2014 BUG-TOGGLE-002/003/004/005 + ExpandedView refactor + BUG-ITER-STOP. NEW: ExpandedView.jsx (orchestrator, 92 lines), ExpandedTransportBar.jsx (217), ExpandedHistoryList.jsx (359), ExpandedDetailPanel.jsx (496), promptUtils.js. DELETED: ExpandedIdleView.jsx. INFERRED\u2192EXTRACTED: WaveformCanvas\u2190RecordingState, MorphCanvas\u2190ThinkingState. App.jsx now imports ExpandedView. main.js gains hide-on-blur. God node: App.jsx at 21 connections (SRP flag).",
+    "god_nodes": [
+      {
+        "file": "src/renderer/App.jsx",
+        "connections": 20,
+        "concept": "foundation",
+        "type": "react-component",
+        "risk": "HIGH",
+        "srp_flag": true,
+        "srp_note": "20 connections \u2014 SRP violation likely; consider further extraction"
+      },
+      {
+        "file": "src/renderer/components/ExpandedView.jsx",
+        "connections": 5,
+        "concept": "expanded-view",
+        "type": "react-component",
+        "risk": "LOW"
+      },
+      {
+        "file": "preload.js",
+        "connections": 3,
+        "concept": "foundation",
+        "type": "electron-preload",
+        "risk": "LOW"
+      },
+      {
+        "file": "src/renderer/utils/history.js",
+        "connections": 3,
+        "concept": "history-panel",
+        "type": "utility",
+        "risk": "LOW"
+      },
+      {
+        "file": "src/renderer/hooks/usePolishMode.js",
+        "connections": 3,
+        "concept": "polish-mode",
+        "type": "react-hook",
+        "risk": "LOW"
+      }
+    ]
   },
   "package.json": {
     "state": "built",
@@ -122,7 +161,8 @@
       "iteration-mode",
       "signing",
       "ui-polish",
-      "quick-copy"
+      "quick-copy",
+      "expanded-view"
     ],
     "secondary_concept_evidence": "transcribe-audio IPC (speech-recording), generate-prompt + show-mode-menu IPC (claude-integration), splash-* IPC channels (first-run), get-theme + nativeTheme.on (dark-mode), createTray/updateTrayMenu (tray), resize-window-width + set-window-size + show-history (history-panel), save-file (export), generate-raw IPC (iteration-mode), request-mic + check-mic-status + session.defaultSession handler (signing/mic permission), remove DevTools (ui-polish), set-last-prompt IPC + lastGeneratedPrompt + copy-last-prompt tray item (quick-copy)",
     "imports": [
@@ -261,8 +301,15 @@
         "text": "buildTrayMenu() refactor (FEATURE-018/QCPY) \u2014 shared helper called by both createTray() and updateTrayMenu(), prevents drift between initial and updated tray menus. lastGeneratedPrompt is session-only (not persisted) \u2014 set via set-last-prompt IPC after each successful generate-prompt. copy-last-prompt tray item copies silently without opening window.",
         "source": "EXTRACTED",
         "added": "2026-04-24"
+      },
+      {
+        "type": "DECISION",
+        "note": "win.on(\"blur\") hides window (fix/window commit, 63fa100) \u2014 auto-dismiss on focus loss. isExpanded guard not needed: blur fires after user switches away.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
       }
-    ]
+    ],
+    "hash": "667e50dacc0c0bb5a107e33099df95dc20cde00e"
   },
   "preload.js": {
     "state": "built",
@@ -456,7 +503,8 @@
     "secondary_concepts": [
       "pause-resume",
       "iteration-mode",
-      "ui-polish"
+      "ui-polish",
+      "expanded-view"
     ],
     "imports": [],
     "imported_by": [
@@ -484,8 +532,15 @@
         "text": "POLISH-001\u2013009 \u2014 state transitions added (opacity + translateY), font-weight tuning, hover states on all interactive elements, pulse ring enhancements, custom scrollbar styles for HistoryPanel, text brightness calibration; all via Tailwind utility classes or CSS tokens",
         "source": "EXTRACTED",
         "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "note": "BUG-TOGGLE-004/005: pulse-ring @keyframes (scale 1\u21921.8), breathe (scale 0.97\u21921.03), spin, skeleton-pulse added. Referenced inline by ExpandedView components. RFX-EXP-005 moved these keyframes from ExpandedView.jsx to index.css to enable cross-component sharing.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
       }
-    ]
+    ],
+    "hash": "8fcb611f0339f1a569d2dfd31ffb70f0b2f058c3"
   },
   "src/renderer/App.jsx": {
     "state": "built",
@@ -503,7 +558,8 @@
       "export",
       "pause-resume",
       "iteration-mode",
-      "ui-polish"
+      "ui-polish",
+      "expanded-view"
     ],
     "imports": [
       {
@@ -613,6 +669,12 @@
         "source": "EXTRACTED",
         "confidence": 1.0,
         "line": 19
+      },
+      {
+        "file": "src/renderer/components/ExpandedView.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "line": 19
       }
     ],
     "imported_by": [
@@ -648,7 +710,12 @@
       "pauseTimer",
       "stopTimer",
       "startIteration",
-      "stopIteration"
+      "stopIteration",
+      "handleIterate",
+      "stopIterating",
+      "dismissIterating",
+      "openSettings",
+      "closeSettings"
     ],
     "ipc_consumed": [
       "window.electronAPI.*"
@@ -665,8 +732,15 @@
       {
         "type": "HACK",
         "note": "stateRef mirrors currentState for stale-closure-safe IPC callbacks \u2014 IPC handlers registered once at mount can't see useState updates"
+      },
+      {
+        "type": "DECISION",
+        "note": "isExpanded (useState bool) added for expanded-view toggle \u2014 App renders ExpandedView for ALL states when isExpanded=true, bypassing individual state components. openHistory/closeHistory/openSettings call setWindowSize directly, bypassing transition() to allow non-standard window width.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
       }
-    ]
+    ],
+    "hash": "a20b6c3cee1da9cf04dde2b3081f997a3cd58919"
   },
   "src/renderer/utils/history.js": {
     "state": "built",
@@ -841,7 +915,8 @@
     "concept_source": "INFERRED",
     "concept_confidence": 0.85,
     "secondary_concepts": [
-      "ui-polish"
+      "ui-polish",
+      "expanded-view"
     ],
     "imports": [],
     "imported_by": [
@@ -857,8 +932,15 @@
         "text": "'built using vibe-* skills' footer added \u2014 attribution line; renders below the \u2318? hint chip in IDLE state",
         "source": "EXTRACTED",
         "added": "2026-04-20"
+      },
+      {
+        "type": "DECISION",
+        "note": "Expand button (\u2922) added top-right corner \u2014 transitions App.jsx isExpanded to true. BUG-TOGGLE-003: breathing ring as separate div (border + breathe 3s keyframe), mic icon rgba(255,255,255,0.55).",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
       }
-    ]
+    ],
+    "hash": "ea68ec6fbee5283a3516a3504a43a84c961eb669"
   },
   "src/renderer/components/RecordingState.jsx": {
     "state": "built",
@@ -946,11 +1028,26 @@
     "imported_by": [
       {
         "file": "src/renderer/components/RecordingState.jsx",
-        "source": "INFERRED",
-        "confidence": 0.9
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import WaveformCanvas line 1 \u2014 confirmed in source"
+      },
+      {
+        "file": "src/renderer/components/ExpandedTransportBar.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import WaveformCanvas line 1 \u2014 waveform zone during RECORDING in expanded view"
       }
     ],
-    "rationale": []
+    "rationale": [
+      {
+        "type": "DECISION",
+        "note": "BUG-TOGGLE-004: DPR-aware sizing added \u2014 canvas.width = offsetWidth * devicePixelRatio, ctx.scale(dpr, dpr). Glow layer lineWidth 3 at rgba(200,50,35,0.07), sharp line lineWidth 1 with red gradient. Fixes blurry canvas on Retina displays.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "00ecaec63efc9e75cc0b2811c411e6b3607f3883"
   },
   "src/renderer/components/ThinkingState.jsx": {
     "state": "built",
@@ -961,8 +1058,9 @@
     "imports": [
       {
         "file": "src/renderer/components/MorphCanvas.jsx",
-        "source": "INFERRED",
-        "confidence": 0.9
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "confirmed by source grep \u2014 import MorphCanvas"
       }
     ],
     "imported_by": [
@@ -984,11 +1082,26 @@
     "imported_by": [
       {
         "file": "src/renderer/components/ThinkingState.jsx",
-        "source": "INFERRED",
-        "confidence": 0.9
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import MorphCanvas \u2014 confirmed in source"
+      },
+      {
+        "file": "src/renderer/components/ExpandedTransportBar.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import MorphCanvas line 2 \u2014 morph wave in THINKING + ITERATING in expanded transport bar"
       }
     ],
-    "rationale": []
+    "rationale": [
+      {
+        "type": "DECISION",
+        "note": "BUG-TOGGLE-004: DPR-aware sizing added. glow lineWidth 3, sharp line lineWidth 1, amplitude max ~4px, blue gradient peak 0.4 opacity. Consistent with WaveformCanvas DPR fix applied in same session.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "9aeb84c1b686ef62470b69f56d50a1b163bb0280"
   },
   "src/renderer/components/PromptReadyState.jsx": {
     "state": "built",
@@ -1330,5 +1443,301 @@
     ],
     "rationale": [],
     "hash": null
+  },
+  "src/renderer/utils/promptUtils.js": {
+    "state": "built",
+    "type": "utility",
+    "concept": "expanded-view",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "Extracted from ExpandedView.jsx refactor (RFX-EXP-004) \u2014 shared render utilities used only by Expanded components",
+    "imports": [],
+    "imported_by": [
+      {
+        "file": "src/renderer/components/ExpandedHistoryList.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { getModeTagStyle } line 3"
+      },
+      {
+        "file": "src/renderer/components/ExpandedDetailPanel.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { parseSections } line 3"
+      }
+    ],
+    "exports": [
+      "parseSections",
+      "getModeTagStyle"
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Extracted from ExpandedView.jsx (RFX-EXP-004) to eliminate duplication \u2014 parseSections used by ExpandedDetailPanel, getModeTagStyle used by ExpandedHistoryList; both are pure functions with no component dependency",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "99f56cb86b42b3dd6a4086c49a393183a00e7421"
+  },
+  "src/renderer/components/ExpandedView.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "expanded-view",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "Primary orchestrator for 1100\u00d7860 expanded layout \u2014 BUG-TOGGLE-002 through BUG-TOGGLE-005",
+    "secondary_concepts": [
+      "history-v2"
+    ],
+    "imports": [
+      {
+        "file": "src/renderer/utils/history.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { getHistory } line 2"
+      },
+      {
+        "file": "src/renderer/components/ExpandedTransportBar.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import ExpandedTransportBar line 3"
+      },
+      {
+        "file": "src/renderer/components/ExpandedHistoryList.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import ExpandedHistoryList line 4"
+      },
+      {
+        "file": "src/renderer/components/ExpandedDetailPanel.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import ExpandedDetailPanel line 5"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "src/renderer/App.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import ExpandedView line 19"
+      }
+    ],
+    "props": [
+      "currentState",
+      "mode",
+      "modeLabel",
+      "duration",
+      "generatedPrompt",
+      "thinkTranscript",
+      "onStart",
+      "onCollapse",
+      "onPause",
+      "onStop",
+      "onStopIterate",
+      "onRegenerate",
+      "onReset",
+      "onIterate",
+      "isIterated",
+      "setGeneratedPrompt",
+      "isPolishMode",
+      "polishResult",
+      "polishTone",
+      "onPolishToneChange",
+      "onOpenSettings",
+      "onReuse"
+    ],
+    "local_state": [
+      "selected",
+      "isViewingHistory"
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Thin orchestrator (92 lines) \u2014 owns only selected + isViewingHistory state, delegates layout to three sub-components. BUG-TOGGLE-002 tore down ExpandedIdleView.jsx (wrong generic mic screen) and built this from scratch.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      },
+      {
+        "type": "DECISION",
+        "note": "Window: 1100\u00d7860 (Claude app dimensions, BUG-TOGGLE-005). Three zones: ExpandedTransportBar (top), ExpandedHistoryList (left 300px), ExpandedDetailPanel (right flex:1). All proportions scaled at BUG-TOGGLE-005.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "37bfdd50152000f2f2449defdfdb247cdafd8fc1"
+  },
+  "src/renderer/components/ExpandedTransportBar.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "expanded-view",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "Extracted from ExpandedView.jsx refactor (RFX-EXP-001) \u2014 top transport row of expanded layout",
+    "imports": [
+      {
+        "file": "src/renderer/components/WaveformCanvas.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import WaveformCanvas line 1"
+      },
+      {
+        "file": "src/renderer/components/MorphCanvas.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import MorphCanvas line 2"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "src/renderer/components/ExpandedView.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
+    "props": [
+      "currentState",
+      "duration",
+      "mode",
+      "modeLabel",
+      "onStart",
+      "onStop",
+      "onStopIterate",
+      "onPause",
+      "onCollapse",
+      "onOpenSettings",
+      "onTypePrompt"
+    ],
+    "rationale": [
+      {
+        "type": "DECISION",
+        "note": "BUG-ITER-STOP fix lives here \u2014 ITERATING check was missing, centre button called onStart instead of onStopIterate. Fixed by adding onStopIterate prop chain. Blue stop + blue pulse rings + MorphCanvas waveform during ITERATING.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "7b0220fc410bae893fb43619266b1d089c858465"
+  },
+  "src/renderer/components/ExpandedHistoryList.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "expanded-view",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "Extracted from ExpandedView.jsx refactor (RFX-EXP-002) \u2014 left panel of expanded layout, 359 lines",
+    "secondary_concepts": [
+      "history-v2",
+      "history-panel"
+    ],
+    "imports": [
+      {
+        "file": "src/renderer/utils/history.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { getHistory, deleteHistoryItem, clearHistory, searchHistory } line 2"
+      },
+      {
+        "file": "src/renderer/utils/promptUtils.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { getModeTagStyle } line 3"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "src/renderer/components/ExpandedView.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
+    "props": [
+      "currentState",
+      "selected",
+      "onSelect"
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Owns its own history/filter state (search, tabs, chips, stats). Syncs bookmark/rating display from selected prop passed from parent. Full parity with HistoryPanel.jsx \u2014 search, All/Saved tabs, filter chips, stats bar, \u21bb badge, clear all.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "e48c960c3a981022a00ea7f47f22be3a42c0ab11"
+  },
+  "src/renderer/components/ExpandedDetailPanel.jsx": {
+    "state": "built",
+    "type": "react-component",
+    "concept": "expanded-view",
+    "concept_source": "EXTRACTED",
+    "concept_confidence": 1.0,
+    "concept_evidence": "Extracted from ExpandedView.jsx refactor (RFX-EXP-003) \u2014 right detail panel, 496 lines",
+    "secondary_concepts": [
+      "history-panel",
+      "actions"
+    ],
+    "imports": [
+      {
+        "file": "src/renderer/utils/history.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { bookmarkHistoryItem, rateHistoryItem, formatTime } line 2"
+      },
+      {
+        "file": "src/renderer/utils/promptUtils.js",
+        "source": "EXTRACTED",
+        "confidence": 1.0,
+        "evidence": "import { parseSections } line 3"
+      }
+    ],
+    "imported_by": [
+      {
+        "file": "src/renderer/components/ExpandedView.jsx",
+        "source": "EXTRACTED",
+        "confidence": 1.0
+      }
+    ],
+    "props": [
+      "selected",
+      "isViewingHistory",
+      "currentState",
+      "generatedPrompt",
+      "thinkTranscript",
+      "mode",
+      "onRegenerate",
+      "onReset",
+      "onIterate",
+      "isIterated",
+      "setGeneratedPrompt",
+      "isPolishMode",
+      "polishResult",
+      "polishTone",
+      "onPolishToneChange",
+      "onReuse",
+      "onEntryChange"
+    ],
+    "rationale": [
+      {
+        "type": "WHY",
+        "note": "Right panel dual-mode: shows history entry detail when isViewingHistory=true; shows per-state content (IDLE placeholder, RECORDING progress, THINKING, PROMPT_READY actions) otherwise.",
+        "source": "EXTRACTED",
+        "added": "2026-04-27"
+      }
+    ],
+    "hash": "78d4377d1ae695f41008024d64446f1d92b0c3b6"
+  },
+  "src/renderer/components/ExpandedIdleView.jsx": {
+    "state": "deleted",
+    "type": "react-component",
+    "concept": "expanded-view",
+    "concept_source": "INFERRED",
+    "concept_confidence": 0.9,
+    "deletion_reason": "BUG-TOGGLE-002 \u2014 tore down as wrong generic mic screen. Replaced by full ExpandedView.jsx three-zone layout.",
+    "deletion_date": "2026-04-26",
+    "superseded_by": "src/renderer/components/ExpandedView.jsx",
+    "imports": [],
+    "imported_by": [],
+    "rationale": []
   }
 }
