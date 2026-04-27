@@ -32,6 +32,6 @@ export function parseSections(text) {
 
 export function getModeTagStyle(mode) {
   if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'rgba(100,220,130,0.6)' }
-  if (mode === 'refine') return { background: 'rgba(168,85,247,0.1)', color: 'rgba(200,150,255,0.65)' }
+  if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'rgba(167,139,250,0.65)' }
   return { background: 'rgba(10,132,255,0.1)', color: 'rgba(100,170,255,0.65)' }
 }

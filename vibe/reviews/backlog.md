@@ -271,7 +271,7 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| P3-EXP-001 | src/renderer/components/HistoryPanel.jsx | 1–663 | 663 lines — pre-existing above P1 threshold (500). Schedule refactor when ExpandedView split creates opportunity. | Open |
+| ~~P3-EXP-001~~ | src/renderer/components/HistoryPanel.jsx | 1–663 | 663 lines — pre-existing above P1 threshold (500). Schedule refactor when ExpandedView split creates opportunity. | ✅ resolved — file is 362 lines (was already fixed via BL-071 extraction); stale line count in backlog |
 | P3-EXP-002 | src/renderer/components/ExpandedDetailPanel.jsx + ExpandedView.jsx | props | ISP — 17 props each (threshold 10). Boundary layer necessity; consider per-state child components in future refactor. | Open |
 | P3-EXP-003 | src/renderer/components/ExpandedDetailPanel.jsx | 8–42 | renderPromptSections partially duplicates parseSections regex from promptUtils.js. Could unify if shared JSX renderer warranted. | Open |
 
@@ -316,15 +316,15 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-077 | vibe/CODEBASE.md | file map | 3 stale line counts after BL-072/073 dedup: ExpandedPromptReadyContent 215→179, HistoryDetailPanel 203→168, ExpandedDetailPanel 346→311. Side-effect of dead code removal + PromptSections migration. | Open |
+| ~~BL-077~~ | vibe/CODEBASE.md | file map | 3 stale line counts after BL-072/073 dedup: ExpandedPromptReadyContent 215→179, HistoryDetailPanel 203→168, ExpandedDetailPanel 346→311. Side-effect of dead code removal + PromptSections migration. | ✅ resolved — line counts corrected 2026-04-27 |
 
 ### Outstanding P3
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-075 | src/renderer/hooks/useIteration.js | 105 | `dismissIterating` is a plain function — siblings `handleIterate` and `stopIterating` are both `useCallback`. Cosmetic inconsistency only; no correctness issue. | Open / monitor |
-| BL-076 | tests/utils.test.js | — | `getModeTagStyle` missing test for `design` mode (currently falls through to blue default). Minor coverage gap. | Open / monitor |
-| BL-078 | src/renderer/components/PromptSections.jsx | 8 | Inline regex `/^[A-Z][A-Z\s/]+:/` diverges from `parseSections` in promptUtils.js which uses `/^([A-Za-z][A-Za-z\s/]*):\s*$/`. parseSections accepts lowercase first char + requires end-of-line anchor. No current impact — all Claude-generated labels are uppercase. | Open / monitor |
+| ~~BL-075~~ | src/renderer/hooks/useIteration.js | 105 | `dismissIterating` is a plain function — siblings `handleIterate` and `stopIterating` are both `useCallback`. Cosmetic inconsistency only; no correctness issue. | ✅ resolved — wrapped in useCallback 2026-04-27 |
+| ~~BL-076~~ | tests/utils.test.js | — | `getModeTagStyle` missing test for `design` mode (currently falls through to blue default). Minor coverage gap. | ✅ resolved — explicit design test added; image mode purple test added; refine color updated to match app accent rgba(139,92,246) 2026-04-27 |
+| ~~BL-078~~ | src/renderer/components/PromptSections.jsx | 8 | Inline regex `/^[A-Z][A-Z\s/]+:/` diverges from `parseSections` in promptUtils.js which uses `/^([A-Za-z][A-Za-z\s/]*):\s*$/`. parseSections accepts lowercase first char + requires end-of-line anchor. No current impact — all Claude-generated labels are uppercase. | ✅ resolved — regex updated to `/^[A-Za-z][A-Za-z\s/]*:\s*$/` 2026-04-27 |
 
 ---
 
@@ -343,3 +343,13 @@
 | ~~P2-SR-003~~ | DESIGN_SPEC.md | No hover states specified | ✅ resolved — hover spec added to both buttons |
 | ~~P2-SR-004~~ | DESIGN_TASKS.md | Smoke checklist not embedded in design docs | ✅ resolved — 11-item checklist embedded in DESIGN_TASKS.md |
 | ~~P2-SR-005~~ | DESIGN_SPEC.md | No user type defined | ✅ resolved — "power users returning to a previously generated prompt" added |
+
+---
+
+## From FEATURE-IMAGE-BUILDER Review (2026-04-27)
+
+### P3 — Monitor / future cleanup
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-IMG-001~~ | src/renderer/App.jsx | 230–300 | Image builder question flow logic (8 handlers + assembleImagePrompt + calcImageBuilderHeight) adds ~90 lines to App.jsx. Extractable to `useImageBuilder()` hook for SRP. Not blocking — logic is cohesive. | ✅ resolved — useImageBuilder.js extracted 2026-04-27; App.jsx 621→537 lines |

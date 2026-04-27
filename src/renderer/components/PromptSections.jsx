@@ -6,7 +6,7 @@ export default function PromptSections({ prompt, labelColor = 'rgba(100,170,255,
   while (i < lines.length) {
     const line = lines[i].trim()
     if (!line) { i++; continue }
-    const isLabel = /^[A-Z][A-Z\s/]+:/.test(line)
+    const isLabel = /^[A-Za-z][A-Za-z\s/]*:\s*$/.test(line)
     if (isLabel) {
       elements.push(
         <div key={`label-${i}`} style={{

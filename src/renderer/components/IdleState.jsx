@@ -1,15 +1,16 @@
 export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, polishTone, onPolishToneChange, onExpand }) {
   const isRefine = mode === 'refine'
   const isPolish = mode === 'polish'
+  const isImage = mode === 'image'
 
   function handleModePillClick(e) {
     e.stopPropagation()
     if (window.electronAPI) window.electronAPI.showModeMenu(mode)
   }
 
-  const ringColor = isPolish ? 'rgba(48,209,88,' : isRefine ? 'rgba(168,85,247,' : 'rgba(10,132,255,'
-  const micStroke = isRefine ? 'rgba(200,160,255,0.8)' : 'rgba(100,180,255,1)'
-  const micStrokeFaded = isRefine ? 'rgba(200,160,255,0.8)' : 'rgba(100,180,255,0.85)'
+  const ringColor = isPolish ? 'rgba(48,209,88,' : isRefine ? 'rgba(168,85,247,' : isImage ? 'rgba(245,158,11,' : 'rgba(10,132,255,'
+  const micStroke = isRefine ? 'rgba(200,160,255,0.8)' : isImage ? 'rgba(252,211,77,0.8)' : 'rgba(100,180,255,1)'
+  const micStrokeFaded = isRefine ? 'rgba(200,160,255,0.8)' : isImage ? 'rgba(252,211,77,0.8)' : 'rgba(100,180,255,0.85)'
 
   return (
     <div id="panel-idle" className="relative z-[1]" style={{height:'134px'}}>
@@ -59,7 +60,9 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
               ? '0 0 12px rgba(48,209,88,0.2)'
               : isRefine
                 ? '0 0 12px rgba(168,85,247,0.2)'
-                : '0 0 12px rgba(10,132,255,0.3), 0 0 24px rgba(10,132,255,0.12)',
+                : isImage
+                  ? '0 0 12px rgba(245,158,11,0.2)'
+                  : '0 0 12px rgba(10,132,255,0.3), 0 0 24px rgba(10,132,255,0.12)',
           }}
         >
           {/* POLISH-005: two-ring staggered pulse */}
@@ -109,7 +112,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
             className="text-[11px]"
             style={{ color:'rgba(255,255,255,0.48)', letterSpacing:'-0.01em' }}
           >
-            {isPolish ? "Speak it rough — get it polished" : isRefine ? "Describe what exists, what's wrong, and what you want" : '⌥ Space to speak · ⌘T to type'}
+            {isPolish ? "Speak it rough — get it polished" : isRefine ? "Describe what exists, what's wrong, and what you want" : isImage ? 'Speak your image idea' : '⌥ Space to speak · ⌘T to type'}
           </div>
           {/* POLISH-009: hint from 0.10 → 0.40 */}
           <span className="text-[9px] mt-[4px] block" style={{color:'rgba(255,255,255,0.40)'}}>⌘? for shortcuts</span>
@@ -183,9 +186,9 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
               padding: '7px 16px',
               minWidth: '80px',
               textAlign: 'center',
-              background: isRefine ? 'rgba(168,85,247,0.12)' : 'rgba(10,132,255,0.12)',
-              border: isRefine ? '0.5px solid rgba(168,85,247,0.3)' : '0.5px solid rgba(10,132,255,0.25)',
-              color: isRefine ? 'rgba(200,160,255,1.0)' : 'rgba(100,180,255,0.85)',
+              background: isRefine ? 'rgba(139,92,246,0.12)' : isImage ? 'rgba(245,158,11,0.12)' : 'rgba(10,132,255,0.12)',
+              border: isRefine ? '0.5px solid rgba(139,92,246,0.3)' : isImage ? '0.5px solid rgba(245,158,11,0.3)' : '0.5px solid rgba(10,132,255,0.25)',
+              color: isRefine ? 'rgba(200,160,255,1.0)' : isImage ? 'rgba(252,211,77,0.9)' : 'rgba(100,180,255,0.85)',
             }}
             onClick={handleModePillClick}
           >

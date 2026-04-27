@@ -5,6 +5,7 @@ import useWindowResize from './hooks/useWindowResize.js'
 import useRecording from './hooks/useRecording.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import useIteration from './hooks/useIteration.js'
+import useImageBuilder from './hooks/useImageBuilder.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -18,6 +19,8 @@ import IteratingState from './components/IteratingState.jsx'
 import TypingState from './components/TypingState.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import ExpandedView from './components/ExpandedView.jsx'
+import ImageBuilderState from './components/ImageBuilderState.jsx'
+import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -32,6 +35,8 @@ const STATES = {
   ITERATING: 'ITERATING',
   TYPING: 'TYPING',
   SETTINGS: 'SETTINGS',
+  IMAGE_BUILDER: 'IMAGE_BUILDER',
+  IMAGE_BUILDER_DONE: 'IMAGE_BUILDER_DONE',
 }
 
 const STATE_HEIGHTS = {
@@ -47,6 +52,8 @@ const STATE_HEIGHTS = {
   TYPING: 244,
   SETTINGS: 322,
   EXPANDED: 860,
+  IMAGE_BUILDER: 520,
+  IMAGE_BUILDER_DONE: 380,
 }
 
 export default function App() {
@@ -58,6 +65,7 @@ export default function App() {
   const isExpandedRef = useRef(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
+  const [thinkingLabel, setThinkingLabel] = useState('')
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -95,6 +103,9 @@ export default function App() {
   useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
+  useEffect(() => {
+    if (mode === 'image' && !isExpandedRef.current) handleExpand()
+  }, [mode])
 
   function transition(newState, payload = {}) {
     stateRef.current = newState
@@ -161,7 +172,45 @@ export default function App() {
     originalTranscript,
   })
 
+  const {
+    imageDefaults,
+    imageAnswers,
+    showAdvanced,
+    activePickerParam,
+    imageBuiltPrompt,
+    isReiteratingRef,
+    runPreSelection,
+    handleChipRemove,
+    handleChipAdd,
+    handleParamChange,
+    handleOpenPicker,
+    handleClosePicker,
+    handleToggleAdvanced,
+    handleConfirm,
+    handleCopyNow,
+    handleImageStartOver,
+    handleImageEditAnswers,
+  } = useImageBuilder({
+    STATES,
+    transitionRef,
+    isExpandedRef,
+    originalTranscript,
+    resizeWindow,
+    setThinkTranscript,
+    setThinkingLabel,
+  })
+
   const handleGenerateResult = useCallback((genResult, transcript) => {
+    if (mode === 'image') {
+      // genResult is a passthrough — run pre-selection Claude call then go to IMAGE_BUILDER
+      const isReiterate = isReiteratingRef.current
+      isReiteratingRef.current = false
+      if (!isExpandedRef.current) handleExpand()
+      setThinkingLabel('Analysing your idea...')
+      runPreSelection(originalTranscript.current, isReiterate)
+      return
+    }
+    setThinkingLabel('')
     if (mode === 'polish') {
       const parsed = parsePolishOutput(genResult.prompt)
       setPolishResult(parsed)
@@ -175,7 +224,7 @@ export default function App() {
       saveToHistory({ transcript, prompt: genResult.prompt, mode })
     }
     transitionRef.current(STATES.PROMPT_READY)
-  }, [mode])
+  }, [mode, runPreSelection])
   handleGenerateResultRef.current = handleGenerateResult
 
   const { iterationBase, handleIterate, stopIterating, dismissIterating } = useIteration({
@@ -351,6 +400,25 @@ export default function App() {
               }
               transition(STATES.PROMPT_READY)
             }}
+            imageBuilderProps={{
+              transcript: originalTranscript.current,
+              imageDefaults,
+              imageAnswers,
+              showAdvanced,
+              activePickerParam,
+              imageBuiltPrompt,
+              onChipRemove: handleChipRemove,
+              onChipAdd: handleChipAdd,
+              onParamChange: handleParamChange,
+              onToggleAdvanced: handleToggleAdvanced,
+              onOpenPicker: handleOpenPicker,
+              onClosePicker: handleClosePicker,
+              onConfirm: handleConfirm,
+              onCopyNow: handleCopyNow,
+              onReiterate: () => { isReiteratingRef.current = true; startRecording() },
+              onEditAnswers: handleImageEditAnswers,
+              onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
+            }}
           />
         ) : (
           <>
@@ -390,7 +458,7 @@ export default function App() {
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState
@@ -455,6 +523,35 @@ export default function App() {
                   }}
                 />
               </>
+            )}
+            {displayState === STATES.IMAGE_BUILDER && (
+              <ImageBuilderState
+                transcript={originalTranscript.current}
+                imageDefaults={imageDefaults}
+                imageAnswers={imageAnswers}
+                showAdvanced={showAdvanced}
+                activePickerParam={activePickerParam}
+                onChipRemove={handleChipRemove}
+                onChipAdd={handleChipAdd}
+                onParamChange={handleParamChange}
+                onToggleAdvanced={handleToggleAdvanced}
+                onOpenPicker={handleOpenPicker}
+                onClosePicker={handleClosePicker}
+                onConfirm={handleConfirm}
+                onCopyNow={handleCopyNow}
+                onReiterate={() => { isReiteratingRef.current = true; startRecording() }}
+                isExpanded={false}
+              />
+            )}
+            {displayState === STATES.IMAGE_BUILDER_DONE && (
+              <ImageBuilderDoneState
+                prompt={imageBuiltPrompt}
+                answers={imageAnswers}
+                transcript={originalTranscript.current}
+                onEditAnswers={handleImageEditAnswers}
+                onStartOver={() => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) }}
+                isExpanded={false}
+              />
             )}
           </>
         )}

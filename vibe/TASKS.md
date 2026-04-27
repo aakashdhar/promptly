@@ -469,4 +469,58 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    → Specs: vibe/bugs/2026-04-28-bug-release-node-path/ | DECISIONS.md D-BUG-RELEASE-NODE-PATH
 
 ## What's next
-Fix BL-077 (3 stale line counts in CODEBASE.md — trivial). Then close out BL-078 + BL-075 + BL-076 for a clean 10/10.
+IMAGE-BUILDER redesign complete. Only IMG-010 (docs) remaining — done now.
+
+---
+
+## FEATURE-IMAGE-BUILDER — Nano Banana Image Prompt Builder (10/10 ✅)
+> Spec: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27 | Completed: 2026-04-27
+   [x] IMG-001 · useMode.js image mode + purple accent — 'image' added to MODE_LABELS
+   [x] IMG-002 · main.js MODE_CONFIG + show-mode-menu — passthrough mode + 'Image' in mode menu
+   [x] IMG-003 · ImageBuilderState.jsx — 13 questions (4 Essential + 3 Important + 6 Advanced), chip selection, tier badges, answered chips, tier 1 summary box
+   [x] IMG-004 · ImageBuilderDoneState.jsx — assembled prompt box, param summary, Edit answers / Start over / Copy prompt
+   [x] IMG-005 · App.jsx states + question flow — IMAGE_BUILDER + IMAGE_BUILDER_DONE states added; handleGenerateResult routes image mode to IMAGE_BUILDER
+   [x] IMG-006 · App.jsx navigation handlers — handleImageNext, handleImageBack, handleImageSkip, handleImageCopyNow, handleImageStartOver, handleImageEditAnswers; assembleImagePrompt via generate-raw
+   [x] IMG-007 · App.jsx STATE_HEIGHTS — IMAGE_BUILDER 380px baseline + dynamic height calc; IMAGE_BUILDER_DONE 380px
+   [x] IMG-008 · History saving for image mode — saveToHistory({ transcript, prompt, mode: 'image' }) in assembleImagePrompt
+   [x] IMG-009 · Expanded view — imageBuilderProps bundle passed App → ExpandedView → ExpandedDetailPanel; ImageBuilderState isExpanded=true renders 4-col grid + progress bar
+   [x] IMG-010 · Docs update — CODEBASE.md (2 new components, IPC passthrough note), DECISIONS.md (D-IMAGE-001, D-IMAGE-002), TASKS.md
+   → Full specs: vibe/features/2026-04-27-image-builder/FEATURE_TASKS.md (agent use)
+
+## FEATURE-IMAGE-BUILDER review — 2026-04-27
+✅ PASS — Score 8.6/10 — Grade B+ — 0 P0, 0 P1 (all fixed at review time)
+→ Full report: vibe/reviews/feature-image-builder-review.md
+
+Review fixes applied (2 P1 + 1 P2 + docs):
+   [x] handleImageSkip stale async state — newAnswers computed sync, passed directly to assembleImagePrompt
+   [x] IdleState image mode identity — purple ring, shadow, subtitle "Speak your image idea", purple mode pill
+   [x] ImageBuilderDoneState unused onCopy prop removed
+   [x] CODEBASE.md: IMAGE_BUILDER + IMAGE_BUILDER_DONE added to state table; App.jsx line count 466→621; ExpandedDetailPanel + ExpandedView line counts corrected
+
+## What just happened
+✅ FEATURE-IMAGE-BUILDER complete 2026-04-27 — All 10 tasks implemented. New "Image" mode adds a 3-tier guided interview (13 questions) after speech recording. Claude assembles a natural language image generation prompt via generate-raw IPC. Compact bar and expanded view (4-col grid + progress bar) both supported. Build clean, lint 0 errors.
+
+---
+
+## FEATURE-IMAGE-BUILDER redesign — 2026-04-27
+
+> Spec: vibe/features/2026-04-27-image-builder/ | DECISIONS.md D-IMG-REDESIGN
+
+**Redesign**: tier-based 17-question interview replaced with two-phase THINKING + all-params review screen pre-filled by Claude.
+
+✅ **Redesign tasks (9/9 ✅)**
+   [x] IMG-001 · useMode.js image mode + purple accent (from v1)
+   [x] IMG-002 · main.js MODE_CONFIG + show-mode-menu (from v1)
+   [x] IMG-003 · ImageBuilderState.jsx full rewrite — 18-param all-params review screen, AI chips (purple dot), user chips, inline picker dropdown, custom text inputs, advanced toggle
+   [x] IMG-004 · ImageBuilderDoneState.jsx (from v1, unchanged)
+   [x] IMG-005 · App.jsx two-phase THINKING — thinkingLabel state, handleGenerateResult image branch calls runPreSelection, useImageBuilder moved before handleGenerateResult
+   [x] IMG-006 · App.jsx chip handlers wired — handleChipRemove/Add/ParamChange/OpenPicker/ClosePicker/ToggleAdvanced/Confirm/CopyNow
+   [x] IMG-007 · STATE_HEIGHTS.IMAGE_BUILDER = 520 (scrollable)
+   [x] IMG-008 · History saving (from v1, unchanged)
+   [x] IMG-009 · ExpandedDetailPanel updated with new imageBuilderProps bundle
+   [x] IMG-010 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md, ARCHITECTURE.md (state count 11→13, image mode entry added)
+   [x] IMG-011 · Option picker inline dropdown (implemented in IMG-003 pass)
+   [x] IMG-012 · Reiterate merge logic — user chips preserved, AI chips refreshed, removedByUser respected
+
+## What just happened
+✅ IMAGE-BUILDER redesign complete 2026-04-27 — Tier-based 17-question interview replaced with all-params review screen. Claude pre-fills all 18 parameters via Phase 1 generate-raw call; user reviews and edits; Phase 2 assembles final natural-language prompt. Inline option picker, custom text inputs, reiterate merge logic all implemented. Build clean.

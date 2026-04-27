@@ -3,6 +3,8 @@ import { bookmarkHistoryItem, rateHistoryItem, formatTime } from '../utils/histo
 import ExpandedTypingContent from './ExpandedTypingContent.jsx'
 import ExpandedPromptReadyContent from './ExpandedPromptReadyContent.jsx'
 import PromptSections from './PromptSections.jsx'
+import ImageBuilderState from './ImageBuilderState.jsx'
+import ImageBuilderDoneState from './ImageBuilderDoneState.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -27,6 +29,7 @@ export default function ExpandedDetailPanel({
   onEntryChange,
   onTypingSubmit,
   onSwitchToVoice,
+  imageBuilderProps,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
 
@@ -304,6 +307,37 @@ export default function ExpandedDetailPanel({
           onRegenerate={onRegenerate}
           onReset={onReset}
           isIterated={isIterated}
+        />
+      )}
+
+      {currentState === 'IMAGE_BUILDER' && !isViewingHistory && imageBuilderProps && (
+        <ImageBuilderState
+          transcript={imageBuilderProps.transcript}
+          imageDefaults={imageBuilderProps.imageDefaults}
+          imageAnswers={imageBuilderProps.imageAnswers}
+          showAdvanced={imageBuilderProps.showAdvanced}
+          activePickerParam={imageBuilderProps.activePickerParam}
+          onChipRemove={imageBuilderProps.onChipRemove}
+          onChipAdd={imageBuilderProps.onChipAdd}
+          onParamChange={imageBuilderProps.onParamChange}
+          onToggleAdvanced={imageBuilderProps.onToggleAdvanced}
+          onOpenPicker={imageBuilderProps.onOpenPicker}
+          onClosePicker={imageBuilderProps.onClosePicker}
+          onConfirm={imageBuilderProps.onConfirm}
+          onCopyNow={imageBuilderProps.onCopyNow}
+          onReiterate={imageBuilderProps.onReiterate}
+          isExpanded={true}
+        />
+      )}
+
+      {currentState === 'IMAGE_BUILDER_DONE' && !isViewingHistory && imageBuilderProps && (
+        <ImageBuilderDoneState
+          prompt={imageBuilderProps.imageBuiltPrompt}
+          answers={imageBuilderProps.answers}
+          transcript={imageBuilderProps.transcript}
+          onEditAnswers={imageBuilderProps.onEditAnswers}
+          onStartOver={imageBuilderProps.onStartOver}
+          isExpanded={true}
         />
       )}
     </div>

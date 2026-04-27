@@ -1314,3 +1314,70 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **CODEBASE.md update**: No — release.sh is not in the file map.
 - **Deviations from BUG_PLAN.md**: None.
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-IMAGE-BUILDER — 2026-04-27
+> Folder: vibe/features/2026-04-27-image-builder/
+> New "Image" mode — guided 3-tier question interview after speech recording → Claude assembles natural language image generation prompt for Nano Banana 2, Nano Banana Pro, and ChatGPT image gen.
+> Tasks: IMG-001 through IMG-010 | Estimated: 8-10 hours (S: 7, M: 3)
+> New states: IMAGE_BUILDER, IMAGE_BUILDER_DONE
+> New components: ImageBuilderState.jsx, ImageBuilderDoneState.jsx
+> New mode key: 'image' (purple accent rgba(139,92,246))
+> Drift logged below.
+
+---
+
+### D-IMAGE-001 — Image mode passthrough in generate-prompt IPC
+- **Date**: 2026-04-27 · **Task**: IMG-002 · **Type**: tech-choice
+- **What was planned**: Standard generate-prompt call for all modes
+- **What was done**: Added `passthrough: true` flag to image MODE_CONFIG. generate-prompt handler returns `{ success: true, prompt: transcript }` immediately for image mode — no Claude call.
+- **Why**: Image mode flow is RECORDING → THINKING (Whisper) → IMAGE_BUILDER (questions) → THINKING (Claude assembly) → IMAGE_BUILDER_DONE. The Claude call happens after the user answers questions, not immediately after transcription. useRecording.js always calls generate-prompt after Whisper; the passthrough makes it a no-op so App.jsx can detect mode === 'image' in handleGenerateResult and route to IMAGE_BUILDER.
+- **Alternatives considered**: Modify useRecording.js to skip generate-prompt for image mode (out of scope per spec); intercept in handleGenerateResult with a wasted Claude call (wasteful).
+- **Impact on other tasks**: None — passthrough only applies when mode === 'image'.
+- **Approved by**: agent-autonomous
+
+### D-IMAGE-002 — imageBuilderProps bundle passed to ExpandedView → ExpandedDetailPanel
+- **Date**: 2026-04-27 · **Task**: IMG-009 · **Type**: tech-choice
+- **What was planned**: isExpanded prop on ImageBuilderState
+- **What was done**: Bundled all image handler props into an `imageBuilderProps` object passed to ExpandedView, then forwarded to ExpandedDetailPanel. ExpandedDetailPanel renders ImageBuilderState/ImageBuilderDoneState with `isExpanded=true` when currentState matches.
+- **Why**: Threading 8+ individual props through two component levels is unwieldy. A single `imageBuilderProps` object follows the pattern used for other cross-cutting concerns.
+- **Approved by**: agent-autonomous
+
+---
+
+### D-SPEC-REVIEW-IMG — Spec review: FEATURE-IMAGE-BUILDER
+- **Date**: 2026-04-27 · **Task**: spec-review (on demand) · **Type**: tech-choice
+- **P0**: 0 · **P1**: 9 (all fixed) · **P2**: 5 (logged)
+- **Action**: All P1 findings fixed inline during review session.
+- **Key decisions captured**:
+  - Custom chip text entry: inline text field revealed below chip row; Enter confirms; empty = Skip
+  - "Copy now →" with empty answers: omit model/useCase lines from system prompt; never disabled
+  - Tier 2→3 transition: "Important ✓" summary box added (mirrors tier 1→2 "Essential ✓" box)
+  - Expand toggle mid-interview: currentTier/currentQuestion/imageAnswers are App.jsx state/refs; survive compact→expanded transition
+  - IMAGE_BUILDER sub-state pattern: currentTier/currentQuestion/imageAnswers implemented as React useState/useRef alongside main currentState — NOT nested state machine states; avoids 17 discrete states
+  - History entry shape: { prompt, transcript, mode: 'image', imageAnswers: {all 17 keys}, timestamp }
+- **Report**: vibe/spec-reviews/2026-04-27-image-builder.md
+- **Approved by**: agent-autonomous
+
+
+---
+
+### D-IMG-REDESIGN — IMAGE_BUILDER major redesign: smart defaults + all-params review screen
+- **Date**: 2026-04-27 · **Task**: IMG-003/005/006/007/012 · **Type**: scope-change
+- **What was planned**: Sequential question-by-question flow (tier 1 → tier 2 → tier 3, 17 discrete questions)
+- **What was done**: Replaced entirely with two-phase THINKING approach — Claude pre-selects all params from transcript in phase 1, user reviews/edits all params at once on a single screen, Claude assembles final prompt in phase 2
+- **Why**: All-at-once review is faster and less tedious; Claude's pre-fills remove most manual work; user only needs to correct/add rather than answer 17 sequential questions
+- **Key state changes**: currentTier + currentQuestion removed; imageDefaults + imageAnswers + removedByUser + showAdvanced + activePickerParam + thinkingLabel added; two-phase THINKING via generate-raw IPC
+- **Spec review findings fixed**: P0-001 subjectDetail row missing; P0-002 single-select picker behavior; P1-001 IPC channel naming; P1-002 thinkingLabel mechanism; P1-003 removedByUser state for merge; P1-004 IMG-009 scope correction
+- **Report**: vibe/spec-reviews/2026-04-27-image-builder-redesign.md
+- **Approved by**: human
+
+---
+
+### D-BUG-001 — Trivial fix: blank screen after Confirm & generate →
+- **Date**: 2026-04-27 · **Type**: drift (trivial bug)
+- **Root cause**: `win.on('blur')` handler called `win.hide()` for any `currentIconState !== 'recording'`. The animated window resize (IMAGE_BUILDER 520px → THINKING 320px via `win.setSize(w, h, true)`) emits a spurious macOS blur event, hiding the window before IMAGE_BUILDER_DONE could display. Additionally IMAGE_BUILDER/IMAGE_BUILDER_DONE were missing from the stateMap, so they fell back to 'idle' — meaning any accidental blur while reviewing params also hid the window.
+- **Fix**: Added 'thinking' and 'builder' exclusions to the blur guard; added IMAGE_BUILDER/IMAGE_BUILDER_DONE → 'builder' to the stateMap in `update-menubar-state` IPC handler.
+- **File**: main.js — 2 hunks, 4 additions, 2 deletions
+- **Approved by**: human

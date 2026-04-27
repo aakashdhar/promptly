@@ -172,11 +172,12 @@ The user's speech transcript is appended after the system prompt as the user mes
 | Layer | Choice | Reason |
 |-------|--------|--------|
 | Shell | Electron v31+ | Native macOS window APIs, .dmg distribution |
-| Frontend | Vanilla HTML + CSS + JS, single `index.html` | Zero build step, zero runtime deps |
+| Frontend | React 18 + Vite — `src/renderer/` → `dist-renderer/` | Migrated from Vanilla JS in FEATURE-004; devDeps only, zero runtime bundle |
+| Styling | Tailwind v4 (static) + inline styles (dynamic) | Tailwind for layout classes; inline styles for stateful/dynamic values |
 | Speech | `getUserMedia` + `MediaRecorder` + Whisper CLI | Local transcription, offline, no API key — webkitSpeechRecognition requires Google API key not bundled in Electron |
 | Prompt gen | `claude -p` via `child_process` | Zero setup for Claude Code users |
 | IPC | Electron ipcMain + preload.js contextBridge | Sandboxed renderer → main |
-| Storage | localStorage | Mode only — nothing sensitive |
+| Storage | localStorage | Mode + history only — nothing sensitive |
 | Distribution | electron-builder → .dmg (arm64 + x64) | Universal binary |
 
 ---
