@@ -72,7 +72,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
   return (
     <div style={{
       width: '300px', flexShrink: 0,
-      background: '#0e0e0f',
+      background: 'transparent',
       borderRight: '0.5px solid rgba(255,255,255,0.06)',
       display: 'flex', flexDirection: 'column',
     }}>
@@ -250,6 +250,13 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
             const d = new Date(entry.timestamp)
             const ts = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             const tagStyle = getModeTagStyle(entry.mode)
+            const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
+            const ratingTagIsPositive = entry.ratingTag && POSITIVE_TAGS.includes(entry.ratingTag)
+            const ratingTagStyle = entry.ratingTag
+              ? ratingTagIsPositive
+                ? { bg: 'rgba(48,209,88,0.10)', border: 'rgba(48,209,88,0.25)', color: 'rgba(100,220,130,0.9)' }
+                : { bg: 'rgba(255,59,48,0.09)', border: 'rgba(255,59,48,0.25)', color: 'rgba(255,100,90,0.9)' }
+              : null
             return (
               <div
                 key={entry.id}
@@ -257,7 +264,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 onMouseEnter={() => setHoveredId(entry.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 style={{
-                  padding: isActive ? '12px 18px 12px 16px' : '12px 18px',
+                  padding: isActive ? '10px 18px 10px 16px' : '10px 18px',
                   borderBottom: '0.5px solid rgba(255,255,255,0.04)',
                   borderLeft: isActive
                     ? (isEntryPolish ? '2px solid rgba(48,209,88,0.5)' : '2px solid rgba(10,132,255,0.5)')
@@ -269,6 +276,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                   transition: 'background 100ms',
                 }}
               >
+                {/* Row 1: timestamp + mode pill + rating tag */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.22)' }}>
@@ -278,23 +286,51 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                       <span style={{ fontSize: '9px', color: 'rgba(10,132,255,0.6)' }}>↻</span>
                     )}
                   </div>
-                  <span style={{
-                    fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em',
-                    textTransform: 'uppercase', padding: '2px 7px', borderRadius: '3px',
-                    background: tagStyle.background, color: tagStyle.color,
-                  }}>
-                    {entry.mode}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    {ratingTagStyle && (
+                      <span style={{
+                        fontSize: '9px', fontWeight: 500, padding: '1px 6px', borderRadius: '3px',
+                        background: ratingTagStyle.bg,
+                        border: `0.5px solid ${ratingTagStyle.border}`,
+                        color: ratingTagStyle.color,
+                      }}>
+                        {entry.ratingTag}
+                      </span>
+                    )}
+                    <span style={{
+                      fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em',
+                      textTransform: 'uppercase', padding: '2px 7px', borderRadius: '3px',
+                      background: tagStyle.background, color: tagStyle.color,
+                    }}>
+                      {entry.mode}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Row 2: title + inline bookmark/rating indicators */}
                 <div style={{
-                  fontSize: '13.5px',
-                  color: isActive ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.48)',
-                  fontWeight: isActive ? 500 : 400,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  marginTop: '3px', paddingRight: '16px',
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  marginTop: '4px', paddingRight: hoveredId === entry.id ? '20px' : '0',
                 }}>
-                  {entry.title || entry.transcript?.split(' ').slice(0, 6).join(' ')}
+                  <span style={{
+                    fontSize: '13px',
+                    color: isActive ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.48)',
+                    fontWeight: isActive ? 500 : 400,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    flex: 1, minWidth: 0,
+                  }}>
+                    {entry.title || entry.transcript?.split(' ').slice(0, 6).join(' ')}
+                  </span>
+                  {entry.bookmarked && (
+                    <svg width="8" height="10" viewBox="0 0 10 13" fill="rgba(255,189,46,0.8)" style={{ flexShrink: 0 }}>
+                      <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z" stroke="rgba(255,189,46,0.8)" strokeWidth="1.2" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {entry.rating && (
+                    <span style={{ fontSize: '9px', flexShrink: 0 }}>{entry.rating === 'up' ? '👍' : '👎'}</span>
+                  )}
                 </div>
+
                 {/* Hover-only delete */}
                 <button
                   onClick={(e) => handleEntryDelete(entry.id, e)}
@@ -308,22 +344,6 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 >
                   ✕
                 </button>
-                {/* Bookmark / rating indicators */}
-                {(entry.bookmarked || entry.rating) && hoveredId !== entry.id && (
-                  <div style={{
-                    position: 'absolute', top: '10px', right: '10px',
-                    display: 'flex', gap: '3px', alignItems: 'center',
-                  }}>
-                    {entry.bookmarked && (
-                      <svg width="8" height="10" viewBox="0 0 10 13" fill="rgba(255,189,46,0.8)">
-                        <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z" stroke="rgba(255,189,46,0.8)" strokeWidth="1.2" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                    {entry.rating && (
-                      <span style={{ fontSize: '9px' }}>{entry.rating === 'up' ? '👍' : '👎'}</span>
-                    )}
-                  </div>
-                )}
               </div>
             )
           })

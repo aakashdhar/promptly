@@ -32,7 +32,7 @@ export default function ExpandedTransportBar({
 
   return (
     <div style={{
-      background: '#111113',
+      background: 'transparent',
       borderBottom: '0.5px solid rgba(255,255,255,0.06)',
       flexShrink: 0,
       position: 'relative',

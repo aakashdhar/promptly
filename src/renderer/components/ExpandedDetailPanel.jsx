@@ -183,7 +183,7 @@ export default function ExpandedDetailPanel({
   const rightSections = sections.slice(mid)
 
   return (
-    <div style={{ flex: 1, minWidth: 0, background: '#0e0e0f', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, minWidth: 0, background: 'transparent', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
       {/* History entry detail */}
       {showEntryDetail && (

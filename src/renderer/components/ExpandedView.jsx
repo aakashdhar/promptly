@@ -52,7 +52,7 @@ export default function ExpandedView({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0e0e0f', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%)', position: 'relative' }}>
       <ExpandedTransportBar
         currentState={currentState}
         duration={duration}
