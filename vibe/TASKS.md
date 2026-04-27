@@ -428,5 +428,9 @@
    Fix: Added onStopIterate prop chain (App → ExpandedView → ExpandedTransportBar). Transport bar now shows blue stop button + blue pulse rings + MorphCanvas waveform + iterGlow animation during ITERATING. Lint + build clean.
    → Specs: vibe/bugs/2026-04-27-bug-iterating-stop/ | DECISIONS.md D-BUG-ITER-STOP
 
+💰 Cost tracked — Session #22: $1.22 est.
+   Project total: $14.79 · Trend: ↑ +47% vs 5-session avg (expected — review subagent + large refactor)
+   vibe/cost/report-2026-04-27-session22.md
+
 ## What's next
 Manual smoke test: expanded view → iterate → confirm blue stop button stops iteration correctly.
