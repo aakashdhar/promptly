@@ -30,13 +30,14 @@ export default function ExpandedView({
   onTypingSubmit,
   onSwitchToVoice,
   onTypePrompt,
+  imageBuilderProps,
 }) {
   const [selected, setSelected] = useState(() => { const h = getHistory(); return h.length > 0 ? h[0] : null })
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
   // Return right panel to current state content when active state arrives
   useEffect(() => {
-    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY' || currentState === 'TYPING') {
+    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY' || currentState === 'TYPING' || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE') {
       setIsViewingHistory(false)
     }
   }, [currentState])
@@ -93,6 +94,7 @@ export default function ExpandedView({
           onEntryChange={handleEntryChange}
           onTypingSubmit={onTypingSubmit}
           onSwitchToVoice={onSwitchToVoice}
+          imageBuilderProps={imageBuilderProps}
         />
       </div>
     </div>

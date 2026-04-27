@@ -139,6 +139,7 @@ Output format:
 
 The user said:
 "{TRANSCRIPT}"` },
+  image:     { name: 'Image',            passthrough: true, instruction: '' },
   polish:    { name: 'Polish',           standalone: true, instruction: `You are an expert editor and writing coach. The user has spoken something rough — with filler words, repetition, grammatical errors, or unclear phrasing. Your job is to return two things and nothing else:
 
 1. The polished version of what they said — clean, grammatically correct, well-phrased prose that preserves their exact meaning and intent.
@@ -729,6 +730,10 @@ app.whenReady().then(async () => {
         return;
       }
       const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
+      if (modeConf.passthrough) {
+        resolve({ success: true, prompt: transcript });
+        return;
+      }
       let systemPrompt = modeConf.standalone
         ? modeConf.instruction.replace('{TRANSCRIPT}', transcript)
         : PROMPT_TEMPLATE
@@ -874,6 +879,7 @@ app.whenReady().then(async () => {
       { key: 'design', label: 'Design' },
       { key: 'refine', label: 'Refine' },
       { key: 'polish', label: 'Polish' },
+      { key: 'image', label: 'Image' },
     ];
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({

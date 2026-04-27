@@ -18,6 +18,8 @@ import IteratingState from './components/IteratingState.jsx'
 import TypingState from './components/TypingState.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import ExpandedView from './components/ExpandedView.jsx'
+import ImageBuilderState, { QUESTIONS as IMAGE_QUESTIONS } from './components/ImageBuilderState.jsx'
+import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -32,6 +34,8 @@ const STATES = {
   ITERATING: 'ITERATING',
   TYPING: 'TYPING',
   SETTINGS: 'SETTINGS',
+  IMAGE_BUILDER: 'IMAGE_BUILDER',
+  IMAGE_BUILDER_DONE: 'IMAGE_BUILDER_DONE',
 }
 
 const STATE_HEIGHTS = {
@@ -47,6 +51,8 @@ const STATE_HEIGHTS = {
   TYPING: 244,
   SETTINGS: 322,
   EXPANDED: 860,
+  IMAGE_BUILDER: 380,
+  IMAGE_BUILDER_DONE: 380,
 }
 
 export default function App() {
@@ -58,6 +64,10 @@ export default function App() {
   const isExpandedRef = useRef(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
+
+  const [imageAnswers, setImageAnswers] = useState({})
+  const [imageQuestionIndex, setImageQuestionIndex] = useState(0)
+  const [imageBuiltPrompt, setImageBuiltPrompt] = useState('')
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -162,6 +172,13 @@ export default function App() {
   })
 
   const handleGenerateResult = useCallback((genResult, transcript) => {
+    if (mode === 'image') {
+      // genResult.prompt is a passthrough of the transcript — go to question flow
+      setImageAnswers({})
+      setImageQuestionIndex(0)
+      transitionRef.current(STATES.IMAGE_BUILDER)
+      return
+    }
     if (mode === 'polish') {
       const parsed = parsePolishOutput(genResult.prompt)
       setPolishResult(parsed)
@@ -177,6 +194,110 @@ export default function App() {
     transitionRef.current(STATES.PROMPT_READY)
   }, [mode])
   handleGenerateResultRef.current = handleGenerateResult
+
+  const assembleImagePrompt = useCallback(async (answers) => {
+    if (!window.electronAPI) {
+      transition(STATES.ERROR, { message: 'Electron API not available' })
+      return
+    }
+    setThinkTranscript(originalTranscript.current)
+    transition(STATES.THINKING)
+    const paramsJson = JSON.stringify(answers, null, 2)
+    const systemPrompt = `You are an expert image prompt engineer for Nano Banana (Google Gemini image generation) and ChatGPT image generation. The user has spoken a rough image idea and selected parameters through a guided interview.
+
+Assemble these into a single, flowing natural language image generation prompt. Do NOT use section headers or structured formatting. Write it as one or two paragraphs of vivid, specific description that image generation models respond to.
+
+User's spoken idea: ${originalTranscript.current}
+Selected parameters: ${paramsJson}
+
+Rules:
+1. Weave the parameters naturally into the description
+2. Be specific and vivid — avoid vague adjectives
+3. Put the most important visual elements first
+4. Include the aspect ratio as a natural phrase
+5. If text was specified, include it in quotes
+6. End with any negative specifications (what to avoid)
+7. Maximum 60 words — concise but complete
+8. Output ONLY the prompt — no preamble, no explanation`
+    const genResult = await window.electronAPI.generateRaw(systemPrompt)
+    if (!genResult.success) {
+      transition(STATES.ERROR, { message: 'Could not generate image prompt — try again' })
+      return
+    }
+    setImageBuiltPrompt(genResult.prompt)
+    saveToHistory({ transcript: originalTranscript.current, prompt: genResult.prompt, mode: 'image' })
+    window.electronAPI?.setLastPrompt?.(genResult.prompt)
+    transition(STATES.IMAGE_BUILDER_DONE)
+  }, [])
+
+  function calcImageBuilderHeight(answers, tier) {
+    const base = tier === 1 ? 380 : tier === 2 ? 420 : 400
+    const answeredRows = Math.ceil(Object.keys(answers).length / 3)
+    return Math.min(base + Math.max(0, answeredRows - 1) * 28, 520)
+  }
+
+  function handleImageSelect(param, value) {
+    setImageAnswers((prev) => ({ ...prev, [param]: value }))
+  }
+
+  function handleImageNext() {
+    const q = IMAGE_QUESTIONS[imageQuestionIndex]
+    const hasSelection = imageAnswers[q.param] != null
+    if (q.tier <= 2 && !hasSelection) return
+    if (imageQuestionIndex === IMAGE_QUESTIONS.length - 1) {
+      assembleImagePrompt(imageAnswers)
+      return
+    }
+    const nextIndex = imageQuestionIndex + 1
+    const nextTier = IMAGE_QUESTIONS[nextIndex].tier
+    const nextHeight = calcImageBuilderHeight(imageAnswers, nextTier)
+    setImageQuestionIndex(nextIndex)
+    if (!isExpandedRef.current) resizeWindow(nextHeight)
+  }
+
+  function handleImageBack() {
+    if (imageQuestionIndex === 0) return
+    const prevIndex = imageQuestionIndex - 1
+    const prevTier = IMAGE_QUESTIONS[prevIndex].tier
+    const prevHeight = calcImageBuilderHeight(imageAnswers, prevTier)
+    setImageQuestionIndex(prevIndex)
+    if (!isExpandedRef.current) resizeWindow(prevHeight)
+  }
+
+  function handleImageSkip() {
+    const q = IMAGE_QUESTIONS[imageQuestionIndex]
+    // Remove skip-only value and skip
+    setImageAnswers((prev) => {
+      const next = { ...prev }
+      delete next[q.param]
+      return next
+    })
+    if (imageQuestionIndex === IMAGE_QUESTIONS.length - 1) {
+      assembleImagePrompt(imageAnswers)
+      return
+    }
+    const nextIndex = imageQuestionIndex + 1
+    const nextTier = IMAGE_QUESTIONS[nextIndex].tier
+    const nextHeight = calcImageBuilderHeight(imageAnswers, nextTier)
+    setImageQuestionIndex(nextIndex)
+    if (!isExpandedRef.current) resizeWindow(nextHeight)
+  }
+
+  function handleImageCopyNow() {
+    assembleImagePrompt(imageAnswers)
+  }
+
+  function handleImageStartOver() {
+    setImageAnswers({})
+    setImageQuestionIndex(0)
+    if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS.IMAGE_BUILDER)
+  }
+
+  function handleImageEditAnswers() {
+    setImageQuestionIndex(0)
+    if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS.IMAGE_BUILDER)
+    transition(STATES.IMAGE_BUILDER)
+  }
 
   const { iterationBase, handleIterate, stopIterating, dismissIterating } = useIteration({
     STATES,
@@ -351,6 +472,19 @@ export default function App() {
               }
               transition(STATES.PROMPT_READY)
             }}
+            imageBuilderProps={{
+              transcript: originalTranscript.current,
+              questionIndex: imageQuestionIndex,
+              answers: imageAnswers,
+              imageBuiltPrompt,
+              onSelect: handleImageSelect,
+              onNext: handleImageNext,
+              onBack: handleImageBack,
+              onSkip: handleImageSkip,
+              onCopyNow: handleImageCopyNow,
+              onEditAnswers: handleImageEditAnswers,
+              onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
+            }}
           />
         ) : (
           <>
@@ -455,6 +589,29 @@ export default function App() {
                   }}
                 />
               </>
+            )}
+            {displayState === STATES.IMAGE_BUILDER && (
+              <ImageBuilderState
+                transcript={originalTranscript.current}
+                questionIndex={imageQuestionIndex}
+                answers={imageAnswers}
+                onSelect={handleImageSelect}
+                onNext={handleImageNext}
+                onBack={handleImageBack}
+                onSkip={handleImageSkip}
+                onCopyNow={handleImageCopyNow}
+                isExpanded={false}
+              />
+            )}
+            {displayState === STATES.IMAGE_BUILDER_DONE && (
+              <ImageBuilderDoneState
+                prompt={imageBuiltPrompt}
+                answers={imageAnswers}
+                transcript={originalTranscript.current}
+                onEditAnswers={handleImageEditAnswers}
+                onStartOver={() => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) }}
+                isExpanded={false}
+              />
             )}
           </>
         )}

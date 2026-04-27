@@ -3,6 +3,8 @@ import { bookmarkHistoryItem, rateHistoryItem, formatTime } from '../utils/histo
 import ExpandedTypingContent from './ExpandedTypingContent.jsx'
 import ExpandedPromptReadyContent from './ExpandedPromptReadyContent.jsx'
 import PromptSections from './PromptSections.jsx'
+import ImageBuilderState from './ImageBuilderState.jsx'
+import ImageBuilderDoneState from './ImageBuilderDoneState.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -27,6 +29,7 @@ export default function ExpandedDetailPanel({
   onEntryChange,
   onTypingSubmit,
   onSwitchToVoice,
+  imageBuilderProps,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
 
@@ -304,6 +307,31 @@ export default function ExpandedDetailPanel({
           onRegenerate={onRegenerate}
           onReset={onReset}
           isIterated={isIterated}
+        />
+      )}
+
+      {currentState === 'IMAGE_BUILDER' && !isViewingHistory && imageBuilderProps && (
+        <ImageBuilderState
+          transcript={imageBuilderProps.transcript}
+          questionIndex={imageBuilderProps.questionIndex}
+          answers={imageBuilderProps.answers}
+          onSelect={imageBuilderProps.onSelect}
+          onNext={imageBuilderProps.onNext}
+          onBack={imageBuilderProps.onBack}
+          onSkip={imageBuilderProps.onSkip}
+          onCopyNow={imageBuilderProps.onCopyNow}
+          isExpanded={true}
+        />
+      )}
+
+      {currentState === 'IMAGE_BUILDER_DONE' && !isViewingHistory && imageBuilderProps && (
+        <ImageBuilderDoneState
+          prompt={imageBuilderProps.imageBuiltPrompt}
+          answers={imageBuilderProps.answers}
+          transcript={imageBuilderProps.transcript}
+          onEditAnswers={imageBuilderProps.onEditAnswers}
+          onStartOver={imageBuilderProps.onStartOver}
+          isExpanded={true}
         />
       )}
     </div>
