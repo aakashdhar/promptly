@@ -447,18 +447,21 @@
    [x] P2-008 · CLAUDE.md — 13 stale completed feature/bug sections removed (~530 lines); Never list preserved; archive note added
 
 ## Full project review — 2026-04-28
-✅ COMPLETE — Score 9.0/10 — Grade A — 0 P0, 0 P1, 4 P2, 2 P3
+✅ COMPLETE (re-run post-P2R fixes) — Score 9.5/10 — Grade A — 0 P0, 0 P1, 1 P2, 3 P3
 → Full report: vibe/reviews/full-project-review-2026-04-28.md
-→ Previous score: 7.4/10 (+1.6 improvement)
+→ Previous score: 9.0/10 (+0.5 improvement after all 4 P2R fixes applied)
 
-P2 fixes for this review (0/4):
-   [ ] P2R-001 · CODEBASE.md — add 7 missing files (useIteration.js, ExpandedTypingContent, ExpandedPromptReadyContent, HistoryDetailPanel, HistoryEntryItem, tests/utils.test.js, vitest.config.js); update stale line counts (ExpandedDetailPanel 496→346, HistoryPanel 663→362, App.jsx 548→466)
-   [ ] P2R-002 · ExpandedPromptReadyContent.jsx — remove dead `renderPromptSections` function (lines 4-38); file imports parseSections but defines an unused local copy
-   [ ] P2R-003 · HistoryDetailPanel.jsx + ExpandedDetailPanel.jsx — replace local `renderPromptSections` with `parseSections` from promptUtils.js to eliminate triplication
-   [ ] P2R-004 · package.json — upgrade vitest from 2.1.9 to 4.x (npm audit fix --force); verify tests still pass after upgrade
+P2 fixes from previous review (4/4 ✅):
+   [x] P2R-001 · CODEBASE.md — 7 missing files added, line counts corrected (BL-071)
+   [x] P2R-002 · ExpandedPromptReadyContent.jsx — dead `renderPromptSections` removed (BL-072)
+   [x] P2R-003 · HistoryDetailPanel.jsx + ExpandedDetailPanel.jsx — local renderPromptSections replaced with PromptSections component (BL-073)
+   [x] P2R-004 · package.json — vitest@4.1.5 installed, npm audit 0 vulnerabilities (BL-074)
+
+Remaining open items (BL-077, BL-075, BL-076, BL-078 — all P2/P3):
+   [ ] BL-077 · CODEBASE.md — 3 stale line counts from dedup commits: ExpandedPromptReadyContent 215→179, HistoryDetailPanel 203→168, ExpandedDetailPanel 346→311
 
 ## Phase gates
-Full project review gate: ✅ reviewed 2026-04-28 — 0 P0, 0 P1 — deploy not blocked — 4 P2 logged to backlog
+Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy not blocked — 1 P2 + 3 P3 logged to backlog
 
 ## What's next
-Fix P2R-002 (dead code removal) first — it is a 5-line delete. Then P2R-003 (renderPromptSections deduplication). Then P2R-001 (CODEBASE.md update). Then P2R-004 (vitest upgrade).
+Fix BL-077 (3 stale line counts in CODEBASE.md — trivial). Then close out BL-078 + BL-075 + BL-076 for a clean 10/10.

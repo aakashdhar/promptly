@@ -307,10 +307,16 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-071 | vibe/CODEBASE.md | file map | 5 new files absent (useIteration.js, ExpandedTypingContent.jsx, ExpandedPromptReadyContent.jsx, HistoryDetailPanel.jsx, HistoryEntryItem.jsx); tests/utils.test.js + vitest.config.js absent; ExpandedDetailPanel 496→346, HistoryPanel 663→362, App.jsx 548→466 stale. | Open |
-| BL-072 | src/renderer/components/ExpandedPromptReadyContent.jsx | 4-38 | Dead `renderPromptSections` function — file defines it but never calls it; uses `parseSections` import instead (line 105). | Open |
-| BL-073 | src/renderer/components/HistoryDetailPanel.jsx + ExpandedDetailPanel.jsx | 6-40, 9-43 | `renderPromptSections` triplicated across 3 files (HistoryDetailPanel, ExpandedDetailPanel, ExpandedPromptReadyContent dead). Replace with `parseSections` from promptUtils.js. Regex also differs: HistoryDetailPanel uses escaped `\/`, others use `/`. | Open |
-| BL-074 | package.json | 35 | vitest@2.1.9 introduces 5 moderate devDep audit vulns (esbuild CORS bypass, Vite path traversal). Upgrade: `npm audit fix --force` → vitest@4.1.5. Verify tests pass after upgrade. | Open |
+| ~~BL-071~~ | vibe/CODEBASE.md | file map | 5 new files absent (useIteration.js, ExpandedTypingContent.jsx, ExpandedPromptReadyContent.jsx, HistoryDetailPanel.jsx, HistoryEntryItem.jsx); tests/utils.test.js + vitest.config.js absent; ExpandedDetailPanel 496→346, HistoryPanel 663→362, App.jsx 548→466 stale. | ✅ resolved — docs(CODEBASE): BL-071 commit |
+| ~~BL-072~~ | src/renderer/components/ExpandedPromptReadyContent.jsx | 4-38 | Dead `renderPromptSections` function — file defines it but never calls it; uses `parseSections` import instead (line 105). | ✅ resolved — fix(quality): BL-072 commit — file now 179 lines |
+| ~~BL-073~~ | src/renderer/components/HistoryDetailPanel.jsx + ExpandedDetailPanel.jsx | 6-40, 9-43 | `renderPromptSections` triplicated across 3 files. Replace with PromptSections shared component. | ✅ resolved — fix(quality): BL-073 commit — both files use `<PromptSections>` component |
+| ~~BL-074~~ | package.json | 35 | vitest@2.1.9 introduces 5 moderate devDep audit vulns. Upgrade to vitest@4.x. | ✅ resolved — fix(quality): BL-074 commit — vitest@4.1.5, npm audit 0 vulnerabilities |
+
+### Outstanding P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-077 | vibe/CODEBASE.md | file map | 3 stale line counts after BL-072/073 dedup: ExpandedPromptReadyContent 215→179, HistoryDetailPanel 203→168, ExpandedDetailPanel 346→311. Side-effect of dead code removal + PromptSections migration. | Open |
 
 ### Outstanding P3
 
@@ -318,6 +324,7 @@
 |----|------|------|---------|--------|
 | BL-075 | src/renderer/hooks/useIteration.js | 105 | `dismissIterating` is a plain function — siblings `handleIterate` and `stopIterating` are both `useCallback`. Cosmetic inconsistency only; no correctness issue. | Open / monitor |
 | BL-076 | tests/utils.test.js | — | `getModeTagStyle` missing test for `design` mode (currently falls through to blue default). Minor coverage gap. | Open / monitor |
+| BL-078 | src/renderer/components/PromptSections.jsx | 8 | Inline regex `/^[A-Z][A-Z\s/]+:/` diverges from `parseSections` in promptUtils.js which uses `/^([A-Za-z][A-Za-z\s/]*):\s*$/`. parseSections accepts lowercase first char + requires end-of-line anchor. No current impact — all Claude-generated labels are uppercase. | Open / monitor |
 
 ---
 
