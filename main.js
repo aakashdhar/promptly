@@ -961,6 +961,10 @@ app.whenReady().then(async () => {
           ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
           ...(pythonPath && { PYTHONPATH: pythonPath }),
           PYTHONUNBUFFERED: '1',
+          // Python.org macOS installer doesn't connect to the system keychain by default.
+          // Point to macOS's system CA bundle so Whisper can download models over HTTPS.
+          SSL_CERT_FILE: '/etc/ssl/cert.pem',
+          REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
         };
 
         exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, stdout, stderr) => {
