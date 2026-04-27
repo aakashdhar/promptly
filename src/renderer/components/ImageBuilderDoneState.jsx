@@ -4,7 +4,6 @@ export default function ImageBuilderDoneState({
   prompt,
   answers,
   transcript,
-  onCopy,
   onEditAnswers,
   onStartOver,
   isExpanded,
@@ -14,7 +13,6 @@ export default function ImageBuilderDoneState({
   function handleCopy() {
     if (window.electronAPI) window.electronAPI.copyToClipboard(prompt)
     setCopied(true)
-    if (onCopy) onCopy()
     setTimeout(() => setCopied(false), 1800)
   }
 

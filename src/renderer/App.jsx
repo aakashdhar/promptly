@@ -266,19 +266,17 @@ Rules:
 
   function handleImageSkip() {
     const q = IMAGE_QUESTIONS[imageQuestionIndex]
-    // Remove skip-only value and skip
-    setImageAnswers((prev) => {
-      const next = { ...prev }
-      delete next[q.param]
-      return next
-    })
+    // Compute cleaned answers synchronously before any setState
+    const newAnswers = { ...imageAnswers }
+    delete newAnswers[q.param]
+    setImageAnswers(newAnswers)
     if (imageQuestionIndex === IMAGE_QUESTIONS.length - 1) {
-      assembleImagePrompt(imageAnswers)
+      assembleImagePrompt(newAnswers)
       return
     }
     const nextIndex = imageQuestionIndex + 1
     const nextTier = IMAGE_QUESTIONS[nextIndex].tier
-    const nextHeight = calcImageBuilderHeight(imageAnswers, nextTier)
+    const nextHeight = calcImageBuilderHeight(newAnswers, nextTier)
     setImageQuestionIndex(nextIndex)
     if (!isExpandedRef.current) resizeWindow(nextHeight)
   }
