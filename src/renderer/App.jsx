@@ -295,7 +295,7 @@ export default function App() {
       }
       setThinkTranscript(iterText)
       transition(STATES.THINKING)
-      resizeWindow(320)
+      if (!isExpandedRef.current) resizeWindow(320)
 
       const iterationSystemPrompt = `You are an expert Claude prompt engineer. You have a previously generated prompt and the user has spoken a refinement.
 
