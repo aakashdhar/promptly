@@ -1343,3 +1343,19 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **What was done**: Bundled all image handler props into an `imageBuilderProps` object passed to ExpandedView, then forwarded to ExpandedDetailPanel. ExpandedDetailPanel renders ImageBuilderState/ImageBuilderDoneState with `isExpanded=true` when currentState matches.
 - **Why**: Threading 8+ individual props through two component levels is unwieldy. A single `imageBuilderProps` object follows the pattern used for other cross-cutting concerns.
 - **Approved by**: agent-autonomous
+
+---
+
+### D-SPEC-REVIEW-IMG — Spec review: FEATURE-IMAGE-BUILDER
+- **Date**: 2026-04-27 · **Task**: spec-review (on demand) · **Type**: tech-choice
+- **P0**: 0 · **P1**: 9 (all fixed) · **P2**: 5 (logged)
+- **Action**: All P1 findings fixed inline during review session.
+- **Key decisions captured**:
+  - Custom chip text entry: inline text field revealed below chip row; Enter confirms; empty = Skip
+  - "Copy now →" with empty answers: omit model/useCase lines from system prompt; never disabled
+  - Tier 2→3 transition: "Important ✓" summary box added (mirrors tier 1→2 "Essential ✓" box)
+  - Expand toggle mid-interview: currentTier/currentQuestion/imageAnswers are App.jsx state/refs; survive compact→expanded transition
+  - IMAGE_BUILDER sub-state pattern: currentTier/currentQuestion/imageAnswers implemented as React useState/useRef alongside main currentState — NOT nested state machine states; avoids 17 discrete states
+  - History entry shape: { prompt, transcript, mode: 'image', imageAnswers: {all 17 keys}, timestamp }
+- **Report**: vibe/spec-reviews/2026-04-27-image-builder.md
+- **Approved by**: agent-autonomous
