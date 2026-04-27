@@ -1314,3 +1314,32 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **CODEBASE.md update**: No — release.sh is not in the file map.
 - **Deviations from BUG_PLAN.md**: None.
 - **Approved by**: human
+
+---
+
+## — Feature Start: FEATURE-IMAGE-BUILDER — 2026-04-27
+> Folder: vibe/features/2026-04-27-image-builder/
+> New "Image" mode — guided 3-tier question interview after speech recording → Claude assembles natural language image generation prompt for Nano Banana 2, Nano Banana Pro, and ChatGPT image gen.
+> Tasks: IMG-001 through IMG-010 | Estimated: 8-10 hours (S: 7, M: 3)
+> New states: IMAGE_BUILDER, IMAGE_BUILDER_DONE
+> New components: ImageBuilderState.jsx, ImageBuilderDoneState.jsx
+> New mode key: 'image' (purple accent rgba(139,92,246))
+> Drift logged below.
+
+---
+
+### D-IMAGE-001 — Image mode passthrough in generate-prompt IPC
+- **Date**: 2026-04-27 · **Task**: IMG-002 · **Type**: tech-choice
+- **What was planned**: Standard generate-prompt call for all modes
+- **What was done**: Added `passthrough: true` flag to image MODE_CONFIG. generate-prompt handler returns `{ success: true, prompt: transcript }` immediately for image mode — no Claude call.
+- **Why**: Image mode flow is RECORDING → THINKING (Whisper) → IMAGE_BUILDER (questions) → THINKING (Claude assembly) → IMAGE_BUILDER_DONE. The Claude call happens after the user answers questions, not immediately after transcription. useRecording.js always calls generate-prompt after Whisper; the passthrough makes it a no-op so App.jsx can detect mode === 'image' in handleGenerateResult and route to IMAGE_BUILDER.
+- **Alternatives considered**: Modify useRecording.js to skip generate-prompt for image mode (out of scope per spec); intercept in handleGenerateResult with a wasted Claude call (wasteful).
+- **Impact on other tasks**: None — passthrough only applies when mode === 'image'.
+- **Approved by**: agent-autonomous
+
+### D-IMAGE-002 — imageBuilderProps bundle passed to ExpandedView → ExpandedDetailPanel
+- **Date**: 2026-04-27 · **Task**: IMG-009 · **Type**: tech-choice
+- **What was planned**: isExpanded prop on ImageBuilderState
+- **What was done**: Bundled all image handler props into an `imageBuilderProps` object passed to ExpandedView, then forwarded to ExpandedDetailPanel. ExpandedDetailPanel renders ImageBuilderState/ImageBuilderDoneState with `isExpanded=true` when currentState matches.
+- **Why**: Threading 8+ individual props through two component levels is unwieldy. A single `imageBuilderProps` object follows the pattern used for other cross-cutting concerns.
+- **Approved by**: agent-autonomous

@@ -1,7 +1,7 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-28
+> Last updated: 2026-04-27 (FEATURE-IMAGE-BUILDER)
 
 ---
 
@@ -58,6 +58,8 @@
 | `src/renderer/utils/promptUtils.js` | Shared prompt-rendering utilities — extracted from ExpandedView.jsx refactor | `parseSections(text)` → `[{label, body}]` (regex supports `/` in labels); `getModeTagStyle(mode)` → `{background, color}` |
 | `vitest.config.js` | Vitest test runner config — environment: node, include: tests/**/*.test.js | — |
 | `tests/utils.test.js` | Unit tests for pure utility functions — 18 tests across 4 modules | `parseSections` (5 tests), `getModeTagStyle` (4), `formatTime` (4), `parsePolishOutput` (5) |
+| `src/renderer/components/ImageBuilderState.jsx` | IMAGE_BUILDER state — 3-tier guided interview (13 questions: 4 Essential + 3 Important + 6 Advanced) with chip selection. Compact bar + expanded view (4-col grid + progress bar). Exports `QUESTIONS` array. | props: `transcript`, `questionIndex`, `answers`, `onSelect`, `onNext`, `onBack`, `onSkip`, `onCopyNow`, `isExpanded` |
+| `src/renderer/components/ImageBuilderDoneState.jsx` | IMAGE_BUILDER_DONE state — assembled image prompt box, param summary (orange chips), Edit answers / Start over / Copy prompt actions. Expanded: two-column layout with prompt + param breakdown + "Optimised for" chips. | props: `prompt`, `answers`, `transcript`, `onCopy`, `onEditAnswers`, `onStartOver`, `isExpanded` |
 | `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px list with search + HistoryEntryItem rows; right detail delegated to HistoryDetailPanel. 362 lines. | props: `onClose`, `onReuse` |
 | `src/renderer/components/HistoryDetailPanel.jsx` | Right panel of HistoryPanel — prompt detail with bookmark toggle, PromptSections rendering, polishChanges notes, rating section (👍/👎 + tag chips), Copy + Reuse buttons. Manages own `copied` state. 203 lines. | props: `{ selected, onCopy, onReuse, onBookmark, onRate, onTag }` |
 | `src/renderer/components/HistoryEntryItem.jsx` | Single row in HistoryPanel entry list — handles hover state, selection, delete click (stopPropagation internal). 111 lines. | props: `{ entry, isSelected, isHovered, onSelect, onHoverEnter, onHoverLeave, onDelete }` |
@@ -73,7 +75,7 @@
 
 | Channel | Direction | Status |
 |---------|-----------|--------|
-| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error }. Accepts optional `options.tone` for polish mode — used to replace `{TONE}` placeholder in polish system prompt. |
+| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error }. Accepts optional `options.tone` for polish mode — used to replace `{TONE}` placeholder in polish system prompt. For mode `image`: returns `{ success: true, prompt: transcript }` immediately (passthrough — no Claude call; App.jsx routes to IMAGE_BUILDER). |
 | `generate-raw` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), full system prompt passed from renderer (no MODE_CONFIG); used by iteration flow. Returns { success, prompt, error } |
 | `copy-to-clipboard` | renderer → main | ✅ registered — clipboard.writeText({ text }) → { success: true } |
 | `check-claude-path` | renderer → main | ✅ registered — returns { found, path } or { found: false, error } |
