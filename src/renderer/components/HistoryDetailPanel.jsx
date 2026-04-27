@@ -1,43 +1,8 @@
 import { useState } from 'react'
+import PromptSections from './PromptSections.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
-
-function renderPromptSections(prompt) {
-  if (!prompt) return null
-  const lines = prompt.split('\n')
-  const elements = []
-  let i = 0
-  while (i < lines.length) {
-    const line = lines[i].trim()
-    if (!line) { i++; continue }
-    const isLabel = /^[A-Z][A-Z\s\/]+:/.test(line)
-    if (isLabel) {
-      elements.push(
-        <div key={`label-${i}`} style={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '.12em',
-          textTransform: 'uppercase',
-          color: 'rgba(100,170,255,0.7)',
-          marginBottom: '6px', marginTop: elements.length ? '18px' : 0,
-          display: 'block',
-        }}>
-          {line.replace(':', '').trim()}
-        </div>
-      )
-    } else {
-      elements.push(
-        <div key={`text-${i}`} style={{
-          fontSize: '13.5px', color: 'rgba(255,255,255,0.88)',
-          lineHeight: 1.75, marginBottom: '4px',
-        }}>
-          {line}
-        </div>
-      )
-    }
-    i++
-  }
-  return elements
-}
 
 export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookmark, onRate, onTag }) {
   const [copied, setCopied] = useState(false)
@@ -106,7 +71,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
       }}/>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px', minHeight: 0 }}>
-        {renderPromptSections(selected.prompt)}
+        <PromptSections prompt={selected.prompt} textSize="13.5px" textColor="rgba(255,255,255,0.88)" />
         {selected.polishChanges && selected.polishChanges.length > 0 && (
           <div style={{ margin: '12px 0 20px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '10px' }}>
             <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(48,209,88,0.5)', marginBottom: '6px' }}>Changes made</div>
