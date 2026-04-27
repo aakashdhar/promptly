@@ -1,0 +1,126 @@
+import { describe, it, expect } from 'vitest'
+import { parseSections, getModeTagStyle } from '../src/renderer/utils/promptUtils.js'
+import { formatTime } from '../src/renderer/utils/history.js'
+import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
+
+describe('parseSections', () => {
+  it('returns empty array for empty input', () => {
+    expect(parseSections('')).toEqual([])
+    expect(parseSections(null)).toEqual([])
+  })
+
+  it('wraps unsectioned text in null-label entry', () => {
+    const result = parseSections('Just some text')
+    expect(result).toHaveLength(1)
+    expect(result[0].label).toBeNull()
+    expect(result[0].body).toBe('Just some text')
+  })
+
+  it('parses sections with labels', () => {
+    const text = 'ROLE:\nYou are an expert\nTASK:\nBuild a thing'
+    const result = parseSections(text)
+    expect(result).toHaveLength(2)
+    expect(result[0].label).toBe('ROLE')
+    expect(result[0].body).toBe('You are an expert')
+    expect(result[1].label).toBe('TASK')
+    expect(result[1].body).toBe('Build a thing')
+  })
+
+  it('handles multiline section bodies', () => {
+    const text = 'ROLE:\nLine one\nLine two\n'
+    const result = parseSections(text)
+    expect(result[0].label).toBe('ROLE')
+    expect(result[0].body).toBe('Line one\nLine two')
+  })
+
+  it('handles sections with slash in label', () => {
+    const text = 'INPUT/OUTPUT:\nSome content'
+    const result = parseSections(text)
+    expect(result[0].label).toBe('INPUT/OUTPUT')
+  })
+})
+
+describe('getModeTagStyle', () => {
+  it('returns green tones for polish mode', () => {
+    const style = getModeTagStyle('polish')
+    expect(style.background).toContain('48,209,88')
+    expect(style.color).toContain('100,220,130')
+  })
+
+  it('returns purple tones for refine mode', () => {
+    const style = getModeTagStyle('refine')
+    expect(style.background).toContain('168,85,247')
+    expect(style.color).toContain('200,150,255')
+  })
+
+  it('returns blue tones for all other modes', () => {
+    for (const mode of ['balanced', 'code', 'design', 'detailed', 'concise', 'chain']) {
+      const style = getModeTagStyle(mode)
+      expect(style.background).toContain('10,132,255')
+      expect(style.color).toContain('100,170,255')
+    }
+  })
+
+  it('returns blue tones for unknown mode', () => {
+    const style = getModeTagStyle('unknown')
+    expect(style.background).toContain('10,132,255')
+  })
+})
+
+describe('formatTime', () => {
+  it('returns "just now" for timestamps under 60 seconds ago', () => {
+    expect(formatTime(new Date(Date.now() - 5000).toISOString())).toBe('just now')
+    expect(formatTime(new Date(Date.now() - 59000).toISOString())).toBe('just now')
+  })
+
+  it('returns minutes for timestamps within the last hour', () => {
+    expect(formatTime(new Date(Date.now() - 5 * 60 * 1000).toISOString())).toBe('5m ago')
+    expect(formatTime(new Date(Date.now() - 59 * 60 * 1000).toISOString())).toBe('59m ago')
+  })
+
+  it('returns hours for timestamps within the last 24 hours', () => {
+    expect(formatTime(new Date(Date.now() - 2 * 3600 * 1000).toISOString())).toBe('2h ago')
+    expect(formatTime(new Date(Date.now() - 23 * 3600 * 1000).toISOString())).toBe('23h ago')
+  })
+
+  it('returns formatted date for older timestamps', () => {
+    const result = formatTime(new Date('2024-01-15T12:00:00.000Z').toISOString())
+    expect(result).toMatch(/Jan/)
+    expect(result).toMatch(/15/)
+  })
+})
+
+describe('parsePolishOutput', () => {
+  it('extracts polished text and changes from well-formed output', () => {
+    const raw = 'POLISHED:\nThis is the polished text\n\nCHANGES:\nFixed grammar\nImproved clarity'
+    const result = parsePolishOutput(raw)
+    expect(result.polished).toBe('This is the polished text')
+    expect(result.changes).toEqual(['Fixed grammar', 'Improved clarity'])
+  })
+
+  it('falls back to raw text when no POLISHED marker', () => {
+    const raw = 'Just some text without markers'
+    const result = parsePolishOutput(raw)
+    expect(result.polished).toBe('Just some text without markers')
+    expect(result.changes).toEqual([])
+  })
+
+  it('handles output with no CHANGES section', () => {
+    const raw = 'POLISHED:\nJust the polished text'
+    const result = parsePolishOutput(raw)
+    expect(result.polished).toBe('Just the polished text')
+    expect(result.changes).toEqual([])
+  })
+
+  it('filters empty lines from changes', () => {
+    const raw = 'POLISHED:\nText\n\nCHANGES:\nFix 1\n\nFix 2'
+    const result = parsePolishOutput(raw)
+    expect(result.changes).toEqual(['Fix 1', 'Fix 2'])
+  })
+
+  it('trims whitespace from polished output', () => {
+    const raw = 'POLISHED:\n  Has leading/trailing whitespace  \n\nCHANGES:\n'
+    const result = parsePolishOutput(raw)
+    expect(result.polished).toBe('Has leading/trailing whitespace')
+  })
+})

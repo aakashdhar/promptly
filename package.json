@@ -19,7 +19,8 @@
     "sign-app": "bash scripts/sign-app.sh",
     "dist:signed": "bash scripts/build-signed.sh",
     "uninstall": "bash scripts/uninstall.sh",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -30,7 +31,8 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.2.2",
-    "vite": "^8.0.8"
+    "vite": "^8.0.8",
+    "vitest": "^2.1.9"
   },
   "build": {
     "appId": "io.betacraft.promptly",
