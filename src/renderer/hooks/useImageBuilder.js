@@ -29,9 +29,29 @@ export default function useImageBuilder({
     setThinkTranscript(originalTranscript.current)
     transitionRef.current(STATES.THINKING)
     const paramsJson = JSON.stringify(answers, null, 2)
+    const modelLine = answers.model ? `The user has selected the following model: ${answers.model}` : ''
+    const useCaseLine = answers.use_case ? `The use case is: ${answers.use_case}` : ''
+    const proLine = answers.model === 'Nano Banana Pro'
+      ? `Since Nano Banana Pro was selected, add 'high fidelity' and 'precise text rendering' to the prompt.`
+      : ''
+    const resolutionLine = answers.resolution && answers.resolution !== 'Standard quality'
+      ? `A resolution level was specified ('${answers.resolution}'). Weave those keywords into the prompt naturally rather than appending them.`
+      : ''
     const systemPrompt = `You are an expert image prompt engineer for Nano Banana (Google Gemini image generation) and ChatGPT image generation. The user has spoken a rough image idea and selected parameters through a guided interview.
 
 Assemble these into a single, flowing natural language image generation prompt. Do NOT use section headers or structured formatting. Write it as one or two paragraphs of vivid, specific description that image generation models respond to.
+${modelLine ? '\n' + modelLine : ''}${useCaseLine ? '\n' + useCaseLine : ''}
+
+Start the prompt appropriately for the use case:
+- Photorealistic scene: start with 'A photo of...'
+- Product mockup / commercial: start with 'Professional product shot of...'
+- 3D render / isometric: start with 'A perfectly isometric 3D scene of...'
+- Stylized illustration / sticker: start with 'A stylized illustration of...'
+- Icon / UI asset: start with 'An icon of...'
+- Infographic / text layout: start with 'An infographic showing...'
+- Style transfer: start with 'Apply [style] to...'
+If no use case was selected, infer a natural opening from the transcript.
+${proLine ? '\n' + proLine : ''}${resolutionLine ? '\n' + resolutionLine : ''}
 
 User's spoken idea: ${originalTranscript.current}
 Selected parameters: ${paramsJson}
@@ -60,17 +80,21 @@ Rules:
     setImageAnswers((prev) => ({ ...prev, [param]: value }))
   }
 
-  function handleImageNext() {
+  function handleImageNext(customValue) {
     const q = IMAGE_QUESTIONS[imageQuestionIndex]
-    const hasSelection = imageAnswers[q.param] != null
+    const resolvedAnswers = customValue != null
+      ? { ...imageAnswers, [q.param]: customValue }
+      : imageAnswers
+    const hasSelection = resolvedAnswers[q.param] != null
     if (q.tier <= 2 && !hasSelection) return
+    if (customValue != null) setImageAnswers(resolvedAnswers)
     if (imageQuestionIndex === IMAGE_QUESTIONS.length - 1) {
-      assembleImagePrompt(imageAnswers)
+      assembleImagePrompt(resolvedAnswers)
       return
     }
     const nextIndex = imageQuestionIndex + 1
     const nextTier = IMAGE_QUESTIONS[nextIndex].tier
-    const nextHeight = calcImageBuilderHeight(imageAnswers, nextTier)
+    const nextHeight = calcImageBuilderHeight(resolvedAnswers, nextTier)
     setImageQuestionIndex(nextIndex)
     if (!isExpandedRef.current) resizeWindow(nextHeight)
   }

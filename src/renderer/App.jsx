@@ -440,7 +440,7 @@ export default function App() {
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState

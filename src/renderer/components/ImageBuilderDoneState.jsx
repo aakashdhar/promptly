@@ -1,5 +1,18 @@
 import { useState } from 'react'
 
+const MODEL_IDS = {
+  'Nano Banana': 'Nano Banana (gemini-2.5-flash-image)',
+  'Nano Banana 2': 'Nano Banana 2 (gemini-3.1-flash-image-preview)',
+  'Nano Banana Pro': 'Nano Banana Pro (gemini-3-pro-image-preview)',
+}
+
+function getOptimisedForChips(model) {
+  const chips = []
+  if (model && MODEL_IDS[model]) chips.push(MODEL_IDS[model])
+  chips.push('ChatGPT image gen')
+  return chips
+}
+
 export default function ImageBuilderDoneState({
   prompt,
   answers,
@@ -42,7 +55,7 @@ export default function ImageBuilderDoneState({
             <div>
               <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {['Nano Banana 2', 'Nano Banana Pro', 'ChatGPT image gen'].map((tool) => (
+                {getOptimisedForChips(answers.model).map((tool) => (
                   <span key={tool} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '3px 9px', fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{tool}</span>
                 ))}
               </div>

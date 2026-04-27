@@ -1,17 +1,24 @@
 import { useState } from 'react'
 
 const QUESTIONS = [
+  // Tier 1 — Essential (6)
+  { tier: 1, param: 'model', label: 'Which model are you using?', hint: 'Different models have different strengths — match to your use case', options: ['Nano Banana', 'Nano Banana 2', 'Nano Banana Pro'] },
+  { tier: 1, param: 'use_case', label: 'What are you creating?', hint: 'Sets the overall approach for the prompt', options: ['Photorealistic scene', 'Stylized illustration / sticker', 'Style transfer', 'Product mockup / commercial', 'Icon / UI asset', 'Infographic / text layout', '3D render / isometric'] },
   { tier: 1, param: 'style', label: 'Style', hint: 'How the image is rendered', options: ['Photorealistic', 'Illustration', 'Oil painting', 'Film photography', '3D render', 'Cinematic', 'Watercolour', 'Anime / manga', 'Isometric', 'Claymation'] },
   { tier: 1, param: 'lighting', label: 'Lighting', hint: 'Sets the atmosphere', options: ['Golden hour', 'Studio softbox', 'Natural overcast', 'Dramatic side light', 'Neon / artificial', 'Backlit silhouette', 'Blue hour / dusk', 'Candlelight'] },
   { tier: 1, param: 'aspect_ratio', label: 'Aspect ratio', hint: 'Output dimensions', options: ['Square 1:1', 'Portrait 9:16', 'Landscape 16:9', 'Widescreen 21:9', '4:3 classic', '3:2 photo'] },
   { tier: 1, param: 'subject_detail', label: 'Subject detail', hint: 'Enrich the subject description', options: ['Add age / appearance', 'Add expression', 'Add clothing', 'Add skin / texture detail', 'Keep as spoken'] },
+  // Tier 2 — Important (4)
   { tier: 2, param: 'composition', label: 'Composition', hint: 'Framing and shot type', options: ['Close-up portrait', 'Medium shot', 'Wide establishing', 'Rule of thirds', 'Symmetrical', 'Aerial / overhead', 'Macro / extreme close'] },
   { tier: 2, param: 'colour_palette', label: 'Colour palette', hint: 'Tonal mood', options: ['Warm & golden', 'Cool & blue', 'Muted & desaturated', 'Vivid & saturated', 'Monochrome', 'Pastel', 'High contrast'] },
+  { tier: 2, param: 'background', label: "What's the background?", hint: 'Explicitly specifying background improves consistency', options: ['Natural / contextual', 'White background', 'Transparent / no background', 'Solid colour', 'Gradient', 'Blurred / bokeh background', 'Black background', 'Custom / describe it'], custom: 'Custom / describe it' },
   { tier: 2, param: 'mood', label: 'Mood / atmosphere', hint: 'Emotional quality', options: ['Serene', 'Dramatic', 'Nostalgic', 'Mysterious', 'Energetic', 'Melancholic', 'Futuristic', 'Dreamlike'] },
+  // Tier 3 — Advanced (7)
+  { tier: 3, param: 'resolution', label: 'What quality level?', hint: 'Add resolution keywords — Nano Banana responds to these in the prompt', options: ['Standard quality', 'High detail', 'Ultra detailed / 4K', 'Hyperreal / 8K', 'Professional print quality', 'Skip ↓'] },
   { tier: 3, param: 'camera_lens', label: 'Camera / lens', hint: 'Optional', options: ['35mm film', '50mm portrait', '85mm bokeh', 'Wide angle', 'Macro', 'Anamorphic', 'Fisheye', 'Skip ↓'] },
   { tier: 3, param: 'text_in_image', label: 'Text in image', hint: 'Optional', special: 'text_capability', options: ['No text needed', 'Yes — title/headline', 'Yes — label/caption', 'Yes — logo/wordmark', 'Yes — signage', 'Skip ↓'] },
   { tier: 3, param: 'detail_level', label: 'Detail specificity', hint: 'Optional', options: ['Minimal / clean', 'Moderate detail', 'Highly detailed', 'Ultra detailed / hyperreal', 'Skip ↓'] },
-  { tier: 3, param: 'avoid', label: 'What to avoid', hint: 'Optional · Negative space', options: ['No text', 'No people', 'No shadows', 'No background', 'Keep minimal', 'Custom (type it)', 'Skip ↓'] },
+  { tier: 3, param: 'avoid', label: 'What to avoid', hint: 'Optional · Negative space', options: ['No text', 'No people', 'No shadows', 'No background', 'Keep minimal', 'Custom (type it)', 'Skip ↓'], custom: 'Custom (type it)' },
   { tier: 3, param: 'surface', label: 'Surface / material', hint: 'Optional', options: ['Matte', 'Glossy', 'Metallic', 'Fabric / textile', 'Natural / organic', 'Glass', 'Skip ↓'] },
   { tier: 3, param: 'post_processing', label: 'Post-processing style', hint: 'Optional', options: ['Film grain', 'Vintage / faded', 'HDR', 'Matte grade', 'Clean / neutral', 'Tilt-shift', 'Skip ↓'] },
 ]
@@ -42,6 +49,7 @@ function TierBadge({ tier, questionNum, total }) {
 
 function AnsweredChip({ param, value }) {
   const label = param.replace(/_/g, ' ')
+  const displayValue = value.length > 20 ? value.slice(0, 20) + '…' : value
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '4px',
@@ -49,8 +57,25 @@ function AnsweredChip({ param, value }) {
       borderRadius: '6px', padding: '3px 7px', fontSize: '10.5px', lineHeight: 1.3,
     }}>
       <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(167,139,250,0.7)', fontWeight: 600 }}>{label}</span>
-      <span style={{ color: 'rgba(255,255,255,0.5)' }}>{value}</span>
+      <span style={{ color: 'rgba(255,255,255,0.5)' }}>{displayValue}</span>
     </span>
+  )
+}
+
+function TierSummaryBox({ tierLabel, color, params, answers }) {
+  const c = color
+  return (
+    <div style={{
+      background: `rgba(${c},0.04)`, border: `1px solid rgba(${c},0.1)`,
+      borderRadius: '9px', padding: '7px 10px',
+    }}>
+      <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: `rgba(${c},0.6)`, fontWeight: 700, marginBottom: '6px' }}>{tierLabel} ✓</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        {params.filter((p) => answers[p]).map((p) => (
+          <AnsweredChip key={p} param={p} value={answers[p]} />
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -66,6 +91,7 @@ export default function ImageBuilderState({
   isExpanded,
 }) {
   const [hovered, setHovered] = useState(null)
+  const [customText, setCustomText] = useState('')
 
   const q = QUESTIONS[questionIndex]
   const tier = q.tier
@@ -78,20 +104,49 @@ export default function ImageBuilderState({
   const isFirst = questionIndex === 0
   const isSkip = (opt) => opt === 'Skip ↓'
   const selectedValue = answers[q.param]
+  const isCustomSelected = q.custom && selectedValue === q.custom
   const canAdvance = tier === 3 || selectedValue != null
 
   // Answered params (excluding current question)
   const answeredEntries = Object.entries(answers).filter(([k]) => k !== q.param)
 
-  // Tier 1 summary when we're in tier 2+
+  // Tier param lists
   const tier1Params = QUESTIONS.filter((x) => x.tier === 1).map((x) => x.param)
+  const tier2Params = QUESTIONS.filter((x) => x.tier === 2).map((x) => x.param)
+
   const tier1Answers = tier1Params.map((p) => answers[p]).filter(Boolean)
+  const tier2Answers = tier2Params.map((p) => answers[p]).filter(Boolean)
+
   const showTier1Summary = tier >= 2 && tier1Answers.length > 0
+  const showTier2Summary = tier >= 3 && tier2Answers.length > 0
 
   // Progress (for expanded view)
   const completedQuestions = questionIndex
-  const totalQuestions = 13
+  const totalQuestions = 17
   const progressPct = Math.round((completedQuestions / totalQuestions) * 100)
+
+  // When the question changes, reset custom text
+  // (handled by parent's onSelect call which resets it)
+  function handleChipClick(opt) {
+    if (isSkip(opt)) {
+      onSkip()
+      return
+    }
+    onSelect(q.param, opt)
+    setCustomText('')
+  }
+
+  function handleNextWithCustom() {
+    if (isCustomSelected && customText.trim()) {
+      // Pass resolved value directly so hook can use it atomically
+      onNext(customText.trim())
+    } else if (isCustomSelected && !customText.trim()) {
+      // Empty custom = skip
+      onSkip()
+    } else {
+      onNext()
+    }
+  }
 
   if (isExpanded) {
     return (
@@ -142,12 +197,12 @@ export default function ImageBuilderState({
           {/* 4-column grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', flexShrink: 0 }}>
             {q.options.map((opt) => {
-              const isSelected = selectedValue === opt
+              const isSelected = selectedValue === opt || (isCustomSelected && opt === q.custom)
               const skip = isSkip(opt)
               return (
                 <button
                   key={opt}
-                  onClick={() => skip ? onSkip() : onSelect(q.param, opt)}
+                  onClick={() => handleChipClick(opt)}
                   style={{
                     padding: '9px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: isSelected ? 500 : 400,
                     textAlign: 'center', cursor: 'pointer', lineHeight: 1.3,
@@ -161,6 +216,24 @@ export default function ImageBuilderState({
               )
             })}
           </div>
+
+          {/* Custom text input */}
+          {isCustomSelected && (
+            <input
+              autoFocus
+              type="text"
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleNextWithCustom() }}
+              placeholder="Describe it…"
+              style={{
+                marginTop: '8px', width: '100%', background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(139,92,246,0.3)', borderRadius: '8px',
+                padding: '8px 12px', fontSize: '12px', color: 'rgba(255,255,255,0.75)',
+                outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          )}
 
           {/* Progress bar at bottom */}
           <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
@@ -184,7 +257,7 @@ export default function ImageBuilderState({
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.18)' }}>or press ↵</span>
           <button
-            onClick={() => canAdvance ? onNext() : null}
+            onClick={() => canAdvance ? handleNextWithCustom() : null}
             style={{
               padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
               background: canAdvance ? 'rgba(139,92,246,0.75)' : 'rgba(139,92,246,0.2)',
@@ -220,23 +293,18 @@ export default function ImageBuilderState({
 
       {/* Tier 1 summary (when in tier 2+) */}
       {showTier1Summary && (
-        <div style={{
-          background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.1)',
-          borderRadius: '9px', padding: '7px 10px',
-        }}>
-          <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(167,139,250,0.6)', fontWeight: 700, marginBottom: '6px' }}>Essential ✓</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-            {tier1Params.filter((p) => answers[p]).map((p) => (
-              <AnsweredChip key={p} param={p} value={answers[p]} />
-            ))}
-          </div>
-        </div>
+        <TierSummaryBox tierLabel="Essential" color="139,92,246" params={tier1Params} answers={answers} />
       )}
 
-      {/* Answered chips (other than tier 1 summary and current question) */}
-      {tier >= 3 && answeredEntries.filter(([k]) => !tier1Params.includes(k)).length > 0 && (
+      {/* Tier 2 summary (when in tier 3) */}
+      {showTier2Summary && (
+        <TierSummaryBox tierLabel="Important" color="59,130,246" params={tier2Params} answers={answers} />
+      )}
+
+      {/* Answered chips — tier 3 only (tiers 1+2 captured in summary boxes) */}
+      {tier >= 3 && answeredEntries.filter(([k]) => !tier1Params.includes(k) && !tier2Params.includes(k)).length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {answeredEntries.filter(([k]) => !tier1Params.includes(k)).map(([param, value]) => (
+          {answeredEntries.filter(([k]) => !tier1Params.includes(k) && !tier2Params.includes(k)).map(([param, value]) => (
             <AnsweredChip key={param} param={param} value={value} />
           ))}
         </div>
@@ -259,12 +327,12 @@ export default function ImageBuilderState({
       {/* Chip options */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
         {q.options.map((opt) => {
-          const isSelected = selectedValue === opt
+          const isSelected = selectedValue === opt || (isCustomSelected && opt === q.custom)
           const skip = isSkip(opt)
           return (
             <button
               key={opt}
-              onClick={() => skip ? onSkip() : onSelect(q.param, opt)}
+              onClick={() => handleChipClick(opt)}
               onMouseEnter={() => setHovered(opt)}
               onMouseLeave={() => setHovered(null)}
               style={{
@@ -282,6 +350,24 @@ export default function ImageBuilderState({
         })}
       </div>
 
+      {/* Custom text input */}
+      {isCustomSelected && (
+        <input
+          autoFocus
+          type="text"
+          value={customText}
+          onChange={(e) => setCustomText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleNextWithCustom() }}
+          placeholder="Describe it…"
+          style={{
+            width: '100%', background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(139,92,246,0.3)', borderRadius: '8px',
+            padding: '6px 10px', fontSize: '11.5px', color: 'rgba(255,255,255,0.75)',
+            outline: 'none', boxSizing: 'border-box',
+          }}
+        />
+      )}
+
       {/* Footer */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -291,7 +377,7 @@ export default function ImageBuilderState({
           <button onClick={onCopyNow} style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Copy now →</button>
         </div>
         <button
-          onClick={() => canAdvance ? onNext() : null}
+          onClick={() => canAdvance ? handleNextWithCustom() : null}
           style={{
             padding: '6px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
             background: canAdvance ? 'rgba(139,92,246,0.75)' : 'rgba(139,92,246,0.2)',
