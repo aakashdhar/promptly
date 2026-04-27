@@ -423,7 +423,10 @@ function updateTrayMenu() {
 // with the directory that contains the claude binary ensures 'node' is findable
 // when the shebang is resolved by macOS.
 function makeClaudeEnv(binPath) {
-  const binDir = path.dirname(binPath);
+  // Resolve symlinks so we get the real bin dir (e.g. nvm's versioned dir, not /usr/local/bin)
+  let realBin = binPath;
+  try { realBin = fs.realpathSync(binPath); } catch { /* use as-is if resolution fails */ }
+  const binDir = path.dirname(realBin);
   const base = process.env.PATH || '/usr/local/bin:/usr/bin:/bin';
   return { ...process.env, PATH: base.includes(binDir) ? base : binDir + ':' + base };
 }
