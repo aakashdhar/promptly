@@ -103,6 +103,9 @@ export default function App() {
   useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
+  useEffect(() => {
+    if (mode === 'image' && !isExpandedRef.current) handleExpand()
+  }, [mode])
 
   function transition(newState, payload = {}) {
     stateRef.current = newState
@@ -202,6 +205,7 @@ export default function App() {
       // genResult is a passthrough — run pre-selection Claude call then go to IMAGE_BUILDER
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
+      if (!isExpandedRef.current) handleExpand()
       setThinkingLabel('Analysing your idea...')
       runPreSelection(originalTranscript.current, isReiterate)
       return
