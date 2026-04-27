@@ -8,13 +8,12 @@ guided way to build a complete, optimised image generation prompt.
 
 ## Solution
 A new mode called "Image" that replaces the standard prompt generation
-flow with a guided interview. After the user speaks their idea, instead
-of generating a structured Claude prompt, Promptly asks a series of
-tappable questions that help the user specify key image parameters.
-The final output is a natural language image generation prompt
-optimised for Nano Banana, Nano Banana 2, Nano Banana Pro, and
-ChatGPT image gen. Model selection is part of the interview and shapes
-how the final prompt is worded.
+flow with a smart-defaults review screen. After the user speaks their idea,
+Claude analyses the transcript and pre-fills all image parameters. The user
+reviews the AI suggestions at a glance, taps to adjust any chips, then
+confirms. The final output is a natural language image generation prompt
+optimised for Nano Banana, Nano Banana 2, Nano Banana Pro, and ChatGPT
+image gen.
 
 ## Output format
 Natural language — not structured sections. The assembled prompt reads
@@ -25,238 +24,331 @@ at golden hour near the ocean. Close-up shot, 9:16 portrait format.
 Warm golden colour palette, serene mood. Shot on 85mm lens with soft
 bokeh. Slight smile, freckles visible. No text."
 
-## Three-tier question system
+---
 
-### Tier 1 — Essential (6 questions, always asked)
-Badge: "Essential · N/6" in purple
+## New IMAGE_BUILDER flow
 
-1. Model — which Nano Banana model
-   Label: "Which model are you using?"
-   Hint: "Different models have different strengths — match to your use case"
-   Options: Nano Banana (fast, efficient — good for quick iterations),
-   Nano Banana 2 (speed + quality — recommended for most use cases),
-   Nano Banana Pro (highest quality, best text rendering, uses Thinking)
-   Note: Model selection affects prompt wording. For Nano Banana Pro,
-   Claude should add "high fidelity" and "precise text rendering" language.
-   For Nano Banana 2, standard prompt language. Stored in imageAnswers.model.
+STEP 1 — User records (unchanged)
+STEP 2 — THINKING state: Whisper transcribes + Claude analyses transcript
+  Label: "Analysing your idea..."
+  Claude returns a JSON object of pre-selected parameters (see below)
+STEP 3 — IMAGE_BUILDER state: shows all-params review screen
+  All parameters pre-filled by Claude
+  User scans, taps to change, adds more, hits "Confirm & generate →"
+STEP 4 — THINKING state: Claude assembles final prompt
+  Label: "Assembling prompt..."
+STEP 5 — IMAGE_BUILDER_DONE: final prompt ready to copy
 
-2. Use case — output type
-   Label: "What are you creating?"
-   Hint: "Sets the overall approach for the prompt"
-   Options: Photorealistic scene (real-world photo style),
-   Stylized illustration / sticker (graphic, flat, artistic),
-   Style transfer (apply a style to existing content),
-   Product mockup / commercial (professional asset),
-   Icon / UI asset (clean, minimal, specific background),
-   Infographic / text layout (text + visuals combined),
-   3D render / isometric (three-dimensional or geometric)
-   Note: Use case shapes the opening of the assembled prompt.
-   Product mockup → "Professional product shot of..."
-   Photorealistic → "A photo of..."
-   3D render/isometric → "A perfectly isometric 3D scene of..."
-   Stylized illustration → "A stylized illustration of..."
-   Icon/UI asset → "An icon of..."
-   Infographic → "An infographic showing..."
-   Stored in imageAnswers.useCase.
+---
 
-3. Style — how the image is rendered
-   Options: Photorealistic, Illustration, Oil painting, Film photography,
-   3D render, Cinematic, Watercolour, Anime / manga, Isometric, Claymation
+## STEP 2 — Claude pre-selection call
 
-4. Lighting — sets the atmosphere
-   Options: Golden hour, Studio softbox, Natural overcast, Dramatic side
-   light, Neon / artificial, Backlit silhouette, Blue hour / dusk, Candlelight
+After transcription, call `window.electronAPI.generateRaw(systemPrompt, transcript)`
+(uses the existing `generate-raw` IPC channel). Parse the returned
+`{ success, prompt }` — `prompt` is the raw JSON string; JSON.parse it to
+get imageDefaults. Use this system prompt:
 
-5. Aspect ratio — output dimensions
-   Options: Square 1:1, Portrait 9:16, Landscape 16:9, Widescreen 21:9,
-   4:3 classic, 3:2 photo
+"You are an expert image prompt engineer for Nano Banana (Google Gemini
+image generation). Analyse the user's spoken idea and return a JSON
+object with pre-selected values for each parameter.
 
-6. Subject detail — enrich the subject description
-   Options: Add age / appearance, Add expression, Add clothing,
-   Add skin / texture detail, Keep as spoken
+User's spoken idea: {transcript}
 
-### Tier 2 — Important (4 questions, asked after tier 1)
-Badge: "Important · N/4" in blue
+Return ONLY valid JSON, no preamble, no explanation, no markdown:
+{
+  "model": "Nano Banana 2",
+  "useCase": "Photorealistic scene",
+  "style": ["Photorealistic"],
+  "lighting": ["Golden hour"],
+  "aspectRatio": "Portrait 9:16",
+  "subjectDetail": [],
+  "composition": ["Close-up portrait"],
+  "cameraAngle": ["Eye level"],
+  "colourPalette": ["Warm & golden"],
+  "background": ["Natural / contextual"],
+  "mood": ["Serene"],
+  "resolution": "Standard quality",
+  "lens": [],
+  "textInImage": "No text needed",
+  "detailLevel": "",
+  "avoid": [],
+  "surfaceMaterial": [],
+  "postProcessing": []
+}
 
-1. Composition — framing and shot type
-   Options: Close-up portrait, Medium shot, Wide establishing, Rule of
-   thirds, Symmetrical, Aerial / overhead, Macro / extreme close
+Rules:
+- Only pre-select values you are confident about from the transcript
+- Arrays can have multiple values if clearly implied
+- Leave arrays empty [] if not mentioned or unclear
+- Leave strings empty '' if not mentioned or unclear
+- model default: Nano Banana 2
+- useCase: infer from context
+- Respond ONLY with the JSON object"
 
-2. Colour palette — tonal mood
-   Options: Warm & golden, Cool & blue, Muted & desaturated, Vivid &
-   saturated, Monochrome, Pastel, High contrast
+Store the response as imageDefaults in App.jsx state.
+imageAnswers starts as a deep copy of imageDefaults.
+This call happens during the first THINKING state.
 
-3. Background — what surrounds the subject
-   Label: "What's the background?"
-   Hint: "Explicitly specifying background improves consistency"
-   Options: Natural / contextual (let model decide),
-   White background (clean, product-style),
-   Transparent / no background (for assets),
-   Solid colour (specify colour in prompt),
-   Gradient (top to bottom or radial),
-   Blurred / bokeh background,
-   Black background,
-   Custom / describe it
-   Custom input: selecting "Custom / describe it" reveals an inline text
-   field directly below the chip row (replaces no other chips). User types
-   a free-form background description; pressing Enter or clicking Next
-   confirms it. The chip shows the first 20 characters of the typed text
-   as the selected value (truncated with "…" if longer). Leaving the
-   field empty and pressing Next is treated as Skip (no value recorded).
+---
 
-4. Mood / atmosphere — emotional quality
-   Options: Serene, Dramatic, Nostalgic, Mysterious, Energetic, Melancholic,
-   Futuristic, Dreamlike
+## IMAGE_BUILDER review screen layout
 
-### Tier 3 — Advanced (7 questions, clearly optional)
-Badge: "Advanced · optional" in amber
-Each question has a "Skip ↓" chip as the last option.
+### Header
+Left: image icon + "Nano Banana builder"
+Right: sparkle icon + "Claude filled these for you" label
+  (sparkle SVG: star/asterisk shape, rgba(139,92,246,0.6))
 
-1. Resolution / quality level
-   Label: "What quality level?"
-   Hint: "Add resolution keywords — Nano Banana responds to these in the prompt"
-   Options: Standard quality (no resolution keywords added),
-   High detail (adds 'highly detailed' to prompt),
-   Ultra detailed / 4K (adds 'ultra detailed, 4K resolution' to prompt),
-   Hyperreal / 8K (adds 'hyperrealistic, 8K, ultra sharp' to prompt),
-   Professional print quality (adds 'print-ready, high resolution' to prompt),
-   Skip ↓
-   Note: These are prompt keywords, not API parameters. Nano Banana has no
-   resolution API parameter — resolution is influenced by prompt language and
-   model choice. If resolution was specified, weave keywords into prompt naturally.
+### You said section
+"YOU SAID" label + transcript text (italic, rgba(255,255,255,0.4))
 
-2. Camera / lens
-   Options: 35mm film, 50mm portrait, 85mm bokeh, Wide angle, Macro,
-   Anamorphic, Fisheye, Skip ↓
+### Divider
 
-3. Text in image (unique Nano Banana capability)
-   Badge: "Unique capability" purple pill on question label
-   Options: No text needed, Yes — title/headline, Yes — label/caption,
-   Yes — logo/wordmark, Yes — signage, Skip ↓
+### Params grid — each row:
+format: [LABEL] [chips] [+ add chip]
 
-4. Detail specificity
-   Options: Minimal / clean, Moderate detail, Highly detailed, Ultra
-   detailed / hyperreal, Skip ↓
+LABEL: font-size 9px, font-weight 700, text-transform uppercase,
+  letter-spacing 0.08em, color rgba(255,255,255,0.22),
+  min-width 80px, flex-shrink 0
 
-5. What to avoid (negative space)
-   Options: No text, No people, No shadows, No background, Keep minimal,
-   Custom (type it), Skip ↓
-   Custom input: same pattern as T2 Q3 — "Custom (type it)" reveals an
-   inline text field below the chip row; Enter confirms; empty + Next = Skip.
+Each param row shows:
+  - AI pre-selected chips (purple dot indicator)
+  - Dashed "+ add" chip at end of each row (opens option picker)
+  - Tap any chip to deselect/remove it
+  - Tap "+ add" to see full options list for that param
 
-6. Surface / material
-   Options: Matte, Glossy, Metallic, Fabric / textile, Natural / organic,
-   Glass, Skip ↓
+### Chip states (three visual states):
+1. AI pre-selected chip:
+   background rgba(139,92,246,0.14)
+   border 0.5px solid rgba(139,92,246,0.38)
+   color rgba(167,139,250,0.95), font-weight 500
+   Left: 5px purple dot (the AI indicator)
+   font-size 11px, padding 4px 10px, border-radius 8px
 
-7. Post-processing style
-   Options: Film grain, Vintage / faded, HDR, Matte grade, Clean / neutral,
-   Tilt-shift, Skip ↓
+2. User-added chip (tapped + add):
+   background rgba(139,92,246,0.22)
+   border 0.5px solid rgba(139,92,246,0.55)
+   color rgba(200,180,255,1), font-weight 600
+   No dot — user chose this manually
 
-## Question UI — both compact bar and expanded view
+3. Deselected chip (was AI selected, user tapped to remove):
+   Do not show — remove from display entirely when tapped
+   (simplest UX — if user taps a chip it disappears, can re-add via + add)
 
-### Compact bar layout (per question)
-Height: dynamic — calculated per question transition (see State machine section)
-Header row:
-  Left: mode icon (image SVG) + "Nano Banana builder" label
-  Right: tier badge
-You said section: italic transcript text at 12px rgba(255,255,255,0.4)
-Divider
-Question title: 13.5px font-weight 500 rgba(255,255,255,0.82)
-Question hint: 11px rgba(255,255,255,0.28)
-Options: flex-wrap row of chip buttons
-  Default chip: padding 6px 12px, border-radius 9px, font-size 11.5px
-    background rgba(255,255,255,0.04), border rgba(255,255,255,0.1)
-    color rgba(255,255,255,0.55)
-  Selected chip (purple):
-    background rgba(139,92,246,0.14), border rgba(139,92,246,0.38)
-    color rgba(167,139,250,0.95), font-weight 500
-  Skip chip: border-style dashed, color rgba(255,255,255,0.25)
-Answered params: flex-wrap row of small answered chips above divider
-  Each: background rgba(139,92,246,0.07), border rgba(139,92,246,0.15)
-  Label: 8.5px uppercase purple, Value: 10.5px rgba(255,255,255,0.5)
-Footer row (Tier 1 Q1 — no Back):
-  Left: "Copy now →" only
-  Right: Next button (rgba(139,92,246,0.75) bg, white text)
-Footer row (all other questions):
-  Left: "← Back · Copy now →"
-  Right: Next button (rgba(139,92,246,0.75) bg, white text)
+### + add chip style:
+   border 0.5px dashed rgba(255,255,255,0.15)
+   background transparent
+   color rgba(255,255,255,0.25)
+   font-size 11px, padding 4px 10px, border-radius 8px
+   text: "+ add"
+   onClick: shows inline option picker for that param
 
-### Expanded view layout (per question)
-Three-zone layout: top bar dimmed + left history + right question panel
-Top bar: opacity 0.4 on mic button and flanking controls (not recording)
-Left panel: same width as existing ExpandedView.jsx (300px) — history as
-  normal, active entry shows "Now · building"
-Right panel: flex:1 — same width as existing ExpandedView.jsx right panel
-  Header: icon + "Nano Banana builder" + tier badge + "Copy now →"
-  You said section: transcript + answered params chips
-  Question area (flex:1, padding 24px 28px):
-    Question title: 18px font-weight 500 rgba(255,255,255,0.85)
-    Question hint: 13px rgba(255,255,255,0.3)
-    Options: 4-column grid, each chip padding 10px 8px, text-align center
-    Progress bar (at bottom of question area, margin-top auto):
-      Label: "{completedQuestions} of 17 · {percentage}% complete"
-        font-size 11px, color rgba(255,255,255,0.2), margin-bottom 6px
-      Bar container: full width, height 2px, border-radius 1px,
-        background rgba(255,255,255,0.06), overflow hidden
-      Bar fill: rgba(139,92,246,0.6), width = percentage%
-      Denominator: always 17 (6 + 4 + 7) — skipped questions count as completed
-      Percentage: Math.round((completedQuestions / 17) * 100)
-  Action row (Tier 1 Q1 — no Back):
-    Back button hidden, spacer collapses
-    Layout: "or press ↵" hint + Next button (right-aligned)
-  Action row (all other questions):
-    Back button + spacer + "or press ↵" + Next button
+### Param rows to show by default (essential + important):
+Row 1:  Model          — single select chip
+Row 2:  Use case       — single select chip
+Row 3:  Subject detail — multi-select chips + add
+Row 4:  Style          — multi-select chips + add
+Row 5:  Lighting       — multi-select chips + add
+Row 6:  Composition    — multi-select chips + add
+Row 7:  Camera angle   — multi-select chips + add
+Row 8:  Ratio          — single select chip
+Row 9:  Colour         — multi-select chips + add
+Row 10: Background     — multi-select chips + add
+Row 11: Mood           — multi-select chips + add
 
-### Tier transition UI
-When tier 1 completes and tier 2 begins:
-  Show a compact summary box above the divider:
-    background rgba(139,92,246,0.04), border rgba(139,92,246,0.1)
-    border-radius 9px, padding 8px 10px
-    Header: "Essential ✓" in small purple uppercase
-    Answered chips below in a flex-wrap row
+### Advanced params section (collapsed by default):
+Show a "+ Show advanced parameters" link below row 11:
+  font-size 10.5px, color rgba(139,92,246,0.5), cursor pointer
+  Clicking expands rows 12–18:
+Row 12: Resolution   — single select chip
+Row 13: Lens         — multi-select chips + add
+Row 14: Text         — single select chip
+Row 15: Detail level — single select chip
+Row 16: Avoid        — multi-select chips + add
+Row 17: Surface      — multi-select chips + add
+Row 18: Post-process — multi-select chips + add
 
-When tier 2 completes and tier 3 begins:
-  Show a second compact summary box above the divider (same visual style):
-    Header: "Important ✓" in small blue uppercase
-    Answered chips below in a flex-wrap row
-  Both the "Essential ✓" and "Important ✓" boxes are stacked, with
-  "Essential ✓" on top and "Important ✓" below it, separated by 6px.
-  The answered params row above the divider shows only tier 3 answers
-  (tiers 1+2 answers are captured in their summary boxes).
+When expanded, link changes to "− Hide advanced parameters"
 
-### Final output screen — compact bar
-Header: green dot + "Image prompt ready"
-Divider
-"Assembled prompt" label + prompt text in a code-style box
-  background rgba(255,255,255,0.03), border rgba(255,255,255,0.07)
-  border-radius 10px, padding 11px 13px
-  font-size 12.5px, rgba(255,255,255,0.65), line-height 1.7
-Param summary: flex-wrap row of orange answered chips
-Actions: Edit answers + Start over + Copy prompt (purple primary)
+### Option picker (when + add is tapped):
+Show a small inline dropdown below the row:
+  background #1a1a24, border 0.5px solid rgba(255,255,255,0.1)
+  border-radius 10px, padding 8px, max-height 160px, overflow-y auto
+  Options listed as small chips in a flex-wrap grid
+  Tapping an option adds it to the row and closes the picker
+  Tapping outside closes the picker without adding
 
-### Final output screen — expanded view
-Right panel two-column grid (1fr 1fr):
-  Left column:
-    "Assembled prompt" label + large prompt text box (font-size 14px)
-    "Optimised for" label + dynamic model chip based on imageAnswers.model:
-      If Nano Banana selected: show "Nano Banana (gemini-2.5-flash-image)"
-      If Nano Banana 2 selected: show "Nano Banana 2 (gemini-3.1-flash-image-preview)"
-      If Nano Banana Pro selected: show "Nano Banana Pro (gemini-3-pro-image-preview)"
-      Always show: ChatGPT image gen
-  Right column:
-    "Parameters applied" label
-    Each param as a row: purple label (min-width 80px) + value (13px)
-Action row: Save to history + spacer + Copy prompt (purple primary)
+### Single-select vs multi-select picker behavior:
+Multi-select rows (Style, Lighting, Composition, Camera angle, Colour,
+  Background, Mood, Lens, Avoid, Surface, Post-process, Subject detail):
+  Tapping an option in the picker adds it alongside any existing chips.
+  Multiple chips can be active at the same time.
+
+Single-select rows (Model, Use case, Ratio, Resolution, Text, Detail level):
+  Tapping "+ add" opens the picker showing all options except the currently
+  selected value. Selecting an option replaces the existing chip entirely.
+  Only one chip can be active at a time.
+  The picker does not show the currently active value as an option.
+
+### Footer area
+Left: "↺ Reiterate" link
+Right: "Copy now →" link + "Confirm & generate →" button
+  Confirm button: rgba(139,92,246,0.75) bg, white, font-weight 600
+  height 32px, padding 0 18px, border-radius 8px
+
+---
+
+## Parameter option lists (unchanged from original spec)
+
+### Model options (single-select)
+Nano Banana (fast, efficient — good for quick iterations)
+Nano Banana 2 (speed + quality — recommended for most use cases)
+Nano Banana Pro (highest quality, best text rendering, uses Thinking)
+
+Note: Model selection affects prompt wording. For Nano Banana Pro,
+Claude should add "high fidelity" and "precise text rendering" language.
+For Nano Banana 2, standard prompt language. Stored in imageAnswers.model.
+
+### Use case options (single-select)
+Photorealistic scene (real-world photo style)
+Stylized illustration / sticker (graphic, flat, artistic)
+Style transfer (apply a style to existing content)
+Product mockup / commercial (professional asset)
+Icon / UI asset (clean, minimal, specific background)
+Infographic / text layout (text + visuals combined)
+3D render / isometric (three-dimensional or geometric)
+
+Note: Use case shapes the opening of the assembled prompt.
+Product mockup → "Professional product shot of..."
+Photorealistic → "A photo of..."
+3D render/isometric → "A perfectly isometric 3D scene of..."
+Stylized illustration → "A stylized illustration of..."
+Icon/UI asset → "An icon of..."
+Infographic → "An infographic showing..."
+Stored in imageAnswers.useCase.
+
+### Style options (multi-select)
+Photorealistic, Illustration, Oil painting, Film photography,
+3D render, Cinematic, Watercolour, Anime / manga, Isometric, Claymation
+
+### Lighting options (multi-select)
+Golden hour, Studio softbox, Natural overcast, Dramatic side light,
+Neon / artificial, Backlit silhouette, Blue hour / dusk, Candlelight
+
+### Aspect ratio options (single-select)
+Square 1:1, Portrait 9:16, Landscape 16:9, Widescreen 21:9,
+4:3 classic, 3:2 photo
+
+### Subject detail options (multi-select)
+Add age / appearance, Add expression, Add clothing,
+Add skin / texture detail, Keep as spoken
+
+### Composition options (multi-select)
+Close-up portrait, Medium shot, Wide establishing, Rule of thirds,
+Symmetrical, Aerial / overhead, Macro / extreme close
+
+### Camera angle options (multi-select)
+Eye level, Low angle, High angle, Dutch tilt, Bird's eye, Worm's eye
+
+### Colour palette options (multi-select)
+Warm & golden, Cool & blue, Muted & desaturated, Vivid & saturated,
+Monochrome, Pastel, High contrast
+
+### Background options (multi-select)
+Natural / contextual (let model decide)
+White background (clean, product-style)
+Transparent / no background (for assets)
+Solid colour (specify colour in prompt)
+Gradient (top to bottom or radial)
+Blurred / bokeh background
+Black background
+Custom / describe it
+
+Custom input: selecting "Custom / describe it" reveals an inline text
+field directly below the chip row. User types a free-form background
+description; pressing Enter or clicking elsewhere confirms it. The chip
+shows the first 20 characters of the typed text (truncated with "…"
+if longer). Leaving the field empty is treated as no value recorded.
+
+### Mood options (multi-select)
+Serene, Dramatic, Nostalgic, Mysterious, Energetic, Melancholic,
+Futuristic, Dreamlike
+
+### Resolution options (single-select)
+Standard quality (no resolution keywords added)
+High detail (adds 'highly detailed' to prompt)
+Ultra detailed / 4K (adds 'ultra detailed, 4K resolution' to prompt)
+Hyperreal / 8K (adds 'hyperrealistic, 8K, ultra sharp' to prompt)
+Professional print quality (adds 'print-ready, high resolution' to prompt)
+
+Note: These are prompt keywords, not API parameters. Nano Banana has no
+resolution API parameter — resolution is influenced by prompt language and
+model choice. If resolution was specified, weave keywords into prompt
+naturally.
+
+### Lens options (multi-select)
+35mm film, 50mm portrait, 85mm bokeh, Wide angle, Macro,
+Anamorphic, Fisheye
+
+### Text in image options (single-select)
+No text needed, Yes — title/headline, Yes — label/caption,
+Yes — logo/wordmark, Yes — signage
+
+### Detail level options (single-select)
+Minimal / clean, Moderate detail, Highly detailed, Ultra detailed / hyperreal
+
+### Avoid options (multi-select)
+No text, No people, No shadows, No background, Keep minimal, Custom (type it)
+
+Custom input: same pattern as Background custom — "Custom (type it)"
+reveals an inline text field below the chip row; Enter confirms;
+empty field = no value recorded.
+
+### Surface / material options (multi-select)
+Matte, Glossy, Metallic, Fabric / textile, Natural / organic, Glass
+
+### Post-processing options (multi-select)
+Film grain, Vintage / faded, HDR, Matte grade, Clean / neutral,
+Tilt-shift
+
+---
+
+## Reiterate from review screen
+Same behaviour as before — re-records without losing any params.
+After new transcription, Claude re-runs the pre-selection call
+and MERGES with existing user selections:
+  - User-manually-added chips are preserved
+  - AI pre-selected chips are refreshed from new imageDefaults
+  - Any chip the user had deselected stays deselected
+
+Merge logic (uses removedByUser state):
+  For each param in new imageDefaults:
+    - Filter new imageDefaults[param] to exclude any value in removedByUser[param]
+    - Replace AI chips in imageAnswers with the filtered new values
+    - User-added chips (values not in any imageDefaults) are preserved as-is
+  removedByUser is NOT reset on reiterate — persists across re-transcriptions
+    so that a value the user removed stays gone until Start over.
+
+---
+
+## Confirm & generate flow
+When user taps "Confirm & generate →":
+  1. Collect all selected params from imageAnswers state
+  2. Transition to THINKING state (label: "Assembling prompt...")
+  3. Call `window.electronAPI.generateRaw(systemPrompt, JSON.stringify(imageAnswers))`
+     using the prompt assembly system prompt below
+  4. Transition to IMAGE_BUILDER_DONE with assembled prompt
+
+---
 
 ## Prompt assembly logic
 Claude assembles the final natural language prompt by combining:
 1. The original transcript (what the user spoke)
-2. All selected parameters from tier 1, tier 2, and any answered tier 3
+2. All selected parameters from imageAnswers
 
 System prompt for Claude generation:
 "You are an expert image prompt engineer for Nano Banana (Google Gemini
 image generation) and ChatGPT image generation. The user has spoken a
-rough image idea and selected parameters through a guided interview.
+rough image idea and selected parameters through a guided review.
 
 Assemble these into a single, flowing natural language image generation
 prompt. Do NOT use section headers or structured formatting. Write it
@@ -293,6 +385,40 @@ Rules:
 7. Maximum 60 words — concise but complete
 8. Output ONLY the prompt — no preamble, no explanation"
 
+---
+
+## Final output screen (IMAGE_BUILDER_DONE — unchanged)
+
+### Compact bar layout
+Header: green dot + "Image prompt ready"
+Divider
+"Assembled prompt" label + prompt text in a code-style box
+  background rgba(255,255,255,0.03), border rgba(255,255,255,0.07)
+  border-radius 10px, padding 11px 13px
+  font-size 12.5px, rgba(255,255,255,0.65), line-height 1.7
+Param summary: flex-wrap row of amber answered chips
+Actions: Edit answers + Start over + Copy prompt (purple primary)
+
+### Expanded view layout
+Right panel two-column grid (1fr 1fr):
+  Left column:
+    "Assembled prompt" label + large prompt text box (font-size 14px)
+    "Optimised for" label + dynamic model chip based on imageAnswers.model:
+      If Nano Banana selected: show "Nano Banana (gemini-2.5-flash-image)"
+      If Nano Banana 2 selected: show "Nano Banana 2 (gemini-3.1-flash-image-preview)"
+      If Nano Banana Pro selected: show "Nano Banana Pro (gemini-3-pro-image-preview)"
+      Always show: ChatGPT image gen
+  Right column:
+    "Parameters applied" label
+    Each param as a row: purple label (min-width 80px) + value (13px)
+Action row: Start over + spacer + Copy prompt (purple primary)
+  Note: "Edit answers" is omitted from the expanded done screen intentionally —
+  in expanded view the user can tap "Start over" to re-enter the flow with
+  the full review screen. The compact view retains "Edit answers" because
+  the compact review screen is harder to navigate.
+
+---
+
 ## Mode identity
 Mode name: 'image'
 Mode label: 'Image'
@@ -301,129 +427,123 @@ Mode icon: image SVG (rectangle with mountain and circle)
 Mode dot colour: rgba(139,92,246,0.9) in idle bar
 Mode subtitle in idle: "Speak your image idea"
 
+---
+
 ## State machine for image builder
-The image builder introduces a new sub-state within the existing
-PROMPT_READY flow. When mode === 'image':
 
-RECORDING → THINKING (Whisper transcription) → IMAGE_BUILDER (questions)
-  → THINKING (Claude assembly) → IMAGE_BUILDER_DONE
+RECORDING → THINKING (Whisper transcription + Claude pre-selection)
+  → IMAGE_BUILDER (review screen)
+  → THINKING (Claude assembly)
+  → IMAGE_BUILDER_DONE
 
-IMAGE_BUILDER state has internal question index tracking:
-  currentTier: 1 | 2 | 3
-  currentQuestion: number
-  answers: object mapping parameter name to selected value
-    imageAnswers.model — selected Nano Banana model
-    imageAnswers.useCase — selected output type
+### App.jsx state additions
+Replace: currentTier, currentQuestion (no longer needed)
+Add:
+  imageDefaults: object — Claude's pre-selected values from STEP 2
+  imageAnswers: object — current user selections (starts as deep copy
+    of imageDefaults, modified by user interactions)
+  removedByUser: object — maps param name → Set<string> of values the
+    user explicitly removed by tapping a chip. handleChipRemove(param, value)
+    adds the value to removedByUser[param]. Reset to {} on Start over.
+    Used by merge logic on reiterate to avoid re-adding removed values.
+  showAdvanced: boolean — controls advanced params visibility (default: false)
+  activePickerParam: string | null — which param has open option picker
 
-IMAGE_BUILDER_DONE (final output, replaces PROMPT_READY display)
+### State heights
+STATE_HEIGHTS.IMAGE_BUILDER = 520 (scrollable)
+STATE_HEIGHTS.IMAGE_BUILDER_DONE = 380
 
-Expand toggle during IMAGE_BUILDER:
-  The expand toggle is active during IMAGE_BUILDER. currentTier,
-  currentQuestion, and imageAnswers are React useState / useRef in App.jsx.
-  They survive the compact→expanded transition because they are owned by
-  App.jsx, not by the ImageBuilderState component. ImageBuilderState
-  receives them as props in both compact and expanded render paths.
-  Expanding mid-interview does NOT reset the question flow.
+### ThinkingState labels
+Add `thinkingLabel` to App.jsx state: `const [thinkingLabel, setThinkingLabel] = useState('')`
 
-"Copy now →" (at any question) and Next after the final question both
-call Claude via the `generate-raw` IPC channel with the image assembly
-system prompt, and show a THINKING transition before IMAGE_BUILDER_DONE.
-No direct parameter concatenation — Claude always assembles the prompt.
+Set it immediately before calling `transition('THINKING', ...)`:
+  Phase 1 (pre-selection): `setThinkingLabel('Analysing your idea...')`
+  Phase 2 (assembly):      `setThinkingLabel('Assembling prompt...')`
 
-When user taps "Copy now →" or completes all questions, transition to the
-standard THINKING state. In ThinkingState (or App.jsx), check
-mode === 'image' to display "Assembling prompt..." instead of the default
-"Generating prompt..." label. No new loading component — reuse ThinkingState
-entirely. After Claude responds, transition to IMAGE_BUILDER_DONE.
+Pass as `<ThinkingState label={thinkingLabel} />`. ThinkingState renders
+`label` if non-empty; otherwise falls back to its existing default text.
+This means non-image modes are unaffected — no mode-check needed in ThinkingState.
+No new loading component — reuse ThinkingState entirely.
 
-All state names map to existing STATES where possible.
-Add STATES.IMAGE_BUILDER and STATES.IMAGE_BUILDER_DONE if needed.
-Use STATE_HEIGHTS.IMAGE_BUILDER_DONE = 380
+### Expand toggle
+The expand toggle is active during IMAGE_BUILDER. imageDefaults,
+imageAnswers, showAdvanced, and activePickerParam are React useState
+in App.jsx — they survive the compact→expanded transition because they
+are owned by App.jsx, not by ImageBuilderState. Expanding mid-review
+does NOT reset state. In expanded view, the right panel shows the same
+all-params review screen.
 
-History entry shape:
-  { prompt: assembledPrompt, transcript: originalTranscript, mode: 'image',
-    imageAnswers: { model, useCase, style, lighting, aspectRatio,
-    subjectDetail, composition, colourPalette, background, mood,
-    resolution, camera, text, detail, avoid, surface, postProcessing },
-    timestamp: Date.now() }
-  imageAnswers is saved to history so that "Parameters applied" can be
-  displayed when viewing the entry in the history panel.
+### History entry shape
+{ prompt: assembledPrompt, transcript: originalTranscript, mode: 'image',
+  imageAnswers: { model, useCase, style, lighting, aspectRatio,
+  subjectDetail, composition, cameraAngle, colourPalette, background,
+  mood, resolution, lens, textInImage, detailLevel, avoid,
+  surfaceMaterial, postProcessing },
+  timestamp: Date.now() }
+imageAnswers is saved to history so that "Parameters applied" can be
+displayed when viewing the entry in the history panel.
 
-Sub-state pattern note:
-  The IMAGE_BUILDER sub-state (currentTier, currentQuestion, imageAnswers)
-  is implemented as React useState / useRef alongside the main currentState
-  in App.jsx — NOT as nested states within the state machine enum. This is
-  a new pattern; log in DECISIONS.md with rationale: "image builder requires
-  internal step tracking within a single STATES.IMAGE_BUILDER state; using
-  a nested object in React state avoids 17 discrete state machine states."
+### Sub-state pattern note
+imageDefaults, imageAnswers, showAdvanced, activePickerParam are
+implemented as React useState alongside the main currentState in
+App.jsx — NOT as nested states within the state machine enum.
+Log in DECISIONS.md: "image builder all-params review approach uses
+parallel React state (imageDefaults, imageAnswers) alongside STATES enum
+rather than 17 discrete question states; smart defaults from Claude
+reduce user interaction to a single review screen."
 
-Dynamic height for IMAGE_BUILDER (call resizeWindow on every question transition):
-  Base heights: Tier 1 = 380px, Tier 2 = 420px (has summary box), Tier 3 = 400px
-  For each additional chip row beyond the first, add 28px
-    (chips wrap at ~3 per row given 520px bar width)
-  Maximum height: 520px — content scrolls beyond that
-  Calculation in App.jsx:
-    const answeredRows = Math.ceil(Object.keys(imageAnswers).length / 3)
-    const dynamicHeight = baseHeight + Math.max(0, answeredRows - 1) * 28
-    resizeWindow(Math.min(dynamicHeight, 520))
+### Error handling
+If the pre-selection Claude call fails → use empty imageDefaults (all
+empty arrays / empty strings / default model 'Nano Banana 2') and
+transition to IMAGE_BUILDER anyway — user can add all params manually.
+If the assembly Claude call fails → ERROR state with message:
+"Could not generate image prompt — try again"
 
-## Navigation rules
-- Copy now → calls Claude via generate-raw → THINKING → IMAGE_BUILDER_DONE
-  "Copy now →" is available from Q1 onward. If imageAnswers has no entries
-  (user triggers it immediately on Q1 before selecting anything), the model
-  and useCase lines are omitted from the system prompt and Claude assembles
-  a prompt from the transcript alone. "Copy now →" is never disabled.
-- Skip ↓ on advanced questions → moves to next question, no value recorded
-- Back → goes to previous question; Back from Tier 2 Q1 returns to Tier 1 Q6;
-  Back from Tier 3 Q1 returns to Tier 2 Q4 — cross-tier back navigation
-  is supported. The tier summary boxes update to reflect any changed answers.
-- Tier 1 Q1 (first question): no Back — compact footer shows "Copy now →" only;
-  expanded action row hides Back button entirely, spacer collapses
-- Start over → resets all answers, returns to transcript display, re-asks Q1
-- Edit answers → returns to tier 1 Q1 with existing answers pre-selected
-- ↵ / Next with selection → advances to next question
-- ↵ / Next without selection → treated as Skip for tier 3, blocked for
-  tier 1+2 (Next button remains disabled, opacity 0.3, until a chip is selected)
+---
 
 ## Acceptance criteria
 - [ ] Image mode appears in right-click mode menu
 - [ ] Idle bar shows purple dot + "Speak your image idea" subtitle
-- [ ] After recording, IMAGE_BUILDER state shows instead of PROMPT_READY
-- [ ] Tier 1 Q1: model selection with 3 options (Nano Banana, Nano Banana 2, Nano Banana Pro)
-- [ ] Tier 1 Q2: use case selection with 7 options
-- [ ] Tier 1: all 6 questions asked in order with correct options
-- [ ] Tier 2: all 4 questions asked after tier 1 completes
-- [ ] Tier 1 summary box appears when tier 2 begins
-- [ ] Tier 3: all 7 questions shown as optional with Skip chips
-- [ ] "Copy now →" at any question → THINKING → IMAGE_BUILDER_DONE
-- [ ] Back navigation works: each question returns to previous; tier 1 Q1 has no Back button
-- [ ] Next without selection on tier 1/2: button is disabled (opacity 0.3) until a chip is selected
-- [ ] Selected chip highlights in purple
-- [ ] Answered chips accumulate above divider as questions progress
-- [ ] Edit answers: previously selected chips are pre-highlighted when returning to each question
-- [ ] Progress bar denominator is 17; skipped questions count as completed
-- [ ] Options grid is 4 columns in expanded view
-- [ ] ThinkingState shows "Assembling prompt..." when mode === 'image' (not the default "Generating prompt...")
-- [ ] Assembled prompt contains no section headers — reads as natural language paragraph(s)
+- [ ] After recording, first THINKING state shows "Analysing your idea..."
+- [ ] IMAGE_BUILDER state shows all-params review screen with Claude pre-fills
+- [ ] Header shows sparkle icon + "Claude filled these for you" label
+- [ ] AI pre-selected chips have purple dot indicator
+- [ ] Tapping a chip removes it from the row (deselect = remove)
+- [ ] Tapping "+ add" opens inline option picker for that param
+- [ ] Selecting from picker adds chip as user-added (no dot, brighter style)
+- [ ] Tapping outside picker closes it without adding
+- [ ] Advanced params section collapsed by default; toggle shows/hides rows 11–17
+- [ ] "Confirm & generate →" → second THINKING state shows "Assembling prompt..."
+- [ ] "Copy now →" at review screen → THINKING → IMAGE_BUILDER_DONE
+- [ ] Reiterate re-records; new pre-selection merges with user selections
+  (user-added chips preserved, AI chips refreshed, removed chips stay removed)
+- [ ] If pre-selection call fails, review screen opens with empty defaults
+- [ ] Assembled prompt contains no section headers — reads as natural language
 - [ ] Assembled prompt opening phrase matches the selected use case
-- [ ] When Nano Banana Pro is selected, the system prompt sent to Claude includes "high fidelity" and "precise text rendering" instructions (verify via system prompt logged in development)
-- [ ] When a resolution level is selected, the system prompt sent to Claude includes the corresponding resolution keyword instructions (verify via system prompt)
+- [ ] When Nano Banana Pro is selected, system prompt includes "high fidelity"
+  and "precise text rendering" instructions
+- [ ] When a resolution level is selected, system prompt includes the
+  corresponding resolution keyword instructions
 - [ ] Final screen shows prompt preview + param summary
 - [ ] "Optimised for" chip shows the selected model with its API model ID
-- [ ] History entry is saved with mode: 'image' and imageAnswers object via utils/history.js
-- [ ] ARCHITECTURE.md state list updated (count: 13, includes IMAGE_BUILDER and IMAGE_BUILDER_DONE)
+- [ ] History entry is saved with mode: 'image' and imageAnswers object
+- [ ] ARCHITECTURE.md state list updated (count: 13, includes IMAGE_BUILDER
+  and IMAGE_BUILDER_DONE)
 - [ ] ARCHITECTURE.md Prompt modes table includes 'image' mode entry
-- [ ] DECISIONS.md includes entry for IMAGE_BUILDER sub-state pattern
-- [ ] If Claude assembly fails → ERROR state with message "Could not generate image prompt — try again"
+- [ ] DECISIONS.md includes entry for IMAGE_BUILDER smart-defaults pattern
+- [ ] If assembly fails → ERROR state with "Could not generate image prompt
+  — try again"
+
+---
 
 ## Files in scope
-- src/renderer/components/ImageBuilderState.jsx (new)
-- src/renderer/components/ImageBuilderDoneState.jsx (new)
-- src/renderer/App.jsx (new states, new mode handling)
+- src/renderer/components/ImageBuilderState.jsx (new — all-params review screen)
+- src/renderer/components/ImageBuilderDoneState.jsx (new — final output)
+- src/renderer/App.jsx (new states, two-phase THINKING, chip handlers)
 - src/renderer/hooks/useMode.js (add image mode)
-- src/renderer/utils/history.js (read only — call existing saveToHistory(), no structural changes)
+- src/renderer/utils/history.js (read only — call existing saveToHistory())
 - main.js (add image to MODE_CONFIG and show-mode-menu)
-- vibe/ARCHITECTURE.md (update state list count to 13 and Prompt modes table to add 'image')
+- vibe/ARCHITECTURE.md (update state list count to 13 and Prompt modes table)
 - vibe/CODEBASE.md, vibe/DECISIONS.md, vibe/TASKS.md
 
 ## Files out of scope

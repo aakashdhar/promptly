@@ -1359,3 +1359,16 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   - History entry shape: { prompt, transcript, mode: 'image', imageAnswers: {all 17 keys}, timestamp }
 - **Report**: vibe/spec-reviews/2026-04-27-image-builder.md
 - **Approved by**: agent-autonomous
+
+
+---
+
+### D-IMG-REDESIGN — IMAGE_BUILDER major redesign: smart defaults + all-params review screen
+- **Date**: 2026-04-27 · **Task**: IMG-003/005/006/007/012 · **Type**: scope-change
+- **What was planned**: Sequential question-by-question flow (tier 1 → tier 2 → tier 3, 17 discrete questions)
+- **What was done**: Replaced entirely with two-phase THINKING approach — Claude pre-selects all params from transcript in phase 1, user reviews/edits all params at once on a single screen, Claude assembles final prompt in phase 2
+- **Why**: All-at-once review is faster and less tedious; Claude's pre-fills remove most manual work; user only needs to correct/add rather than answer 17 sequential questions
+- **Key state changes**: currentTier + currentQuestion removed; imageDefaults + imageAnswers + removedByUser + showAdvanced + activePickerParam + thinkingLabel added; two-phase THINKING via generate-raw IPC
+- **Spec review findings fixed**: P0-001 subjectDetail row missing; P0-002 single-select picker behavior; P1-001 IPC channel naming; P1-002 thinkingLabel mechanism; P1-003 removedByUser state for merge; P1-004 IMG-009 scope correction
+- **Report**: vibe/spec-reviews/2026-04-27-image-builder-redesign.md
+- **Approved by**: human
