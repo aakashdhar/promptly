@@ -70,7 +70,7 @@ export default function ImageBuilderDoneState({
             )}
             {answeredEntries.map(([key, value]) => (
               <div key={key} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-                <span style={{ fontSize: '11px', color: 'rgba(167,139,250,0.7)', minWidth: '90px', textTransform: 'capitalize', flexShrink: 0 }}>{paramLabel(key)}</span>
+                <span style={{ fontSize: '11px', color: 'rgba(252,211,77,0.7)', minWidth: '90px', textTransform: 'capitalize', flexShrink: 0 }}>{paramLabel(key)}</span>
                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>{value}</span>
               </div>
             ))}
@@ -92,7 +92,7 @@ export default function ImageBuilderDoneState({
             onClick={handleCopy}
             style={{
               padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
-              background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(139,92,246,0.75)',
+              background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(245,158,11,0.75)',
               border: 'none', color: 'white', cursor: 'pointer', transition: 'background 200ms ease',
             }}
           >{copied ? 'Copied ✓' : 'Copy prompt'}</button>
@@ -155,7 +155,7 @@ export default function ImageBuilderDoneState({
           onClick={handleCopy}
           style={{
             padding: '6px 15px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
-            background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(139,92,246,0.75)',
+            background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(245,158,11,0.75)',
             border: 'none', color: 'white', cursor: 'pointer', transition: 'background 200ms ease',
           }}
         >{copied ? 'Copied ✓' : 'Copy prompt'}</button>

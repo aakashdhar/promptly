@@ -26,7 +26,7 @@ const QUESTIONS = [
 export { QUESTIONS }
 
 const TIER_BADGE_COLOR = {
-  1: { bg: 'rgba(139,92,246,0.15)', border: 'rgba(139,92,246,0.35)', text: 'rgba(167,139,250,0.9)', label: 'Essential' },
+  1: { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.35)', text: 'rgba(252,211,77,0.9)', label: 'Essential' },
   2: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', text: 'rgba(147,197,253,0.9)', label: 'Important' },
   3: { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.35)', text: 'rgba(252,211,77,0.9)', label: 'Advanced' },
 }
@@ -53,10 +53,10 @@ function AnsweredChip({ param, value }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '4px',
-      background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.15)',
+      background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.15)',
       borderRadius: '6px', padding: '3px 7px', fontSize: '10.5px', lineHeight: 1.3,
     }}>
-      <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(167,139,250,0.7)', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(252,211,77,0.7)', fontWeight: 600 }}>{label}</span>
       <span style={{ color: 'rgba(255,255,255,0.5)' }}>{displayValue}</span>
     </span>
   )
@@ -155,11 +155,11 @@ export default function ImageBuilderState({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="1" y="3" width="14" height="10" rx="2" stroke="rgba(167,139,250,0.7)" strokeWidth="1.3" fill="none"/>
-              <circle cx="5.5" cy="6.5" r="1.5" fill="rgba(167,139,250,0.7)"/>
-              <path d="M1 11l4-3 3 2.5 3-3.5 4 4" stroke="rgba(167,139,250,0.7)" strokeWidth="1.2" strokeLinejoin="round" fill="none"/>
+              <rect x="1" y="3" width="14" height="10" rx="2" stroke="rgba(252,211,77,0.7)" strokeWidth="1.3" fill="none"/>
+              <circle cx="5.5" cy="6.5" r="1.5" fill="rgba(252,211,77,0.7)"/>
+              <path d="M1 11l4-3 3 2.5 3-3.5 4 4" stroke="rgba(252,211,77,0.7)" strokeWidth="1.2" strokeLinejoin="round" fill="none"/>
             </svg>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(167,139,250,0.85)', letterSpacing: '0.04em' }}>Nano Banana builder</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(252,211,77,0.85)', letterSpacing: '0.04em' }}>Nano Banana builder</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <TierBadge tier={tier} questionNum={tierNum} total={tierQuestions.length} />
@@ -189,7 +189,7 @@ export default function ImageBuilderState({
           <div style={{ marginBottom: '6px' }}>
             <span style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(255,255,255,0.85)' }}>{q.label}</span>
             {q.special === 'text_capability' && (
-              <span style={{ marginLeft: '8px', background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: 'rgba(167,139,250,0.8)', fontSize: '9px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Unique capability</span>
+              <span style={{ marginLeft: '8px', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', color: 'rgba(252,211,77,0.8)', fontSize: '9px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Unique capability</span>
             )}
           </div>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: '0 0 14px 0' }}>{q.hint}</p>
@@ -206,9 +206,9 @@ export default function ImageBuilderState({
                   style={{
                     padding: '9px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: isSelected ? 500 : 400,
                     textAlign: 'center', cursor: 'pointer', lineHeight: 1.3,
-                    background: isSelected ? 'rgba(139,92,246,0.14)' : (skip ? 'transparent' : 'rgba(255,255,255,0.04)'),
-                    border: isSelected ? '1px solid rgba(139,92,246,0.38)' : (skip ? '1px dashed rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.1)'),
-                    color: isSelected ? 'rgba(167,139,250,0.95)' : (skip ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.55)'),
+                    background: isSelected ? 'rgba(245,158,11,0.14)' : (skip ? 'transparent' : 'rgba(255,255,255,0.04)'),
+                    border: isSelected ? '1px solid rgba(245,158,11,0.38)' : (skip ? '1px dashed rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.1)'),
+                    color: isSelected ? 'rgba(252,211,77,0.95)' : (skip ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.55)'),
                   }}
                 >
                   {opt}
@@ -228,7 +228,7 @@ export default function ImageBuilderState({
               placeholder="Describe it…"
               style={{
                 marginTop: '8px', width: '100%', background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(139,92,246,0.3)', borderRadius: '8px',
+                border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px',
                 padding: '8px 12px', fontSize: '12px', color: 'rgba(255,255,255,0.75)',
                 outline: 'none', boxSizing: 'border-box',
               }}
@@ -241,7 +241,7 @@ export default function ImageBuilderState({
               {completedQuestions} of {totalQuestions} · {progressPct}% complete
             </p>
             <div style={{ width: '100%', height: '2px', borderRadius: '1px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-              <div style={{ width: `${progressPct}%`, height: '100%', background: 'rgba(139,92,246,0.6)', borderRadius: '1px' }} />
+              <div style={{ width: `${progressPct}%`, height: '100%', background: 'rgba(245,158,11,0.6)', borderRadius: '1px' }} />
             </div>
           </div>
         </div>
@@ -260,7 +260,7 @@ export default function ImageBuilderState({
             onClick={() => canAdvance ? handleNextWithCustom() : null}
             style={{
               padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
-              background: canAdvance ? 'rgba(139,92,246,0.75)' : 'rgba(139,92,246,0.2)',
+              background: canAdvance ? 'rgba(245,158,11,0.75)' : 'rgba(245,158,11,0.2)',
               border: 'none', color: 'white', cursor: canAdvance ? 'pointer' : 'default',
               opacity: canAdvance ? 1 : 0.4, transition: 'opacity 120ms ease',
             }}
@@ -277,11 +277,11 @@ export default function ImageBuilderState({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-            <rect x="1" y="3" width="14" height="10" rx="2" stroke="rgba(167,139,250,0.7)" strokeWidth="1.3" fill="none"/>
-            <circle cx="5.5" cy="6.5" r="1.5" fill="rgba(167,139,250,0.7)"/>
-            <path d="M1 11l4-3 3 2.5 3-3.5 4 4" stroke="rgba(167,139,250,0.7)" strokeWidth="1.2" strokeLinejoin="round" fill="none"/>
+            <rect x="1" y="3" width="14" height="10" rx="2" stroke="rgba(252,211,77,0.7)" strokeWidth="1.3" fill="none"/>
+            <circle cx="5.5" cy="6.5" r="1.5" fill="rgba(252,211,77,0.7)"/>
+            <path d="M1 11l4-3 3 2.5 3-3.5 4 4" stroke="rgba(252,211,77,0.7)" strokeWidth="1.2" strokeLinejoin="round" fill="none"/>
           </svg>
-          <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'rgba(167,139,250,0.8)', letterSpacing: '0.04em' }}>Nano Banana builder</span>
+          <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'rgba(252,211,77,0.8)', letterSpacing: '0.04em' }}>Nano Banana builder</span>
         </div>
         <TierBadge tier={tier} questionNum={tierNum} total={tierQuestions.length} />
       </div>
@@ -318,7 +318,7 @@ export default function ImageBuilderState({
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           <span style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.82)' }}>{q.label}</span>
           {q.special === 'text_capability' && (
-            <span style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: 'rgba(167,139,250,0.8)', fontSize: '8px', fontWeight: 600, padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Unique capability</span>
+            <span style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', color: 'rgba(252,211,77,0.8)', fontSize: '8px', fontWeight: 600, padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Unique capability</span>
           )}
         </div>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', margin: 0 }}>{q.hint}</p>
@@ -338,9 +338,9 @@ export default function ImageBuilderState({
               style={{
                 padding: '5px 11px', borderRadius: '9px', fontSize: '11.5px', fontWeight: isSelected ? 500 : 400,
                 cursor: 'pointer', lineHeight: 1,
-                background: isSelected ? 'rgba(139,92,246,0.14)' : (hovered === opt && !skip ? 'rgba(255,255,255,0.07)' : (skip ? 'transparent' : 'rgba(255,255,255,0.04)')),
-                border: isSelected ? '1px solid rgba(139,92,246,0.38)' : (skip ? '1px dashed rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.1)'),
-                color: isSelected ? 'rgba(167,139,250,0.95)' : (skip ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.55)'),
+                background: isSelected ? 'rgba(245,158,11,0.14)' : (hovered === opt && !skip ? 'rgba(255,255,255,0.07)' : (skip ? 'transparent' : 'rgba(255,255,255,0.04)')),
+                border: isSelected ? '1px solid rgba(245,158,11,0.38)' : (skip ? '1px dashed rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.1)'),
+                color: isSelected ? 'rgba(252,211,77,0.95)' : (skip ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.55)'),
                 transition: 'background 100ms ease, border-color 100ms ease',
               }}
             >
@@ -361,7 +361,7 @@ export default function ImageBuilderState({
           placeholder="Describe it…"
           style={{
             width: '100%', background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(139,92,246,0.3)', borderRadius: '8px',
+            border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px',
             padding: '6px 10px', fontSize: '11.5px', color: 'rgba(255,255,255,0.75)',
             outline: 'none', boxSizing: 'border-box',
           }}
@@ -380,7 +380,7 @@ export default function ImageBuilderState({
           onClick={() => canAdvance ? handleNextWithCustom() : null}
           style={{
             padding: '6px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
-            background: canAdvance ? 'rgba(139,92,246,0.75)' : 'rgba(139,92,246,0.2)',
+            background: canAdvance ? 'rgba(245,158,11,0.75)' : 'rgba(245,158,11,0.2)',
             border: 'none', color: 'white', cursor: canAdvance ? 'pointer' : 'default',
             opacity: canAdvance ? 1 : 0.4, transition: 'opacity 120ms ease',
           }}
