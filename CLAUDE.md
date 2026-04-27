@@ -168,3 +168,50 @@ Never let CODEBASE.md drift more than one task behind.
 - Mutating `originalTranscript` after recording stops
 
 > Completed feature sections removed 2026-04-27 (P2-008 — full-project review). Full specs remain in their respective `vibe/features/` and `vibe/bugs/` folders.
+
+---
+### Active Feature: FEATURE-IMAGE-BUILDER
+> Folder: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27
+
+**Feature summary**: New "Image" mode — guided tier-based interview after speech → Claude assembles natural language image prompt for Nano Banana / ChatGPT image gen.
+**Files in scope**: src/renderer/components/ImageBuilderState.jsx (new), src/renderer/components/ImageBuilderDoneState.jsx (new), src/renderer/App.jsx, src/renderer/hooks/useMode.js, main.js, vibe/CODEBASE.md, vibe/DECISIONS.md, vibe/TASKS.md
+**Files out of scope**: All other components, all hooks except useMode, preload.js, index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file in src/renderer/components/. Functional React components only.
+- All state transitions via transition() in App.jsx — never mutate state directly.
+- Inline styles for dynamic/stateful values; Tailwind only for static layout classes.
+- No dangerouslySetInnerHTML with user/Claude content — use JSX text nodes.
+- IPC via window.electronAPI only — never ipcRenderer directly.
+- localStorage only via useMode() / useTone() / utils/history.js wrappers.
+- Purple accent: rgba(139,92,246) — not used by any existing mode.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md for new files ·
+        update TASKS.md after every task
+
+Ask first: adding new IPC channels · changing window dimensions · modifying existing mode flows
+Never: touch files not in scope · change behaviour of other modes · use innerHTML with generated text
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add src/renderer/components/ImageBuilderState.jsx src/renderer/components/ImageBuilderDoneState.jsx src/renderer/App.jsx src/renderer/hooks/useMode.js main.js
+   git commit -m "feat(image-builder): [TASK-ID] — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-27-image-builder/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [TASK-ID] done — image-builder"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---
