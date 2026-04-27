@@ -446,5 +446,19 @@
    [x] P2-007 · CODEBASE.md — open-settings row: stale "stub console.log" → accurate description
    [x] P2-008 · CLAUDE.md — 13 stale completed feature/bug sections removed (~530 lines); Never list preserved; archive note added
 
+## Full project review — 2026-04-28
+✅ COMPLETE — Score 9.0/10 — Grade A — 0 P0, 0 P1, 4 P2, 2 P3
+→ Full report: vibe/reviews/full-project-review-2026-04-28.md
+→ Previous score: 7.4/10 (+1.6 improvement)
+
+P2 fixes for this review (0/4):
+   [ ] P2R-001 · CODEBASE.md — add 7 missing files (useIteration.js, ExpandedTypingContent, ExpandedPromptReadyContent, HistoryDetailPanel, HistoryEntryItem, tests/utils.test.js, vitest.config.js); update stale line counts (ExpandedDetailPanel 496→346, HistoryPanel 663→362, App.jsx 548→466)
+   [ ] P2R-002 · ExpandedPromptReadyContent.jsx — remove dead `renderPromptSections` function (lines 4-38); file imports parseSections but defines an unused local copy
+   [ ] P2R-003 · HistoryDetailPanel.jsx + ExpandedDetailPanel.jsx — replace local `renderPromptSections` with `parseSections` from promptUtils.js to eliminate triplication
+   [ ] P2R-004 · package.json — upgrade vitest from 2.1.9 to 4.x (npm audit fix --force); verify tests still pass after upgrade
+
+## Phase gates
+Full project review gate: ✅ reviewed 2026-04-28 — 0 P0, 0 P1 — deploy not blocked — 4 P2 logged to backlog
+
 ## What's next
-Manual smoke test: expanded view → iterate → confirm blue stop button stops iteration correctly.
+Fix P2R-002 (dead code removal) first — it is a 5-line delete. Then P2R-003 (renderPromptSections deduplication). Then P2R-001 (CODEBASE.md update). Then P2R-004 (vitest upgrade).

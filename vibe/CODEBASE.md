@@ -1,14 +1,14 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-27
+> Last updated: 2026-04-28
 
 ---
 
 ## Current state
 
-**Phase:** All features complete — React migration mainlined, deploy gate unlocked (2026-04-24)
-**Files written:** 7 source files + eslint.config.js + 19 React renderer files
+**Phase:** All features complete — React migration mainlined, deploy gate unlocked (2026-04-24). SRP refactor + tests added 2026-04-28.
+**Files written:** 7 source files + eslint.config.js + 27 React renderer files + 1 test file + vitest.config.js
 
 ---
 
@@ -27,17 +27,20 @@
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
-| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording and keyboard concerns delegated to hooks. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleGenerateResult()` (unified polish/non-polish result handler — called by handleTypingSubmit, handleRegenerate, and via `handleGenerateResultRef` by useRecording), `handleRegenerate()`, `handleIterate()`, `stopIterating()`, `dismissIterating()`, `openHistory()` / `closeHistory()` (call setWindowSize + setWindowButtonsVisible + updateMenuBarState + animateToState directly — bypass transition() to allow non-standard window width). Refs: `transitionRef`, `handleGenerateResultRef`, `iterationBase`, `isIterated`, `iterRecorderRef`, `iterChunksRef`, `iterIsProcessingRef`. Theme: getTheme + onThemeChanged useEffect with cleanup. |
+| `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording and keyboard concerns delegated to hooks. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. 466 lines. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleGenerateResult()` (unified polish/non-polish result handler — called by handleTypingSubmit, handleRegenerate, and via `handleGenerateResultRef` by useRecording), `handleRegenerate()`, `openHistory()` / `closeHistory()`. Iteration flow (handleIterate, stopIterating, dismissIterating, iterRecorderRef, iterChunksRef, iterIsProcessingRef, iterationBase) extracted to `useIteration.js`. Refs: `transitionRef`, `handleGenerateResultRef`, `isIterated`, `generatedPromptRef`, `modeRef`. Theme: getTheme + onThemeChanged useEffect with cleanup. |
 | `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useTone.js` | Polish tone localStorage wrapper — `promptly_polish_tone` key, default `'formal'` | `getPolishTone()`, `setPolishTone()`, `usePolishTone()` → `{ tone, setTone }` |
 | `src/renderer/hooks/usePolishMode.js` | Polish flow hook — owns polishResult, copied, tone state, polishToneRef, handlePolishToneChange | `parsePolishOutput(raw)` (named export), `usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })` → `{ polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
+| `src/renderer/hooks/useIteration.js` | Iteration recording/transcription/generation flow — extracted from App.jsx. Owns iterRecorderRef, iterChunksRef, iterIsProcessingRef, iterationBase. Uses generatedPromptRef + modeRef (no stale closures). 118 lines. | `useIteration({ STATES, transitionRef, resizeWindow, isExpandedRef, generatedPromptRef, modeRef, isIterated, originalTranscript, setThinkTranscript, setGeneratedPrompt, startTimer, stopTimer })` → `{ iterationBase, handleIterate, stopIterating, dismissIterating }` |
 | `src/renderer/hooks/useRecording.js` | Recording state + callbacks hook — owns mediaRecorderRef, audioChunksRef, isProcessingRef, isPausedRef, recTimerRef, recSecs. Params: `{ STATES, transitionRef, modeRef, polishToneRef, setThinkTranscript, onGenerateResult, isIterated, originalTranscript }` — `onGenerateResult` is a ref to App.jsx's `handleGenerateResult(genResult, transcript)` callback (replaces old `setGeneratedPrompt` + `setPolishResult` params) | Returns: `{ recSecs, startRecording, stopRecording, handleDismiss, pauseRecording, resumeRecording, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, startTimer, stopTimer }` |
 | `src/renderer/hooks/useKeyboardShortcuts.js` | IPC shortcut listeners + keydown handler hook. Params: `{ STATES, stateRef, prevStateRef, generatedPromptRef, modeRef, transitionRef, setMode, setPolishToneValue, startRecordingRef, stopRecordingRef, pauseRecordingRef, resumeRecordingRef, openHistory, closeHistory, openSettings, closeSettings }` | Returns nothing (side-effects only) |
 | `src/renderer/components/ExpandedView.jsx` | Thin orchestrator for expanded layout mode — owns `selected` + `isViewingHistory` state; renders ExpandedTransportBar + ExpandedHistoryList + ExpandedDetailPanel. Rendered by App.jsx when `isExpanded=true`. 100 lines. | props: `currentState`, `mode`, `modeLabel`, `duration`, `generatedPrompt`, `thinkTranscript`, `onStart`, `onCollapse`, `onPause`, `onStop`, `onStopIterate`, `onRegenerate`, `onReset`, `onIterate`, `isIterated`, `setGeneratedPrompt`, `isPolishMode`, `polishResult`, `polishTone`, `onPolishToneChange`, `onOpenSettings`, `onReuse`, `onTypingSubmit`, `onSwitchToVoice`, `onTypePrompt` |
 | `src/renderer/components/ExpandedTransportBar.jsx` | Top bar of expanded view — traffic light drag spacer, transport row (pause+timer, mic/stop circle, mode pill+settings), waveform zone (60% width). Handles RECORDING (red stop), ITERATING (blue stop → onStopIterate, MorphCanvas wave, blue pulse rings), THINKING (MorphCanvas), TYPING (dimmed controls). ⌨ keyboard icon button calls `onTypePrompt` to switch to TYPING state. | props: `currentState`, `duration`, `mode`, `modeLabel`, `onStart`, `onStop`, `onStopIterate`, `onPause`, `onCollapse`, `onOpenSettings`, `onTypePrompt` |
 | `src/renderer/components/ExpandedHistoryList.jsx` | Left panel of expanded view — session history list with search, All/Saved tabs, filter chips, stats bar, entry rows, count footer, clear all. Owns its own history/filter state; syncs bookmark/rating display from `selected` prop. 359 lines. | props: `currentState`, `selected`, `onSelect(entry\|null)` |
-| `src/renderer/components/ExpandedDetailPanel.jsx` | Right panel of expanded view — history entry detail when `isViewingHistory`; per-state content (IDLE, RECORDING, PAUSED, ITERATING, TYPING, THINKING, PROMPT_READY) otherwise. Imports `parseSections` from `utils/promptUtils.js`. 496 lines. | props: `selected`, `isViewingHistory`, `currentState`, `generatedPrompt`, `thinkTranscript`, `mode`, `onRegenerate`, `onReset`, `onIterate`, `isIterated`, `setGeneratedPrompt`, `isPolishMode`, `polishResult`, `polishTone`, `onPolishToneChange`, `onReuse`, `onEntryChange` |
+| `src/renderer/components/ExpandedDetailPanel.jsx` | Right panel of expanded view — history entry detail when `isViewingHistory`; per-state content (IDLE, RECORDING, PAUSED, ITERATING, TYPING, THINKING, PROMPT_READY) otherwise. TYPING delegated to ExpandedTypingContent; PROMPT_READY delegated to ExpandedPromptReadyContent; history prompt rendered via PromptSections. 346 lines. | props: `selected`, `isViewingHistory`, `currentState`, `generatedPrompt`, `thinkTranscript`, `mode`, `onRegenerate`, `onReset`, `onIterate`, `isIterated`, `setGeneratedPrompt`, `isPolishMode`, `polishResult`, `polishTone`, `onPolishToneChange`, `onReuse`, `onEntryChange`, `onTypingSubmit`, `onSwitchToVoice` |
+| `src/renderer/components/ExpandedTypingContent.jsx` | Self-contained TYPING state for expanded view — owns typingText state and typingTextareaRef, auto-focuses on mount. Contains MODE_DESCRIPTIONS constant. 153 lines. | props: `{ mode, onTypingSubmit, onSwitchToVoice }` |
+| `src/renderer/components/ExpandedPromptReadyContent.jsx` | Self-contained PROMPT_READY state for expanded view — owns isEditing, editHovered, isCopied, promptRef, preEditValue. Resets edit/copy state when generatedPrompt changes. 215 lines. | props: `{ generatedPrompt, setGeneratedPrompt, isPolishMode, polishResult, mode, onIterate, onRegenerate, onReset, isIterated }` |
 | `src/renderer/components/IdleState.jsx` | IDLE panel — pulse ring, mode pill, click-to-record | — |
 | `src/renderer/components/RecordingState.jsx` | RECORDING panel — dismiss, waveform, timer, pause (amber ⏸), stop | props: onStop, onDismiss, onPause, duration |
 | `src/renderer/components/PausedState.jsx` | PAUSED panel — dismiss, flat amber line, amber timer, resume (▶), stop, status text | props: duration, onResume, onStop, onDismiss |
@@ -52,8 +55,13 @@
 | `src/renderer/components/ShortcutsPanel.jsx` | SHORTCUTS panel — 8 shortcut rows with key chips, Done button (returns to prevState). px-[28px] padding, WebkitAppRegion: no-drag | — |
 | `src/renderer/components/SettingsPanel.jsx` | SETTINGS panel — path configuration UI for Claude + Whisper binary paths; browse (file picker), recheck (re-resolve), save; 128 lines, all styles inline | props: `onClose` |
 | `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime`, `bookmarkHistoryItem`, `rateHistoryItem` |
-| `src/renderer/utils/promptUtils.js` | Shared prompt-rendering utilities — extracted from ExpandedView.jsx refactor | `parseSections(text)` → `[{label, body}]`; `getModeTagStyle(mode)` → `{background, color}` |
-| `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px scrollable list with search + per-entry delete + tab switcher (All/Saved) + filter chips (All/👍/👎/Unrated) + stats bar, right flex:1 prompt detail with Save/Saved bookmark toggle + rating section (👍/👎 + tag chips) + copy + reuse | props: `onClose`, `onReuse` |
+| `src/renderer/utils/promptUtils.js` | Shared prompt-rendering utilities — extracted from ExpandedView.jsx refactor | `parseSections(text)` → `[{label, body}]` (regex supports `/` in labels); `getModeTagStyle(mode)` → `{background, color}` |
+| `vitest.config.js` | Vitest test runner config — environment: node, include: tests/**/*.test.js | — |
+| `tests/utils.test.js` | Unit tests for pure utility functions — 18 tests across 4 modules | `parseSections` (5 tests), `getModeTagStyle` (4), `formatTime` (4), `parsePolishOutput` (5) |
+| `src/renderer/components/HistoryPanel.jsx` | HISTORY state panel — split-panel history UI; full inline styles (no Tailwind); left 240px list with search + HistoryEntryItem rows; right detail delegated to HistoryDetailPanel. 362 lines. | props: `onClose`, `onReuse` |
+| `src/renderer/components/HistoryDetailPanel.jsx` | Right panel of HistoryPanel — prompt detail with bookmark toggle, PromptSections rendering, polishChanges notes, rating section (👍/👎 + tag chips), Copy + Reuse buttons. Manages own `copied` state. 203 lines. | props: `{ selected, onCopy, onReuse, onBookmark, onRate, onTag }` |
+| `src/renderer/components/HistoryEntryItem.jsx` | Single row in HistoryPanel entry list — handles hover state, selection, delete click (stopPropagation internal). 111 lines. | props: `{ entry, isSelected, isHovered, onSelect, onHoverEnter, onHoverLeave, onDelete }` |
+| `src/renderer/components/PromptSections.jsx` | Shared prompt-rendering component — parses prompt text into labeled sections (UPPERCASE: headers) with configurable label colour, text size, text colour. Replaces duplicated renderPromptSections in HistoryDetailPanel and ExpandedDetailPanel. | `export default PromptSections({ prompt, labelColor, textSize, textColor })` |
 | ~~`src/renderer/styles/tokens.css`~~ | ~~CSS custom properties (:root) + body.light overrides~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/bar.css`~~ | ~~.bar glass container + ::before tint + ::after accent~~ | deleted — FEATURE-005 |
 | ~~`src/renderer/styles/states.css`~~ | ~~All per-state layout CSS + @keyframes~~ | deleted — FEATURE-005 |
@@ -146,11 +154,8 @@
 | `isPausedRef` | useRef boolean | pauseRecording/resumeRecording/handleDismiss | guard |
 | `recTimerRef` | useRef interval\|null | startTimer/pauseTimer/stopTimer | cleared on pause/stop/dismiss |
 | `recSecs` | useState number | startTimer interval | duration formatting for RecordingState + PausedState |
-| `iterationBase` | useRef {transcript,prompt,mode}\|null | handleIterate — set when user taps ↻ Iterate | stopIterating — reads .prompt and .mode for system prompt |
-| `isIterated` | useRef boolean | stopIterating (true on success); stopRecording onstop (reset false) | PromptReadyState isIterated prop — controls badge |
-| `iterRecorderRef` | useRef MediaRecorder\|null | handleIterate | stopIterating, dismissIterating |
-| `iterChunksRef` | useRef Blob[] | handleIterate ondataavailable | stopIterating onstop |
-| `iterIsProcessingRef` | useRef boolean | stopIterating start/end guard | stopIterating early-exit guard |
+| `iterationBase` | useRef (owned by useIteration.js) | handleIterate — set when user taps ↻ Iterate | stopIterating |
+| `isIterated` | useRef boolean (in App.jsx — shared with useIteration + useRecording) | stopIterating (true on success); stopRecording onstop (reset false) | PromptReadyState isIterated prop — controls badge |
 | `polishResult` | useState (in usePolishMode) `{polished,changes}|null` | stopRecording/handleTypingSubmit/handleRegenerate/handlePolishToneChange | PolishReadyState |
 | `polishTone` | hook (usePolishMode→useTone) string | usePolishMode() | IdleState, PolishReadyState, generate calls |
 | `polishToneRef` | useRef (in usePolishMode) string | mirrors polishTone — stale-closure-safe for generate calls | stopRecording, handleTypingSubmit, handleRegenerate |
@@ -285,5 +290,5 @@
 ## Known issues / watch items
 
 - `eslint main.js preload.js` — 0 errors, 0 warnings (the intentional `console.error` in uncaughtException has `// eslint-disable-next-line no-console`)
-- `npm audit` — 0 vulnerabilities. 2 low-severity devDep vulns in `@eslint/plugin-kit` (BL-024) — devDep only, not in .dmg, awaiting manual decision on `npm audit fix --force`
+- `npm audit` — 1 moderate devDep vuln in `vitest@2.1.9` (BL-074) — devDep only, not in .dmg; fix: `npm install --save-dev vitest@latest` (upgrades to v4.x)
 - `src/renderer/index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually; see D-001)

@@ -283,21 +283,41 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-061 | src/renderer/hooks/useKeyboardShortcuts.js | 21-55 | IPC listener accumulation on HMR — 7 listeners registered, no cleanup returned. Discards unsubscribe returns from all `on*` calls. Add cleanup: capture unsubs array + return `() => unsubs.forEach(fn => fn?.())`. Production unaffected; dev-only issue. | Open |
-| BL-062 | vibe/ARCHITECTURE.md | 96-99 | ExpandedView dimensions stale — still says `setWindowSize(760, 580)` + `STATE_HEIGHTS.EXPANDED = 580`. Actual since BUG-TOGGLE-005: `setWindowSize(1100, 860)`, `STATE_HEIGHTS.EXPANDED = 860`. | Open |
-| BL-063 | vibe/ARCHITECTURE.md | — | Window lifecycle section absent — BUG-018-004 deliverable not completed. Missing: `isQuitting`, `win.on('close')` hide-intercept, `requestSingleInstanceLock()`, `before-quit`, `win.on('blur')` auto-hide. | Open |
-| BL-064 | vibe/CODEBASE.md | 37 | ExpandedView.jsx props list missing `onTypingSubmit`, `onSwitchToVoice`, `onTypePrompt` (3 props added post-BUG-TOGGLE); line count stale at 92 (actual 100). | Open |
-| BL-065 | vibe/CODEBASE.md | IPC table | `splash-check-whisper` and `check-mic-status` absent from CODEBASE.md IPC table (both present in ARCHITECTURE.md and main.js). | Open |
-| BL-066 | vibe/CODEBASE.md | 96 | `open-settings` row notes "stub console.log in App.jsx" — stub was removed; App.jsx calls openSettings() via useKeyboardShortcuts.js:52-54. | Open |
-| BL-067 | CLAUDE.md | 163-685 | ~17 completed "Active Feature/Bug" sections (~520 lines) still present. All marked COMPLETE or fully ticked. Add context noise + superseded constraints. Should be trimmed per CP-01. | Open |
+| ~~BL-061~~ | src/renderer/hooks/useKeyboardShortcuts.js | 21-55 | IPC listener accumulation on HMR — cleanup via unsubs array | ✅ resolved — 2026-04-27 P2 fixes |
+| ~~BL-062~~ | vibe/ARCHITECTURE.md | 96-99 | ExpandedView dimensions stale — 760×580 → 1100×860 | ✅ resolved — 2026-04-27 P2 fixes |
+| ~~BL-063~~ | vibe/ARCHITECTURE.md | — | Window lifecycle section absent | ✅ resolved — 2026-04-27 P2 fixes |
+| ~~BL-064~~ | vibe/CODEBASE.md | 37 | ExpandedView props + line count stale | ✅ resolved — 2026-04-27 P2 fixes |
+| ~~BL-065~~ | vibe/CODEBASE.md | IPC table | splash-check-whisper + check-mic-status absent | ✅ resolved — 2026-04-27 P2 fixes |
+| ~~BL-066~~ | vibe/CODEBASE.md | 96 | open-settings row stale note | ✅ resolved — 2026-04-27 P2 fixes |
+| ~~BL-067~~ | CLAUDE.md | 163-685 | ~520 lines of stale feature/bug sections | ✅ resolved — 2026-04-27 P2 fixes |
 
 ### Outstanding P3
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-068 | src/renderer/App.jsx | 1-548 | 548 lines — approaching P1 threshold (500). Growth driven by isExpanded/handleExpand/handleCollapse + ExpandedView wiring. Monitor; extract useExpandedView hook if next feature pushes past 500. | Open / monitor |
-| BL-069 | src/renderer/components/ExpandedDetailPanel.jsx | 1-645 | 645 lines — above P1 threshold. State-content boundary necessity. No blocking action. | Open |
-| BL-070 | — | — | No automated test suite. Pure functions (`parsePolishOutput`, `parseSections`, `formatTime`, `getModeTagStyle`) are prime candidates for Vitest. Recommended for v1.5. | Open |
+| ~~BL-068~~ | src/renderer/App.jsx | 1-548 | 548 lines — approaching P1 threshold | ✅ resolved — App.jsx now 466 lines (useIteration extraction) |
+| ~~BL-069~~ | src/renderer/components/ExpandedDetailPanel.jsx | 1-645 | 645 lines — above P1 threshold | ✅ resolved — ExpandedDetailPanel now 346 lines (ExpandedTypingContent + ExpandedPromptReadyContent extracted) |
+| ~~BL-070~~ | — | — | No automated test suite | ✅ resolved — Vitest added, 18 tests in tests/utils.test.js |
+
+---
+
+## From Full Project Review (2026-04-28)
+
+### Outstanding P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-071 | vibe/CODEBASE.md | file map | 5 new files absent (useIteration.js, ExpandedTypingContent.jsx, ExpandedPromptReadyContent.jsx, HistoryDetailPanel.jsx, HistoryEntryItem.jsx); tests/utils.test.js + vitest.config.js absent; ExpandedDetailPanel 496→346, HistoryPanel 663→362, App.jsx 548→466 stale. | Open |
+| BL-072 | src/renderer/components/ExpandedPromptReadyContent.jsx | 4-38 | Dead `renderPromptSections` function — file defines it but never calls it; uses `parseSections` import instead (line 105). | Open |
+| BL-073 | src/renderer/components/HistoryDetailPanel.jsx + ExpandedDetailPanel.jsx | 6-40, 9-43 | `renderPromptSections` triplicated across 3 files (HistoryDetailPanel, ExpandedDetailPanel, ExpandedPromptReadyContent dead). Replace with `parseSections` from promptUtils.js. Regex also differs: HistoryDetailPanel uses escaped `\/`, others use `/`. | Open |
+| BL-074 | package.json | 35 | vitest@2.1.9 introduces 5 moderate devDep audit vulns (esbuild CORS bypass, Vite path traversal). Upgrade: `npm audit fix --force` → vitest@4.1.5. Verify tests pass after upgrade. | Open |
+
+### Outstanding P3
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-075 | src/renderer/hooks/useIteration.js | 105 | `dismissIterating` is a plain function — siblings `handleIterate` and `stopIterating` are both `useCallback`. Cosmetic inconsistency only; no correctness issue. | Open / monitor |
+| BL-076 | tests/utils.test.js | — | `getModeTagStyle` missing test for `design` mode (currently falls through to blue default). Minor coverage gap. | Open / monitor |
 
 ---
 
