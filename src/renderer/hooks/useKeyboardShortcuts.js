@@ -21,37 +21,41 @@ export default function useKeyboardShortcuts({
   useEffect(() => {
     if (!window.electronAPI) return
 
-    window.electronAPI.onShortcutTriggered(() => {
-      if (stateRef.current === STATES.IDLE) startRecordingRef.current()
-      else if (stateRef.current === STATES.RECORDING) stopRecordingRef.current()
-      else if (stateRef.current === STATES.SHORTCUTS) startRecordingRef.current()
-    })
+    const unsubs = [
+      window.electronAPI.onShortcutTriggered(() => {
+        if (stateRef.current === STATES.IDLE) startRecordingRef.current()
+        else if (stateRef.current === STATES.RECORDING) stopRecordingRef.current()
+        else if (stateRef.current === STATES.SHORTCUTS) startRecordingRef.current()
+      }),
 
-    window.electronAPI.onModeSelected((key) => {
-      setMode(key)
-    })
+      window.electronAPI.onModeSelected((key) => {
+        setMode(key)
+      }),
 
-    window.electronAPI.onToneSelected((t) => {
-      setPolishToneValue(t)
-    })
+      window.electronAPI.onToneSelected((t) => {
+        setPolishToneValue(t)
+      }),
 
-    window.electronAPI.onShowShortcuts(() => {
-      prevStateRef.current = stateRef.current
-      transitionRef.current(STATES.SHORTCUTS)
-    })
+      window.electronAPI.onShowShortcuts(() => {
+        prevStateRef.current = stateRef.current
+        transitionRef.current(STATES.SHORTCUTS)
+      }),
 
-    window.electronAPI.onShowHistory(() => {
-      openHistory()
-    })
+      window.electronAPI.onShowHistory(() => {
+        openHistory()
+      }),
 
-    window.electronAPI.onShortcutPause(() => {
-      if (stateRef.current === STATES.RECORDING) pauseRecordingRef.current()
-      else if (stateRef.current === STATES.PAUSED) resumeRecordingRef.current()
-    })
+      window.electronAPI.onShortcutPause(() => {
+        if (stateRef.current === STATES.RECORDING) pauseRecordingRef.current()
+        else if (stateRef.current === STATES.PAUSED) resumeRecordingRef.current()
+      }),
 
-    window.electronAPI.onOpenSettings(() => {
-      openSettings()
-    })
+      window.electronAPI.onOpenSettings(() => {
+        openSettings()
+      }),
+    ]
+
+    return () => unsubs.forEach(fn => fn?.())
   }, [])
 
   useEffect(() => {
