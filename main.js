@@ -5,7 +5,7 @@ process.on('uncaughtException', (err) => {
   console.error('[Promptly] Uncaught exception:', err.message, err.stack);
 });
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session, screen } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -183,6 +183,7 @@ let menuBarTray = null;
 let pulseInterval = null;
 let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
+let preExpandBounds = null;
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -587,6 +588,10 @@ function createWindow() {
       updateTrayMenu();
     }
   });
+  win.on('blur', () => {
+    // Hide when focus moves to another app, unless mic is actively capturing
+    if (currentIconState !== 'recording') win.hide();
+  });
   win.on('hide', () => {
     clearInterval(pulseInterval);
     pulseInterval = null;
@@ -821,7 +826,24 @@ app.whenReady().then(async () => {
       win.setResizable(true);
       win.setMinimumSize(width, 50);
       win.setMaximumSize(width, 2000);
-      win.setSize(width, height, true);
+      if (width >= 1000) {
+        // Expanding to full view — store pre-expand position, centre on current display
+        preExpandBounds = win.getBounds();
+        const display = screen.getDisplayNearestPoint({ x: preExpandBounds.x, y: preExpandBounds.y });
+        const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
+        const newX = Math.round(dx + (dw - width) / 2);
+        // Clamp Y: shift up only as much as needed to clear the bottom edge
+        const maxY = dy + dh - height;
+        const newY = Math.max(Math.min(preExpandBounds.y, maxY), dy);
+        win.setBounds({ x: newX, y: newY, width, height }, false);
+      } else if (width <= 520 && preExpandBounds) {
+        // Collapsing from expanded view — restore original x/y
+        const { x, y } = preExpandBounds;
+        win.setBounds({ x, y, width, height }, false);
+        preExpandBounds = null;
+      } else {
+        win.setSize(width, height, true);
+      }
       win.setResizable(false);
     }
     return { ok: true };
