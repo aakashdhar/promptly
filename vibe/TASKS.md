@@ -423,5 +423,10 @@
 → 3 P3 findings logged to backlog (boundary-layer ISP, renderPromptSections duplication, HistoryPanel.jsx carry)
 → Full report: vibe/reviews/expanded-view-postfix-review-2026-04-27.md
 
+✅ **BUG-ITER-STOP — Iterating stop button missing in expanded view** (FIXED 2026-04-27)
+   Root cause: ExpandedTransportBar had no ITERATING check — centre button called onStart instead of stopIterating; no blue waveform shown.
+   Fix: Added onStopIterate prop chain (App → ExpandedView → ExpandedTransportBar). Transport bar now shows blue stop button + blue pulse rings + MorphCanvas waveform + iterGlow animation during ITERATING. Lint + build clean.
+   → Specs: vibe/bugs/2026-04-27-bug-iterating-stop/ | DECISIONS.md D-BUG-ITER-STOP
+
 ## What's next
-Branch feat/toggle-expand-collapse is clear for merge to main. All P0/P1/P2 verified resolved.
+Manual smoke test: expanded view → iterate → confirm blue stop button stops iteration correctly.

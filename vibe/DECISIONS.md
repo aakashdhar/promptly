@@ -1270,3 +1270,35 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Files changed**: `src/renderer/App.jsx` (1 line — `onStart` prop for ExpandedView only)
 - **Fix**: Guard changed to `s === STATES.IDLE || s === STATES.PROMPT_READY` — allows starting a new recording from either idle or prompt-ready state. IdleState's `onStart` (line 439) left unchanged — it is only ever rendered in IDLE state anyway.
 - **Approved by**: human
+
+---
+
+## D-TYPING-EXPANDED — Typing state added to expanded view right panel
+
+- **Date**: 2026-04-27 · **Type**: feature (visual — no logic changes)
+- **Decision**: Implement full TYPING state UI in ExpandedDetailPanel.jsx right panel. Local `typingText` state owned by ExpandedDetailPanel — not lifted to App.jsx — since it is pure UI state. Two new props threaded from App.jsx → ExpandedView → ExpandedDetailPanel: `onTypingSubmit` (= existing `handleTypingSubmit`) and `onSwitchToVoice` (= `() => transition(STATES.IDLE)`). Transport bar dims mic (0.5), flanking buttons (0.35), and timer (0.2) via `isTyping = currentState === 'TYPING'` opacity — no new props, uses existing `currentState` prop.
+- **Files changed**: `ExpandedDetailPanel.jsx`, `ExpandedTransportBar.jsx`, `ExpandedView.jsx`, `App.jsx`
+- **Approved by**: human
+
+---
+
+### D-BUG-ITER-STOP — Iterating stop button missing in expanded view
+- **Date**: 2026-04-27 · **Type**: drift (bug)
+- **Root cause**: `ExpandedTransportBar.jsx` had no `isIterating` check — `isRecording` was `false` during ITERATING, so centre button called `onStart` (new recording) instead of `stopIterating`. `ExpandedView` never forwarded `stopIterating` from App.jsx.
+- **Files changed**: `App.jsx` (add `onStopIterate` prop), `ExpandedView.jsx` (forward `onStopIterate`), `ExpandedTransportBar.jsx` (add `isIterating` + blue stop UI + MorphCanvas waveform)
+- **Fix**: Added `onStopIterate` prop chain (App → ExpandedView → ExpandedTransportBar). In transport bar: `isIterating = currentState === 'ITERATING'`; centre button shows blue stop square + calls `onStopIterate`; blue pulse rings + `iterGlow` animation; MorphCanvas renders in waveform zone; pause/timer dimmed.
+- **Approved by**: human
+
+---
+
+### D-BUG-TOGGLE-007 — Vertical clamping on expand: bottom edge clipped by screen boundary
+- **Date**: 2026-04-27 · **Task**: BUG-TOGGLE-007 · **Type**: drift (positioning bug)
+- **Root cause**: BUG-TOGGLE-006 centred the window horizontally but preserved `preExpandBounds.y` unchanged. If the compact bar was near the bottom of the screen, the 860px expanded window overflowed below the work area bottom edge.
+- **Files changed**: `main.js` (set-window-size IPC handler, expand branch only)
+- **Fix**: In the expand branch of `set-window-size`, compute `maxY = workArea.y + workArea.height - height` (lowest y where window fits fully). Apply `newY = Math.max(Math.min(currentY, maxY), workArea.y)` — shifts up only as much as needed; also clamps top edge to work area top. Collapse still restores `preExpandBounds.y` exactly (clamping is expand-only).
+- **Logic**:
+  1. `maxY` = bottom of workArea minus expanded window height
+  2. `Math.min(currentY, maxY)` — keep current y if it fits, otherwise shift up just enough
+  3. `Math.max(..., dy)` — prevent over-correction from pushing top edge off screen
+- **Constraints**: Horizontal centering from BUG-TOGGLE-006 unchanged. No renderer changes. `animate: false` preserved. `preExpandBounds` store/restore unchanged.
+- **Approved by**: human
