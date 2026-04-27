@@ -313,13 +313,19 @@ export default function ExpandedDetailPanel({
       {currentState === 'IMAGE_BUILDER' && !isViewingHistory && imageBuilderProps && (
         <ImageBuilderState
           transcript={imageBuilderProps.transcript}
-          questionIndex={imageBuilderProps.questionIndex}
-          answers={imageBuilderProps.answers}
-          onSelect={imageBuilderProps.onSelect}
-          onNext={imageBuilderProps.onNext}
-          onBack={imageBuilderProps.onBack}
-          onSkip={imageBuilderProps.onSkip}
+          imageDefaults={imageBuilderProps.imageDefaults}
+          imageAnswers={imageBuilderProps.imageAnswers}
+          showAdvanced={imageBuilderProps.showAdvanced}
+          activePickerParam={imageBuilderProps.activePickerParam}
+          onChipRemove={imageBuilderProps.onChipRemove}
+          onChipAdd={imageBuilderProps.onChipAdd}
+          onParamChange={imageBuilderProps.onParamChange}
+          onToggleAdvanced={imageBuilderProps.onToggleAdvanced}
+          onOpenPicker={imageBuilderProps.onOpenPicker}
+          onClosePicker={imageBuilderProps.onClosePicker}
+          onConfirm={imageBuilderProps.onConfirm}
           onCopyNow={imageBuilderProps.onCopyNow}
+          onReiterate={imageBuilderProps.onReiterate}
           isExpanded={true}
         />
       )}

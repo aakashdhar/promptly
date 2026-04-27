@@ -2,7 +2,7 @@ import MorphCanvas from './MorphCanvas.jsx'
 
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
-export default function ThinkingState({ transcript, mode }) {
+export default function ThinkingState({ transcript, mode, label }) {
   return (
     <div id="panel-thinking" className="relative z-[1]">
       <div className="h-7 [-webkit-app-region:drag]" />
@@ -13,7 +13,7 @@ export default function ThinkingState({ transcript, mode }) {
         </div>
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}
         <div className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em' }}>
-          {mode === 'image' ? 'Assembling prompt…' : 'Building your prompt'}
+          {label || (mode === 'image' ? 'Assembling prompt…' : 'Building your prompt')}
         </div>
       </div>
       <div className="pt-[10px] pb-6" style={PAD}>
