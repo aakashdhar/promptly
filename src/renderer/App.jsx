@@ -173,6 +173,7 @@ export default function App() {
       // genResult.prompt is a passthrough of the transcript — go to question flow
       setImageAnswers({})
       setImageQuestionIndex(0)
+      if (!isExpandedRef.current) handleExpand()
       transitionRef.current(STATES.IMAGE_BUILDER)
       return
     }
