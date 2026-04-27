@@ -49,12 +49,24 @@ describe('getModeTagStyle', () => {
 
   it('returns purple tones for refine mode', () => {
     const style = getModeTagStyle('refine')
-    expect(style.background).toContain('168,85,247')
-    expect(style.color).toContain('200,150,255')
+    expect(style.background).toContain('139,92,246')
+    expect(style.color).toContain('167,139,250')
   })
 
-  it('returns blue tones for all other modes', () => {
-    for (const mode of ['balanced', 'code', 'design', 'detailed', 'concise', 'chain']) {
+  it('returns purple tones for image mode', () => {
+    const style = getModeTagStyle('image')
+    expect(style.background).toContain('139,92,246')
+    expect(style.color).toContain('167,139,250')
+  })
+
+  it('returns blue tones for design mode', () => {
+    const style = getModeTagStyle('design')
+    expect(style.background).toContain('10,132,255')
+    expect(style.color).toContain('100,170,255')
+  })
+
+  it('returns blue tones for standard prose modes', () => {
+    for (const mode of ['balanced', 'code', 'detailed', 'concise', 'chain']) {
       const style = getModeTagStyle(mode)
       expect(style.background).toContain('10,132,255')
       expect(style.color).toContain('100,170,255')

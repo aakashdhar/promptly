@@ -102,7 +102,7 @@ Mode: ${iterationBase.current.mode}`
     }
   }, [])
 
-  function dismissIterating() {
+  const dismissIterating = useCallback(() => {
     const recorder = iterRecorderRef.current
     if (recorder) {
       recorder.stream.getTracks().forEach((t) => t.stop())
@@ -112,7 +112,7 @@ Mode: ${iterationBase.current.mode}`
     iterIsProcessingRef.current = false
     stopTimer()
     transitionRef.current(STATES.PROMPT_READY)
-  }
+  }, [])
 
   return { iterationBase, handleIterate, stopIterating, dismissIterating }
 }
