@@ -29,7 +29,7 @@ export default function ImageBuilderDoneState({
     setTimeout(() => setCopied(false), 1800)
   }
 
-  const answeredEntries = Object.entries(answers).filter(([, v]) => v)
+  const answeredEntries = Object.entries(answers || {}).filter(([, v]) => v)
   const paramLabel = (key) => key.replace(/_/g, ' ')
 
   if (isExpanded) {

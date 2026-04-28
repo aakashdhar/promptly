@@ -570,6 +570,9 @@ function registerShortcut() {
       winSend('open-settings');
     }
   });
+  globalShortcut.register('CommandOrControl+Option+I', () => {
+    if (win && !win.isDestroyed()) win.webContents.openDevTools({ mode: 'detach' });
+  });
 }
 
 function createWindow() {

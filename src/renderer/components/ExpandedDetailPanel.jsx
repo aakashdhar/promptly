@@ -333,7 +333,7 @@ export default function ExpandedDetailPanel({
       {currentState === 'IMAGE_BUILDER_DONE' && !isViewingHistory && imageBuilderProps && (
         <ImageBuilderDoneState
           prompt={imageBuilderProps.imageBuiltPrompt}
-          answers={imageBuilderProps.answers}
+          answers={imageBuilderProps.imageAnswers}
           transcript={imageBuilderProps.transcript}
           onEditAnswers={imageBuilderProps.onEditAnswers}
           onStartOver={imageBuilderProps.onStartOver}
