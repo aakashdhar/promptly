@@ -231,12 +231,12 @@ Rules:
 
   // In VIDEO_BUILDER: copies raw transcript
   function handleVideoCopyNow() {
-    window.electronAPI?.copyToClipboard?.({ text: originalTranscript.current })
+    window.electronAPI?.copyToClipboard?.(originalTranscript.current)
   }
 
   // In VIDEO_BUILDER_DONE: copies assembled prompt
   function handleVideoCopyPrompt() {
-    window.electronAPI?.copyToClipboard?.({ text: videoBuiltPrompt })
+    window.electronAPI?.copyToClipboard?.(videoBuiltPrompt)
   }
 
   function handleVideoDialogueChange(text) { setVideoDialogueText(text) }

@@ -22,9 +22,9 @@ export default function ExpandedTransportBar({
   const isVideo = mode === 'video'
   const isPolish = mode === 'polish'
   const isRefine = mode === 'refine'
-  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : 'rgba(10,132,255,0.12)'
-  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
-  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : 'rgba(100,180,255,0.85)'
+  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : 'rgba(10,132,255,0.12)'
+  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
+  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : 'rgba(100,180,255,0.85)'
 
   const pauseBtnBg = isRecording ? 'rgba(255,189,46,0.12)' : 'rgba(255,255,255,0.06)'
   const pauseBtnBorder = isRecording ? '0.5px solid rgba(255,189,46,0.3)' : '0.5px solid rgba(255,255,255,0.1)'

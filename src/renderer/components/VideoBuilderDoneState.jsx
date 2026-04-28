@@ -44,7 +44,7 @@ export default function VideoBuilderDoneState({
 
   function handleCopy() {
     if (onCopy) onCopy()
-    else if (window.electronAPI) window.electronAPI.copyToClipboard({ text: prompt })
+    else if (window.electronAPI) window.electronAPI.copyToClipboard(prompt)
     setCopied(true)
     setTimeout(() => setCopied(false), 1800)
   }
