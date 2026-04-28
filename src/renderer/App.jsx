@@ -101,7 +101,11 @@ export default function App() {
   }
 
   useEffect(() => {
-    resizeWindow(STATE_HEIGHTS.IDLE)
+    // Skip IDLE resize when mode auto-expands on mount — handleExpand fires directly
+    // (no RAF), so the RAF-wrapped resizeWindow would race and win, collapsing the window.
+    if (mode !== 'image' && mode !== 'video') {
+      resizeWindow(STATE_HEIGHTS.IDLE)
+    }
     return () => {
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
     }
@@ -400,6 +404,53 @@ export default function App() {
     if (window.electronAPI) window.electronAPI.showModeMenu(mode)
   }
 
+  const imageBuilderProps = {
+    transcript: originalTranscript.current,
+    imageDefaults,
+    imageAnswers,
+    showAdvanced,
+    activePickerParam,
+    imageBuiltPrompt,
+    onChipRemove: handleChipRemove,
+    onChipAdd: handleChipAdd,
+    onParamChange: handleParamChange,
+    onToggleAdvanced: handleToggleAdvanced,
+    onOpenPicker: handleOpenPicker,
+    onClosePicker: handleClosePicker,
+    onConfirm: handleConfirm,
+    onCopyNow: handleCopyNow,
+    onReiterate: () => { isReiteratingRef.current = true; startRecording() },
+    onEditAnswers: handleImageEditAnswers,
+    onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
+  }
+
+  const videoBuilderProps = {
+    transcript: originalTranscript.current,
+    videoDefaults,
+    videoAnswers,
+    showAdvanced: showVideoAdvanced,
+    activePickerParam: videoActivePickerParam,
+    dialogueText: videoDialogueText,
+    settingDetail: videoSettingDetail,
+    videoBuiltPrompt,
+    isSaved: videoIsSaved,
+    onChipRemove: handleVideoChipRemove,
+    onChipAdd: handleVideoChipAdd,
+    onParamChange: handleVideoParamChange,
+    onToggleAdvanced: handleVideoToggleAdvanced,
+    onOpenPicker: handleVideoOpenPicker,
+    onClosePicker: handleVideoClosePicker,
+    onDialogueChange: handleVideoDialogueChange,
+    onSettingChange: handleVideoSettingChange,
+    onConfirm: handleVideoConfirm,
+    onCopyNow: handleVideoCopyNow,
+    onCopyPrompt: handleVideoCopyPrompt,
+    onReiterate: () => { isVideoReiteratingRef.current = true; startRecording() },
+    onEditAnswers: handleVideoEditAnswers,
+    onStartOver: handleVideoStartOver,
+    onSave: handleVideoSave,
+  }
+
   return (
     <div
       style={{width:'100%', height:'100vh', display:'flex', flexDirection:'column', borderRadius:'18px', overflow:'hidden', position:'relative', background:'linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%)', borderTop:'1px solid rgba(255,255,255,0.18)', borderLeft:'1px solid rgba(255,255,255,0.10)', borderRight:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.04)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)'}}
@@ -423,7 +474,7 @@ export default function App() {
             duration={duration}
             generatedPrompt={generatedPrompt}
             thinkTranscript={thinkTranscript}
-            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY) startRecording() }}
+            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) startRecording() }}
             onCollapse={handleCollapse}
             onPause={pauseRecording}
             onStop={stopRecording}
@@ -453,51 +504,8 @@ export default function App() {
             }}
             thinkingLabel={thinkingLabel}
             thinkingAccentColor={thinkingAccentColor}
-            imageBuilderProps={{
-              transcript: originalTranscript.current,
-              imageDefaults,
-              imageAnswers,
-              showAdvanced,
-              activePickerParam,
-              imageBuiltPrompt,
-              onChipRemove: handleChipRemove,
-              onChipAdd: handleChipAdd,
-              onParamChange: handleParamChange,
-              onToggleAdvanced: handleToggleAdvanced,
-              onOpenPicker: handleOpenPicker,
-              onClosePicker: handleClosePicker,
-              onConfirm: handleConfirm,
-              onCopyNow: handleCopyNow,
-              onReiterate: () => { isReiteratingRef.current = true; startRecording() },
-              onEditAnswers: handleImageEditAnswers,
-              onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
-            }}
-            videoBuilderProps={{
-              transcript: originalTranscript.current,
-              videoDefaults,
-              videoAnswers,
-              showAdvanced: showVideoAdvanced,
-              activePickerParam: videoActivePickerParam,
-              dialogueText: videoDialogueText,
-              settingDetail: videoSettingDetail,
-              videoBuiltPrompt,
-              isSaved: videoIsSaved,
-              onChipRemove: handleVideoChipRemove,
-              onChipAdd: handleVideoChipAdd,
-              onParamChange: handleVideoParamChange,
-              onToggleAdvanced: handleVideoToggleAdvanced,
-              onOpenPicker: handleVideoOpenPicker,
-              onClosePicker: handleVideoClosePicker,
-              onDialogueChange: handleVideoDialogueChange,
-              onSettingChange: handleVideoSettingChange,
-              onConfirm: handleVideoConfirm,
-              onCopyNow: handleVideoCopyNow,
-              onCopyPrompt: handleVideoCopyPrompt,
-              onReiterate: () => { isVideoReiteratingRef.current = true; startRecording() },
-              onEditAnswers: handleVideoEditAnswers,
-              onStartOver: handleVideoStartOver,
-              onSave: handleVideoSave,
-            }}
+            imageBuilderProps={imageBuilderProps}
+            videoBuilderProps={videoBuilderProps}
           />
         ) : (
           <>
