@@ -557,5 +557,22 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 ## What just happened
 ✅ FEATURE-HISTORY-EMPTY-STATE complete 2026-04-28 — `selected` initialises to `null` in ExpandedView (no auto-selection). ExpandedDetailPanel shows clock SVG + "Select a history to view details" (opacity 0.35) when IDLE and no selection. Both tasks in one pass. Lint clean.
 
+---
+
+## BUG-TOGGLE-008 — Expanded view visual redesign (COMPLETE 2026-04-28)
+> Branch: feat/bug-toggle-008 | Merged to main: 2026-04-28
+
+**ExpandedTransportBar.jsx** — replaced 3-column flanking layout with inline-flex transport row that shrinks to content width. `useRef` + `ResizeObserver` measures the row; waveform `div` width set to match exactly. Text block right of a 0.5px divider shows state-aware hint text (Listening / Generating / Paused / etc.) with colour dot. Mic 52px, pause/type 36px. Removed flanking 140px fixed-width columns.
+
+**ExpandedDetailPanel.jsx** — converted right panel to pure history viewer. Removed RECORDING/PAUSED/ITERATING/THINKING/IDLE-mic content blocks. Added always-visible panel header with "Session details" or entry title + Copy/Export quick links (hidden during content states). Clock empty state shown for all non-content states when nothing selected. TYPING/PROMPT_READY/IMAGE_BUILDER/VIDEO_BUILDER/DONE content delegated to existing components unchanged. `isContentState` flag guards all content-state rendering.
+
+**ExpandedView.jsx** — `selected` already initialised to `null`. Added toggle-deselect: clicking the active history entry deselects it. Removed stale `useEffect` that cleared `isViewingHistory` on state transitions (no longer needed — `isContentState` in ExpandedDetailPanel handles this). Removed unused `getHistory` import.
+
+---
+
+## fix(video-builder) — history not populated after video prompt generation (FIXED 2026-04-28)
+Root cause: `saveToHistory` was only called in `handleVideoSave` (explicit Save button), which doesn't trigger a state change. `ExpandedHistoryList` refreshes on `currentState` changes only — so the list never reflected newly generated video prompts.
+Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDER_DONE` transition), matching the image builder pattern. `handleVideoSave` retains `isSaved` flag toggle for UI feedback but no longer writes history.
+
 ## What's next
 No pending tasks. All active features complete.
