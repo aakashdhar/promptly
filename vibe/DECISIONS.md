@@ -1405,3 +1405,15 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   6. Copy now behaviour defined: VIDEO_BUILDER → copies transcript; VIDEO_BUILDER_DONE → copies assembled prompt
 - **Report**: vibe/spec-reviews/2026-04-28-video-builder.md
 - **Approved by**: human
+
+---
+
+### D-VIDEO-BUILD — FEATURE-VIDEO-BUILDER implementation complete
+- **Date**: 2026-04-28 · **Type**: tech-choice
+- **Summary**: All 12 VID tasks (VID-000 through VID-011) implemented. Key wiring decisions:
+  1. `thinkingAccentColor` state added to App.jsx alongside existing `thinkingLabel` — both cleared on transition away from THINKING
+  2. `videoBuilderProps` bundle mirrors `imageBuilderProps` pattern — assembled in App.jsx and forwarded through ExpandedView → ExpandedDetailPanel
+  3. ExpandedDetailPanel THINKING block updated to use `thinkingLabel`/`thinkingAccentColor` props instead of hardcoded "Generating prompt..."
+  4. ThinkingState.jsx accentColor prop uses RGBA string manipulation to derive background/border variants from the passed color
+  5. Non-expanded VIDEO_BUILDER/VIDEO_BUILDER_DONE paths not added — video auto-expands and these states are only reachable when expanded
+- **Files**: src/renderer/App.jsx, src/renderer/hooks/useVideoBuilder.js, src/renderer/components/VideoBuilderState.jsx, src/renderer/components/VideoBuilderDoneState.jsx, src/renderer/components/ExpandedView.jsx, src/renderer/components/ExpandedDetailPanel.jsx, src/renderer/components/ExpandedTransportBar.jsx, src/renderer/components/ThinkingState.jsx, src/renderer/hooks/useMode.js, main.js

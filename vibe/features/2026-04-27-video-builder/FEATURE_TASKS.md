@@ -1,53 +1,53 @@
 # FEATURE-VIDEO-BUILDER Tasks
 
-- [ ] VID-000 — useVideoBuilder.js hook (all state + handlers)
+- [x] VID-000 — useVideoBuilder.js hook (all state + handlers)
       Touches: src/renderer/hooks/useVideoBuilder.js (new)
       Dependencies: none
 
-- [ ] VID-001 — useMode.js video mode + orange accent
+- [x] VID-001 — useMode.js video mode + orange accent
       Touches: src/renderer/hooks/useMode.js
       Dependencies: none
 
-- [ ] VID-002 — main.js MODE_CONFIG + show-mode-menu passthrough
+- [x] VID-002 — main.js MODE_CONFIG + show-mode-menu passthrough
       Touches: main.js
       Dependencies: none
 
-- [ ] VID-003 — VideoBuilderState.jsx review screen (13 rows)
+- [x] VID-003 — VideoBuilderState.jsx review screen (13 rows)
       Touches: src/renderer/components/VideoBuilderState.jsx (new)
       Dependencies: VID-001 (accent colour used in chip styles)
 
-- [ ] VID-004 — VideoBuilderDoneState.jsx final output
+- [x] VID-004 — VideoBuilderDoneState.jsx final output
       Touches: src/renderer/components/VideoBuilderDoneState.jsx (new)
       Dependencies: VID-001
 
-- [ ] VID-005 — App.jsx states + ThinkingState props + auto-expand
+- [x] VID-005 — App.jsx states + ThinkingState props + auto-expand
       Touches: src/renderer/App.jsx,
                src/renderer/components/ThinkingState.jsx
       Dependencies: VID-000, VID-003, VID-004
 
-- [ ] VID-006 — App.jsx STATE_HEIGHTS VIDEO_BUILDER + VIDEO_BUILDER_DONE = 860
+- [x] VID-006 — App.jsx STATE_HEIGHTS VIDEO_BUILDER + VIDEO_BUILDER_DONE = 860
       Touches: src/renderer/App.jsx
       Dependencies: VID-005
 
-- [ ] VID-007 — Reiterate flow for video (merge logic in useVideoBuilder.js)
+- [x] VID-007 — Reiterate flow for video (merge logic in useVideoBuilder.js)
       Touches: src/renderer/hooks/useVideoBuilder.js
       Dependencies: VID-000, VID-005
 
-- [ ] VID-008 — History saving for video mode
+- [x] VID-008 — History saving for video mode
       Touches: src/renderer/hooks/useVideoBuilder.js,
                src/renderer/App.jsx
       Dependencies: VID-000, VID-005
 
-- [ ] VID-009 — ExpandedTransportBar.jsx collapse button disabled in video mode
+- [x] VID-009 — ExpandedTransportBar.jsx collapse button disabled in video mode
       Touches: src/renderer/components/ExpandedTransportBar.jsx
       Dependencies: VID-001
 
-- [ ] VID-010 — ExpandedView.jsx + ExpandedDetailPanel.jsx videoBuilderProps wiring
+- [x] VID-010 — ExpandedView.jsx + ExpandedDetailPanel.jsx videoBuilderProps wiring
       Touches: src/renderer/components/ExpandedView.jsx,
                src/renderer/components/ExpandedDetailPanel.jsx
       Dependencies: VID-003, VID-004, VID-005
 
-- [ ] VID-011 — Docs update (CODEBASE.md, DECISIONS.md, TASKS.md)
+- [x] VID-011 — Docs update (CODEBASE.md, DECISIONS.md, TASKS.md)
       Touches: vibe/CODEBASE.md, vibe/DECISIONS.md, vibe/TASKS.md,
                vibe/features/2026-04-27-video-builder/FEATURE_TASKS.md
       Dependencies: all above complete
