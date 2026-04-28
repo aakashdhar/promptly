@@ -1390,3 +1390,18 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Fix**: `ExpandedDetailPanel.jsx` — `imageBuilderProps.answers` → `imageBuilderProps.imageAnswers`. Defensive guard added to `ImageBuilderDoneState.jsx` — `Object.entries(answers || {})`.
 - **Files**: `src/renderer/components/ExpandedDetailPanel.jsx`, `src/renderer/components/ImageBuilderDoneState.jsx`
 - **Approved by**: human
+
+---
+
+### D-VIDEO-SPEC — Spec review: FEATURE-VIDEO-BUILDER
+- **Date**: 2026-04-28 · **Type**: discovery
+- **P0**: 4 · **P1**: 8 · **P2**: 3 — all resolved before build
+- **Key decisions from review**:
+  1. Dialogue duplication removed — Audio row has 4 options only (no Dialogue chip); Row 11 is sole dialogue entry
+  2. thinkingLabel + thinkingAccentColor added to App.jsx state — ThinkingState.jsx gets override props to support multiple labels in video mode
+  3. useVideoBuilder.js hook added (VID-000) — mirrors useImageBuilder.js pattern instead of inline App.jsx handlers
+  4. ExpandedView.jsx, ExpandedDetailPanel.jsx, ExpandedTransportBar.jsx, ThinkingState.jsx added to files in scope
+  5. Collapse button: disabled (opacity 0.4 + tooltip) not hidden
+  6. Copy now behaviour defined: VIDEO_BUILDER → copies transcript; VIDEO_BUILDER_DONE → copies assembled prompt
+- **Report**: vibe/spec-reviews/2026-04-28-video-builder.md
+- **Approved by**: human
