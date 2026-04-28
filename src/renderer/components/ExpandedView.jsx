@@ -36,7 +36,7 @@ export default function ExpandedView({
   videoBuilderProps,
   onAbort,
 }) {
-  const [selected, setSelected] = useState(() => { const h = getHistory(); return h.length > 0 ? h[0] : null })
+  const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
   // Return right panel to current state content when active state arrives

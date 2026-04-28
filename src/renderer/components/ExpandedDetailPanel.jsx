@@ -80,6 +80,23 @@ export default function ExpandedDetailPanel({
   return (
     <div style={{ flex: 1, minWidth: 0, background: 'transparent', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
+      {/* Empty state — IDLE with no selection */}
+      {currentState === 'IDLE' && !selected && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: '12px',
+          opacity: 0.35,
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2"/>
+            <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
+            Select a history to view details
+          </span>
+        </div>
+      )}
+
       {/* History entry detail */}
       {showEntryDetail && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
