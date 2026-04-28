@@ -6,6 +6,7 @@ import useRecording from './hooks/useRecording.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import useIteration from './hooks/useIteration.js'
 import useImageBuilder from './hooks/useImageBuilder.js'
+import useVideoBuilder from './hooks/useVideoBuilder.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -21,6 +22,8 @@ import SettingsPanel from './components/SettingsPanel.jsx'
 import ExpandedView from './components/ExpandedView.jsx'
 import ImageBuilderState from './components/ImageBuilderState.jsx'
 import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
+import VideoBuilderState from './components/VideoBuilderState.jsx'
+import VideoBuilderDoneState from './components/VideoBuilderDoneState.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -37,6 +40,8 @@ const STATES = {
   SETTINGS: 'SETTINGS',
   IMAGE_BUILDER: 'IMAGE_BUILDER',
   IMAGE_BUILDER_DONE: 'IMAGE_BUILDER_DONE',
+  VIDEO_BUILDER: 'VIDEO_BUILDER',
+  VIDEO_BUILDER_DONE: 'VIDEO_BUILDER_DONE',
 }
 
 const STATE_HEIGHTS = {
@@ -54,6 +59,8 @@ const STATE_HEIGHTS = {
   EXPANDED: 860,
   IMAGE_BUILDER: 520,
   IMAGE_BUILDER_DONE: 380,
+  VIDEO_BUILDER: 860,
+  VIDEO_BUILDER_DONE: 860,
 }
 
 export default function App() {
@@ -66,6 +73,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
   const [thinkingLabel, setThinkingLabel] = useState('')
+  const [thinkingAccentColor, setThinkingAccentColor] = useState('')
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -74,6 +82,7 @@ export default function App() {
   const isIterated = useRef(false)
   const transitionTimerRef = useRef(null)
   const transitionRef = useRef(null)
+  const abortRef = useRef(false)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -93,7 +102,11 @@ export default function App() {
   }
 
   useEffect(() => {
-    resizeWindow(STATE_HEIGHTS.IDLE)
+    // Skip IDLE resize when mode auto-expands on mount — handleExpand fires directly
+    // (no RAF), so the RAF-wrapped resizeWindow would race and win, collapsing the window.
+    if (mode !== 'image' && mode !== 'video') {
+      resizeWindow(STATE_HEIGHTS.IDLE)
+    }
     return () => {
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
     }
@@ -104,13 +117,14 @@ export default function App() {
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
   useEffect(() => {
-    if (mode === 'image' && !isExpandedRef.current) handleExpand()
+    if ((mode === 'image' || mode === 'video') && !isExpandedRef.current) handleExpand()
   }, [mode])
 
   function transition(newState, payload = {}) {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
+    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor('') }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -200,14 +214,57 @@ export default function App() {
     setThinkingLabel,
   })
 
+  const {
+    videoDefaults,
+    videoAnswers,
+    videoBuiltPrompt,
+    showVideoAdvanced,
+    videoActivePickerParam,
+    videoDialogueText,
+    videoSettingDetail,
+    isSaved: videoIsSaved,
+    isReiteratingRef: isVideoReiteratingRef,
+    runPreSelection: runVideoPreSelection,
+    handleVideoChipRemove,
+    handleVideoChipAdd,
+    handleVideoParamChange,
+    handleVideoOpenPicker,
+    handleVideoClosePicker,
+    handleVideoToggleAdvanced,
+    handleVideoConfirm,
+    handleVideoCopyNow,
+    handleVideoCopyPrompt,
+    handleVideoDialogueChange,
+    handleVideoSettingChange,
+    handleVideoSave,
+    handleVideoStartOver,
+    handleVideoEditAnswers,
+  } = useVideoBuilder({
+    STATES,
+    transitionRef,
+    originalTranscript,
+    setThinkTranscript,
+    setThinkingLabel,
+    setThinkingAccentColor,
+  })
+
   const handleGenerateResult = useCallback((genResult, transcript) => {
+    if (abortRef.current) { abortRef.current = false; return }
     if (mode === 'image') {
-      // genResult is a passthrough — run pre-selection Claude call then go to IMAGE_BUILDER
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
       if (!isExpandedRef.current) handleExpand()
       setThinkingLabel('Analysing your idea...')
       runPreSelection(originalTranscript.current, isReiterate)
+      return
+    }
+    if (mode === 'video') {
+      const isReiterate = isVideoReiteratingRef.current
+      isVideoReiteratingRef.current = false
+      if (!isExpandedRef.current) handleExpand()
+      setThinkingLabel('Analysing your idea...')
+      setThinkingAccentColor('rgba(251,146,60,0.8)')
+      runVideoPreSelection(originalTranscript.current, isReiterate)
       return
     }
     setThinkingLabel('')
@@ -241,6 +298,18 @@ export default function App() {
     startTimer,
     stopTimer,
   })
+
+  function handleAbort() {
+    const s = stateRef.current
+    if (s === STATES.IDLE || s === STATES.HISTORY || s === STATES.SETTINGS ||
+        s === STATES.SHORTCUTS || s === STATES.ERROR) return
+    if (s === STATES.RECORDING || s === STATES.PAUSED) { handleDismiss(); return }
+    if (s === STATES.THINKING) { abortRef.current = true; transition(STATES.IDLE); return }
+    if (s === STATES.ITERATING) { dismissIterating(); return }
+    if (s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE) { handleImageStartOver(); return }
+    if (s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) { handleVideoStartOver(); return }
+    transition(STATES.IDLE)
+  }
 
   function openHistory() {
     isExpandedRef.current = false
@@ -349,6 +418,53 @@ export default function App() {
     if (window.electronAPI) window.electronAPI.showModeMenu(mode)
   }
 
+  const imageBuilderProps = {
+    transcript: originalTranscript.current,
+    imageDefaults,
+    imageAnswers,
+    showAdvanced,
+    activePickerParam,
+    imageBuiltPrompt,
+    onChipRemove: handleChipRemove,
+    onChipAdd: handleChipAdd,
+    onParamChange: handleParamChange,
+    onToggleAdvanced: handleToggleAdvanced,
+    onOpenPicker: handleOpenPicker,
+    onClosePicker: handleClosePicker,
+    onConfirm: handleConfirm,
+    onCopyNow: handleCopyNow,
+    onReiterate: () => { isReiteratingRef.current = true; startRecording() },
+    onEditAnswers: handleImageEditAnswers,
+    onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
+  }
+
+  const videoBuilderProps = {
+    transcript: originalTranscript.current,
+    videoDefaults,
+    videoAnswers,
+    showAdvanced: showVideoAdvanced,
+    activePickerParam: videoActivePickerParam,
+    dialogueText: videoDialogueText,
+    settingDetail: videoSettingDetail,
+    videoBuiltPrompt,
+    isSaved: videoIsSaved,
+    onChipRemove: handleVideoChipRemove,
+    onChipAdd: handleVideoChipAdd,
+    onParamChange: handleVideoParamChange,
+    onToggleAdvanced: handleVideoToggleAdvanced,
+    onOpenPicker: handleVideoOpenPicker,
+    onClosePicker: handleVideoClosePicker,
+    onDialogueChange: handleVideoDialogueChange,
+    onSettingChange: handleVideoSettingChange,
+    onConfirm: handleVideoConfirm,
+    onCopyNow: handleVideoCopyNow,
+    onCopyPrompt: handleVideoCopyPrompt,
+    onReiterate: () => { isVideoReiteratingRef.current = true; startRecording() },
+    onEditAnswers: handleVideoEditAnswers,
+    onStartOver: handleVideoStartOver,
+    onSave: handleVideoSave,
+  }
+
   return (
     <div
       style={{width:'100%', height:'100vh', display:'flex', flexDirection:'column', borderRadius:'18px', overflow:'hidden', position:'relative', background:'linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%)', borderTop:'1px solid rgba(255,255,255,0.18)', borderLeft:'1px solid rgba(255,255,255,0.10)', borderRight:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.04)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)'}}
@@ -372,7 +488,7 @@ export default function App() {
             duration={duration}
             generatedPrompt={generatedPrompt}
             thinkTranscript={thinkTranscript}
-            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY) startRecording() }}
+            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) startRecording() }}
             onCollapse={handleCollapse}
             onPause={pauseRecording}
             onStop={stopRecording}
@@ -400,25 +516,11 @@ export default function App() {
               }
               transition(STATES.PROMPT_READY)
             }}
-            imageBuilderProps={{
-              transcript: originalTranscript.current,
-              imageDefaults,
-              imageAnswers,
-              showAdvanced,
-              activePickerParam,
-              imageBuiltPrompt,
-              onChipRemove: handleChipRemove,
-              onChipAdd: handleChipAdd,
-              onParamChange: handleParamChange,
-              onToggleAdvanced: handleToggleAdvanced,
-              onOpenPicker: handleOpenPicker,
-              onClosePicker: handleClosePicker,
-              onConfirm: handleConfirm,
-              onCopyNow: handleCopyNow,
-              onReiterate: () => { isReiteratingRef.current = true; startRecording() },
-              onEditAnswers: handleImageEditAnswers,
-              onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
-            }}
+            thinkingLabel={thinkingLabel}
+            thinkingAccentColor={thinkingAccentColor}
+            imageBuilderProps={imageBuilderProps}
+            videoBuilderProps={videoBuilderProps}
+            onAbort={handleAbort}
           />
         ) : (
           <>
@@ -458,7 +560,7 @@ export default function App() {
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState
@@ -556,6 +658,33 @@ export default function App() {
           </>
         )}
       </div>
+
+      {!isExpanded && displayState !== STATES.IDLE &&
+       displayState !== STATES.HISTORY && displayState !== STATES.SETTINGS &&
+       displayState !== STATES.SHORTCUTS && displayState !== STATES.ERROR && (
+        <button
+          onClick={handleAbort}
+          title="Reset to start"
+          style={{
+            position: 'absolute', top: '10px', right: '14px', zIndex: 20,
+            width: '26px', height: '26px', borderRadius: '7px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', WebkitAppRegion: 'no-drag', padding: 0,
+            transition: 'background 150ms',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M6.5 5.5L9 3L6.5 0.5"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
 
       <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[var(--color-red)]/20 to-transparent pointer-events-none z-10" />
     </div>

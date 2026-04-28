@@ -13,17 +13,19 @@ export default function ExpandedTransportBar({
   onCollapse,
   onOpenSettings,
   onTypePrompt,
+  onAbort,
 }) {
   const isRecording = currentState === 'RECORDING'
   const isThinking = currentState === 'THINKING'
   const isTyping = currentState === 'TYPING'
   const isIterating = currentState === 'ITERATING'
 
+  const isVideo = mode === 'video'
   const isPolish = mode === 'polish'
   const isRefine = mode === 'refine'
-  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : 'rgba(10,132,255,0.12)'
-  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
-  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : 'rgba(100,180,255,0.85)'
+  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : 'rgba(10,132,255,0.12)'
+  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
+  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : 'rgba(100,180,255,0.85)'
 
   const pauseBtnBg = isRecording ? 'rgba(255,189,46,0.12)' : 'rgba(255,255,255,0.06)'
   const pauseBtnBorder = isRecording ? '0.5px solid rgba(255,189,46,0.3)' : '0.5px solid rgba(255,255,255,0.1)'
@@ -40,22 +42,46 @@ export default function ExpandedTransportBar({
       {/* Traffic light drag spacer + collapse button as child (no-drag child overrides parent drag) */}
       <div style={{
         height: '36px', WebkitAppRegion: 'drag',
-        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <button
-          onClick={onCollapse}
-          title="Collapse"
+          onClick={onAbort}
+          title="Reset to start"
           style={{
             width: '28px', height: '28px', borderRadius: '7px',
             background: 'rgba(255,255,255,0.05)',
             border: '0.5px solid rgba(255,255,255,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', marginRight: '18px',
+            cursor: currentState === 'IDLE' ? 'default' : 'pointer',
+            marginLeft: '18px', WebkitAppRegion: 'no-drag', padding: 0,
+            transition: 'background 150ms', flexShrink: 0,
+            opacity: currentState === 'IDLE' ? 0.3 : 1,
+          }}
+          onMouseEnter={e => { if (currentState !== 'IDLE') e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M6.5 5.5L9 3L6.5 0.5"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button
+          onClick={isVideo ? undefined : onCollapse}
+          title={isVideo ? 'Video mode requires expanded view' : 'Collapse'}
+          style={{
+            width: '28px', height: '28px', borderRadius: '7px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: isVideo ? 'not-allowed' : 'pointer', marginRight: '18px',
             WebkitAppRegion: 'no-drag', padding: 0,
             transition: 'background 150ms', flexShrink: 0,
+            opacity: isVideo ? 0.4 : 1,
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseEnter={e => { if (!isVideo) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+          onMouseLeave={e => { if (!isVideo) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
         >
           <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
             <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />

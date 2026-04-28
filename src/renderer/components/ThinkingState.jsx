@@ -2,13 +2,20 @@ import MorphCanvas from './MorphCanvas.jsx'
 
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
-export default function ThinkingState({ transcript, mode, label }) {
+// accentColor must be rgba(R,G,B,A) format with no spaces — alpha digit replaced for bg/border variants
+export default function ThinkingState({ transcript, mode, label, accentColor }) {
+  const pillStyle = accentColor
+    ? { padding: '7px 16px', background: `${accentColor.replace(/[\d.]+\)$/, '0.1)')}`, border: `1px solid ${accentColor.replace(/[\d.]+\)$/, '0.2)')}`, color: accentColor }
+    : { padding: '7px 16px', color: 'rgba(100,180,255,0.8)' }
+  const dotStyle = accentColor
+    ? { background: accentColor, boxShadow: `0 0 6px ${accentColor}` }
+    : {}
   return (
     <div id="panel-thinking" className="relative z-[1]">
       <div className="h-7 [-webkit-app-region:drag]" />
       <div className="h-20 flex items-center gap-[14px]" style={PAD}>
-        <div className="bg-[var(--color-blue)]/[0.10] border border-[var(--color-blue)]/[0.20] rounded-full text-[10px] font-medium tracking-[0.04em] flex items-center gap-[6px] flex-shrink-0" style={{padding:'7px 16px', color:'rgba(100,180,255,0.8)'}}>
-          <div className="w-[5px] h-[5px] rounded-full bg-[var(--color-blue)]/90 shadow-[0_0_6px_rgba(10,132,255,0.7)] animate-pulse" />
+        <div className={accentColor ? 'rounded-full text-[10px] font-medium tracking-[0.04em] flex items-center gap-[6px] flex-shrink-0' : 'bg-[var(--color-blue)]/[0.10] border border-[var(--color-blue)]/[0.20] rounded-full text-[10px] font-medium tracking-[0.04em] flex items-center gap-[6px] flex-shrink-0'} style={pillStyle}>
+          <div className={accentColor ? 'w-[5px] h-[5px] rounded-full animate-pulse' : 'w-[5px] h-[5px] rounded-full bg-[var(--color-blue)]/90 shadow-[0_0_6px_rgba(10,132,255,0.7)] animate-pulse'} style={dotStyle} />
           Processing
         </div>
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}

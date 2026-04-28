@@ -529,3 +529,21 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 
 ## What just happened
 ✅ IMAGE-BUILDER redesign complete 2026-04-27 — Tier-based 17-question interview replaced with all-params review screen. Claude pre-fills all 18 parameters via Phase 1 generate-raw call; user reviews and edits; Phase 2 assembles final natural-language prompt. Inline option picker, custom text inputs, reiterate merge logic all implemented. Build clean.
+
+---
+
+## FEATURE-ABORT-RESET — Always-visible reset button (5/5 ✅)
+> Spec: vibe/features/2026-04-28-abort-reset/ | Added: 2026-04-28
+> Estimated: approx. 4–5 hours (S: 4, M: 1)
+   [x] ABORT-001 · abortRef + handleGenerateResult guard — prevents stale generation completing after user resets
+   [x] ABORT-002 · handleAbort() in App.jsx + onAbort prop chain to ExpandedView/ExpandedTransportBar
+   [x] ABORT-003 · Abort button in ExpandedTransportBar drag-spacer row (left side, always in expanded view)
+   [x] ABORT-004 · Abort overlay button in App.jsx collapsed mode (absolute top-right, all non-IDLE states)
+   [x] ABORT-005 · Docs — CODEBASE.md + DECISIONS.md update
+   → Full specs: vibe/features/2026-04-28-abort-reset/FEATURE_TASKS.md (agent use)
+
+## What just happened
+✅ ABORT-005 · Docs updated — CODEBASE.md (App.jsx, ExpandedView, ExpandedTransportBar rows + abortRef refs table row), DECISIONS.md D-ABORT-001 entry. All 5 ABORT tasks complete.
+
+## What's next
+Feature ABORT-RESET is fully shipped. Manual smoke test: exercise abort from RECORDING, THINKING, IMAGE_BUILDER_DONE, VIDEO_BUILDER, ITERATING states — both collapsed and expanded modes. Say "next" to start a new feature.

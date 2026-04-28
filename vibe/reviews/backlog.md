@@ -353,3 +353,28 @@
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
 | ~~BL-IMG-001~~ | src/renderer/App.jsx | 230–300 | Image builder question flow logic (8 handlers + assembleImagePrompt + calcImageBuilderHeight) adds ~90 lines to App.jsx. Extractable to `useImageBuilder()` hook for SRP. Not blocking — logic is cohesive. | ✅ resolved — useImageBuilder.js extracted 2026-04-27; App.jsx 621→537 lines |
+
+---
+
+## From FEATURE-VIDEO-BUILDER Review (2026-04-28)
+
+### P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-VID-001~~ | src/renderer/components/IdleState.jsx | 2–4, 11, 115, 189 | Video mode missing orange identity — no `isVideo` flag, ring/pill/subtitle fall through to blue | ✅ resolved — isVideo added, all 5 ternaries extended with orange arms |
+| ~~BL-VID-002~~ | src/renderer/components/ExpandedTransportBar.jsx | 25–27 | Video mode pill shows blue in expanded transport bar — `isVideo` not added to pill ternaries | ✅ resolved — isVideo arm added to pillBg/pillBorder/pillColor ternaries |
+| ~~BL-VID-003~~ | src/renderer/App.jsx | 1–642 | 642 lines — above 500-line P1 threshold; imageBuilderProps + videoBuilderProps bundles are inline JSX 40-line objects; extract to useMemo or named variables | ✅ resolved — both bundles extracted to named constants before return() |
+
+### P2 — Fix before deploy (lower priority)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-VID-004~~ | src/renderer/components/ThinkingState.jsx | 7–9 | RGBA derivation via `.replace(/[\d.]+\)$/, '0.1)')` is fragile — only works for exact `rgba(R,G,B,N)` format with no spaces | ✅ resolved — format constraint documented in comment above component |
+
+### P3 — Monitor
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P3-VID-001 | src/renderer/components/ExpandedDetailPanel.jsx | props | 23 props after video additions — carryover P3-EXP-002 | Open |
+| ~~P3-VID-002~~ | src/renderer/components/VideoBuilderState.jsx | 195 | Hardcoded `#1a1a24` picker background not in @theme token set | ✅ resolved — changed to `rgba(26,26,36,1)` |

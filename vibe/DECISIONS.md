@@ -1390,3 +1390,45 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Fix**: `ExpandedDetailPanel.jsx` — `imageBuilderProps.answers` → `imageBuilderProps.imageAnswers`. Defensive guard added to `ImageBuilderDoneState.jsx` — `Object.entries(answers || {})`.
 - **Files**: `src/renderer/components/ExpandedDetailPanel.jsx`, `src/renderer/components/ImageBuilderDoneState.jsx`
 - **Approved by**: human
+
+---
+
+### D-VIDEO-SPEC — Spec review: FEATURE-VIDEO-BUILDER
+- **Date**: 2026-04-28 · **Type**: discovery
+- **P0**: 4 · **P1**: 8 · **P2**: 3 — all resolved before build
+- **Key decisions from review**:
+  1. Dialogue duplication removed — Audio row has 4 options only (no Dialogue chip); Row 11 is sole dialogue entry
+  2. thinkingLabel + thinkingAccentColor added to App.jsx state — ThinkingState.jsx gets override props to support multiple labels in video mode
+  3. useVideoBuilder.js hook added (VID-000) — mirrors useImageBuilder.js pattern instead of inline App.jsx handlers
+  4. ExpandedView.jsx, ExpandedDetailPanel.jsx, ExpandedTransportBar.jsx, ThinkingState.jsx added to files in scope
+  5. Collapse button: disabled (opacity 0.4 + tooltip) not hidden
+  6. Copy now behaviour defined: VIDEO_BUILDER → copies transcript; VIDEO_BUILDER_DONE → copies assembled prompt
+- **Report**: vibe/spec-reviews/2026-04-28-video-builder.md
+- **Approved by**: human
+
+---
+
+### D-VIDEO-BUILD — FEATURE-VIDEO-BUILDER implementation complete
+- **Date**: 2026-04-28 · **Type**: tech-choice
+- **Summary**: All 12 VID tasks (VID-000 through VID-011) implemented. Key wiring decisions:
+  1. `thinkingAccentColor` state added to App.jsx alongside existing `thinkingLabel` — both cleared on transition away from THINKING
+  2. `videoBuilderProps` bundle mirrors `imageBuilderProps` pattern — assembled in App.jsx and forwarded through ExpandedView → ExpandedDetailPanel
+  3. ExpandedDetailPanel THINKING block updated to use `thinkingLabel`/`thinkingAccentColor` props instead of hardcoded "Generating prompt..."
+  4. ThinkingState.jsx accentColor prop uses RGBA string manipulation to derive background/border variants from the passed color
+  5. Non-expanded VIDEO_BUILDER/VIDEO_BUILDER_DONE paths not added — video auto-expands and these states are only reachable when expanded
+- **Files**: src/renderer/App.jsx, src/renderer/hooks/useVideoBuilder.js, src/renderer/components/VideoBuilderState.jsx, src/renderer/components/VideoBuilderDoneState.jsx, src/renderer/components/ExpandedView.jsx, src/renderer/components/ExpandedDetailPanel.jsx, src/renderer/components/ExpandedTransportBar.jsx, src/renderer/components/ThinkingState.jsx, src/renderer/hooks/useMode.js, main.js
+
+---
+
+## D-ABORT-001 — 2026-04-28 — Abort button: always-visible overlay vs per-state controls
+- **Date**: 2026-04-28 · **Type**: tech-choice
+- **Summary**: Feature start — FEATURE-ABORT-RESET — abort/reset button that is always accessible.
+  Key decisions:
+  1. Single overlay button in App.jsx for collapsed mode + button in ExpandedTransportBar for expanded mode — avoids touching every state component; single implementation point for all abort states.
+  2. `abortRef` flag in App.jsx guards `handleGenerateResult` — prevents stale Claude generation completing after user resets during THINKING.
+  3. Collapsed-mode button placed as sibling to animated state wrapper (outside `{isExpanded ? ... : ...}` branch), positioned absolute inside `<div id="bar">`.
+  4. Expanded-mode button placed in drag-spacer row of ExpandedTransportBar (always visible), dimmed at IDLE.
+  5. `handleAbort` reads `stateRef.current` (not `currentState`) — stale-closure-safe event handler.
+  6. Keyboard shortcut deferred — Escape is already claimed in Typing and Shortcuts states.
+- **Tasks**: ABORT-001 through ABORT-005
+- **Folder**: vibe/features/2026-04-28-abort-reset/

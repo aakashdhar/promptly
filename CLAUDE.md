@@ -215,3 +215,50 @@ Never: touch files not in scope · change behaviour of other modes · use innerH
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
 ---
+
+### Active Feature: FEATURE-ABORT-RESET
+> Folder: vibe/features/2026-04-28-abort-reset/ | Added: 2026-04-28
+
+**Feature summary**: Always-visible reset button that aborts any in-progress state and returns to IDLE for the current mode.
+**Files in scope**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx`, `src/renderer/components/ExpandedTransportBar.jsx`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: All other components, all hooks, main.js, preload.js, index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file in src/renderer/components/. Functional React components only.
+- All state transitions via transition() in App.jsx — never mutate state directly.
+- Inline styles for dynamic/stateful values; Tailwind only for static layout classes.
+- No dangerouslySetInnerHTML with user/Claude content.
+- IPC via window.electronAPI only.
+- Use `stateRef.current` (not `currentState`) inside event handlers to avoid stale closures.
+- Use `displayState` for render-conditional visibility (follows animation, not instant state).
+- `WebkitAppRegion: 'no-drag'` on ALL clickable elements.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md for new props/refs ·
+        update TASKS.md after every task
+
+Ask first: adding new IPC channels · changing window dimensions
+Never: touch files not in scope · change behaviour of other modes · add runtime npm packages
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add src/renderer/App.jsx src/renderer/components/ExpandedView.jsx src/renderer/components/ExpandedTransportBar.jsx
+   git commit -m "feat(abort-reset): [TASK-ID] — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-28-abort-reset/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [TASK-ID] done — abort-reset"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---
