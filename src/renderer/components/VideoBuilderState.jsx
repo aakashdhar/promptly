@@ -192,7 +192,7 @@ export default function VideoBuilderState({
             />
             <div style={{
               position: 'absolute', top: 'calc(100% + 2px)', left: labelW,
-              zIndex: 20, background: '#1a1a24',
+              zIndex: 20, background: 'rgba(26,26,36,1)',
               border: '0.5px solid rgba(255,255,255,0.1)',
               borderRadius: '10px', padding: '8px',
               maxHeight: '160px', overflowY: 'auto',

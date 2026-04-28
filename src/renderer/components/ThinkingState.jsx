@@ -2,6 +2,7 @@ import MorphCanvas from './MorphCanvas.jsx'
 
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
+// accentColor must be rgba(R,G,B,A) format with no spaces — alpha digit replaced for bg/border variants
 export default function ThinkingState({ transcript, mode, label, accentColor }) {
   const pillStyle = accentColor
     ? { padding: '7px 16px', background: `${accentColor.replace(/[\d.]+\)$/, '0.1)')}`, border: `1px solid ${accentColor.replace(/[\d.]+\)$/, '0.2)')}`, color: accentColor }
