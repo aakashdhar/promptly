@@ -1381,3 +1381,12 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Fix**: Added 'thinking' and 'builder' exclusions to the blur guard; added IMAGE_BUILDER/IMAGE_BUILDER_DONE → 'builder' to the stateMap in `update-menubar-state` IPC handler.
 - **File**: main.js — 2 hunks, 4 additions, 2 deletions
 - **Approved by**: human
+
+---
+
+### D-BUG-002 — Fix: IMAGE_BUILDER_DONE blank screen crash in expanded view
+- **Date**: 2026-04-28 · **Type**: drift (trivial bug)
+- **Root cause**: `ExpandedDetailPanel.jsx` passed `imageBuilderProps.answers` to `ImageBuilderDoneState`, but App.jsx names the prop `imageAnswers`. `answers` was always `undefined`, so `Object.entries(undefined)` threw a TypeError when transitioning to `IMAGE_BUILDER_DONE`, crashing the React tree and leaving a blank unrecoverable window.
+- **Fix**: `ExpandedDetailPanel.jsx` — `imageBuilderProps.answers` → `imageBuilderProps.imageAnswers`. Defensive guard added to `ImageBuilderDoneState.jsx` — `Object.entries(answers || {})`.
+- **Files**: `src/renderer/components/ExpandedDetailPanel.jsx`, `src/renderer/components/ImageBuilderDoneState.jsx`
+- **Approved by**: human

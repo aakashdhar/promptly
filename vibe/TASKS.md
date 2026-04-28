@@ -468,6 +468,11 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    Fix: nvm init block + preflight checks added to top of release.sh (same pattern as main.js resolveClaudePath)
    → Specs: vibe/bugs/2026-04-28-bug-release-node-path/ | DECISIONS.md D-BUG-RELEASE-NODE-PATH
 
+✅ **D-BUG-002 — IMAGE_BUILDER_DONE blank screen + no history** (FIXED 2026-04-28)
+   Root cause: `ExpandedDetailPanel.jsx` passed `imageBuilderProps.answers` but App.jsx names the prop `imageAnswers`. `answers` was always `undefined` → `Object.entries(undefined)` crashed React → blank unrecoverable window.
+   Fix: corrected prop reference to `imageBuilderProps.imageAnswers`; defensive `answers || {}` guard added to `ImageBuilderDoneState.jsx`.
+   → DECISIONS.md D-BUG-002 · DevTools shortcut Cmd+Option+I added to main.js for future debugging
+
 ## What's next
 IMAGE-BUILDER redesign complete. Only IMG-010 (docs) remaining — done now.
 
