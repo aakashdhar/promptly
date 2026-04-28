@@ -7,7 +7,7 @@
 ---
 
 ### ABORT-001 · abortRef + handleGenerateResult guard
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria (AC-013, AC-014)
 - **Dependencies**: None
@@ -41,7 +41,7 @@ That's the entire task. No other changes.
 ---
 
 ### ABORT-002 · handleAbort() in App.jsx + onAbort prop wired to ExpandedView
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria (AC-004 through AC-011)
 - **Dependencies**: ABORT-001
@@ -95,7 +95,7 @@ Note: `handleAbort` references `handleDismiss`, `dismissIterating`, `handleImage
 ---
 
 ### ABORT-003 · Abort button in ExpandedTransportBar
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria (AC-002, AC-012, AC-015)
 - **Dependencies**: ABORT-002
@@ -158,7 +158,7 @@ The existing collapse button stays in the same position (`marginRight: '18px'`).
 ---
 
 ### ABORT-004 · Abort overlay button in App.jsx (collapsed mode)
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria (AC-003, AC-012, AC-015)
 - **Dependencies**: ABORT-002
@@ -234,7 +234,7 @@ Place the abort overlay button AFTER the animated wrapper div and BEFORE the clo
 ---
 
 ### ABORT-005 · Docs — CODEBASE.md + DECISIONS.md update
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#conformance-checklist
 - **Dependencies**: ABORT-004
