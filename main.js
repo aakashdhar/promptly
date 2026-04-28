@@ -140,6 +140,7 @@ Output format:
 The user said:
 "{TRANSCRIPT}"` },
   image:     { name: 'Image',            passthrough: true, instruction: '' },
+  video:     { name: 'Video',            passthrough: true, instruction: '' },
   polish:    { name: 'Polish',           standalone: true, instruction: `You are an expert editor and writing coach. The user has spoken something rough — with filler words, repetition, grammatical errors, or unclear phrasing. Your job is to return two things and nothing else:
 
 1. The polished version of what they said — clean, grammatically correct, well-phrased prose that preserves their exact meaning and intent.
@@ -887,6 +888,7 @@ app.whenReady().then(async () => {
       { key: 'refine', label: 'Refine' },
       { key: 'polish', label: 'Polish' },
       { key: 'image', label: 'Image' },
+      { key: 'video', label: 'Video' },
     ];
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({
