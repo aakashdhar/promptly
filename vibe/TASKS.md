@@ -545,5 +545,17 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 ## What just happened
 ✅ ABORT-005 · Docs updated — CODEBASE.md (App.jsx, ExpandedView, ExpandedTransportBar rows + abortRef refs table row), DECISIONS.md D-ABORT-001 entry. All 5 ABORT tasks complete.
 
+---
+
+## FEATURE-HISTORY-EMPTY-STATE — Right panel empty state on launch (2/2 ✅)
+> Spec: vibe/features/2026-04-28-history-empty-state/ | Added: 2026-04-28
+> Estimated: approx. 30 mins (S: 2)
+   [x] HEMPTY-001 · Remove auto-selection in ExpandedView — no entry selected on launch
+   [x] HEMPTY-002 · Add empty state in ExpandedDetailPanel — clock icon + "Select a history to view details"
+   → Full specs: vibe/features/2026-04-28-history-empty-state/FEATURE_TASKS.md (agent use)
+
+## What just happened
+✅ FEATURE-HISTORY-EMPTY-STATE complete 2026-04-28 — `selected` initialises to `null` in ExpandedView (no auto-selection). ExpandedDetailPanel shows clock SVG + "Select a history to view details" (opacity 0.35) when IDLE and no selection. Both tasks in one pass. Lint clean.
+
 ## What's next
-Feature ABORT-RESET is fully shipped. Manual smoke test: exercise abort from RECORDING, THINKING, IMAGE_BUILDER_DONE, VIDEO_BUILDER, ITERATING states — both collapsed and expanded modes. Say "next" to start a new feature.
+No pending tasks. All active features complete.
