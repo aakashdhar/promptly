@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { getHistory } from '../utils/history.js'
+import { useState } from 'react'
 import ExpandedTransportBar from './ExpandedTransportBar.jsx'
 import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
@@ -39,14 +38,12 @@ export default function ExpandedView({
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
-  // Return right panel to current state content when active state arrives
-  useEffect(() => {
-    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY' || currentState === 'TYPING' || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE' || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE') {
-      setIsViewingHistory(false)
-    }
-  }, [currentState])
-
   function handleSelect(entry) {
+    if (entry && selected && entry.id === selected.id) {
+      setSelected(null)
+      setIsViewingHistory(false)
+      return
+    }
     setSelected(entry)
     if (entry) setIsViewingHistory(true)
     else setIsViewingHistory(false)
