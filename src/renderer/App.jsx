@@ -82,6 +82,7 @@ export default function App() {
   const isIterated = useRef(false)
   const transitionTimerRef = useRef(null)
   const transitionRef = useRef(null)
+  const abortRef = useRef(false)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -248,6 +249,7 @@ export default function App() {
   })
 
   const handleGenerateResult = useCallback((genResult, transcript) => {
+    if (abortRef.current) { abortRef.current = false; return }
     if (mode === 'image') {
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
