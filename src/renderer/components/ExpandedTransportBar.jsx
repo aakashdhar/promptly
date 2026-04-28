@@ -13,6 +13,7 @@ export default function ExpandedTransportBar({
   onCollapse,
   onOpenSettings,
   onTypePrompt,
+  onAbort,
 }) {
   const isRecording = currentState === 'RECORDING'
   const isThinking = currentState === 'THINKING'
@@ -41,8 +42,31 @@ export default function ExpandedTransportBar({
       {/* Traffic light drag spacer + collapse button as child (no-drag child overrides parent drag) */}
       <div style={{
         height: '36px', WebkitAppRegion: 'drag',
-        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
+        <button
+          onClick={onAbort}
+          title="Reset to start"
+          style={{
+            width: '28px', height: '28px', borderRadius: '7px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: currentState === 'IDLE' ? 'default' : 'pointer',
+            marginLeft: '18px', WebkitAppRegion: 'no-drag', padding: 0,
+            transition: 'background 150ms', flexShrink: 0,
+            opacity: currentState === 'IDLE' ? 0.3 : 1,
+          }}
+          onMouseEnter={e => { if (currentState !== 'IDLE') e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M6.5 5.5L9 3L6.5 0.5"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
         <button
           onClick={isVideo ? undefined : onCollapse}
           title={isVideo ? 'Video mode requires expanded view' : 'Collapse'}

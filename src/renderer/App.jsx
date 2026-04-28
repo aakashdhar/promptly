@@ -659,6 +659,33 @@ export default function App() {
         )}
       </div>
 
+      {!isExpanded && displayState !== STATES.IDLE &&
+       displayState !== STATES.HISTORY && displayState !== STATES.SETTINGS &&
+       displayState !== STATES.SHORTCUTS && displayState !== STATES.ERROR && (
+        <button
+          onClick={handleAbort}
+          title="Reset to start"
+          style={{
+            position: 'absolute', top: '10px', right: '14px', zIndex: 20,
+            width: '26px', height: '26px', borderRadius: '7px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', WebkitAppRegion: 'no-drag', padding: 0,
+            transition: 'background 150ms',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+        >
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M6.5 5.5L9 3L6.5 0.5"
+              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
+
       <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[var(--color-red)]/20 to-transparent pointer-events-none z-10" />
     </div>
   )
