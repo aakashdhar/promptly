@@ -39,10 +39,10 @@ export default function ExpandedTransportBar({
       flexShrink: 0,
       position: 'relative',
     }}>
-      {/* Traffic light drag spacer + collapse button as child (no-drag child overrides parent drag) */}
+      {/* Traffic light drag spacer — abort button sits left (after traffic lights), collapse right */}
       <div style={{
         height: '36px', WebkitAppRegion: 'drag',
-        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <button
           onClick={onAbort}
@@ -53,7 +53,7 @@ export default function ExpandedTransportBar({
             border: '0.5px solid rgba(255,255,255,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: currentState === 'IDLE' ? 'default' : 'pointer',
-            marginRight: '8px', WebkitAppRegion: 'no-drag', padding: 0,
+            marginLeft: '80px', WebkitAppRegion: 'no-drag', padding: 0,
             transition: 'background 150ms', flexShrink: 0,
             opacity: currentState === 'IDLE' ? 0.3 : 1,
           }}
