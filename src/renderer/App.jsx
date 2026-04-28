@@ -299,6 +299,18 @@ export default function App() {
     stopTimer,
   })
 
+  function handleAbort() {
+    const s = stateRef.current
+    if (s === STATES.IDLE || s === STATES.HISTORY || s === STATES.SETTINGS ||
+        s === STATES.SHORTCUTS || s === STATES.ERROR) return
+    if (s === STATES.RECORDING || s === STATES.PAUSED) { handleDismiss(); return }
+    if (s === STATES.THINKING) { abortRef.current = true; transition(STATES.IDLE); return }
+    if (s === STATES.ITERATING) { dismissIterating(); return }
+    if (s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE) { handleImageStartOver(); return }
+    if (s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) { handleVideoStartOver(); return }
+    transition(STATES.IDLE)
+  }
+
   function openHistory() {
     isExpandedRef.current = false
     setIsExpanded(false)
@@ -508,6 +520,7 @@ export default function App() {
             thinkingAccentColor={thinkingAccentColor}
             imageBuilderProps={imageBuilderProps}
             videoBuilderProps={videoBuilderProps}
+            onAbort={handleAbort}
           />
         ) : (
           <>

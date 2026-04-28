@@ -34,6 +34,7 @@ export default function ExpandedView({
   thinkingAccentColor,
   imageBuilderProps,
   videoBuilderProps,
+  onAbort,
 }) {
   const [selected, setSelected] = useState(() => { const h = getHistory(); return h.length > 0 ? h[0] : null })
   const [isViewingHistory, setIsViewingHistory] = useState(false)
@@ -69,6 +70,7 @@ export default function ExpandedView({
         onCollapse={onCollapse}
         onOpenSettings={onOpenSettings}
         onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
+        onAbort={onAbort}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
