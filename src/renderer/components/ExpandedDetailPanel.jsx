@@ -37,9 +37,17 @@ export default function ExpandedDetailPanel({
   videoBuilderProps,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
+  const [entryExported, setEntryExported] = useState(false)
 
   const isRefine = mode === 'refine'
   const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
+
+  const isContentState = currentState === 'TYPING' || currentState === 'PROMPT_READY'
+    || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
+    || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
+
+  const showEntryDetail = !isContentState && selected !== null
+  const showEmpty = !isContentState && !selected
 
   // ── entry detail handlers ──
 
@@ -48,6 +56,18 @@ export default function ExpandedDetailPanel({
     if (window.electronAPI) window.electronAPI.copyToClipboard(selected.prompt)
     setEntryCopied(true)
     setTimeout(() => setEntryCopied(false), 1800)
+  }
+
+  function handleEntryExport() {
+    if (!selected) return
+    const text = [
+      `Transcript: ${selected.transcript}`,
+      '',
+      `Prompt:\n${selected.prompt}`,
+    ].join('\n')
+    if (window.electronAPI) window.electronAPI.copyToClipboard(text)
+    setEntryExported(true)
+    setTimeout(() => setEntryExported(false), 1800)
   }
 
   function handleEntryReuse() {
@@ -75,32 +95,85 @@ export default function ExpandedDetailPanel({
     onEntryChange({ ...selected, ratingTag: newTag })
   }
 
-  const showEntryDetail = (currentState === 'IDLE' || isViewingHistory) && selected !== null
-
   return (
-    <div style={{ flex: 1, minWidth: 0, background: 'transparent', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, minWidth: 0, background: 'transparent', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
-      {/* Empty state — IDLE with no selection */}
-      {currentState === 'IDLE' && !selected && (
+      {/* Always-visible panel header — hidden during content states */}
+      {!isContentState && (
+        <div style={{
+          padding: '12px 20px 10px', flexShrink: 0,
+          borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          gap: '10px',
+        }}>
+          <span style={{
+            fontSize: '12px', color: 'rgba(255,255,255,0.35)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+            letterSpacing: '0.01em',
+          }}>
+            {selected
+              ? (selected.title || selected.transcript.slice(0, 48))
+              : 'Session details'}
+          </span>
+          {showEntryDetail && (
+            <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+              <button
+                onClick={handleEntryCopy}
+                title="Copy prompt"
+                style={{
+                  height: '24px', padding: '0 8px', borderRadius: '5px',
+                  fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer',
+                  background: entryCopied ? 'rgba(48,209,88,0.1)' : 'rgba(255,255,255,0.05)',
+                  border: entryCopied ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(255,255,255,0.1)',
+                  color: entryCopied ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.4)',
+                  transition: 'all 150ms',
+                }}
+              >
+                {entryCopied ? 'Copied' : 'Copy'}
+              </button>
+              <button
+                onClick={handleEntryExport}
+                title="Export as text"
+                style={{
+                  height: '24px', padding: '0 8px', borderRadius: '5px',
+                  fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer',
+                  background: entryExported ? 'rgba(48,209,88,0.1)' : 'rgba(255,255,255,0.05)',
+                  border: entryExported ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(255,255,255,0.1)',
+                  color: entryExported ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.4)',
+                  transition: 'all 150ms',
+                }}
+              >
+                {entryExported ? 'Exported' : 'Export'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Clock empty state */}
+      {showEmpty && (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '12px',
-          opacity: 0.35,
+          alignItems: 'center', justifyContent: 'center', gap: '14px',
+          minHeight: '200px',
         }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2"/>
-            <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2"/>
+            <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
-            Select a history to view details
+          <span style={{ fontSize: '16px', fontWeight: 400, color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.01em' }}>
+            Select a session to view details
+          </span>
+          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.16)' }}>
+            Your generated prompts appear here
           </span>
         </div>
       )}
 
       {/* History entry detail */}
       {showEntryDetail && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div style={{ padding: '22px 28px 14px', flexShrink: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ padding: '16px 28px 14px', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{
                 fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
@@ -233,51 +306,8 @@ export default function ExpandedDetailPanel({
         </div>
       )}
 
-      {/* IDLE — no history */}
-      {currentState === 'IDLE' && !selected && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
-          <div style={{
-            width: '68px', height: '68px', borderRadius: '50%',
-            background: 'rgba(10,132,255,0.08)', border: '1px solid rgba(10,132,255,0.2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="18" height="22" viewBox="0 0 12 16" fill="none">
-              <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,170,255,0.7)" strokeWidth="1" />
-              <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,170,255,0.7)" strokeWidth="1" strokeLinecap="round" />
-              <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,170,255,0.7)" strokeWidth="1" strokeLinecap="round" />
-            </svg>
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 500, color: 'rgba(255,255,255,0.65)', letterSpacing: '-0.01em' }}>
-            Speak your prompt
-          </div>
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.25)' }}>
-            Press ⌥ Space or click the mic to start
-          </div>
-        </div>
-      )}
-
-      {currentState === 'RECORDING' && !isViewingHistory && (
-        <div style={{ padding: '24px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.75)', marginBottom: '8px' }}>Listening...</div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>Speak now. Recording will stop when you tap the square.</div>
-        </div>
-      )}
-
-      {currentState === 'PAUSED' && !isViewingHistory && (
-        <div style={{ padding: '24px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,189,46,0.75)', marginBottom: '8px' }}>Paused</div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>Tap resume to continue recording.</div>
-        </div>
-      )}
-
-      {currentState === 'ITERATING' && !isViewingHistory && (
-        <div style={{ padding: '24px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(10,132,255,0.8)', marginBottom: '8px' }}>Iterating...</div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>Speak your refinement. Stop when done.</div>
-        </div>
-      )}
-
-      {currentState === 'TYPING' && !isViewingHistory && (
+      {/* Content states — delegated to dedicated components */}
+      {currentState === 'TYPING' && (
         <ExpandedTypingContent
           mode={mode}
           onTypingSubmit={onTypingSubmit}
@@ -285,40 +315,7 @@ export default function ExpandedDetailPanel({
         />
       )}
 
-      {currentState === 'THINKING' && !isViewingHistory && (
-        <div style={{ padding: '24px 15%' }}>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: thinkingAccentColor || 'rgba(255,255,255,0.75)', marginBottom: '16px' }}>{thinkingLabel || 'Generating prompt...'}</div>
-          {thinkTranscript && (
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px', fontStyle: 'italic', lineHeight: 1.5 }}>
-              &ldquo;{thinkTranscript}&rdquo;
-            </div>
-          )}
-          {[
-            { bars: ['88%', '72%'] },
-            { bars: ['94%', '65%'] },
-            { bars: ['80%', '55%'] },
-          ].map((section, si) => (
-            <div key={si}>
-              <div style={{
-                height: '8px', width: '30%', borderRadius: '4px',
-                background: 'rgba(100,170,255,0.08)',
-                marginBottom: '8px', marginTop: si === 0 ? 0 : '16px',
-                animation: 'skeleton-pulse 1.8s ease-in-out infinite',
-              }} />
-              {section.bars.map((w, bi) => (
-                <div key={bi} style={{
-                  height: '10px', borderRadius: '5px',
-                  background: 'rgba(255,255,255,0.05)', width: w,
-                  marginBottom: '10px',
-                  animation: `skeleton-pulse ${1.4 + (si * 2 + bi) * 0.15}s ease-in-out infinite`,
-                }} />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {currentState === 'PROMPT_READY' && !isViewingHistory && (
+      {currentState === 'PROMPT_READY' && (
         <ExpandedPromptReadyContent
           generatedPrompt={generatedPrompt}
           setGeneratedPrompt={setGeneratedPrompt}
@@ -332,7 +329,7 @@ export default function ExpandedDetailPanel({
         />
       )}
 
-      {currentState === 'IMAGE_BUILDER' && !isViewingHistory && imageBuilderProps && (
+      {currentState === 'IMAGE_BUILDER' && imageBuilderProps && (
         <ImageBuilderState
           transcript={imageBuilderProps.transcript}
           imageDefaults={imageBuilderProps.imageDefaults}
@@ -352,7 +349,7 @@ export default function ExpandedDetailPanel({
         />
       )}
 
-      {currentState === 'IMAGE_BUILDER_DONE' && !isViewingHistory && imageBuilderProps && (
+      {currentState === 'IMAGE_BUILDER_DONE' && imageBuilderProps && (
         <ImageBuilderDoneState
           prompt={imageBuilderProps.imageBuiltPrompt}
           answers={imageBuilderProps.imageAnswers}
@@ -363,7 +360,7 @@ export default function ExpandedDetailPanel({
         />
       )}
 
-      {currentState === 'VIDEO_BUILDER' && !isViewingHistory && videoBuilderProps && (
+      {currentState === 'VIDEO_BUILDER' && videoBuilderProps && (
         <VideoBuilderState
           transcript={videoBuilderProps.transcript}
           videoDefaults={videoBuilderProps.videoDefaults}
@@ -386,7 +383,7 @@ export default function ExpandedDetailPanel({
         />
       )}
 
-      {currentState === 'VIDEO_BUILDER_DONE' && !isViewingHistory && videoBuilderProps && (
+      {currentState === 'VIDEO_BUILDER_DONE' && videoBuilderProps && (
         <VideoBuilderDoneState
           prompt={videoBuilderProps.videoBuiltPrompt}
           videoAnswers={videoBuilderProps.videoAnswers}

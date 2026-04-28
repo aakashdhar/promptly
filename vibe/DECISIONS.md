@@ -1447,3 +1447,16 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 > Action: passed — proceeded to build
 > Report: vibe/spec-reviews/2026-04-28-history-empty-state.md
 ---
+
+---
+### D-BUG-TOGGLE-008 — 2026-04-28 — Visual redesign: transport bar + right panel (pure history viewer)
+- **Date**: 2026-04-28 · **Type**: scope-change (visual redesign)
+- **Branch**: feat/bug-toggle-008 (fresh branch from main — prior branch feat/toggle-expand-collapse abandoned after merge conflict complexity)
+- **What was planned**: centred flanking transport row; right panel with state-driven recording/thinking/mic UI
+- **What was done**:
+  1. **ExpandedTransportBar**: replaced 3-column flanking layout with `inline-flex` row that shrinks to content width. Added ResizeObserver on transport row `ref`; waveform `div` width set to measured pixel value for exact alignment. Text block (right of 0.5px divider) shows state-aware hint text. Mic 52px, pause/type 36px.
+  2. **ExpandedDetailPanel**: converted right panel to pure history viewer. Removed RECORDING/PAUSED/ITERATING/THINKING/IDLE-mic content blocks. Added always-visible panel header (title + Copy/Export quick links, hidden during content states). Clock empty state shown for all non-content states when nothing selected. Kept TYPING/PROMPT_READY/IMAGE_BUILDER/VIDEO_BUILDER/DONE intact.
+  3. **ExpandedView**: `selected` initialises to `null` (no auto-selection). Clicking active history entry toggles deselect. Removed stale `useEffect` that cleared `isViewingHistory` on state transitions (not needed — content states now bypass history viewer via `isContentState` flag in ExpandedDetailPanel).
+- **Alternatives considered**: keeping flanking layout and adding text inline → rejected, too cramped; keeping recording UI in right panel → rejected, conflicts with "pure history viewer" spec requirement
+- **Impact on other tasks**: none — purely visual, no logic changes to recording/generation flow
+- **Approved by**: human

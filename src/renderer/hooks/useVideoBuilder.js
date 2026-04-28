@@ -88,6 +88,12 @@ Rules:
     }
     setVideoBuiltPrompt(genResult.prompt)
     setIsSaved(false)
+    saveToHistory({
+      transcript: originalTranscript.current,
+      prompt: genResult.prompt,
+      mode: 'video',
+      videoAnswers: { ...answers, dialogueText, settingDetail },
+    })
     window.electronAPI?.setLastPrompt?.(genResult.prompt)
     transitionRef.current(STATES.VIDEO_BUILDER_DONE)
   }, [])
@@ -244,12 +250,6 @@ Rules:
 
   function handleVideoSave() {
     if (isSaved) return
-    saveToHistory({
-      transcript: originalTranscript.current,
-      prompt: videoBuiltPrompt,
-      mode: 'video',
-      videoAnswers: { ...videoAnswers, dialogueText: videoDialogueText, settingDetail: videoSettingDetail },
-    })
     window.electronAPI?.setLastPrompt?.(videoBuiltPrompt)
     setIsSaved(true)
   }
