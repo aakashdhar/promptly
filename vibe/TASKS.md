@@ -529,3 +529,20 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 
 ## What just happened
 ✅ IMAGE-BUILDER redesign complete 2026-04-27 — Tier-based 17-question interview replaced with all-params review screen. Claude pre-fills all 18 parameters via Phase 1 generate-raw call; user reviews and edits; Phase 2 assembles final natural-language prompt. Inline option picker, custom text inputs, reiterate merge logic all implemented. Build clean.
+
+---
+
+## FEATURE-ABORT-RESET — Always-visible reset button (0/5)
+> Spec: vibe/features/2026-04-28-abort-reset/ | Added: 2026-04-28
+> Estimated: approx. 4–5 hours (S: 4, M: 1)
+   [ ] ABORT-001 · abortRef + handleGenerateResult guard — prevents stale generation completing after user resets
+   [ ] ABORT-002 · handleAbort() in App.jsx + onAbort prop chain to ExpandedView/ExpandedTransportBar
+   [ ] ABORT-003 · Abort button in ExpandedTransportBar drag-spacer row (left side, always in expanded view)
+   [ ] ABORT-004 · Abort overlay button in App.jsx collapsed mode (absolute top-right, all non-IDLE states)
+   [ ] ABORT-005 · Docs — CODEBASE.md + DECISIONS.md update
+   → Full specs: vibe/features/2026-04-28-abort-reset/FEATURE_TASKS.md (agent use)
+
+## What's next
+⬜ ABORT-001 · Add abortRef + guard in handleGenerateResult
+   Prevents stale Claude generation from transitioning the app after user has already reset.
+Say "next" to begin.
