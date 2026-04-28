@@ -190,3 +190,10 @@ Build order from Feature Map above:
 - Manual smoke test — exercise all 6 states, all 5 modes, on both architectures
 - Build verification — `npm run dist` produces working universal .dmg
 - Distribution prep — upload path + Slack message template
+
+---
+#### History Empty State — right panel empty state on launch ← UNPLANNED ADDITION
+> Added: 2026-04-28 · See DECISIONS.md D-HEMPTY-001 for context
+> Build order: post-video-builder · Depends on: ExpandedView + ExpandedDetailPanel (both built)
+> Shared data: none — UI only
+> Spec: vibe/features/2026-04-28-history-empty-state/

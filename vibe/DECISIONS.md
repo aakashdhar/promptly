@@ -1432,3 +1432,18 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
   6. Keyboard shortcut deferred — Escape is already claimed in Typing and Shortcuts states.
 - **Tasks**: ABORT-001 through ABORT-005
 - **Folder**: vibe/features/2026-04-28-abort-reset/
+
+---
+## D-HEMPTY-001 — 2026-04-28 — History empty state: no auto-selection on launch
+> Folder: vibe/features/2026-04-28-history-empty-state/
+> Right panel shows clock icon + "Select a history to view details" when no entry is selected on launch.
+> Tasks: HEMPTY-001, HEMPTY-002 | Estimated: ~30 mins
+> Decision: null initial state in ExpandedView rather than auto-selecting h[0]. Empty state rendered in ExpandedDetailPanel for IDLE + no selection. Mid-session selections preserved — empty state only appears before first selection per session.
+---
+
+---
+## 2026-04-28 — Spec review: history-empty-state (add-feature)
+> P0: 0 · P1: 0 · P2: 1
+> Action: passed — proceeded to build
+> Report: vibe/spec-reviews/2026-04-28-history-empty-state.md
+---

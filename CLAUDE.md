@@ -262,3 +262,37 @@ Never: touch files not in scope · change behaviour of other modes · add runtim
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
 ---
+
+---
+### Active Feature: FEATURE-HISTORY-EMPTY-STATE
+> Folder: vibe/features/2026-04-28-history-empty-state/ | Added: 2026-04-28
+
+**Feature summary**: Show empty state (clock icon + "Select a history to view details") in right panel when no history entry is selected on launch.
+**Files in scope**: `src/renderer/components/ExpandedView.jsx`, `src/renderer/components/ExpandedDetailPanel.jsx`, `vibe/CODEBASE.md`, `vibe/TASKS.md`, `vibe/DECISIONS.md`
+**Files out of scope**: All other components, all hooks, App.jsx, main.js, preload.js, index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- Inline styles for conditional/dynamic rendering
+- No dangerouslySetInnerHTML — JSX text nodes only
+- Functional React components, one per file
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change · keep changes additive · update CODEBASE.md · update TASKS.md after every task
+Never: touch files not in scope · change showEntryDetail logic · remove getHistory import
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add src/renderer/components/ExpandedView.jsx src/renderer/components/ExpandedDetailPanel.jsx
+   git commit -m "feat(history-empty-state): [TASK-ID] — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-28-history-empty-state/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [TASK-ID] done — history-empty-state"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---
