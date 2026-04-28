@@ -30,14 +30,17 @@ export default function ExpandedView({
   onTypingSubmit,
   onSwitchToVoice,
   onTypePrompt,
+  thinkingLabel,
+  thinkingAccentColor,
   imageBuilderProps,
+  videoBuilderProps,
 }) {
   const [selected, setSelected] = useState(() => { const h = getHistory(); return h.length > 0 ? h[0] : null })
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
   // Return right panel to current state content when active state arrives
   useEffect(() => {
-    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY' || currentState === 'TYPING' || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE') {
+    if (currentState === 'RECORDING' || currentState === 'THINKING' || currentState === 'PROMPT_READY' || currentState === 'TYPING' || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE' || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE') {
       setIsViewingHistory(false)
     }
   }, [currentState])
@@ -94,7 +97,10 @@ export default function ExpandedView({
           onEntryChange={handleEntryChange}
           onTypingSubmit={onTypingSubmit}
           onSwitchToVoice={onSwitchToVoice}
+          thinkingLabel={thinkingLabel}
+          thinkingAccentColor={thinkingAccentColor}
           imageBuilderProps={imageBuilderProps}
+          videoBuilderProps={videoBuilderProps}
         />
       </div>
     </div>

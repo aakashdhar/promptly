@@ -19,6 +19,7 @@ export default function ExpandedTransportBar({
   const isTyping = currentState === 'TYPING'
   const isIterating = currentState === 'ITERATING'
 
+  const isVideo = mode === 'video'
   const isPolish = mode === 'polish'
   const isRefine = mode === 'refine'
   const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : 'rgba(10,132,255,0.12)'
@@ -43,19 +44,20 @@ export default function ExpandedTransportBar({
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
       }}>
         <button
-          onClick={onCollapse}
-          title="Collapse"
+          onClick={isVideo ? undefined : onCollapse}
+          title={isVideo ? 'Video mode requires expanded view' : 'Collapse'}
           style={{
             width: '28px', height: '28px', borderRadius: '7px',
             background: 'rgba(255,255,255,0.05)',
             border: '0.5px solid rgba(255,255,255,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', marginRight: '18px',
+            cursor: isVideo ? 'not-allowed' : 'pointer', marginRight: '18px',
             WebkitAppRegion: 'no-drag', padding: 0,
             transition: 'background 150ms', flexShrink: 0,
+            opacity: isVideo ? 0.4 : 1,
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseEnter={e => { if (!isVideo) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+          onMouseLeave={e => { if (!isVideo) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
         >
           <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
             <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />

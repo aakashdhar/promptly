@@ -5,6 +5,8 @@ import ExpandedPromptReadyContent from './ExpandedPromptReadyContent.jsx'
 import PromptSections from './PromptSections.jsx'
 import ImageBuilderState from './ImageBuilderState.jsx'
 import ImageBuilderDoneState from './ImageBuilderDoneState.jsx'
+import VideoBuilderState from './VideoBuilderState.jsx'
+import VideoBuilderDoneState from './VideoBuilderDoneState.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -29,7 +31,10 @@ export default function ExpandedDetailPanel({
   onEntryChange,
   onTypingSubmit,
   onSwitchToVoice,
+  thinkingLabel,
+  thinkingAccentColor,
   imageBuilderProps,
+  videoBuilderProps,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
 
@@ -265,7 +270,7 @@ export default function ExpandedDetailPanel({
 
       {currentState === 'THINKING' && !isViewingHistory && (
         <div style={{ padding: '24px 15%' }}>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.75)', marginBottom: '16px' }}>Generating prompt...</div>
+          <div style={{ fontSize: '13px', fontWeight: 500, color: thinkingAccentColor || 'rgba(255,255,255,0.75)', marginBottom: '16px' }}>{thinkingLabel || 'Generating prompt...'}</div>
           {thinkTranscript && (
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '20px', fontStyle: 'italic', lineHeight: 1.5 }}>
               &ldquo;{thinkTranscript}&rdquo;
@@ -338,6 +343,42 @@ export default function ExpandedDetailPanel({
           onEditAnswers={imageBuilderProps.onEditAnswers}
           onStartOver={imageBuilderProps.onStartOver}
           isExpanded={true}
+        />
+      )}
+
+      {currentState === 'VIDEO_BUILDER' && !isViewingHistory && videoBuilderProps && (
+        <VideoBuilderState
+          transcript={videoBuilderProps.transcript}
+          videoDefaults={videoBuilderProps.videoDefaults}
+          videoAnswers={videoBuilderProps.videoAnswers}
+          showAdvanced={videoBuilderProps.showAdvanced}
+          activePickerParam={videoBuilderProps.activePickerParam}
+          dialogueText={videoBuilderProps.dialogueText}
+          settingDetail={videoBuilderProps.settingDetail}
+          onChipRemove={videoBuilderProps.onChipRemove}
+          onChipAdd={videoBuilderProps.onChipAdd}
+          onParamChange={videoBuilderProps.onParamChange}
+          onToggleAdvanced={videoBuilderProps.onToggleAdvanced}
+          onOpenPicker={videoBuilderProps.onOpenPicker}
+          onClosePicker={videoBuilderProps.onClosePicker}
+          onDialogueChange={videoBuilderProps.onDialogueChange}
+          onSettingChange={videoBuilderProps.onSettingChange}
+          onConfirm={videoBuilderProps.onConfirm}
+          onCopyNow={videoBuilderProps.onCopyNow}
+          onReiterate={videoBuilderProps.onReiterate}
+        />
+      )}
+
+      {currentState === 'VIDEO_BUILDER_DONE' && !isViewingHistory && videoBuilderProps && (
+        <VideoBuilderDoneState
+          prompt={videoBuilderProps.videoBuiltPrompt}
+          videoAnswers={videoBuilderProps.videoAnswers}
+          transcript={videoBuilderProps.transcript}
+          onCopy={videoBuilderProps.onCopyPrompt}
+          onEdit={videoBuilderProps.onEditAnswers}
+          onStartOver={videoBuilderProps.onStartOver}
+          isSaved={videoBuilderProps.isSaved}
+          onSave={videoBuilderProps.onSave}
         />
       )}
     </div>

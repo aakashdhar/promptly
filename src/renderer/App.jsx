@@ -6,6 +6,7 @@ import useRecording from './hooks/useRecording.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import useIteration from './hooks/useIteration.js'
 import useImageBuilder from './hooks/useImageBuilder.js'
+import useVideoBuilder from './hooks/useVideoBuilder.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -21,6 +22,8 @@ import SettingsPanel from './components/SettingsPanel.jsx'
 import ExpandedView from './components/ExpandedView.jsx'
 import ImageBuilderState from './components/ImageBuilderState.jsx'
 import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
+import VideoBuilderState from './components/VideoBuilderState.jsx'
+import VideoBuilderDoneState from './components/VideoBuilderDoneState.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -37,6 +40,8 @@ const STATES = {
   SETTINGS: 'SETTINGS',
   IMAGE_BUILDER: 'IMAGE_BUILDER',
   IMAGE_BUILDER_DONE: 'IMAGE_BUILDER_DONE',
+  VIDEO_BUILDER: 'VIDEO_BUILDER',
+  VIDEO_BUILDER_DONE: 'VIDEO_BUILDER_DONE',
 }
 
 const STATE_HEIGHTS = {
@@ -54,6 +59,8 @@ const STATE_HEIGHTS = {
   EXPANDED: 860,
   IMAGE_BUILDER: 520,
   IMAGE_BUILDER_DONE: 380,
+  VIDEO_BUILDER: 860,
+  VIDEO_BUILDER_DONE: 860,
 }
 
 export default function App() {
@@ -66,6 +73,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
   const [thinkingLabel, setThinkingLabel] = useState('')
+  const [thinkingAccentColor, setThinkingAccentColor] = useState('')
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -104,13 +112,14 @@ export default function App() {
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
   useEffect(() => {
-    if (mode === 'image' && !isExpandedRef.current) handleExpand()
+    if ((mode === 'image' || mode === 'video') && !isExpandedRef.current) handleExpand()
   }, [mode])
 
   function transition(newState, payload = {}) {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
+    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor('') }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -200,14 +209,56 @@ export default function App() {
     setThinkingLabel,
   })
 
+  const {
+    videoDefaults,
+    videoAnswers,
+    videoBuiltPrompt,
+    showVideoAdvanced,
+    videoActivePickerParam,
+    videoDialogueText,
+    videoSettingDetail,
+    isSaved: videoIsSaved,
+    isReiteratingRef: isVideoReiteratingRef,
+    runPreSelection: runVideoPreSelection,
+    handleVideoChipRemove,
+    handleVideoChipAdd,
+    handleVideoParamChange,
+    handleVideoOpenPicker,
+    handleVideoClosePicker,
+    handleVideoToggleAdvanced,
+    handleVideoConfirm,
+    handleVideoCopyNow,
+    handleVideoCopyPrompt,
+    handleVideoDialogueChange,
+    handleVideoSettingChange,
+    handleVideoSave,
+    handleVideoStartOver,
+    handleVideoEditAnswers,
+  } = useVideoBuilder({
+    STATES,
+    transitionRef,
+    originalTranscript,
+    setThinkTranscript,
+    setThinkingLabel,
+    setThinkingAccentColor,
+  })
+
   const handleGenerateResult = useCallback((genResult, transcript) => {
     if (mode === 'image') {
-      // genResult is a passthrough — run pre-selection Claude call then go to IMAGE_BUILDER
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
       if (!isExpandedRef.current) handleExpand()
       setThinkingLabel('Analysing your idea...')
       runPreSelection(originalTranscript.current, isReiterate)
+      return
+    }
+    if (mode === 'video') {
+      const isReiterate = isVideoReiteratingRef.current
+      isVideoReiteratingRef.current = false
+      if (!isExpandedRef.current) handleExpand()
+      setThinkingLabel('Analysing your idea...')
+      setThinkingAccentColor('rgba(251,146,60,0.8)')
+      runVideoPreSelection(originalTranscript.current, isReiterate)
       return
     }
     setThinkingLabel('')
@@ -400,6 +451,8 @@ export default function App() {
               }
               transition(STATES.PROMPT_READY)
             }}
+            thinkingLabel={thinkingLabel}
+            thinkingAccentColor={thinkingAccentColor}
             imageBuilderProps={{
               transcript: originalTranscript.current,
               imageDefaults,
@@ -418,6 +471,32 @@ export default function App() {
               onReiterate: () => { isReiteratingRef.current = true; startRecording() },
               onEditAnswers: handleImageEditAnswers,
               onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
+            }}
+            videoBuilderProps={{
+              transcript: originalTranscript.current,
+              videoDefaults,
+              videoAnswers,
+              showAdvanced: showVideoAdvanced,
+              activePickerParam: videoActivePickerParam,
+              dialogueText: videoDialogueText,
+              settingDetail: videoSettingDetail,
+              videoBuiltPrompt,
+              isSaved: videoIsSaved,
+              onChipRemove: handleVideoChipRemove,
+              onChipAdd: handleVideoChipAdd,
+              onParamChange: handleVideoParamChange,
+              onToggleAdvanced: handleVideoToggleAdvanced,
+              onOpenPicker: handleVideoOpenPicker,
+              onClosePicker: handleVideoClosePicker,
+              onDialogueChange: handleVideoDialogueChange,
+              onSettingChange: handleVideoSettingChange,
+              onConfirm: handleVideoConfirm,
+              onCopyNow: handleVideoCopyNow,
+              onCopyPrompt: handleVideoCopyPrompt,
+              onReiterate: () => { isVideoReiteratingRef.current = true; startRecording() },
+              onEditAnswers: handleVideoEditAnswers,
+              onStartOver: handleVideoStartOver,
+              onSave: handleVideoSave,
             }}
           />
         ) : (
@@ -458,7 +537,7 @@ export default function App() {
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState
