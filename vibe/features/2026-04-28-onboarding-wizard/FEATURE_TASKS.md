@@ -449,7 +449,7 @@
 ---
 
 ### ONBD-016 · OperationErrorPanel.jsx — shared error component
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#transcription-error-state + #generation-error-state (visual specs)
 - **Dependencies**: None (can be built standalone, wired in ONBD-014/015)
@@ -474,8 +474,10 @@
 **Architecture compliance**: Functional React component; inline styles for dynamic; no dangerouslySetInnerHTML
 
 **Decisions**:
-> Filled in by agent after completing.
-- None yet.
+- Props: `{ icon, title, body, errorDetails, slowWarning, fixLabel, fixCode, fixNote, fixPreNote, onRetry, retryLabel, onOpenSettings }` — added `slowWarning`, `fixNote`, `fixPreNote`, `retryLabel` beyond spec to handle all caller variations without forking.
+- Callers use IIFEs (`{currentState === 'X' && (() => { ... })()}`) in ExpandedDetailPanel to compute props inline — no additional wrapper components needed.
+- `fixCopied`/`setFixCopied` state removed from ExpandedDetailPanel; OperationErrorPanel owns its own copy-flash state.
+- GenerationErrorPanel multi-command case (empty type): primary fix is `claude update` via `fixCode`; second command removed — single command is sufficient for the repair path.
 
 ---
 
