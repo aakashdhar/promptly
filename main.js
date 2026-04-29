@@ -1153,6 +1153,70 @@ app.whenReady().then(async () => {
     return { downloaded: false, path: null, sizeMB: null };
   });
 
+  ipcMain.handle('download-whisper-model', () => {
+    return new Promise((resolve) => {
+      if (!whisperPath) {
+        resolve({ success: false, error: 'Whisper not found — install Whisper first' });
+        return;
+      }
+
+      // tqdm remaining-time string "mm:ss" or "h:mm:ss" → seconds
+      function parseTqdmTime(s) {
+        if (!s) return null;
+        const parts = s.trim().split(':').map(Number);
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return parts[0] || null;
+      }
+
+      const [cmd, spawnArgs] = whisperPath === 'python3 -m whisper'
+        ? ['python3', ['-m', 'whisper', '/dev/null', '--model', 'base']]
+        : [whisperPath, ['/dev/null', '--model', 'base']];
+
+      const child = spawn(cmd, spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stderrBuf = '';
+      let resolved = false;
+
+      child.stderr.on('data', (d) => {
+        stderrBuf += d.toString();
+        // tqdm uses \r to rewrite the line in-place — split on both
+        const lines = stderrBuf.split(/[\r\n]/);
+        stderrBuf = lines.pop();
+        for (const line of lines) {
+          const m = line.match(/(\d+)%\|.*?\|\s*([\d.]+)M\/([\d.]+)M\s*\[(.+?)<(.+?),/);
+          if (m) {
+            const payload = {
+              percent:    parseInt(m[1], 10),
+              mbDone:     parseFloat(m[2]),
+              mbTotal:    parseFloat(m[3]),
+              secondsLeft: parseTqdmTime(m[5]),
+            };
+            if (!win || win.isDestroyed()) return;
+            win.webContents.send('whisper-download-progress', payload);
+          }
+        }
+      });
+
+      child.stdout.on('data', () => {}); // drain
+
+      child.on('close', (code) => {
+        if (resolved) return;
+        resolved = true;
+        if (code === 0) {
+          resolve({ success: true });
+        } else {
+          resolve({ success: false, error: stderrBuf.trim() || 'Download failed' });
+        }
+      });
+
+      child.on('error', (err) => {
+        if (resolved) return;
+        resolved = true;
+        resolve({ success: false, error: err.message || 'Download failed' });
+      });
+    });
+  });
+
   ipcMain.handle('uninstall-promptly', () => handleUninstall());
 
   ipcMain.handle('get-stored-paths', () => {
