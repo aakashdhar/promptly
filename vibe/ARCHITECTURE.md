@@ -78,7 +78,7 @@ promptly/
 
 **Approach:** React `useState` + `useRef` state machine in `App.jsx`. Single `currentState` (useState) mirrors `stateRef` (useRef) for stale-closure-safe IPC callbacks.
 
-**States (13 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS, IMAGE_BUILDER, IMAGE_BUILDER_DONE added via features):**
+**States (15 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS, IMAGE_BUILDER, IMAGE_BUILDER_DONE, VIDEO_BUILDER, VIDEO_BUILDER_DONE, WORKFLOW_BUILDER, WORKFLOW_BUILDER_DONE added via features):**
 ```
 FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
                  ↕ PAUSED (FEATURE-011)
@@ -88,6 +88,8 @@ IDLE / PROMPT_READY → SHORTCUTS (FEATURE-006)
 IDLE / PROMPT_READY → HISTORY (FEATURE-009)
 IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
 RECORDING (image mode) → THINKING → IMAGE_BUILDER → THINKING → IMAGE_BUILDER_DONE (FEATURE-IMAGE-BUILDER)
+RECORDING (video mode) → THINKING → VIDEO_BUILDER → THINKING → VIDEO_BUILDER_DONE (FEATURE-VIDEO-BUILDER)
+RECORDING (workflow mode) → THINKING → WORKFLOW_BUILDER → THINKING → WORKFLOW_BUILDER_DONE (FEATURE-WORKFLOW-BUILDER)
 ```
 
 **`isExpanded` — layout mode flag (POLISH-TOGGLE / BUG-TOGGLE-002):**
@@ -318,6 +320,8 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 | Refine | `refine` | Standalone 4-section design feedback prompt (Current state, Problem, Desired outcome, Constraints); purple accent in UI; bypasses PROMPT_TEMPLATE |
 | Polish | `polish` | Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; `{TONE}` replaced via `options.tone`; green accent in UI |
 | Image | `image` | Two-phase flow: generate-prompt passthrough → Phase 1 generate-raw (Claude pre-selects all params as JSON → imageDefaults) → IMAGE_BUILDER review screen → Phase 2 generate-raw (Claude assembles final natural-language prompt) → IMAGE_BUILDER_DONE; purple accent in UI |
+| Video | `video` | Two-phase flow: Phase 1 generate-raw (Claude pre-selects video params as JSON) → VIDEO_BUILDER review screen → Phase 2 generate-raw (Claude assembles Veo 3.1 natural-language prompt) → VIDEO_BUILDER_DONE; orange accent in UI |
+| Workflow | `workflow` | Two-phase flow: Phase 1 generate-raw (Claude maps spoken idea to n8n nodes as JSON → workflowAnalysis) → WORKFLOW_BUILDER review/fill screen → Phase 2 generate-raw (Claude outputs complete n8n workflow JSON) → WORKFLOW_BUILDER_DONE; green accent in UI |
 
 - Mode is selected via right-click context menu on the bar.
 - Active mode persisted in localStorage via `getMode()` / `setMode()`.
