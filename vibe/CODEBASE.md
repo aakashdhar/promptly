@@ -1,7 +1,7 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-04-29 (FEATURE-ONBOARDING-WIZARD ONBD-001–ONBD-016)
+> Last updated: 2026-04-29 (post-ONBD-017 wizard UX fixes — window resize, no-auto-advance, scroll)
 
 ---
 
@@ -22,7 +22,7 @@
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, menu bar icon. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. MODE_CONFIG has 10 modes total (adds workflow: passthrough:true, instruction:''). | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `resolveFfmpegPath()`, `registerShortcut()`, `buildTrayMenu()`, `updateTrayMenu()`, `handleUninstall()`, `crc32()`, `pngEncode()`, `createMicIcon()`, `createMenuBarIcon()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `menuBarTray`, `pulseInterval`, `lastGeneratedPrompt`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt(transcript, mode, options?)`, `generateRaw`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause`, `updateMenuBarState(state)`, `setLastPrompt(prompt)`, `retryTranscription()`, `onTranscriptionSlowWarning(cb)`, `retryGeneration()`, `onGenerationSlowWarning(cb)`, `reopenWizard()` |
-| `splash.html` | Launch-time CLI + mic checks before main bar shows — separate splashWin BrowserWindow (vanilla HTML, independent of React). Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()` |
+| `splash.html` | 4-screen onboarding wizard + legacy quick-check for returning users — separate splashWin BrowserWindow (vanilla HTML, independent of React). Window: 560×620 (enlarged post-fix). Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. All screens scrollable (overflow-y: auto). Screens 1/2/3 do NOT auto-advance on success — each shows a "Continue →" primary button so the user controls pace. "Check again ↺" is secondary style on screens 1–3. Screen 0 (welcome): centered column layout; on repeat launches calls `runChecks()` (legacy quick-check) instead of immediately calling splashDone. `s1ShowError()` helper consolidates error-state display for screen 1. Font size 13px throughout. | `runChecks()`, `setCheck()`, `showReady()`, `openInstall()`, `showScreen(n)`, `s1ShowError(stateId, showHelp)` |
 | `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
@@ -226,7 +226,7 @@
 | `claudePath` | app-ready — `resolveClaudePath()` Promise | resolved binary path or null |
 | `whisperPath` | app-ready — `resolveWhisperPath()` Promise (awaited) | resolved binary path, `'python3 -m whisper'`, or null |
 | `win` | `createWindow()` called after `resolveClaudePath()` resolves | BrowserWindow instance |
-| `splashWin` | `app.whenReady()` — created before `win`, destroyed after `splash-done` | BrowserWindow instance (null after splash) |
+| `splashWin` | `app.whenReady()` — created before `win` (560×620); destroyed after `splash-done`; recreated by `reopen-wizard` at same 560×620 dimensions | BrowserWindow instance (null after splash) |
 | `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |
 | `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, refine, design, polish }` — 8 modes total; each `{ name, instruction }`; `refine`, `design`, and `polish` have `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
 | `tray` | `updateTrayMenu()` reference — null after FEATURE-017 removed `createTray()` | null (menuBarTray is the sole Tray instance) |

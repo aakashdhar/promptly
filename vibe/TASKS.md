@@ -473,8 +473,13 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    Fix: corrected prop reference to `imageBuilderProps.imageAnswers`; defensive `answers || {}` guard added to `ImageBuilderDoneState.jsx`.
    → DECISIONS.md D-BUG-002 · DevTools shortcut Cmd+Option+I added to main.js for future debugging
 
+## What just happened
+✅ FEATURE-ONBOARDING-WIZARD complete (17/17) — 4-screen setup wizard (verify Claude/Whisper/ffmpeg/model end-to-end), transcription + generation error states with retry, OperationErrorPanel shared component. All tasks committed.
+
+✅ Post-ONBD-017 wizard UX fixes (2026-04-29) — splashWin enlarged 520×300 → 560×620; all screens scrollable; screens 1/2/3 no longer auto-advance on success — each shows "Continue →" so user controls pace; "Check again ↺" demoted to secondary; welcome screen centered; font bumped to 13px; legacy `runChecks()` restored for returning users (setupComplete=true path); `s1ShowError()` helper extracted. D-ONBD-UX-FIX logged in DECISIONS.md.
+
 ## What's next
-✅ FEATURE-ONBOARDING-WIZARD complete (17/17) — 4-screen setup wizard (verify Claude/Whisper/ffmpeg/model end-to-end), transcription + generation error states with retry, OperationErrorPanel shared component. All tasks committed. Ready for review gate.
+Ready for review gate (review: onboarding-wizard).
 
 ---
 
