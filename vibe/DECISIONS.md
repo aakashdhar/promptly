@@ -1500,6 +1500,14 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 ---
 
 ---
+## — Feature Start: FEATURE-ONBOARDING-WIZARD — 2026-04-29
+> Folder: vibe/features/2026-04-28-onboarding-wizard/
+> Splash screen becomes a 4-screen setup wizard (verify tools work end-to-end, not just path check); expanded view gains error states for transcription + generation failures with retry.
+> Tasks: ONBD-001 through ONBD-017 | Estimated: 22–30 hours (S: 9, M: 8)
+> Drift logged below as tasks complete.
+---
+
+---
 ### D-WFL-NOGATE — 2026-04-29 — Remove mandatory placeholder-fill gate
 - **Date**: 2026-04-29 · **Type**: scope-change
 - **Trigger**: change: command — user-initiated

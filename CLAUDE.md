@@ -370,3 +370,52 @@ Never: fix other bugs noticed · introduce new patterns · change unrelated code
 **Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
 **Between tasks:** "next" → lint → code commit → doc commit → state next task → confirm.
 ---
+
+---
+### Active Feature: FEATURE-ONBOARDING-WIZARD
+> Folder: vibe/features/2026-04-28-onboarding-wizard/ | Added: 2026-04-29
+
+**Feature summary**: Setup wizard (splash.html) that verifies tools actually work + expanded view error states with retry for transcription and generation failures.
+**Files in scope**: `splash.html`, `main.js`, `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx`, `src/renderer/components/ExpandedDetailPanel.jsx`, `src/renderer/components/SettingsPanel.jsx`, `src/renderer/components/ErrorStatePanel.jsx` (new), `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: All mode-specific components (image/video/workflow builders), all hooks, preload.js (unless new IPC channels added — ask first), index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file in src/renderer/components/. Functional React components only.
+- All state transitions via transition() in App.jsx — never mutate state directly.
+- Inline styles for dynamic/stateful values; Tailwind only for static layout classes.
+- No dangerouslySetInnerHTML with user/Claude content — use JSX text nodes.
+- IPC via window.electronAPI only — never ipcRenderer directly.
+- splash.html is vanilla HTML/JS — no React, no build step.
+- PATH resolution: static paths → nvm scan → shell fallback (ARCHITECTURE.md pattern).
+- Use execFile (not exec) for all binary verification calls.
+- config.json via readConfig/writeConfig — no new runtime npm deps.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md for new files/IPC/states ·
+        update TASKS.md after every task
+
+Ask first: adding new IPC channels · changing window dimensions · modifying existing mode flows · touching preload.js
+Never: touch files not in scope · change behaviour of existing features · add runtime npm packages · use innerHTML with generated text
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add splash.html main.js src/renderer/App.jsx src/renderer/components/ExpandedView.jsx src/renderer/components/ExpandedDetailPanel.jsx src/renderer/components/SettingsPanel.jsx src/renderer/components/ErrorStatePanel.jsx
+   git commit -m "feat(onboarding): ONBD-XXX — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-28-onboarding-wizard/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark ONBD-XXX done — onboarding-wizard"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---

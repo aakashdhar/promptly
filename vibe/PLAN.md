@@ -197,3 +197,10 @@ Build order from Feature Map above:
 > Build order: post-video-builder · Depends on: ExpandedView + ExpandedDetailPanel (both built)
 > Shared data: none — UI only
 > Spec: vibe/features/2026-04-28-history-empty-state/
+
+#### FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-04-29
+> Added: 2026-04-29 · See DECISIONS.md D-ONBD-001 for context
+> Build order: independent — modifies splash.html + main.js + App.jsx error paths; no mode dependencies
+> Depends on: existing splash.html, generate-prompt + transcribe-audio IPC, React app (all complete)
+> Shared data: reads config.json (writes setupComplete flag); reads/writes lastTempAudioPath + lastTranscript (new main.js vars)
+> Spec: vibe/features/2026-04-28-onboarding-wizard/

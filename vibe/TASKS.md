@@ -609,6 +609,30 @@ Fix RFX-WFL tasks below before merging to main.
 
 ---
 
+## FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling (0/17)
+> Spec: vibe/features/2026-04-28-onboarding-wizard/ | Added: 2026-04-29
+> Estimated: approx. 22–30 hours (S: 9, M: 8)
+   [ ] ONBD-001 · main.js: check-claude IPC with test generation
+   [ ] ONBD-002 · main.js: check-whisper + check-ffmpeg IPC
+   [ ] ONBD-003 · main.js: check-whisper-model IPC
+   [ ] ONBD-004 · main.js: download-whisper-model IPC with progress streaming
+   [ ] ONBD-005 · main.js: lastTempAudioPath + lastTranscript + retry IPC
+   [ ] ONBD-006 · main.js: transcription timeout (30s) with kill + warning events
+   [ ] ONBD-007 · main.js: generation timeout (45s) with error type parsing
+   [ ] ONBD-008 · splash.html: Screen 0 Welcome + setupComplete check
+   [ ] ONBD-009 · splash.html: Screen 1 — Claude CLI wizard step
+   [ ] ONBD-010 · splash.html: Screen 2 — Whisper + ffmpeg wizard step
+   [ ] ONBD-011 · splash.html: Screen 3 — Model download with real progress bar
+   [ ] ONBD-012 · splash.html: Screen 4 — All done + launch
+   [ ] ONBD-013 · Skip option + settings recheck
+   [ ] ONBD-014 · App.jsx + ExpandedView.jsx: transcription error state
+   [ ] ONBD-015 · App.jsx + ExpandedView.jsx: generation error state
+   [ ] ONBD-016 · ErrorStatePanel.jsx: shared error component
+   [ ] ONBD-017 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md
+   → Full specs: vibe/features/2026-04-28-onboarding-wizard/FEATURE_TASKS.md (agent use)
+
+---
+
 ## ✅ Review fixes — FEATURE-WORKFLOW-BUILDER gate (2/2 COMPLETE)
 
 - [x] RFX-WFL-001 · WorkflowBuilderState.jsx — blankFilled bug fixed; checks filledPlaceholders state (not stale node.name); added to filledCount sum
