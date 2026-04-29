@@ -617,7 +617,7 @@ Fix RFX-WFL tasks below before merging to main.
    [x] ONBD-003 · main.js: check-whisper-model IPC
    [x] ONBD-004 · main.js: download-whisper-model IPC with progress streaming
    [x] ONBD-005 · main.js: lastTempAudioPath + lastTranscript + retry IPC
-   [ ] ONBD-006 · main.js: transcription timeout (30s) with kill + warning events
+   [x] ONBD-006 · main.js: transcription timeout (30s) with kill + warning events
    [ ] ONBD-007 · main.js: generation timeout (45s) with error type parsing
    [ ] ONBD-008 · splash.html: Screen 0 Welcome + setupComplete check
    [ ] ONBD-009 · splash.html: Screen 1 — Claude CLI wizard step

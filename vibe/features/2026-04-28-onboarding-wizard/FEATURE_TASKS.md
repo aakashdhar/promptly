@@ -142,7 +142,7 @@
 ---
 
 ### ONBD-006 · main.js — transcription timeout (30s) with kill + warning events
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#timeout-handling
 - **Dependencies**: None
