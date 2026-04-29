@@ -396,8 +396,8 @@
 |----|------|------|---------|--------|
 | ~~BL-WFL-003~~ | vibe/ARCHITECTURE.md | 81 | State count "13 total" — should be 15; WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE absent from state diagram; 'workflow' absent from prompt modes table | ✅ resolved — ARCHITECTURE.md updated 2026-04-29 |
 | ~~BL-WFL-004~~ | tests/utils.test.js | 43–80 | `getModeTagStyle('workflow')` not tested — add green tones assertion | ✅ resolved — workflow + video tests added; 20→22 tests 2026-04-29 |
-| BL-WFL-007 | vibe/CODEBASE.md | 30, 36–38, 41, 44, 63 | Hook exports stale — useWorkflowBuilder/useVideoBuilder/useImageBuilder return values, params, App.jsx state vars, ExpandedView/ExpandedDetailPanel props chains, test count 20→22 | Open |
-| BL-WFL-008 | src/renderer/App.jsx | 1–659 | 659 lines — 159 over P1 threshold (500); bundle extraction applied; residual is irreducible orchestrator core | Open |
+| ~~BL-WFL-007~~ | vibe/CODEBASE.md | 30, 36–38, 41, 44, 63 | Hook exports stale — useWorkflowBuilder/useVideoBuilder/useImageBuilder return values, params, App.jsx state vars, ExpandedView/ExpandedDetailPanel props chains, test count 20→22 | ✅ resolved — CODEBASE.md updated 2026-04-29 |
+| BL-WFL-008 | src/renderer/App.jsx | 1–659 | 659 lines — 159 over P1 threshold (500); bundle extraction applied; residual is irreducible orchestrator core. No further extraction yields benefit without artificial complexity. | Accepted — monitor only |
 
 ### P3 — Monitor / minor cleanup
 
@@ -405,4 +405,4 @@
 |----|------|------|---------|--------|
 | ~~BL-WFL-005~~ | src/renderer/hooks/useWorkflowBuilder.js | 193–196 | `handleWorkflowConfirm` calls `setThinkingLabel('Assembling JSON...')` redundantly | ✅ resolved — redundant call removed 2026-04-29 |
 | ~~BL-WFL-006~~ | src/renderer/App.jsx | 518 | `onReiterate` sets `isWorkflowReiteratingRef.current = true` explicitly — double-set | ✅ resolved — onReiterate moved to hook; sets ref once 2026-04-29 |
-| BL-WFL-009 | src/renderer/App.jsx | 296 | `runVideoPreSelection` missing from `handleGenerateResult` dep array — `[mode, runPreSelection, runWorkflowAnalysis]` should include `runVideoPreSelection` | Open |
+| ~~BL-WFL-009~~ | src/renderer/App.jsx | 296 | `runVideoPreSelection` missing from `handleGenerateResult` dep array — `[mode, runPreSelection, runWorkflowAnalysis]` should include `runVideoPreSelection` | ✅ resolved — dep array updated 2026-04-29 |
