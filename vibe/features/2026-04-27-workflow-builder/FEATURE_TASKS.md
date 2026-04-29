@@ -5,7 +5,7 @@
 ---
 
 ### WFL-001 · useMode.js — add 'workflow' mode with green accent
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#mode-identity
 - **Dependencies**: None
@@ -14,8 +14,8 @@
 **What to do**: Add `workflow: 'Workflow'` to MODE_LABELS. No other changes needed — the green accent and subtitle are handled in IdleState and ExpandedTransportBar via mode prop, not in useMode.
 
 **Acceptance criteria**:
-- [ ] `useMode()` returns `modeLabel === 'Workflow'` when mode is 'workflow'
-- [ ] No other MODE_LABELS entries changed
+- [x] `useMode()` returns `modeLabel === 'Workflow'` when mode is 'workflow'
+- [x] No other MODE_LABELS entries changed
 
 **Self-verify**: Read useMode.js and confirm workflow entry present. Check no existing labels broken.
 **Test requirement**: Manual — switch to workflow mode via context menu, confirm label reads "Workflow".
@@ -29,7 +29,7 @@
 ---
 
 ### WFL-002 · main.js — MODE_CONFIG + show-mode-menu + system prompts
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#step-3-claude-analysis-call + FEATURE_SPEC.md#step-5-claude-json-assembly-call
 - **Dependencies**: None (parallel with WFL-001)
@@ -41,10 +41,10 @@
 3. The two system prompts (analysis + JSON assembly) live in the renderer (WorkflowBuilderState / App.jsx) and are passed via generate-raw — nothing extra in main.js for prompts.
 
 **Acceptance criteria**:
-- [ ] 'Workflow' appears in the right-click mode menu
-- [ ] MODE_CONFIG.workflow has passthrough: true
-- [ ] show-mode-menu array includes 'workflow'
-- [ ] No existing MODE_CONFIG entries changed
+- [x] 'Workflow' appears in the right-click mode menu
+- [x] MODE_CONFIG.workflow has passthrough: true
+- [x] show-mode-menu array includes 'workflow'
+- [x] No existing MODE_CONFIG entries changed
 
 **Self-verify**: Read main.js MODE_CONFIG and show-mode-menu. Confirm workflow present and passthrough true.
 **Test requirement**: Manual — right-click bar, confirm "Workflow" appears in mode menu with checkmark when active.
@@ -58,7 +58,7 @@
 ---
 
 ### WFL-003 · WorkflowBuilderState.jsx — node cards review screen
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#workflow_builder-review-screen
 - **Dependencies**: WFL-001, WFL-002
@@ -92,16 +92,16 @@ Render:
 - Action row: amber warning if placeholders unfilled + "Start over" + "Confirm & generate JSON →" (disabled if any placeholder unfilled)
 
 **Acceptance criteria**:
-- [ ] Node cards render with correct green/blue number badges (trigger=1=green, action=blue)
-- [ ] Placeholder chips are amber, clicking opens inline input
-- [ ] Filling placeholder updates chip to green value display
-- [ ] Unfilled placeholder count shown in header badge
-- [ ] Confirm button disabled while any placeholder unfilled
-- [ ] Confirm button enabled when all placeholders filled
-- [ ] "Add another node" adds blank card with text inputs for name and type
-- [ ] "↺ Reiterate" calls onReiterate
-- [ ] "Start over" calls onStartOver
-- [ ] Connector line appears between each node card pair
+- [x] Node cards render with correct green/blue number badges (trigger=1=green, action=blue)
+- [x] Placeholder chips are amber, clicking opens inline input
+- [x] Filling placeholder updates chip to green value display
+- [x] Unfilled placeholder count shown in header badge
+- [x] Confirm button disabled while any placeholder unfilled
+- [x] Confirm button enabled when all placeholders filled
+- [x] "Add another node" adds blank card with text inputs for name and type
+- [x] "↺ Reiterate" calls onReiterate
+- [x] "Start over" calls onStartOver
+- [x] Connector line appears between each node card pair
 
 **Self-verify**: Re-read FEATURE_SPEC.md#workflow_builder-review-screen. Tick every visual criterion.
 **Test requirement**: Manual — load with a 3-node workflowAnalysis, fill all placeholders, confirm button enables.
@@ -115,7 +115,7 @@ Render:
 ---
 
 ### WFL-004 · WorkflowBuilderDoneState.jsx — done screen
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#workflow_builder_done-layout
 - **Dependencies**: WFL-001, WFL-002
@@ -148,14 +148,14 @@ Render:
 - Action row: "Save" (secondary, shows "Saved ✓" when isSaved) + "Copy JSON" (primary green gradient, shows "Copied!" flash when isCopied)
 
 **Acceptance criteria**:
-- [ ] Two-column layout renders (left HOW IT WORKS, right JSON)
-- [ ] Numbered steps use green circle for trigger node, blue for action nodes
-- [ ] Import instructions box renders below steps
-- [ ] JSON preview shows syntax-highlighted JSON (blue keys, green strings, orange numbers)
-- [ ] Copy JSON button calls onCopy and shows "Copied!" flash
-- [ ] Save button calls onSave and shows "Saved ✓" when isSaved=true
-- [ ] "← Edit nodes" calls onEdit
-- [ ] "Start over" calls onStartOver
+- [x] Two-column layout renders (left HOW IT WORKS, right JSON)
+- [x] Numbered steps use green circle for trigger node, blue for action nodes
+- [x] Import instructions box renders below steps
+- [x] JSON preview shows syntax-highlighted JSON (blue keys, green strings, orange numbers)
+- [x] Copy JSON button calls onCopy and shows "Copied!" flash
+- [x] Save button calls onSave and shows "Saved ✓" when isSaved=true
+- [x] "← Edit nodes" calls onEdit
+- [x] "Start over" calls onStartOver
 
 **Self-verify**: Re-read FEATURE_SPEC.md#workflow_builder_done-layout. Tick every visual criterion.
 **Test requirement**: Manual — load with sample workflowAnalysis + workflowJson, verify both columns render, copy to clipboard works.
@@ -169,7 +169,7 @@ Render:
 ---
 
 ### WFL-005 · App.jsx — WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE states + auto-expand + disable collapse
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#state-machine-additions + FEATURE_SPEC.md#critical-behaviour
 - **Dependencies**: WFL-003, WFL-004
@@ -185,13 +185,13 @@ Render:
 7. `thinkingLabel` and `thinkingAccentColor` wired for both phases (green `rgba(34,197,94,0.85)`).
 
 **Acceptance criteria**:
-- [ ] STATES.WORKFLOW_BUILDER and STATES.WORKFLOW_BUILDER_DONE defined
-- [ ] handleGenerateResult routes workflow mode to runWorkflowAnalysis
-- [ ] Auto-expand fires when mode switches to 'workflow' while minimized
-- [ ] Collapse button disabled (opacity 0.4, cursor not-allowed) when mode==='workflow'
-- [ ] thinkingLabel shows "Mapping your workflow..." for phase 1
-- [ ] thinkingAccentColor is green rgba(34,197,94,0.85) for workflow THINKING
-- [ ] workflowBuilderProps bundle passed to ExpandedView
+- [x] STATES.WORKFLOW_BUILDER and STATES.WORKFLOW_BUILDER_DONE defined
+- [x] handleGenerateResult routes workflow mode to runWorkflowAnalysis
+- [x] Auto-expand fires when mode switches to 'workflow' while minimized
+- [x] Collapse button disabled (opacity 0.4, cursor not-allowed) when mode==='workflow'
+- [x] thinkingLabel shows "Mapping your workflow..." for phase 1
+- [x] thinkingAccentColor is green rgba(34,197,94,0.85) for workflow THINKING
+- [x] workflowBuilderProps bundle passed to ExpandedView
 
 **Self-verify**: Re-read FEATURE_SPEC.md#state-machine-additions and #critical-behaviour. Tick every criterion.
 **Test requirement**: Manual — switch to workflow mode while minimized, confirm auto-expand. Switch to another mode, confirm collapse button re-enables.
@@ -205,7 +205,7 @@ Render:
 ---
 
 ### WFL-006 · App.jsx — workflow handlers via useWorkflowBuilder hook
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#step-3 + FEATURE_SPEC.md#step-5 + FEATURE_SPEC.md#reiterate-behaviour
 - **Dependencies**: WFL-005
@@ -225,14 +225,14 @@ Render:
 - `handleWorkflowCopy()`: copies workflowJson to clipboard via copyToClipboard IPC → flashes isCopied for 1.8s.
 
 **Acceptance criteria**:
-- [ ] Phase 1 failure → ERROR state with "Workflow mapping failed. Please try again."
-- [ ] Phase 1 empty nodes array → ERROR state
-- [ ] Phase 2 failure → ERROR state with "JSON assembly failed. Please try again."
-- [ ] handleFillPlaceholder updates filledPlaceholders correctly
-- [ ] handleWorkflowReiterate preserves matching filled placeholders
-- [ ] handleWorkflowReiterate discards user-added nodes
-- [ ] handleWorkflowSave toggles isSaved flag
-- [ ] saveToHistory called in assembleWorkflowJson before WORKFLOW_BUILDER_DONE transition
+- [x] Phase 1 failure → ERROR state with "Workflow mapping failed. Please try again."
+- [x] Phase 1 empty nodes array → ERROR state
+- [x] Phase 2 failure → ERROR state with "JSON assembly failed. Please try again."
+- [x] handleFillPlaceholder updates filledPlaceholders correctly
+- [x] handleWorkflowReiterate preserves matching filled placeholders
+- [x] handleWorkflowReiterate discards user-added nodes
+- [x] handleWorkflowSave toggles isSaved flag
+- [x] saveToHistory called in assembleWorkflowJson before WORKFLOW_BUILDER_DONE transition
 
 **Self-verify**: Re-read FEATURE_SPEC.md#step-3, #step-5, #reiterate-behaviour, and error states section. Tick every criterion.
 **Test requirement**: Manual — force an invalid Claude response (bad JSON), confirm ERROR state fires with correct message.
@@ -246,7 +246,7 @@ Render:
 ---
 
 ### WFL-007 · App.jsx — STATE_HEIGHTS for WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#state-machine-additions
 - **Dependencies**: WFL-005
@@ -260,8 +260,8 @@ WORKFLOW_BUILDER_DONE: 860,
 Both are always expanded-only (never rendered in collapsed bar). The transition() function skips resizeWindow while isExpanded (guarded by isExpandedRef.current) — no special handling needed.
 
 **Acceptance criteria**:
-- [ ] STATE_HEIGHTS.WORKFLOW_BUILDER === 860
-- [ ] STATE_HEIGHTS.WORKFLOW_BUILDER_DONE === 860
+- [x] STATE_HEIGHTS.WORKFLOW_BUILDER === 860
+- [x] STATE_HEIGHTS.WORKFLOW_BUILDER_DONE === 860
 
 **Self-verify**: Read App.jsx STATE_HEIGHTS block. Confirm both entries present.
 **Test requirement**: Implicit — covered by WFL-005 smoke test.
@@ -275,7 +275,7 @@ Both are always expanded-only (never rendered in collapsed bar). The transition(
 ---
 
 ### WFL-008 · App.jsx — Reiterate flow with isReiteratingWorkflow flag
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#reiterate-behaviour
 - **Dependencies**: WFL-006
@@ -290,12 +290,12 @@ Both are always expanded-only (never rendered in collapsed bar). The transition(
 This is likely already partially implemented in WFL-006 handleWorkflowReiterate — this task confirms the merge logic is correct and tested.
 
 **Acceptance criteria**:
-- [ ] Reiterate triggers new recording → new transcript
-- [ ] THINKING shows "Re-mapping workflow..." during reiterate
-- [ ] After new analysis: placeholder values from matching nodeId+paramKey keys preserved
-- [ ] Placeholder values from user-added nodes (not in new analysis) discarded
-- [ ] New placeholder keys from new analysis start unfilled
-- [ ] isReiteratingWorkflow reset to false after new analysis arrives
+- [x] Reiterate triggers new recording → new transcript
+- [x] THINKING shows "Re-mapping workflow..." during reiterate
+- [x] After new analysis: placeholder values from matching nodeId+paramKey keys preserved
+- [x] Placeholder values from user-added nodes (not in new analysis) discarded
+- [x] New placeholder keys from new analysis start unfilled
+- [x] isReiteratingWorkflow reset to false after new analysis arrives
 
 **Self-verify**: Re-read FEATURE_SPEC.md#reiterate-behaviour. Trace the reiterate code path end-to-end.
 **Test requirement**: Manual — fill 2 placeholders, reiterate with same idea, confirm filled values reappear on matching keys.
@@ -309,7 +309,7 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 ---
 
 ### WFL-009 · History saving — workflow entries with mode 'workflow'
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria (history entry)
 - **Dependencies**: WFL-006
@@ -334,10 +334,10 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
    Add `promptUtils.js` to files touched by this task.
 
 **Acceptance criteria**:
-- [ ] After WORKFLOW_BUILDER_DONE: new entry appears in ExpandedHistoryList
-- [ ] Entry shows mode tag with green background rgba(34,197,94,0.1) + color rgba(74,222,128,0.65)
-- [ ] Entry title shows workflowName from workflowAnalysis
-- [ ] getModeTagStyle('workflow') returns correct green colours
+- [x] After WORKFLOW_BUILDER_DONE: new entry appears in ExpandedHistoryList
+- [x] Entry shows mode tag with green background rgba(34,197,94,0.1) + color rgba(74,222,128,0.65)
+- [x] Entry title shows workflowName from workflowAnalysis
+- [x] getModeTagStyle('workflow') returns correct green colours
 
 **Self-verify**: Read promptUtils.js getModeTagStyle. Confirm 'workflow' case present. Check history entry renders correctly in ExpandedHistoryList.
 **Test requirement**: Manual — complete a workflow build end-to-end, confirm history entry appears with green mode tag.
@@ -351,7 +351,7 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 ---
 
 ### WFL-010 · ExpandedTransportBar — hide collapse button in workflow mode
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#critical-behaviour
 - **Dependencies**: WFL-005
@@ -363,11 +363,11 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 - When mode switches away from workflow, collapse button re-enables (already handled by the conditional above).
 
 **Acceptance criteria**:
-- [ ] Collapse button is visually dimmed (opacity 0.3) when mode === 'workflow'
-- [ ] Collapse button is not clickable (pointerEvents: none) when mode === 'workflow'
-- [ ] Hovering collapse button in workflow mode shows browser tooltip "Workflow mode uses full view"
-- [ ] Collapse button returns to full opacity and clickable when mode !== 'workflow'
-- [ ] Video mode collapse behaviour unchanged
+- [x] Collapse button is visually dimmed (opacity 0.3) when mode === 'workflow'
+- [x] Collapse button is not clickable (pointerEvents: none) when mode === 'workflow'
+- [x] Hovering collapse button in workflow mode shows browser tooltip "Workflow mode uses full view"
+- [x] Collapse button returns to full opacity and clickable when mode !== 'workflow'
+- [x] Video mode collapse behaviour unchanged
 
 **Self-verify**: Read ExpandedTransportBar.jsx collapse button section. Confirm workflow condition added alongside video condition.
 **Test requirement**: Manual — switch to workflow mode, confirm collapse button is dimmed and non-clickable.
@@ -381,7 +381,7 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 ---
 
 ### WFL-011 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: All
 - **Dependencies**: WFL-001 through WFL-010 (runs last)
@@ -394,10 +394,10 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 4. FEATURE_TASKS.md: Tick all tasks complete, fill Decisions sections.
 
 **Acceptance criteria**:
-- [ ] CODEBASE.md has rows for both new components
-- [ ] CODEBASE.md state table includes WORKFLOW_BUILDER and WORKFLOW_BUILDER_DONE
-- [ ] TASKS.md shows FEATURE-WORKFLOW-BUILDER as complete (11/11 ✅)
-- [ ] DECISIONS.md has D-WORKFLOW-BUILDER entry for the feature
+- [x] CODEBASE.md has rows for both new components
+- [x] CODEBASE.md state table includes WORKFLOW_BUILDER and WORKFLOW_BUILDER_DONE
+- [x] TASKS.md shows FEATURE-WORKFLOW-BUILDER as complete (11/11 ✅)
+- [x] DECISIONS.md has D-WORKFLOW-BUILDER entry for the feature
 
 **Self-verify**: grep CODEBASE.md for WorkflowBuilder. Confirm both components present.
 **Test requirement**: N/A — doc-only task.
@@ -412,24 +412,24 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 
 #### Conformance: FEATURE-WORKFLOW-BUILDER
 > Tick after every task. All items ✅ before feature is shippable.
-- [ ] Workflow mode appears in right-click menu with green accent
-- [ ] Idle bar shows green dot + "Describe your automation" in workflow mode
-- [ ] ⌥ Space auto-expands if minimized when mode === 'workflow'
-- [ ] THINKING phase 1: green spinner "Mapping your workflow..."
-- [ ] WORKFLOW_BUILDER shows node cards — trigger green, action blue
-- [ ] Placeholder chips amber, tappable → inline input → green on fill
-- [ ] Confirm button disabled while any placeholder unfilled
-- [ ] Reiterate preserves filled placeholder values on matching keys
-- [ ] User-added nodes discarded on reiterate
-- [ ] THINKING phase 2: green spinner "Assembling JSON..."
-- [ ] WORKFLOW_BUILDER_DONE two-column layout renders
-- [ ] JSON preview syntax-highlighted (blue keys, green strings, orange numbers)
-- [ ] Copy JSON copies full workflowJson to clipboard
-- [ ] Collapse button dimmed and non-clickable in workflow mode
-- [ ] History entry saves with green mode tag + workflowName as title
-- [ ] Phase 1 Claude failure → ERROR state with clear message
-- [ ] Phase 2 Claude failure → ERROR state with clear message
-- [ ] All new component lint passes (0 errors)
-- [ ] No regressions in other modes (video, image, polish)
-- [ ] CODEBASE.md updated for all new files
+- [x] Workflow mode appears in right-click menu with green accent
+- [x] Idle bar shows green dot + "Describe your automation" in workflow mode
+- [x] ⌥ Space auto-expands if minimized when mode === 'workflow'
+- [x] THINKING phase 1: green spinner "Mapping your workflow..."
+- [x] WORKFLOW_BUILDER shows node cards — trigger green, action blue
+- [x] Placeholder chips amber, tappable → inline input → green on fill
+- [x] Confirm button disabled while any placeholder unfilled
+- [x] Reiterate preserves filled placeholder values on matching keys
+- [x] User-added nodes discarded on reiterate
+- [x] THINKING phase 2: green spinner "Assembling JSON..."
+- [x] WORKFLOW_BUILDER_DONE two-column layout renders
+- [x] JSON preview syntax-highlighted (blue keys, green strings, orange numbers)
+- [x] Copy JSON copies full workflowJson to clipboard
+- [x] Collapse button dimmed and non-clickable in workflow mode
+- [x] History entry saves with green mode tag + workflowName as title
+- [x] Phase 1 Claude failure → ERROR state with clear message
+- [x] Phase 2 Claude failure → ERROR state with clear message
+- [x] All new component lint passes (0 errors)
+- [x] No regressions in other modes (video, image, polish)
+- [x] CODEBASE.md updated for all new files
 ---

@@ -574,18 +574,22 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 Root cause: `saveToHistory` was only called in `handleVideoSave` (explicit Save button), which doesn't trigger a state change. `ExpandedHistoryList` refreshes on `currentState` changes only — so the list never reflected newly generated video prompts.
 Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDER_DONE` transition), matching the image builder pattern. `handleVideoSave` retains `isSaved` flag toggle for UI feedback but no longer writes history.
 
-## What's next
-🔄 FEATURE-WORKFLOW-BUILDER — n8n workflow builder mode (0/11)
-   Estimated: approx. 8 hours (S: 8, M: 3)
-   [ ] WFL-001 · useMode.js workflow mode + green accent
-   [ ] WFL-002 · main.js MODE_CONFIG + system prompts
-   [ ] WFL-003 · WorkflowBuilderState.jsx node cards
-   [ ] WFL-004 · WorkflowBuilderDoneState.jsx done screen
-   [ ] WFL-005 · App.jsx states + auto-expand + disable collapse
-   [ ] WFL-006 · App.jsx handlers
-   [ ] WFL-007 · STATE_HEIGHTS
-   [ ] WFL-008 · Reiterate flow
-   [ ] WFL-009 · History saving
-   [ ] WFL-010 · Collapse button hidden in workflow mode
-   [ ] WFL-011 · Docs update
+## What just happened
+✅ FEATURE-WORKFLOW-BUILDER complete 2026-04-29 — All 11 WFL tasks implemented. New "Workflow" mode adds two-phase Claude flow: Phase 1 analyses spoken automation idea → n8n node cards with placeholder chips; Phase 2 assembles importable n8n JSON. WorkflowBuilderState (node cards, amber chips, inline fill), WorkflowBuilderDoneState (HOW IT WORKS + syntax-highlighted JSON), useWorkflowBuilder hook (full lifecycle, reiterate merge). Build + lint clean.
+
+## FEATURE-WORKFLOW-BUILDER — n8n workflow builder mode (11/11 ✅)
+   [x] WFL-001 · useMode.js workflow mode + green accent
+   [x] WFL-002 · main.js MODE_CONFIG + system prompts
+   [x] WFL-003 · WorkflowBuilderState.jsx node cards
+   [x] WFL-004 · WorkflowBuilderDoneState.jsx done screen
+   [x] WFL-005 · App.jsx states + auto-expand + disable collapse
+   [x] WFL-006 · App.jsx handlers via useWorkflowBuilder hook
+   [x] WFL-007 · STATE_HEIGHTS WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE = 860
+   [x] WFL-008 · Reiterate flow with isReiteratingWorkflow flag + placeholder merge
+   [x] WFL-009 · History saving + getModeTagStyle green case
+   [x] WFL-010 · Collapse button disabled for workflow mode (opacity 0.3, pointerEvents none)
+   [x] WFL-011 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md, FEATURE_TASKS.md updated
    → Full specs: vibe/features/2026-04-27-workflow-builder/FEATURE_TASKS.md (agent use)
+
+## What's next
+Run `review: feature-workflow-builder` to gate the feature before merging.

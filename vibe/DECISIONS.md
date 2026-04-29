@@ -1476,3 +1476,12 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 > Action: all P1 findings fixed — spec ready to build
 > Report: vibe/spec-reviews/2026-04-29-workflow-builder.md
 ---
+
+---
+## D-WORKFLOW-BUILDER-002 — 2026-04-29 — FEATURE-WORKFLOW-BUILDER implementation decisions
+- **WorkflowBuilderState placeholder chips**: inline text inputs activate on chip click; commit on Enter or blur. activeInput keyed by `${nodeId}-${paramKey}`. Filled chips switch to green display and remain tappable to re-edit.
+- **Blank node handling**: blank nodes (added via Add another node) use `__name__` and `__type__` as special param keys sent via onFillPlaceholder; allFilled check examines `node.name && node.type` directly.
+- **useWorkflowBuilder lastHistoryIdRef**: saveToHistory doesn't return the entry, so we call getHistory()[0] immediately after to capture the entry id for bookmarking.
+- **ExpandedDetailPanel isContentState**: WORKFLOW_BUILDER and WORKFLOW_BUILDER_DONE added to `isContentState` — right panel shows WorkflowBuilder components, not the history viewer, when in these states.
+- **Collapse button**: extended isVideo check to `isFullViewMode = isVideo || isWorkflow`. pointerEvents: 'none' added (in addition to opacity 0.3) to ensure clicks don't propagate even if CSS opacity isn't blocking.
+- **IdleState + ExpandedTransportBar**: workflow green accent `rgba(34,197,94,...)` added to all mode-conditional colour chains (ringColor, micStroke, pillBg, pillBorder, pillColor).
