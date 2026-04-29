@@ -119,6 +119,8 @@
 | `check-whisper` | renderer → main | ✅ registered — resolves whisperPath then runs --help to verify (exec fallback for 'python3 -m whisper' compound path). Returns `{ found, path, error }`. (ONBD-002) |
 | `check-ffmpeg` | renderer → main | ✅ registered — runs resolveFfmpegPath() then execFile -version to verify. Returns `{ found, path, error }`. (ONBD-002) |
 | `check-whisper-model` | renderer → main | ✅ registered — checks ~/.cache/whisper/base.pt and ~/Library/Caches/whisper/base.pt via fs.statSync. Downloaded = file exists AND size > 100MB. Returns `{ downloaded, path, sizeMB }`. (ONBD-003) |
+| `download-whisper-model` | renderer → main | ✅ registered — spawns `whisper /dev/null --model base` (python3 -m whisper handled). Parses tqdm stderr via regex on \r\n splits; pushes `whisper-download-progress` events. Returns `{ success: true }` or `{ success: false, error }`. (ONBD-004) |
+| `whisper-download-progress` | main → renderer | ✅ push — sent during model download; payload `{ percent, mbDone, mbTotal, secondsLeft }`. (ONBD-004) |
 
 ---
 

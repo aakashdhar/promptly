@@ -85,7 +85,7 @@
 ---
 
 ### ONBD-004 · main.js — download-whisper-model IPC with progress streaming
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#downloading-state-after-button-click
 - **Dependencies**: ONBD-002 (need whisperPath resolved)

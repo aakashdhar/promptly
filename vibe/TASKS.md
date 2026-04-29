@@ -615,7 +615,7 @@ Fix RFX-WFL tasks below before merging to main.
    [x] ONBD-001 · main.js: check-claude IPC with test generation
    [x] ONBD-002 · main.js: check-whisper + check-ffmpeg IPC
    [x] ONBD-003 · main.js: check-whisper-model IPC
-   [ ] ONBD-004 · main.js: download-whisper-model IPC with progress streaming
+   [x] ONBD-004 · main.js: download-whisper-model IPC with progress streaming
    [ ] ONBD-005 · main.js: lastTempAudioPath + lastTranscript + retry IPC
    [ ] ONBD-006 · main.js: transcription timeout (30s) with kill + warning events
    [ ] ONBD-007 · main.js: generation timeout (45s) with error type parsing
