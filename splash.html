@@ -880,6 +880,43 @@ html, body {
     <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
   </div>
 
+  <!-- Screen 4: All done -->
+  <div id="screen-4" class="wz-screen">
+    <div class="wz-stepper">
+      <div class="wz-step-circle done">✓</div>
+      <div class="wz-step-bar filled"></div>
+      <div class="wz-step-circle done">✓</div>
+      <div class="wz-step-bar filled"></div>
+      <div class="wz-step-circle done">✓</div>
+    </div>
+    <div class="wz-body-area" style="align-items:center;justify-content:center;gap:14px">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(48,209,88,0.12);border:0.5px solid rgba(48,209,88,0.3);display:flex;align-items:center;justify-content:center">
+        <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
+          <path d="M2 9L9 16L22 2" stroke="rgba(48,209,88,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:-0.01em">You're all set</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.35);text-align:center;line-height:1.5;max-width:320px">Everything is installed and verified. Press ⌥Space any time to start speaking.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
+          <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.55)">Claude CLI</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
+          <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.55)">Whisper + voice model</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
+          <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.55)">ffmpeg</span>
+        </div>
+      </div>
+    </div>
+    <div class="wz-action-row">
+      <button class="wz-btn-primary" style="flex:1" onclick="launchApp()">Launch Promptly</button>
+    </div>
+  </div>
+
   <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -1273,6 +1310,12 @@ function showScreen(n) {
   if (n === 1) runScreen1();
   if (n === 2) runScreen2();
   if (n === 3) runScreen3();
+  // Screen 4 is static — no auto-run needed
+}
+
+async function launchApp() {
+  await window.electronAPI.setSetupComplete();
+  window.electronAPI.splashDone();
 }
 
 document.getElementById('wzCtaBtn').addEventListener('click', () => showScreen(1));
