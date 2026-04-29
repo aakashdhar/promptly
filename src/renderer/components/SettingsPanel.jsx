@@ -123,6 +123,17 @@ export default function SettingsPanel({ onClose }) {
       </button>
 
       <div style={{ fontSize: 10.5, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: 'inherit', color: saveMsgColor }}>{saveMsg}</div>
+
+      {/* divider */}
+      <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', margin: '12px 0' }} />
+
+      {/* recheck setup */}
+      <button
+        onClick={() => window.electronAPI?.reopenWizard?.()}
+        style={{ width: '100%', height: 30, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
+      >
+        Recheck setup ↺
+      </button>
     </div>
   )
 }

@@ -80,6 +80,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resetSetupComplete: () =>
     ipcRenderer.invoke('reset-setup-complete'),
 
+  reopenWizard: () =>
+    ipcRenderer.invoke('reopen-wizard'),
+
   checkClaude: () =>
     ipcRenderer.invoke('check-claude'),
 

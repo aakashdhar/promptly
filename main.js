@@ -763,6 +763,38 @@ app.whenReady().then(async () => {
     writeConfig({ ...readConfig(), setupComplete: false });
   });
 
+  ipcMain.handle('reopen-wizard', () => {
+    writeConfig({ ...readConfig(), setupComplete: false });
+    if (splashWin && !splashWin.isDestroyed()) {
+      splashWin.show();
+      splashWin.center();
+      return;
+    }
+    splashWin = new BrowserWindow({
+      width: 520,
+      height: 300,
+      show: false,
+      frame: false,
+      transparent: false,
+      backgroundColor: '#0A0A14',
+      resizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      alwaysOnTop: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js'),
+      },
+    });
+    splashWin.loadFile(path.join(__dirname, 'splash.html'));
+    splashWin.once('ready-to-show', () => {
+      splashWin.show();
+      splashWin.center();
+    });
+    if (win && !win.isDestroyed()) win.hide();
+  });
+
   ipcMain.handle('request-mic', async () => {
     const status = systemPreferences.getMediaAccessStatus('microphone');
     return { ok: status === 'granted' };
