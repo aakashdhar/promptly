@@ -293,7 +293,7 @@ export default function App() {
       saveToHistory({ transcript, prompt: genResult.prompt, mode })
     }
     transitionRef.current(STATES.PROMPT_READY)
-  }, [mode, runPreSelection, runWorkflowAnalysis])
+  }, [mode, runPreSelection, runVideoPreSelection, runWorkflowAnalysis])
   handleGenerateResultRef.current = handleGenerateResult
 
   const { iterationBase, handleIterate, stopIterating, dismissIterating } = useIteration({
