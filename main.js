@@ -9,7 +9,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nati
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { exec, spawn } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 const { deflateSync } = require('zlib');
 
 const configPath = path.join(app.getPath('userData'), 'config.json');
@@ -1023,6 +1023,61 @@ app.whenReady().then(async () => {
       return { found: true, path: claudePath };
     }
     return { found: false, error: 'Claude CLI not found.' };
+  });
+
+  ipcMain.handle('check-claude', async () => {
+    // Step 1: resolve binary path (use cached or re-resolve)
+    const resolvedPath = claudePath || await resolveClaudePath();
+    if (!resolvedPath) {
+      return { found: false, path: null, version: null, working: false, error: 'Claude CLI not found', authError: false };
+    }
+
+    // Step 2: get version string
+    let version = null;
+    try {
+      version = await new Promise((resolve) => {
+        execFile(resolvedPath, ['--version'], { env: makeClaudeEnv(resolvedPath), timeout: 5000 }, (err, stdout) => {
+          resolve(err ? null : (stdout.trim() || null));
+        });
+      });
+    } catch { /* version not critical — continue */ }
+
+    // Step 3: test generation with 15s timeout
+    const testResult = await new Promise((resolve) => {
+      let stdout = '', stderr = '', settled = false;
+      const child = spawn(resolvedPath, ['-p', 'respond with only the word READY'], { env: makeClaudeEnv(resolvedPath) });
+      const timer = setTimeout(() => {
+        settled = true;
+        child.kill();
+        resolve({ ok: false, stdout, stderr, timedOut: true });
+      }, 15000);
+      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stderr.on('data', (d) => { stderr += d.toString(); });
+      child.stdin.end();
+      child.on('close', (code) => {
+        if (settled) return;
+        clearTimeout(timer); settled = true;
+        resolve({ ok: code === 0, stdout, stderr, timedOut: false });
+      });
+      child.on('error', (err) => {
+        if (settled) return;
+        clearTimeout(timer); settled = true;
+        resolve({ ok: false, stdout, stderr: err.message, timedOut: false });
+      });
+    });
+
+    const combined = (testResult.stdout + ' ' + testResult.stderr).toLowerCase();
+    const authError = combined.includes('not authenticated') || combined.includes('login') || combined.includes('unauthorized');
+    const working = testResult.ok && testResult.stdout.toLowerCase().includes('ready');
+
+    let error = null;
+    if (!working) {
+      if (testResult.timedOut) error = 'Claude is not responding (timed out after 15s)';
+      else if (authError) error = 'Claude is not logged in — run: claude login';
+      else error = testResult.stderr.trim() || 'Claude CLI returned an error';
+    }
+
+    return { found: true, path: resolvedPath, version, working, error, authError };
   });
 
   ipcMain.handle('uninstall-promptly', () => handleUninstall());
