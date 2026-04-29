@@ -33,6 +33,7 @@ export default function ExpandedView({
   thinkingAccentColor,
   imageBuilderProps,
   videoBuilderProps,
+  workflowBuilderProps,
   onAbort,
 }) {
   const [selected, setSelected] = useState(null)
@@ -100,6 +101,7 @@ export default function ExpandedView({
           thinkingAccentColor={thinkingAccentColor}
           imageBuilderProps={imageBuilderProps}
           videoBuilderProps={videoBuilderProps}
+          workflowBuilderProps={workflowBuilderProps}
         />
       </div>
     </div>
