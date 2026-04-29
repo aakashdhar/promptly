@@ -474,7 +474,7 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    → DECISIONS.md D-BUG-002 · DevTools shortcut Cmd+Option+I added to main.js for future debugging
 
 ## What's next
-IMAGE-BUILDER redesign complete. Only IMG-010 (docs) remaining — done now.
+ONBD-014 complete — transcription error state wired (expanded: TRANSCRIPTION_ERROR; collapsed: ERROR). Next: ONBD-015 generation error state.
 
 ---
 
@@ -625,7 +625,7 @@ Fix RFX-WFL tasks below before merging to main.
    [x] ONBD-011 · splash.html: Screen 3 — Model download with real progress bar
    [x] ONBD-012 · splash.html: Screen 4 — All done + launch
    [x] ONBD-013 · Skip option + settings recheck
-   [ ] ONBD-014 · App.jsx + ExpandedView.jsx: transcription error state
+   [x] ONBD-014 · App.jsx + ExpandedView.jsx: transcription error state
    [ ] ONBD-015 · App.jsx + ExpandedView.jsx: generation error state
    [ ] ONBD-016 · ErrorStatePanel.jsx: shared error component
    [ ] ONBD-017 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md

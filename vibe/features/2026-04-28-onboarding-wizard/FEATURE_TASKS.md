@@ -381,7 +381,7 @@
 ---
 
 ### ONBD-014 · App.jsx + ExpandedView.jsx — transcription error state
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#transcription-error-state
 - **Dependencies**: ONBD-005, ONBD-006
@@ -407,8 +407,10 @@
 **Architecture compliance**: transition() only for state changes; useRef for stable callbacks; no stale closures
 
 **Decisions**:
-> Filled in by agent after completing.
-- None yet.
+- `transcriptionError` state shape: `{ error, timedOut, canRetry }` (errorType derived in UI from error string via `getTranscriptionFix`). Kept main.js shape minimal.
+- `TranscriptionErrorPanel` built inline in ExpandedDetailPanel (local function component) — will be extracted to `OperationErrorPanel.jsx` in ONBD-016.
+- `useRecording.js` checks `isExpandedRef.current`: expanded → TRANSCRIPTION_ERROR; collapsed → ERROR with "expand to retry" message.
+- `handleRetryTranscription` in App.jsx also runs `generatePrompt` after successful retry transcription (matching normal stopRecording flow).
 
 ---
 
