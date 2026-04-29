@@ -406,6 +406,7 @@ export default function ExpandedDetailPanel({
           filledPlaceholders={workflowBuilderProps.filledPlaceholders}
           onFillPlaceholder={workflowBuilderProps.onFillPlaceholder}
           onAddNode={workflowBuilderProps.onAddNode}
+          onDeleteNode={workflowBuilderProps.onDeleteNode}
           onConfirm={workflowBuilderProps.onConfirm}
           onReiterate={workflowBuilderProps.onReiterate}
           onStartOver={workflowBuilderProps.onStartOver}
