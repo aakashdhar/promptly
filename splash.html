@@ -309,14 +309,215 @@ html, body {
 
 .wz-cta:hover { background: linear-gradient(135deg, rgba(168,85,247,0.95), rgba(124,58,237,0.95)); }
 
-/* ── Wizard screen 1 placeholder ── */
-#screen-1 {
+/* ── Wizard screens (1+) shared ── */
+.wz-screen {
   display: none;
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
   border-radius: inherit;
+  flex-direction: column;
   z-index: 31;
+  overflow: hidden;
+}
+.wz-screen.visible { display: flex; }
+
+/* Stepper */
+.wz-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 28px 0;
+  gap: 0;
+}
+.wz-step-circle {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+  flex-shrink: 0;
+}
+.wz-step-circle.done {
+  background: rgba(48,209,88,0.15);
+  border: 0.5px solid rgba(48,209,88,0.4);
+  color: rgba(48,209,88,0.9);
+}
+.wz-step-circle.current {
+  background: rgba(168,85,247,0.18);
+  border: 0.5px solid rgba(168,85,247,0.45);
+  color: rgba(168,85,247,0.95);
+}
+.wz-step-circle.future {
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.25);
+}
+.wz-step-bar {
+  flex: 1; height: 2px;
+  background: rgba(255,255,255,0.06);
+  max-width: 60px;
+}
+.wz-step-bar.filled { background: rgba(48,209,88,0.4); }
+
+/* Screen body */
+.wz-body-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 24px 16px;
+  overflow-y: auto;
+}
+
+/* Status row */
+.wz-status-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.wz-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.wz-dot.checking {
+  background: rgba(10,132,255,0.4);
+  border: 0.5px solid rgba(10,132,255,0.6);
+  animation: spin 1s linear infinite;
+}
+.wz-dot.ok { background: rgba(48,209,88,0.85); }
+.wz-dot.fail { background: rgba(255,59,48,0.85); }
+.wz-dot.warn { background: rgba(255,189,46,0.85); }
+
+.wz-status-title {
+  font-size: 13px; font-weight: 500;
+  color: rgba(255,255,255,0.8);
+}
+.wz-status-sub {
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  margin-bottom: 10px; line-height: 1.4;
+}
+
+/* Code block + copy */
+.wz-code-label {
+  font-size: 10px; color: rgba(255,255,255,0.3);
+  margin-bottom: 4px; margin-top: 8px;
+}
+.wz-code-row {
+  display: flex; gap: 6px; align-items: center;
+  margin-bottom: 2px;
+}
+.wz-code {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-family: monospace; font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  white-space: pre;
+}
+.wz-copy-btn {
+  height: 28px; padding: 0 10px;
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  cursor: pointer; font-family: inherit;
+  -webkit-app-region: no-drag; white-space: nowrap;
+}
+.wz-copy-btn:hover { background: rgba(255,255,255,0.08); }
+
+.wz-note {
+  font-size: 10px; color: rgba(255,255,255,0.22);
+  margin-top: 4px; line-height: 1.4;
+}
+
+/* Error box */
+.wz-error-box {
+  background: rgba(255,59,48,0.05);
+  border: 0.5px solid rgba(255,59,48,0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: monospace; font-size: 10.5px;
+  color: rgba(255,100,90,0.8);
+  max-height: 64px; overflow-y: auto;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+/* Action row */
+.wz-action-row {
+  display: flex; gap: 8px;
+  padding: 10px 24px 14px;
+  flex-shrink: 0;
+}
+.wz-btn-secondary {
+  flex: 1; height: 36px;
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.5);
+  cursor: pointer; font-family: inherit;
+  -webkit-app-region: no-drag;
+}
+.wz-btn-primary {
+  flex: 1; height: 36px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(124,58,237,0.85));
+  border: 0.5px solid rgba(168,85,247,0.35);
+  border-radius: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.95);
+  cursor: pointer; font-family: inherit;
+  -webkit-app-region: no-drag;
+}
+.wz-btn-primary:hover { background: linear-gradient(135deg, rgba(168,85,247,0.95), rgba(124,58,237,0.95)); }
+
+/* Skip link */
+.wz-skip-link {
+  text-align: center;
+  font-size: 11px; color: rgba(255,255,255,0.18);
+  cursor: pointer; padding-bottom: 10px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+.wz-skip-link:hover { color: rgba(255,255,255,0.35); }
+
+/* Skip confirmation overlay */
+#skipOverlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,20,0.92);
+  border-radius: inherit;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  z-index: 50;
+  gap: 14px;
+}
+#skipOverlay.visible { display: flex; }
+.skip-title {
+  font-size: 13px; font-weight: 500;
+  color: rgba(255,255,255,0.8); text-align: center;
+}
+.skip-body {
+  font-size: 11.5px; color: rgba(255,255,255,0.35);
+  text-align: center; line-height: 1.5;
+}
+.skip-btns { display: flex; gap: 10px; width: 100%; }
+.skip-cancel {
+  flex: 1; height: 36px;
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.5);
+  cursor: pointer; font-family: inherit;
+  -webkit-app-region: no-drag;
+}
+.skip-confirm {
+  flex: 1; height: 36px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(124,58,237,0.85));
+  border: 0.5px solid rgba(168,85,247,0.35);
+  border-radius: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.9);
+  cursor: pointer; font-family: inherit;
+  -webkit-app-region: no-drag;
 }
 </style>
 </head>
@@ -407,8 +608,111 @@ html, body {
     <button class="wz-cta" id="wzCtaBtn">Let's set up Promptly →</button>
   </div>
 
-  <!-- Screen 1 placeholder (content added in ONBD-009) -->
-  <div id="screen-1"></div>
+  <!-- Screen 1: Claude CLI check -->
+  <div id="screen-1" class="wz-screen">
+    <!-- Stepper -->
+    <div class="wz-stepper">
+      <div class="wz-step-circle current" id="s1-step1">1</div>
+      <div class="wz-step-bar" id="s1-bar1"></div>
+      <div class="wz-step-circle future" id="s1-step2">2</div>
+      <div class="wz-step-bar" id="s1-bar2"></div>
+      <div class="wz-step-circle future" id="s1-step3">3</div>
+    </div>
+
+    <!-- Body -->
+    <div class="wz-body-area" id="s1-body">
+      <!-- State: CHECKING -->
+      <div id="s1-checking">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot checking"></div>
+          <div class="wz-status-title">Checking Claude CLI...</div>
+        </div>
+        <div class="wz-status-sub" id="s1-substate">Looking for Claude CLI...</div>
+      </div>
+
+      <!-- State: WORKING -->
+      <div id="s1-working" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot ok"></div>
+          <div class="wz-status-title">Claude CLI — working</div>
+        </div>
+        <div class="wz-status-sub" id="s1-path-version"></div>
+        <div class="wz-status-sub" style="color:rgba(48,209,88,0.6)">Test generation passed ✓</div>
+      </div>
+
+      <!-- State: NOT FOUND -->
+      <div id="s1-notfound" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot fail"></div>
+          <div class="wz-status-title">Claude CLI not found</div>
+        </div>
+        <div class="wz-status-sub">The AI engine that writes your prompts</div>
+        <div class="wz-code-label">Don't have Node.js? Install it first:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">brew install node</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install node')">Copy</button>
+        </div>
+        <div class="wz-code-label">Then install Claude CLI:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">npm install -g @anthropic-ai/claude-cli</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'npm install -g @anthropic-ai/claude-cli')">Copy</button>
+        </div>
+        <div class="wz-code-label">Then log in:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">claude login</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'claude login')">Copy</button>
+        </div>
+        <div class="wz-note">claude login opens a browser to authenticate</div>
+      </div>
+
+      <!-- State: NOT LOGGED IN -->
+      <div id="s1-notloggedin" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot warn"></div>
+          <div class="wz-status-title">Claude CLI found but not logged in</div>
+        </div>
+        <div class="wz-status-sub">Your session expired or you haven't logged in yet</div>
+        <div class="wz-code-label">Run this to log in:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">claude login</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'claude login')">Copy</button>
+        </div>
+        <div class="wz-note">This opens a browser to authenticate with Anthropic</div>
+      </div>
+
+      <!-- State: NOT RESPONDING -->
+      <div id="s1-notresponding" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot fail"></div>
+          <div class="wz-status-title">Claude CLI not responding</div>
+        </div>
+        <div class="wz-error-box" id="s1-error-output"></div>
+        <div class="wz-code-label">Try running in Terminal:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">claude -p "hello"</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'claude -p &quot;hello&quot;')">Copy</button>
+        </div>
+        <div class="wz-note">If that works, click Check again. If not, try: claude logout &amp;&amp; claude login</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="wz-action-row" id="s1-actions" style="display:none">
+      <button class="wz-btn-secondary" id="s1-help-btn" style="display:none" onclick="window.electronAPI.splashOpenURL('https://docs.anthropic.com/en/docs/claude-code/')">Need help?</button>
+      <button class="wz-btn-primary" id="s1-recheck-btn" onclick="runScreen1()">Check again ↺</button>
+    </div>
+    <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
+  </div>
+
+  <!-- Skip confirmation overlay -->
+  <div id="skipOverlay">
+    <div class="skip-title">Skip setup?</div>
+    <div class="skip-body">Promptly may not work correctly if dependencies are missing.</div>
+    <div class="skip-btns">
+      <button class="skip-cancel" onclick="hideSkipOverlay()">Cancel</button>
+      <button class="skip-confirm" onclick="confirmSkip()">Skip anyway</button>
+    </div>
+  </div>
 
   <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
 
@@ -617,10 +921,90 @@ async function runChecks() {
   window.electronAPI.splashDone();
 }
 
-document.getElementById('wzCtaBtn').addEventListener('click', () => {
+// ── Shared helpers ────────────────────────────────────────────────
+function wzCopy(btn, text) {
+  window.electronAPI.copyToClipboard(text);
+  const orig = btn.textContent;
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
+function showSkipOverlay() {
+  document.getElementById('skipOverlay').classList.add('visible');
+}
+
+function hideSkipOverlay() {
+  document.getElementById('skipOverlay').classList.remove('visible');
+}
+
+async function confirmSkip() {
+  hideSkipOverlay();
+  await window.electronAPI.setSetupComplete();
+  window.electronAPI.splashDone();
+}
+
+// ── Screen 1: Claude CLI ──────────────────────────────────────────
+function s1Show(stateId) {
+  ['s1-checking','s1-working','s1-notfound','s1-notloggedin','s1-notresponding']
+    .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
+}
+
+async function runScreen1() {
+  document.getElementById('s1-actions').style.display = 'none';
+  s1Show('s1-checking');
+
+  const sub = document.getElementById('s1-substate');
+  sub.textContent = 'Looking for Claude CLI...';
+  await new Promise(r => setTimeout(r, 600));
+  sub.textContent = 'Verifying version...';
+  await new Promise(r => setTimeout(r, 500));
+  sub.textContent = 'Testing generation...';
+
+  const result = await window.electronAPI.checkClaude();
+
+  if (!result.found) {
+    s1Show('s1-notfound');
+    document.getElementById('s1-actions').style.display = 'flex';
+    document.getElementById('s1-help-btn').style.display = 'flex';
+    return;
+  }
+
+  if (result.authError) {
+    s1Show('s1-notloggedin');
+    document.getElementById('s1-actions').style.display = 'flex';
+    document.getElementById('s1-help-btn').style.display = 'none';
+    return;
+  }
+
+  if (!result.working) {
+    s1Show('s1-notresponding');
+    document.getElementById('s1-error-output').textContent = result.error || 'Unknown error';
+    document.getElementById('s1-actions').style.display = 'flex';
+    document.getElementById('s1-help-btn').style.display = 'none';
+    return;
+  }
+
+  // Working
+  s1Show('s1-working');
+  const verStr = result.version ? result.version.split('\n')[0] : '';
+  document.getElementById('s1-path-version').textContent =
+    result.path + (verStr ? '  ·  ' + verStr : '');
+
+  await new Promise(r => setTimeout(r, 1500));
+  showScreen(2);
+}
+
+// ── Screen navigation ─────────────────────────────────────────────
+function showScreen(n) {
   document.getElementById('screen-welcome').classList.remove('visible');
-  document.getElementById('screen-1').style.display = 'block';
-});
+  [1, 2, 3, 4].forEach(i => {
+    const el = document.getElementById('screen-' + i);
+    if (el) el.classList.toggle('visible', i === n);
+  });
+  if (n === 1) runScreen1();
+}
+
+document.getElementById('wzCtaBtn').addEventListener('click', () => showScreen(1));
 
 async function initSplash() {
   const result = await window.electronAPI.checkSetupComplete();

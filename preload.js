@@ -80,6 +80,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resetSetupComplete: () =>
     ipcRenderer.invoke('reset-setup-complete'),
 
+  checkClaude: () =>
+    ipcRenderer.invoke('check-claude'),
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) => {
     ipcRenderer.on('shortcut-triggered', callback)
