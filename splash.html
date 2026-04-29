@@ -714,6 +714,88 @@ html, body {
     </div>
   </div>
 
+  <!-- Screen 2: Whisper + ffmpeg -->
+  <div id="screen-2" class="wz-screen">
+    <div class="wz-stepper">
+      <div class="wz-step-circle done">✓</div>
+      <div class="wz-step-bar filled"></div>
+      <div class="wz-step-circle current">2</div>
+      <div class="wz-step-bar" id="s2-bar2"></div>
+      <div class="wz-step-circle future">3</div>
+    </div>
+    <div class="wz-body-area">
+      <!-- CHECKING -->
+      <div id="s2-checking">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot checking"></div>
+          <div class="wz-status-title">Checking Whisper and ffmpeg...</div>
+        </div>
+      </div>
+      <!-- BOTH FOUND -->
+      <div id="s2-both-found" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot ok"></div>
+          <div class="wz-status-title" id="s2-whisper-ok-label">Whisper — found</div>
+        </div>
+        <div class="wz-status-row">
+          <div class="wz-dot ok"></div>
+          <div class="wz-status-title" id="s2-ffmpeg-ok-label">ffmpeg — found</div>
+        </div>
+      </div>
+      <!-- WHISPER NOT FOUND -->
+      <div id="s2-whisper-notfound" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot fail"></div>
+          <div class="wz-status-title">Whisper not found</div>
+        </div>
+        <div class="wz-code-label">Don't have Python? Install it first:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">brew install python</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install python')">Copy</button>
+        </div>
+        <div class="wz-code-label">Then install Whisper:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">pip3 install openai-whisper</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'pip3 install openai-whisper')">Copy</button>
+        </div>
+      </div>
+      <!-- FFMPEG NOT FOUND (whisper ok) -->
+      <div id="s2-ffmpeg-notfound" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot ok"></div>
+          <div class="wz-status-title" id="s2-whisper-partial-label">Whisper — found ✓</div>
+        </div>
+        <div class="wz-status-row">
+          <div class="wz-dot fail"></div>
+          <div class="wz-status-title">ffmpeg not found — required for audio processing</div>
+        </div>
+        <div class="wz-code-label">Install ffmpeg:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">brew install ffmpeg</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install ffmpeg')">Copy</button>
+        </div>
+        <div class="wz-note">ffmpeg processes audio before Whisper can transcribe it</div>
+      </div>
+      <!-- BOTH NOT FOUND -->
+      <div id="s2-both-notfound" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot fail"></div>
+          <div class="wz-status-title">Whisper and ffmpeg not found</div>
+        </div>
+        <div class="wz-dot fail" style="display:none"></div>
+        <div class="wz-code-label">Install everything at once:</div>
+        <div class="wz-code-row">
+          <div class="wz-code" style="white-space:pre">brew install python ffmpeg&#10;pip3 install openai-whisper</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install python ffmpeg\npip3 install openai-whisper')">Copy</button>
+        </div>
+      </div>
+    </div>
+    <div class="wz-action-row" id="s2-actions" style="display:none">
+      <button class="wz-btn-primary" onclick="runScreen2()">Check again ↺</button>
+    </div>
+    <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
+  </div>
+
   <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -994,6 +1076,43 @@ async function runScreen1() {
   showScreen(2);
 }
 
+// ── Screen 2: Whisper + ffmpeg ────────────────────────────────────
+function s2Show(stateId) {
+  ['s2-checking','s2-both-found','s2-whisper-notfound','s2-ffmpeg-notfound','s2-both-notfound']
+    .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
+}
+
+async function runScreen2() {
+  document.getElementById('s2-actions').style.display = 'none';
+  s2Show('s2-checking');
+
+  const [whisper, ffmpeg] = await Promise.all([
+    window.electronAPI.checkWhisper(),
+    window.electronAPI.checkFfmpeg(),
+  ]);
+
+  if (whisper.found && ffmpeg.found) {
+    s2Show('s2-both-found');
+    document.getElementById('s2-whisper-ok-label').textContent = 'Whisper — found at ' + whisper.path;
+    document.getElementById('s2-ffmpeg-ok-label').textContent = 'ffmpeg — found at ' + ffmpeg.path;
+    document.getElementById('s2-bar2').classList.add('filled');
+    await new Promise(r => setTimeout(r, 1000));
+    showScreen(3);
+    return;
+  }
+
+  if (!whisper.found && !ffmpeg.found) {
+    s2Show('s2-both-notfound');
+  } else if (!whisper.found) {
+    s2Show('s2-whisper-notfound');
+  } else {
+    s2Show('s2-ffmpeg-notfound');
+    document.getElementById('s2-whisper-partial-label').textContent = 'Whisper — found at ' + whisper.path + ' ✓';
+  }
+
+  document.getElementById('s2-actions').style.display = 'flex';
+}
+
 // ── Screen navigation ─────────────────────────────────────────────
 function showScreen(n) {
   document.getElementById('screen-welcome').classList.remove('visible');
@@ -1002,6 +1121,7 @@ function showScreen(n) {
     if (el) el.classList.toggle('visible', i === n);
   });
   if (n === 1) runScreen1();
+  if (n === 2) runScreen2();
 }
 
 document.getElementById('wzCtaBtn').addEventListener('click', () => showScreen(1));

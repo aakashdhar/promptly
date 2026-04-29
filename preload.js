@@ -83,6 +83,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkClaude: () =>
     ipcRenderer.invoke('check-claude'),
 
+  checkWhisper: () =>
+    ipcRenderer.invoke('check-whisper'),
+
+  checkFfmpeg: () =>
+    ipcRenderer.invoke('check-ffmpeg'),
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) => {
     ipcRenderer.on('shortcut-triggered', callback)
