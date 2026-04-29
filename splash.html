@@ -796,6 +796,90 @@ html, body {
     <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
   </div>
 
+  <!-- Screen 3: Model download -->
+  <div id="screen-3" class="wz-screen">
+    <div class="wz-stepper">
+      <div class="wz-step-circle done">✓</div>
+      <div class="wz-step-bar filled"></div>
+      <div class="wz-step-circle done">✓</div>
+      <div class="wz-step-bar filled" id="s3-bar3"></div>
+      <div class="wz-step-circle current" id="s3-step3">3</div>
+    </div>
+    <div class="wz-body-area">
+      <!-- CHECKING -->
+      <div id="s3-checking">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot checking"></div>
+          <div class="wz-status-title">Checking voice model...</div>
+        </div>
+      </div>
+      <!-- ALREADY DOWNLOADED -->
+      <div id="s3-already" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot ok"></div>
+          <div class="wz-status-title">Voice model ready (base, 148MB)</div>
+        </div>
+        <div class="wz-status-sub" style="color:rgba(48,209,88,0.6)">Already downloaded — no action needed</div>
+      </div>
+      <!-- NOT DOWNLOADED (pre-download) -->
+      <div id="s3-notdownloaded" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;margin-bottom:8px">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3v10M6 9l4 4 4-4" stroke="rgba(168,85,247,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 15h14" stroke="rgba(168,85,247,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <div class="wz-status-title">Voice model download required</div>
+        </div>
+        <div class="wz-status-sub">Whisper needs a voice model to understand speech. This is a one-time 148MB download. Once done, Promptly works fully offline — your voice never leaves your Mac.</div>
+        <div style="background:rgba(255,189,46,0.04);border:0.5px solid rgba(255,189,46,0.15);border-radius:8px;padding:8px 10px;margin-top:6px">
+          <div style="font-size:10px;color:rgba(255,189,46,0.6);line-height:1.5">This would have happened silently on your first recording. We're doing it now so you don't hit a surprise 2-minute wait later.</div>
+        </div>
+      </div>
+      <!-- DOWNLOADING -->
+      <div id="s3-downloading" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot checking"></div>
+          <div class="wz-status-title">Downloading Whisper base model</div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:6px">
+            <div id="s3-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(10,132,255,0.8),rgba(100,180,255,0.9));border-radius:2px;transition:width 0.4s ease"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <div id="s3-mb-label" style="font-size:10px;color:rgba(255,255,255,0.3)">0 MB of 148 MB</div>
+            <div id="s3-time-label" style="font-size:10px;color:rgba(255,255,255,0.3)"></div>
+          </div>
+        </div>
+      </div>
+      <!-- COMPLETE -->
+      <div id="s3-complete" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot ok"></div>
+          <div class="wz-status-title">Voice model downloaded</div>
+        </div>
+        <div class="wz-status-sub" style="color:rgba(48,209,88,0.6)">Ready to transcribe ✓</div>
+      </div>
+      <!-- FAILED -->
+      <div id="s3-failed" style="display:none">
+        <div class="wz-status-row" style="margin-top:8px">
+          <div class="wz-dot fail"></div>
+          <div class="wz-status-title">Download failed</div>
+        </div>
+        <div class="wz-error-box" id="s3-error-text"></div>
+        <div class="wz-note">You can also download the model manually and place it in ~/.cache/whisper/base.pt</div>
+      </div>
+    </div>
+    <!-- Actions: download button (pre-download) -->
+    <div class="wz-action-row" id="s3-download-action" style="display:none">
+      <button class="wz-btn-primary" id="s3-download-btn" onclick="startDownload()">Download now (148MB)</button>
+    </div>
+    <!-- Actions: retry after failure -->
+    <div class="wz-action-row" id="s3-retry-action" style="display:none">
+      <button class="wz-btn-primary" onclick="startDownload()">Try again ↺</button>
+    </div>
+    <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
+  </div>
+
   <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -1113,6 +1197,72 @@ async function runScreen2() {
   document.getElementById('s2-actions').style.display = 'flex';
 }
 
+// ── Screen 3: Model download ──────────────────────────────────────
+let s3progressUnsubscribe = null;
+
+function s3Show(stateId) {
+  ['s3-checking','s3-already','s3-notdownloaded','s3-downloading','s3-complete','s3-failed']
+    .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
+  document.getElementById('s3-download-action').style.display = 'none';
+  document.getElementById('s3-retry-action').style.display = 'none';
+}
+
+async function runScreen3() {
+  // Clean up any lingering progress listener
+  if (s3progressUnsubscribe) { s3progressUnsubscribe(); s3progressUnsubscribe = null; }
+  s3Show('s3-checking');
+
+  const result = await window.electronAPI.checkWhisperModel();
+
+  if (result.downloaded) {
+    s3Show('s3-already');
+    document.getElementById('s3-bar3').classList.add('filled');
+    document.getElementById('s3-step3').className = 'wz-step-circle done';
+    document.getElementById('s3-step3').textContent = '✓';
+    await new Promise(r => setTimeout(r, 1000));
+    showScreen(4);
+    return;
+  }
+
+  s3Show('s3-notdownloaded');
+  document.getElementById('s3-download-action').style.display = 'flex';
+}
+
+async function startDownload() {
+  document.getElementById('s3-download-action').style.display = 'none';
+  document.getElementById('s3-retry-action').style.display = 'none';
+  s3Show('s3-downloading');
+  document.getElementById('s3-progress-bar').style.width = '0%';
+  document.getElementById('s3-mb-label').textContent = '0 MB of 148 MB';
+  document.getElementById('s3-time-label').textContent = '';
+
+  // Listen for progress events
+  s3progressUnsubscribe = window.electronAPI.onWhisperDownloadProgress((data) => {
+    document.getElementById('s3-progress-bar').style.width = data.percent + '%';
+    document.getElementById('s3-mb-label').textContent =
+      Math.round(data.mbDone) + ' MB of ' + Math.round(data.mbTotal) + ' MB';
+    if (data.secondsLeft != null) {
+      document.getElementById('s3-time-label').textContent = '~' + data.secondsLeft + ' sec remaining';
+    }
+  });
+
+  const result = await window.electronAPI.downloadWhisperModel();
+  if (s3progressUnsubscribe) { s3progressUnsubscribe(); s3progressUnsubscribe = null; }
+
+  if (result.success) {
+    s3Show('s3-complete');
+    document.getElementById('s3-bar3').classList.add('filled');
+    document.getElementById('s3-step3').className = 'wz-step-circle done';
+    document.getElementById('s3-step3').textContent = '✓';
+    await new Promise(r => setTimeout(r, 1000));
+    showScreen(4);
+  } else {
+    s3Show('s3-failed');
+    document.getElementById('s3-error-text').textContent = result.error || 'Download failed';
+    document.getElementById('s3-retry-action').style.display = 'flex';
+  }
+}
+
 // ── Screen navigation ─────────────────────────────────────────────
 function showScreen(n) {
   document.getElementById('screen-welcome').classList.remove('visible');
@@ -1122,6 +1272,7 @@ function showScreen(n) {
   });
   if (n === 1) runScreen1();
   if (n === 2) runScreen2();
+  if (n === 3) runScreen3();
 }
 
 document.getElementById('wzCtaBtn').addEventListener('click', () => showScreen(1));

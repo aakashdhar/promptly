@@ -89,6 +89,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkFfmpeg: () =>
     ipcRenderer.invoke('check-ffmpeg'),
 
+  checkWhisperModel: () =>
+    ipcRenderer.invoke('check-whisper-model'),
+
+  downloadWhisperModel: () =>
+    ipcRenderer.invoke('download-whisper-model'),
+
+  onWhisperDownloadProgress: (callback) => {
+    ipcRenderer.on('whisper-download-progress', (_e, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners('whisper-download-progress');
+  },
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) => {
     ipcRenderer.on('shortcut-triggered', callback)
