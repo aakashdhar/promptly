@@ -1135,6 +1135,24 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('check-whisper-model', () => {
+    const home = os.homedir();
+    const cachePaths = [
+      path.join(home, '.cache', 'whisper', 'base.pt'),
+      path.join(home, 'Library', 'Caches', 'whisper', 'base.pt'),
+    ];
+    const MIN_BYTES = 104857600; // 100 MB
+    for (const p of cachePaths) {
+      try {
+        const stat = fs.statSync(p);
+        if (stat.size > MIN_BYTES) {
+          return { downloaded: true, path: p, sizeMB: Math.round(stat.size / 1048576) };
+        }
+      } catch { /* file absent — try next */ }
+    }
+    return { downloaded: false, path: null, sizeMB: null };
+  });
+
   ipcMain.handle('uninstall-promptly', () => handleUninstall());
 
   ipcMain.handle('get-stored-paths', () => {
