@@ -700,7 +700,8 @@ html, body {
     <!-- Actions -->
     <div class="wz-action-row" id="s1-actions" style="display:none">
       <button class="wz-btn-secondary" id="s1-help-btn" style="display:none" onclick="window.electronAPI.splashOpenURL('https://docs.anthropic.com/en/docs/claude-code/')">Need help?</button>
-      <button class="wz-btn-primary" id="s1-recheck-btn" onclick="runScreen1()">Check again ↺</button>
+      <button class="wz-btn-secondary" id="s1-recheck-btn" onclick="runScreen1()">Check again ↺</button>
+      <button class="wz-btn-primary" id="s1-continue-btn" style="display:none" onclick="showScreen(2)">Continue →</button>
     </div>
     <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
   </div>
@@ -792,7 +793,8 @@ html, body {
       </div>
     </div>
     <div class="wz-action-row" id="s2-actions" style="display:none">
-      <button class="wz-btn-primary" onclick="runScreen2()">Check again ↺</button>
+      <button class="wz-btn-secondary" id="s2-recheck-btn" onclick="runScreen2()">Check again ↺</button>
+      <button class="wz-btn-primary" id="s2-continue-btn" style="display:none" onclick="showScreen(3)">Continue →</button>
     </div>
     <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
   </div>
@@ -873,6 +875,11 @@ html, body {
     <!-- Actions: download button (pre-download) -->
     <div class="wz-action-row" id="s3-download-action" style="display:none">
       <button class="wz-btn-primary" id="s3-download-btn" onclick="startDownload()">Download now (148MB)</button>
+    </div>
+    <!-- Actions: success (already downloaded or just completed) -->
+    <div class="wz-action-row" id="s3-success-action" style="display:none">
+      <button class="wz-btn-secondary" onclick="runScreen3()">Check again ↺</button>
+      <button class="wz-btn-primary" onclick="showScreen(4)">Continue →</button>
     </div>
     <!-- Actions: retry after failure -->
     <div class="wz-action-row" id="s3-retry-action" style="display:none">
@@ -1166,25 +1173,20 @@ async function runScreen1() {
 
   const result = await window.electronAPI.checkClaude();
 
-  if (!result.found) {
-    s1Show('s1-notfound');
+  function s1ShowError(stateId, showHelp) {
+    s1Show(stateId);
+    document.getElementById('s1-recheck-btn').style.display = 'flex';
+    document.getElementById('s1-recheck-btn').className = 'wz-btn-primary';
+    document.getElementById('s1-continue-btn').style.display = 'none';
+    document.getElementById('s1-help-btn').style.display = showHelp ? 'flex' : 'none';
     document.getElementById('s1-actions').style.display = 'flex';
-    document.getElementById('s1-help-btn').style.display = 'flex';
-    return;
   }
 
-  if (result.authError) {
-    s1Show('s1-notloggedin');
-    document.getElementById('s1-actions').style.display = 'flex';
-    document.getElementById('s1-help-btn').style.display = 'none';
-    return;
-  }
-
+  if (!result.found) { s1ShowError('s1-notfound', true); return; }
+  if (result.authError) { s1ShowError('s1-notloggedin', false); return; }
   if (!result.working) {
-    s1Show('s1-notresponding');
     document.getElementById('s1-error-output').textContent = result.error || 'Unknown error';
-    document.getElementById('s1-actions').style.display = 'flex';
-    document.getElementById('s1-help-btn').style.display = 'none';
+    s1ShowError('s1-notresponding', false);
     return;
   }
 
@@ -1194,8 +1196,10 @@ async function runScreen1() {
   document.getElementById('s1-path-version').textContent =
     result.path + (verStr ? '  ·  ' + verStr : '');
 
-  await new Promise(r => setTimeout(r, 1500));
-  showScreen(2);
+  document.getElementById('s1-recheck-btn').style.display = 'flex';
+  document.getElementById('s1-continue-btn').style.display = 'flex';
+  document.getElementById('s1-help-btn').style.display = 'none';
+  document.getElementById('s1-actions').style.display = 'flex';
 }
 
 // ── Screen 2: Whisper + ffmpeg ────────────────────────────────────
@@ -1218,8 +1222,8 @@ async function runScreen2() {
     document.getElementById('s2-whisper-ok-label').textContent = 'Whisper — found at ' + whisper.path;
     document.getElementById('s2-ffmpeg-ok-label').textContent = 'ffmpeg — found at ' + ffmpeg.path;
     document.getElementById('s2-bar2').classList.add('filled');
-    await new Promise(r => setTimeout(r, 1000));
-    showScreen(3);
+    document.getElementById('s2-continue-btn').style.display = 'flex';
+    document.getElementById('s2-actions').style.display = 'flex';
     return;
   }
 
@@ -1243,6 +1247,7 @@ function s3Show(stateId) {
     .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
   document.getElementById('s3-download-action').style.display = 'none';
   document.getElementById('s3-retry-action').style.display = 'none';
+  document.getElementById('s3-success-action').style.display = 'none';
 }
 
 async function runScreen3() {
@@ -1257,8 +1262,7 @@ async function runScreen3() {
     document.getElementById('s3-bar3').classList.add('filled');
     document.getElementById('s3-step3').className = 'wz-step-circle done';
     document.getElementById('s3-step3').textContent = '✓';
-    await new Promise(r => setTimeout(r, 1000));
-    showScreen(4);
+    document.getElementById('s3-success-action').style.display = 'flex';
     return;
   }
 
@@ -1292,8 +1296,7 @@ async function startDownload() {
     document.getElementById('s3-bar3').classList.add('filled');
     document.getElementById('s3-step3').className = 'wz-step-circle done';
     document.getElementById('s3-step3').textContent = '✓';
-    await new Promise(r => setTimeout(r, 1000));
-    showScreen(4);
+    document.getElementById('s3-success-action').style.display = 'flex';
   } else {
     s3Show('s3-failed');
     document.getElementById('s3-error-text').textContent = result.error || 'Download failed';
