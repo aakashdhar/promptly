@@ -614,7 +614,7 @@ Fix RFX-WFL tasks below before merging to main.
 > Estimated: approx. 22–30 hours (S: 9, M: 8)
    [x] ONBD-001 · main.js: check-claude IPC with test generation
    [x] ONBD-002 · main.js: check-whisper + check-ffmpeg IPC
-   [ ] ONBD-003 · main.js: check-whisper-model IPC
+   [x] ONBD-003 · main.js: check-whisper-model IPC
    [ ] ONBD-004 · main.js: download-whisper-model IPC with progress streaming
    [ ] ONBD-005 · main.js: lastTempAudioPath + lastTranscript + retry IPC
    [ ] ONBD-006 · main.js: transcription timeout (30s) with kill + warning events

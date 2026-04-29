@@ -58,7 +58,7 @@
 ---
 
 ### ONBD-003 · main.js — check-whisper-model IPC
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#screen-3--voice-model-download
 - **Dependencies**: None

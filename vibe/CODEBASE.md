@@ -118,6 +118,7 @@
 | `check-claude` | renderer → main | ✅ registered — 3-step verification: resolveClaudePath + execFile --version + spawn test generation ('respond with only the word READY', 15s timeout). Returns `{ found, path, version, working, error, authError }`. Auth error detected if stdout/stderr contains 'not authenticated' \| 'login' \| 'unauthorized'. (ONBD-001) |
 | `check-whisper` | renderer → main | ✅ registered — resolves whisperPath then runs --help to verify (exec fallback for 'python3 -m whisper' compound path). Returns `{ found, path, error }`. (ONBD-002) |
 | `check-ffmpeg` | renderer → main | ✅ registered — runs resolveFfmpegPath() then execFile -version to verify. Returns `{ found, path, error }`. (ONBD-002) |
+| `check-whisper-model` | renderer → main | ✅ registered — checks ~/.cache/whisper/base.pt and ~/Library/Caches/whisper/base.pt via fs.statSync. Downloaded = file exists AND size > 100MB. Returns `{ downloaded, path, sizeMB }`. (ONBD-003) |
 
 ---
 
