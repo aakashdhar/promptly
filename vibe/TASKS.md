@@ -612,7 +612,7 @@ Fix RFX-WFL tasks below before merging to main.
 ## FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling (0/17)
 > Spec: vibe/features/2026-04-28-onboarding-wizard/ | Added: 2026-04-29
 > Estimated: approx. 22–30 hours (S: 9, M: 8)
-   [ ] ONBD-001 · main.js: check-claude IPC with test generation
+   [x] ONBD-001 · main.js: check-claude IPC with test generation
    [ ] ONBD-002 · main.js: check-whisper + check-ffmpeg IPC
    [ ] ONBD-003 · main.js: check-whisper-model IPC
    [ ] ONBD-004 · main.js: download-whisper-model IPC with progress streaming

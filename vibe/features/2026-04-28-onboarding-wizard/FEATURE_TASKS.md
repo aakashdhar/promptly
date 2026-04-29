@@ -5,7 +5,7 @@
 ---
 
 ### ONBD-001 · main.js — check-claude IPC with test generation
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#screen-1--claude-cli-check
 - **Dependencies**: None
@@ -27,8 +27,7 @@
 **Architecture compliance**: PATH resolution pattern (ARCHITECTURE.md), execFile not exec, ipcMain.handle pattern
 
 **Decisions**:
-> Filled in by agent after completing.
-- None yet.
+- Used `spawn` for step 3 (consistent with generate-prompt/generate-raw pattern); `execFile` for step 2 (--version, small output). Both avoid shell wrapping.
 
 ---
 

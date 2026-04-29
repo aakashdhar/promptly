@@ -115,6 +115,7 @@
 | `open-settings` | main → renderer | ✅ registered — sent by tray "Path configuration..." item and ⌘, shortcut; triggers SETTINGS state via onOpenSettings IPC listener in useKeyboardShortcuts.js |
 | `update-menubar-state` | renderer → main | ✅ registered — maps STATES enum string → icon state (idle/recording/thinking/ready); calls `updateMenuBarIcon()` which sets tooltip + pulse interval (600ms) for recording/thinking, steady image for idle/ready |
 | `set-last-prompt` | renderer → main | ✅ registered — stores prompt string in `lastGeneratedPrompt` module var; called after every successful generation; used by "Copy last prompt" tray menu item (FEATURE-018) |
+| `check-claude` | renderer → main | ✅ registered — 3-step verification: resolveClaudePath + execFile --version + spawn test generation ('respond with only the word READY', 15s timeout). Returns `{ found, path, version, working, error, authError }`. Auth error detected if stdout/stderr contains 'not authenticated' \| 'login' \| 'unauthorized'. (ONBD-001) |
 
 ---
 
