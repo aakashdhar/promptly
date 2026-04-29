@@ -11,13 +11,13 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   -webkit-font-smoothing: antialiased;
   user-select: none;
-  width: 520px;
-  height: 300px;
+  width: 560px;
+  height: 620px;
 }
 
 .splash {
-  width: 520px;
-  height: 300px;
+  width: 560px;
+  height: 620px;
   background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
   border-radius: 18px;
   border-top: 0.5px solid rgba(255,255,255,0.18);
@@ -199,9 +199,9 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 28px 28px 22px;
+  padding: 36px 36px 28px;
   z-index: 30;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 #screen-welcome.visible { display: flex; }
@@ -210,7 +210,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 22px;
 }
 
 .wz-logo-ring {
@@ -248,19 +248,19 @@ html, body {
 .wz-steps {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .wz-step-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   background: rgba(255,255,255,0.03);
   border: 0.5px solid rgba(255,255,255,0.08);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 13px 16px;
 }
 
 .wz-step-num {
@@ -322,12 +322,13 @@ html, body {
 }
 .wz-screen.visible { display: flex; }
 
+
 /* Stepper */
 .wz-stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px 28px 0;
+  padding: 24px 36px 0;
   gap: 0;
 }
 .wz-step-circle {
@@ -363,7 +364,7 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 18px 24px 16px;
+  padding: 20px 32px 16px;
   overflow-y: auto;
 }
 
@@ -444,7 +445,7 @@ html, body {
 /* Action row */
 .wz-action-row {
   display: flex; gap: 8px;
-  padding: 10px 24px 14px;
+  padding: 10px 32px 16px;
   flex-shrink: 0;
 }
 .wz-btn-secondary {
@@ -917,7 +918,7 @@ html, body {
     </div>
   </div>
 
-  <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
+  <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:24px 32px 28px;z-index:20;flex-direction:column;overflow-y:auto">
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.65);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">Path configuration</span>

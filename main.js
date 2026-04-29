@@ -696,8 +696,8 @@ app.whenReady().then(async () => {
   whisperPath = await resolveWhisperPath();
 
   splashWin = new BrowserWindow({
-    width: 520,
-    height: 300,
+    width: 560,
+    height: 620,
     show: false,
     frame: false,
     transparent: false,
@@ -771,8 +771,8 @@ app.whenReady().then(async () => {
       return;
     }
     splashWin = new BrowserWindow({
-      width: 520,
-      height: 300,
+      width: 560,
+      height: 620,
       show: false,
       frame: false,
       transparent: false,
