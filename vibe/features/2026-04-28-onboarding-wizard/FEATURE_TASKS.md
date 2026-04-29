@@ -415,7 +415,7 @@
 ---
 
 ### ONBD-015 · App.jsx + ExpandedView.jsx — generation error state
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#generation-error-state
 - **Dependencies**: ONBD-005, ONBD-007
@@ -440,8 +440,11 @@
 **Architecture compliance**: abortRef guard pattern; transition() only; no stale closures
 
 **Decisions**:
-> Filled in by agent after completing.
-- None yet.
+- All generation failure handling consolidated into `handleGenerateResult` (App.jsx) — removed scattered checks from `handleTypingSubmit`, `handleRegenerate`, `handleRetryTranscription`.
+- `GenerationErrorPanel` built inline in ExpandedDetailPanel (local function component) alongside `TranscriptionErrorPanel` — both to be extracted to `OperationErrorPanel.jsx` in ONBD-016.
+- `generationError` state shape: `{ error, errorType, canRetry }` — errorType: 'auth' | 'timeout' | 'empty' | 'unknown'.
+- `handleRetryGeneration` delegates result to `handleGenerateResultRef.current` — same path as initial generation.
+- Collapsed expansion → ERROR state with inline message ("Claude not logged in" for auth, "Generation failed" otherwise).
 
 ---
 

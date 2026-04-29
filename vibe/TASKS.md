@@ -474,7 +474,7 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    → DECISIONS.md D-BUG-002 · DevTools shortcut Cmd+Option+I added to main.js for future debugging
 
 ## What's next
-ONBD-014 complete — transcription error state wired (expanded: TRANSCRIPTION_ERROR; collapsed: ERROR). Next: ONBD-015 generation error state.
+ONBD-015 complete — generation error state wired (GENERATION_ERROR expanded state, 4 error types: auth/timeout/empty/unknown, slow warning banner, retry via retryGeneration IPC). Next: ONBD-016 — OperationErrorPanel.jsx shared error component.
 
 ---
 
