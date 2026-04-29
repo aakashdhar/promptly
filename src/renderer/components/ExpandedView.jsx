@@ -37,6 +37,8 @@ export default function ExpandedView({
   onAbort,
   transcriptionErrorProps,
   transcriptionSlow,
+  generationErrorProps,
+  generationSlow,
 }) {
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
@@ -71,6 +73,7 @@ export default function ExpandedView({
         onOpenSettings={onOpenSettings}
         onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
         onAbort={onAbort}
+        generationErrorType={generationErrorProps?.errorType}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
@@ -106,6 +109,8 @@ export default function ExpandedView({
           workflowBuilderProps={workflowBuilderProps}
           transcriptionErrorProps={transcriptionErrorProps}
           transcriptionSlow={transcriptionSlow}
+          generationErrorProps={generationErrorProps}
+          generationSlow={generationSlow}
         />
       </div>
     </div>

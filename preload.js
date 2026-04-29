@@ -170,4 +170,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('transcription-slow-warning', cb)
     return () => ipcRenderer.removeListener('transcription-slow-warning', cb)
   },
+
+  retryGeneration: () =>
+    ipcRenderer.invoke('retry-generation'),
+
+  onGenerationSlowWarning: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('generation-slow-warning', cb)
+    return () => ipcRenderer.removeListener('generation-slow-warning', cb)
+  },
 });

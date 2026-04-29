@@ -22,6 +22,131 @@ function getTranscriptionFix(error) {
   return null
 }
 
+function GenerationErrorPanel({ generationErrorProps, generationSlow, fixCopied, setFixCopied }) {
+  const err = generationErrorProps || {}
+  const errorType = err.errorType || 'unknown'
+  const isAuth = errorType === 'auth'
+  const isTimeout = errorType === 'timeout'
+  const isEmpty = errorType === 'empty'
+  const isUnknown = errorType === 'unknown'
+  const isAmber = isAuth || isTimeout || isEmpty
+
+  function handleCopyFix(code) {
+    if (window.electronAPI) window.electronAPI.copyToClipboard(code)
+    setFixCopied(code)
+    setTimeout(() => setFixCopied(null), 1800)
+  }
+
+  const iconColor = isAmber ? 'rgba(255,189,46,' : 'rgba(255,59,48,'
+  const iconBg = `${iconColor}0.08)`
+  const iconBorder = `${iconColor}0.2)`
+
+  const icon = isAuth ? (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <rect x="5" y="11" width="14" height="11" rx="2" stroke={`${iconColor}0.8)`} strokeWidth="1.5"/>
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke={`${iconColor}0.8)`} strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ) : isTimeout ? (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={`${iconColor}0.8)`} strokeWidth="1.5"/>
+      <path d="M12 7v5l3 3" stroke={`${iconColor}0.8)`} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ) : isEmpty ? (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke={`${iconColor}0.8)`} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ) : (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="rgba(255,59,48,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+
+  const title = isAuth ? 'Claude is not logged in'
+    : isTimeout ? 'Claude took too long to respond'
+    : isEmpty ? 'Claude returned an empty response'
+    : 'Generation failed'
+
+  const body = isAuth ? 'Your session expired or you haven\'t logged in yet.'
+    : isTimeout ? 'This can happen with slow connections or if Claude CLI needs updating.'
+    : isEmpty ? 'The CLI ran successfully but returned nothing. This may be a Claude CLI version issue.'
+    : null
+
+  const fixCommands = isAuth ? [{ label: 'Log in to Claude:', code: 'claude login', note: 'This opens a browser to authenticate' }]
+    : isTimeout ? [{ label: 'Update Claude CLI:', code: 'claude update' }]
+    : isEmpty ? [{ label: 'Update Claude CLI:', code: 'claude update' }, { label: 'Test manually in Terminal:', code: 'claude -p "hello"' }]
+    : [{ label: 'Test manually in Terminal:', code: 'claude -p "hello"' }]
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 36px', gap: '14px', minHeight: 0 }}>
+      {/* Error icon */}
+      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: iconBg, border: `1px solid ${iconBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+
+      {/* Title + body */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(255,255,255,0.75)', marginBottom: '6px' }}>{title}</div>
+        {body && <div style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.38)', lineHeight: 1.7 }}>{body}</div>}
+      </div>
+
+      {/* Slow warning */}
+      {generationSlow && (
+        <div style={{ fontSize: '11px', color: 'rgba(255,189,46,0.7)', textAlign: 'center' }}>
+          Claude is taking longer than usual...
+        </div>
+      )}
+
+      {/* Error details (unknown only) */}
+      {isUnknown && err.error && (
+        <div style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: '9px', padding: '10px 14px' }}>
+          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.2)', marginBottom: '6px' }}>Error details</div>
+          <div style={{ fontFamily: 'monospace', fontSize: '10.5px', color: 'rgba(255,100,90,0.55)', maxHeight: '80px', overflowY: 'auto', lineHeight: 1.5 }}>{err.error}</div>
+        </div>
+      )}
+
+      {/* Fix box */}
+      <div style={{ width: '100%', background: 'rgba(255,189,46,0.04)', border: '0.5px solid rgba(255,189,46,0.12)', borderRadius: '9px', padding: '10px 14px' }}>
+        <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,189,46,0.55)', marginBottom: '8px' }}>Fix</div>
+        {isTimeout && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>Check your internet connection, then:</div>}
+        {fixCommands.map(({ label, code, note }) => (
+          <div key={code} style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>{label}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <code style={{ flex: 1, fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,189,46,0.75)', background: 'rgba(255,255,255,0.04)', padding: '4px 8px', borderRadius: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{code}</code>
+              <button onClick={() => handleCopyFix(code)} style={{ padding: '4px 10px', borderRadius: '5px', fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer', background: fixCopied === code ? 'rgba(48,209,88,0.1)' : 'rgba(255,255,255,0.05)', border: `0.5px solid ${fixCopied === code ? 'rgba(48,209,88,0.25)' : 'rgba(255,255,255,0.1)'}`, color: fixCopied === code ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.4)', transition: 'all 150ms', flexShrink: 0 }}>
+                {fixCopied === code ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            {note && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.28)', marginTop: '4px' }}>{note}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Action row */}
+      <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
+        {(isUnknown && err.onOpenSettings) && (
+          <button
+            onClick={err.onOpenSettings}
+            style={{ flex: 1, height: '38px', borderRadius: '9px', fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer', background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', transition: 'background 150ms' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+          >
+            Open settings
+          </button>
+        )}
+        <button
+          onClick={err.onRetry}
+          style={{ flex: 2, height: '38px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: 'linear-gradient(135deg,rgba(168,85,247,0.85),rgba(124,58,237,0.85))', border: 'none', color: 'white', boxShadow: '0 2px 14px rgba(139,92,246,0.3)', transition: 'opacity 150ms' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          {isAuth ? 'I\'ve logged in — Try again ↺' : 'Try again ↺'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function TranscriptionErrorPanel({ transcriptionErrorProps, transcriptionSlow, fixCopied, setFixCopied }) {
   const err = transcriptionErrorProps || {}
   const fix = getTranscriptionFix(err.error)
@@ -143,6 +268,8 @@ export default function ExpandedDetailPanel({
   workflowBuilderProps,
   transcriptionErrorProps,
   transcriptionSlow,
+  generationErrorProps,
+  generationSlow,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
   const [entryExported, setEntryExported] = useState(false)
@@ -156,6 +283,7 @@ export default function ExpandedDetailPanel({
     || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
     || currentState === 'WORKFLOW_BUILDER' || currentState === 'WORKFLOW_BUILDER_DONE'
     || currentState === 'TRANSCRIPTION_ERROR'
+    || currentState === 'GENERATION_ERROR'
 
   const showEntryDetail = !isContentState && selected !== null
   const showEmpty = !isContentState && !selected
@@ -524,6 +652,15 @@ export default function ExpandedDetailPanel({
         <TranscriptionErrorPanel
           transcriptionErrorProps={transcriptionErrorProps}
           transcriptionSlow={transcriptionSlow}
+          fixCopied={fixCopied}
+          setFixCopied={setFixCopied}
+        />
+      )}
+
+      {currentState === 'GENERATION_ERROR' && (
+        <GenerationErrorPanel
+          generationErrorProps={generationErrorProps}
+          generationSlow={generationSlow}
           fixCopied={fixCopied}
           setFixCopied={setFixCopied}
         />

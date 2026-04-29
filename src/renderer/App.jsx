@@ -48,6 +48,7 @@ const STATES = {
   WORKFLOW_BUILDER: 'WORKFLOW_BUILDER',
   WORKFLOW_BUILDER_DONE: 'WORKFLOW_BUILDER_DONE',
   TRANSCRIPTION_ERROR: 'TRANSCRIPTION_ERROR',
+  GENERATION_ERROR: 'GENERATION_ERROR',
 }
 
 const STATE_HEIGHTS = {
@@ -70,6 +71,7 @@ const STATE_HEIGHTS = {
   WORKFLOW_BUILDER: 860,
   WORKFLOW_BUILDER_DONE: 860,
   TRANSCRIPTION_ERROR: 860,
+  GENERATION_ERROR: 860,
 }
 
 export default function App() {
@@ -85,6 +87,8 @@ export default function App() {
   const [thinkingAccentColor, setThinkingAccentColor] = useState('')
   const [transcriptionError, setTranscriptionError] = useState(null)
   const [transcriptionSlow, setTranscriptionSlow] = useState(false)
+  const [generationError, setGenerationError] = useState(null)
+  const [generationSlow, setGenerationSlow] = useState(false)
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -135,7 +139,7 @@ export default function App() {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
-    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setTranscriptionSlow(false) }
+    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -261,6 +265,22 @@ export default function App() {
 
   const handleGenerateResult = useCallback((genResult, transcript) => {
     if (abortRef.current) { abortRef.current = false; return }
+    if (!genResult.success) {
+      if (isExpandedRef.current) {
+        setGenerationError({
+          error: genResult.error || '',
+          errorType: genResult.errorType || (genResult.timedOut ? 'timeout' : 'unknown'),
+          canRetry: true,
+        })
+        transitionRef.current(STATES.GENERATION_ERROR)
+      } else {
+        const msg = genResult.errorType === 'auth'
+          ? 'Claude not logged in — expand to fix'
+          : 'Generation failed — expand to retry'
+        transitionRef.current(STATES.ERROR, { message: msg })
+      }
+      return
+    }
     if (mode === 'image') {
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
@@ -373,10 +393,6 @@ export default function App() {
     }
 
     const genResult = await window.electronAPI.generatePrompt(typedText, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
-    if (!genResult.success) {
-      transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
-      return
-    }
     handleGenerateResult(genResult, typedText)
   }, [mode, handleGenerateResult])
 
@@ -390,10 +406,6 @@ export default function App() {
     }
 
     const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
-    if (!genResult.success) {
-      transition(STATES.ERROR, { message: genResult.error || 'Claude error' })
-      return
-    }
     handleGenerateResult(genResult, originalTranscript.current)
   }, [mode, handleGenerateResult])
 
@@ -416,16 +428,24 @@ export default function App() {
       text, modeRef.current,
       modeRef.current === 'polish' ? { tone: polishToneRef.current } : undefined
     )
-    if (!genResult.success) {
-      transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
-      return
-    }
     handleGenerateResultRef.current(genResult, text)
+  }, [])
+
+  const handleRetryGeneration = useCallback(async () => {
+    if (!window.electronAPI) return
+    const result = await window.electronAPI.retryGeneration()
+    handleGenerateResultRef.current(result, originalTranscript.current)
   }, [])
 
   useEffect(() => {
     if (!window.electronAPI?.onTranscriptionSlowWarning) return
     const unsub = window.electronAPI.onTranscriptionSlowWarning(() => setTranscriptionSlow(true))
+    return () => unsub?.()
+  }, [])
+
+  useEffect(() => {
+    if (!window.electronAPI?.onGenerationSlowWarning) return
+    const unsub = window.electronAPI.onGenerationSlowWarning(() => setGenerationSlow(true))
     return () => unsub?.()
   }, [])
 
@@ -528,6 +548,8 @@ export default function App() {
             onAbort={handleAbort}
             transcriptionErrorProps={{ ...transcriptionError, onRetry: handleRetryTranscription, onOpenSettings: openSettings }}
             transcriptionSlow={transcriptionSlow}
+            generationErrorProps={{ ...generationError, onRetry: handleRetryGeneration, onOpenSettings: openSettings }}
+            generationSlow={generationSlow}
           />
         ) : (
           <>
@@ -567,7 +589,7 @@ export default function App() {
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} transcriptionSlow={transcriptionSlow} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} transcriptionSlow={transcriptionSlow} generationSlow={generationSlow} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState

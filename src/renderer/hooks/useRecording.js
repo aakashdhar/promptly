@@ -102,11 +102,6 @@ export default function useRecording({
         mode,
         mode === 'polish' ? { tone: polishToneRef.current } : undefined
       )
-      if (!genResult.success) {
-        transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
-        return
-      }
-
       onGenerateResult.current(genResult, text)
     }
   }, [])
