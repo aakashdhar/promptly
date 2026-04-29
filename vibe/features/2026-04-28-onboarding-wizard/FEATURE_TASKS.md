@@ -229,7 +229,7 @@
 ---
 
 ### ONBD-009 · splash.html — Screen 1: Claude CLI wizard step
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#screen-1--claude-cli-check
 - **Dependencies**: ONBD-001, ONBD-008
