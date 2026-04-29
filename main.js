@@ -540,6 +540,27 @@ async function resolveWhisperPath() {
   return shellResolved;
 }
 
+async function resolveFfmpegPath() {
+  const home = os.homedir();
+  const commonPaths = [
+    '/usr/local/bin/ffmpeg',
+    '/opt/homebrew/bin/ffmpeg',
+    path.join(home, '.local/bin/ffmpeg'),
+    '/usr/bin/ffmpeg',
+  ];
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+  }
+  return new Promise((resolve) => {
+    exec('zsh -lc "which ffmpeg"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which ffmpeg"', (err2, stdout2) => {
+        resolve(stdout2?.trim() || null);
+      });
+    });
+  });
+}
+
 function winSend(channel, payload) {
   if (!win || win.isDestroyed()) return;
   win.webContents.send(channel, payload);
@@ -1078,6 +1099,40 @@ app.whenReady().then(async () => {
     }
 
     return { found: true, path: resolvedPath, version, working, error, authError };
+  });
+
+  ipcMain.handle('check-whisper', async () => {
+    const resolvedPath = whisperPath || await resolveWhisperPath();
+    if (!resolvedPath) {
+      return { found: false, path: null, error: 'Whisper not found — install via: pip install openai-whisper' };
+    }
+    try {
+      await new Promise((resolve, reject) => {
+        if (resolvedPath === 'python3 -m whisper') {
+          exec('python3 -m whisper --help', { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
+        } else {
+          execFile(resolvedPath, ['--help'], { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
+        }
+      });
+      return { found: true, path: resolvedPath, error: null };
+    } catch (err) {
+      return { found: false, path: resolvedPath, error: err.message || 'Whisper failed to run' };
+    }
+  });
+
+  ipcMain.handle('check-ffmpeg', async () => {
+    const resolvedPath = await resolveFfmpegPath();
+    if (!resolvedPath) {
+      return { found: false, path: null, error: 'ffmpeg not found — install via: brew install ffmpeg' };
+    }
+    try {
+      await new Promise((resolve, reject) => {
+        execFile(resolvedPath, ['-version'], { timeout: 5000 }, (err) => { err ? reject(err) : resolve(); });
+      });
+      return { found: true, path: resolvedPath, error: null };
+    } catch (err) {
+      return { found: false, path: resolvedPath, error: err.message || 'ffmpeg failed to run' };
+    }
   });
 
   ipcMain.handle('uninstall-promptly', () => handleUninstall());
