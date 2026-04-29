@@ -436,6 +436,12 @@ function makeClaudeEnv(binPath) {
   return { ...process.env, PATH: base.includes(binDir) ? base : binDir + ':' + base };
 }
 
+function parseGenerationError(stderr, stdout) {
+  const combined = (stderr + stdout).toLowerCase();
+  if (combined.includes('not authenticated') || combined.includes('login') || combined.includes('unauthorized')) return 'auth';
+  return 'unknown';
+}
+
 async function resolveClaudePath() {
   const stored = readConfig().claudePath;
   if (stored && stored.trim()) {
@@ -760,7 +766,7 @@ app.whenReady().then(async () => {
     currentMode = mode || 'balanced';
     return new Promise((resolve) => {
       if (!claudePath) {
-        resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code' });
+        resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
         return;
       }
       const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
@@ -782,34 +788,42 @@ app.whenReady().then(async () => {
       let stdout = '';
       let stderr = '';
       let resolved = false;
-      const timer = setTimeout(() => {
+
+      const slowTimer = setTimeout(() => {
+        if (!win.isDestroyed()) win.webContents.send('generation-slow-warning');
+      }, 30000);
+
+      const killTimer = setTimeout(() => {
         resolved = true;
         child.kill();
-        resolve({ success: false, error: 'Claude took too long — try again' });
-      }, 60000);
+        resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
+      }, 45000);
+
       child.stdout.on('data', (d) => { stdout += d.toString(); });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.end();
       child.on('close', (code) => {
         if (resolved) return;
-        clearTimeout(timer);
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
         resolved = true;
         if (code !== 0) {
-          resolve({ success: false, error: stderr.trim() || 'Claude CLI error' });
+          resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) });
           return;
         }
         const prompt = stdout.trim();
         if (!prompt) {
-          resolve({ success: false, error: 'Claude returned an empty response — try again' });
+          resolve({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' });
           return;
         }
         resolve({ success: true, prompt });
       });
       child.on('error', (err) => {
         if (resolved) return;
-        clearTimeout(timer);
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
         resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error' });
+        resolve({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' });
       });
     });
   });
@@ -817,30 +831,47 @@ app.whenReady().then(async () => {
   ipcMain.handle('generate-raw', (_event, { systemPrompt }) => {
     return new Promise((resolve) => {
       if (!claudePath) {
-        resolve({ success: false, error: 'Claude CLI not found.' });
+        resolve({ success: false, error: 'Claude CLI not found.', errorType: 'unknown' });
         return;
       }
       const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
       let stdout = '', stderr = '', resolved = false;
-      const timer = setTimeout(() => {
-        resolved = true; child.kill();
-        resolve({ success: false, error: 'Claude took too long — try again' });
-      }, 60000);
+
+      const slowTimer = setTimeout(() => {
+        if (!win.isDestroyed()) win.webContents.send('generation-slow-warning');
+      }, 30000);
+
+      const killTimer = setTimeout(() => {
+        resolved = true;
+        child.kill();
+        resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
+      }, 45000);
+
       child.stdout.on('data', (d) => { stdout += d.toString(); });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.end();
       child.on('close', (code) => {
         if (resolved) return;
-        clearTimeout(timer); resolved = true;
-        if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error' }); return; }
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
+        resolved = true;
+        if (code !== 0) {
+          resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) });
+          return;
+        }
         const prompt = stdout.trim();
-        if (!prompt) { resolve({ success: false, error: 'Claude returned empty response — try again' }); return; }
+        if (!prompt) {
+          resolve({ success: false, error: 'Claude returned empty response — try again', errorType: 'empty' });
+          return;
+        }
         resolve({ success: true, prompt });
       });
       child.on('error', (err) => {
         if (resolved) return;
-        clearTimeout(timer); resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error' });
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
+        resolved = true;
+        resolve({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' });
       });
     });
   });
