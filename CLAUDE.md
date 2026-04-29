@@ -170,6 +170,11 @@ Never let CODEBASE.md drift more than one task behind.
 > Completed feature sections removed 2026-04-27 (P2-008 — full-project review). Full specs remain in their respective `vibe/features/` and `vibe/bugs/` folders.
 
 ---
+
+## Execution mode
+VIBE_MODE=manual
+
+---
 ### Active Feature: FEATURE-IMAGE-BUILDER
 > Folder: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27
 
