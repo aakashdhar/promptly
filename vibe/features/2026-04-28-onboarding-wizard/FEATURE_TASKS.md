@@ -291,7 +291,7 @@
 ---
 
 ### ONBD-011 · splash.html — Screen 3: Model download with real progress bar
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#screen-3--voice-model-download
 - **Dependencies**: ONBD-003, ONBD-004, ONBD-010
