@@ -32,7 +32,7 @@
 ---
 
 ### ONBD-002 · main.js — check-whisper + check-ffmpeg IPC
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#screen-2--whisper--ffmpeg-check
 - **Dependencies**: None
@@ -53,8 +53,7 @@
 **Architecture compliance**: PATH resolution pattern (ARCHITECTURE.md)
 
 **Decisions**:
-> Filled in by agent after completing.
-- None yet.
+- resolveFfmpegPath uses static paths + shell fallback only (no nvm scan — ffmpeg is not installed via nvm). exec used for 'python3 -m whisper' compound path check in check-whisper.
 
 ---
 
