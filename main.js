@@ -187,6 +187,9 @@ let pulseInterval = null;
 let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
 let preExpandBounds = null;
+let lastTempAudioPath = null;
+let lastTranscript = null;
+let currentMode = 'balanced';
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -754,6 +757,7 @@ app.whenReady().then(async () => {
 
   // P1-008: IPC handlers
   ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} }) => {
+    currentMode = mode || 'balanced';
     return new Promise((resolve) => {
       if (!claudePath) {
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code' });
@@ -953,6 +957,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
+    lastTempAudioPath = null; // reset on new recording
     if (!whisperPath) {
       return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
     }
@@ -961,6 +966,7 @@ app.whenReady().then(async () => {
     const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
+      lastTempAudioPath = tmpFile; // capture for retry
       const transcript = await new Promise((resolve, reject) => {
         const whisperCmd = whisperPath === 'python3 -m whisper'
           ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
@@ -1010,11 +1016,93 @@ app.whenReady().then(async () => {
           }
         });
       });
+      lastTranscript = transcript; // capture for retry
       return { success: true, transcript };
     } catch (err) {
-      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+      // keep tmpFile on error so retry-transcription can reuse it
       return { success: false, error: err.message || 'Transcription failed' };
     }
+  });
+
+  ipcMain.handle('retry-transcription', async () => {
+    if (!lastTempAudioPath) {
+      return { success: false, error: 'No audio available — please record again' };
+    }
+    try { if (!fs.existsSync(lastTempAudioPath)) return { success: false, error: 'No audio available — please record again' }; } catch {
+      return { success: false, error: 'No audio available — please record again' };
+    }
+    if (!whisperPath) return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    const tmpFile = lastTempAudioPath;
+    const outDir = os.tmpdir();
+    const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
+    try {
+      const transcript = await new Promise((resolve, reject) => {
+        const whisperCmd = whisperPath === 'python3 -m whisper'
+          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
+          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
+        const pyenvVersion = process.env.PYENV_VERSION || '';
+        const pythonPath = process.env.PYTHONPATH || '';
+        const whisperEnv = {
+          ...process.env,
+          PATH: ['/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin', '/opt/local/bin',
+            path.join(os.homedir(), '.local/bin'), path.join(os.homedir(), '.pyenv/bin'), path.join(os.homedir(), '.pyenv/shims'),
+            path.join(os.homedir(), 'anaconda3/bin'), path.join(os.homedir(), 'miniconda3/bin'), path.join(os.homedir(), 'miniforge3/bin'),
+            '/usr/local/opt/ffmpeg/bin', process.env.PATH].filter(Boolean).join(':'),
+          ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
+          ...(pythonPath && { PYTHONPATH: pythonPath }),
+          PYTHONUNBUFFERED: '1',
+          SSL_CERT_FILE: '/etc/ssl/cert.pem',
+          REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
+        };
+        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, _stdout, stderr) => {
+          if (err) { reject(new Error(stderr || err.message || 'Whisper failed')); return; }
+          try {
+            const text = fs.readFileSync(txtFile, 'utf8').trim();
+            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
+            resolve(text);
+          } catch { reject(new Error('Whisper output not found')); }
+        });
+      });
+      lastTranscript = transcript;
+      return { success: true, transcript };
+    } catch (err) {
+      return { success: false, error: err.message || 'Transcription failed' };
+    }
+  });
+
+  ipcMain.handle('retry-generation', () => {
+    if (!lastTranscript) return { success: false, error: 'No transcript available — please record again' };
+    const mode = currentMode || 'balanced';
+    const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
+    if (modeConf.passthrough) return { success: true, prompt: lastTranscript };
+    let systemPrompt = modeConf.standalone
+      ? modeConf.instruction.replace('{TRANSCRIPT}', lastTranscript)
+      : PROMPT_TEMPLATE.replace('{MODE_NAME}', modeConf.name).replace('{MODE_INSTRUCTION}', modeConf.instruction).replace('{TRANSCRIPT}', lastTranscript);
+    if (mode === 'polish') {
+      systemPrompt = systemPrompt.replace('{TONE}', 'Formal');
+    }
+    return new Promise((resolve) => {
+      if (!claudePath) { resolve({ success: false, error: 'Claude CLI not found.' }); return; }
+      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
+      let stdout = '', stderr = '', resolved = false;
+      const timer = setTimeout(() => { resolved = true; child.kill(); resolve({ success: false, error: 'Claude took too long — try again' }); }, 60000);
+      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stderr.on('data', (d) => { stderr += d.toString(); });
+      child.stdin.end();
+      child.on('close', (code) => {
+        if (resolved) return;
+        clearTimeout(timer); resolved = true;
+        if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error' }); return; }
+        const prompt = stdout.trim();
+        if (!prompt) { resolve({ success: false, error: 'Claude returned an empty response — try again' }); return; }
+        resolve({ success: true, prompt });
+      });
+      child.on('error', (err) => {
+        if (resolved) return;
+        clearTimeout(timer); resolved = true;
+        resolve({ success: false, error: err.message || 'Claude CLI error' });
+      });
+    });
   });
 
   ipcMain.handle('save-file', async (_event, { content, filename }) => {
