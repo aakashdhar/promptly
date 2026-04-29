@@ -1001,9 +1001,13 @@ app.whenReady().then(async () => {
           REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
         };
 
-        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, stdout, stderr) => {
+        const whisperChild = exec(whisperCmd, { env: whisperEnv }, (err, stdout, stderr) => {
+          clearTimeout(slowTimer);
+          clearTimeout(killTimer);
           if (err) {
-            reject(new Error(stderr || err.message || 'Whisper failed'));
+            const wrappedErr = new Error(stderr || err.message || 'Whisper failed');
+            if (err.killed) wrappedErr.timedOut = true;
+            reject(wrappedErr);
             return;
           }
           try {
@@ -1015,12 +1019,23 @@ app.whenReady().then(async () => {
             reject(new Error('Whisper output not found'));
           }
         });
+
+        const slowTimer = setTimeout(() => {
+          if (!win.isDestroyed()) win.webContents.send('transcription-slow-warning');
+        }, 20000);
+
+        const killTimer = setTimeout(() => {
+          whisperChild.kill();
+          const timeoutErr = new Error('Transcription timed out after 30 seconds');
+          timeoutErr.timedOut = true;
+          reject(timeoutErr);
+        }, 30000);
       });
       lastTranscript = transcript; // capture for retry
       return { success: true, transcript };
     } catch (err) {
       // keep tmpFile on error so retry-transcription can reuse it
-      return { success: false, error: err.message || 'Transcription failed' };
+      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
     }
   });
 
