@@ -1485,3 +1485,16 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **ExpandedDetailPanel isContentState**: WORKFLOW_BUILDER and WORKFLOW_BUILDER_DONE added to `isContentState` — right panel shows WorkflowBuilder components, not the history viewer, when in these states.
 - **Collapse button**: extended isVideo check to `isFullViewMode = isVideo || isWorkflow`. pointerEvents: 'none' added (in addition to opacity 0.3) to ensure clicks don't propagate even if CSS opacity isn't blocking.
 - **IdleState + ExpandedTransportBar**: workflow green accent `rgba(34,197,94,...)` added to all mode-conditional colour chains (ringColor, micStroke, pillBg, pillBorder, pillColor).
+
+
+---
+### D-BUG-WFL-PLACEHOLDER-DELETE — 2026-04-29 — Bug fix: WorkflowBuilderState placeholder fill UX + delete node
+- **Type**: drift (bug)
+- **Folder**: vibe/bugs/2026-04-29-wfl-placeholder-delete/
+- **Bug 1 root cause**: Warning text "Fill X placeholders before generating" gave no instruction on HOW; amber chips with ✎ icon are the fill mechanism but users didn't discover them
+- **Bug 2 root cause**: handleAddNode existed but no handleDeleteNode in hook or × button in component
+- **Files in scope**: src/renderer/components/WorkflowBuilderState.jsx, src/renderer/hooks/useWorkflowBuilder.js
+- **Fix approach**: (1) update warning text to "Click the amber values above to fill..."; (2) add handleDeleteNode + onDeleteNode prop + × button per card (hidden when ≤1 node)
+- **CODEBASE.md update**: Yes — WorkflowBuilderState props + useWorkflowBuilder exports
+- **ARCHITECTURE.md update**: No
+---

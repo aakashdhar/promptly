@@ -348,3 +348,25 @@ Never: touch files not in scope · change behaviour of other modes · use innerH
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
 ---
+
+### Active Bug Fix: WorkflowBuilderState — placeholder fill UX + delete node
+> Folder: vibe/bugs/2026-04-29-wfl-placeholder-delete/ | Added: 2026-04-29
+
+**Files in scope**: `src/renderer/components/WorkflowBuilderState.jsx`, `src/renderer/hooks/useWorkflowBuilder.js`
+**Files out of scope**: All other components, all hooks except useWorkflowBuilder, App.jsx, preload.js, main.js
+
+**Boundaries:**
+Always: run lint after every change · smallest change only · follow ARCHITECTURE.md patterns ·
+        update CODEBASE.md if fix changes props/exports · update TASKS.md after every task
+Ask first: touching any file not in BUG_PLAN.md
+Never: fix other bugs noticed · introduce new patterns · change unrelated code
+
+**Done condition:**
+- [ ] Warning text updated to tell users HOW to fill placeholders
+- [ ] `handleDeleteNode` added to useWorkflowBuilder, exposed in workflowBuilderProps
+- [ ] × delete button in WorkflowBuilderState, hidden when ≤1 node
+- [ ] Linter clean · CODEBASE.md updated
+
+**Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
+**Between tasks:** "next" → lint → code commit → doc commit → state next task → confirm.
+---

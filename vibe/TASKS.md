@@ -574,6 +574,16 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 Root cause: `saveToHistory` was only called in `handleVideoSave` (explicit Save button), which doesn't trigger a state change. `ExpandedHistoryList` refreshes on `currentState` changes only — so the list never reflected newly generated video prompts.
 Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDER_DONE` transition), matching the image builder pattern. `handleVideoSave` retains `isSaved` flag toggle for UI feedback but no longer writes history.
 
+✅ WorkflowBuilderState — placeholder fill UX + missing delete node (4/4 ✅)
+   [x] BUG-001 · Confirm both bugs reproduce (manual) — confirmed by user report
+   [x] BUG-002 · Implement fix — warning text + handleDeleteNode + × button
+   [x] BUG-003 · Verify — lint 0 errors, both bugs resolved
+   [x] BUG-004 · Update docs — CODEBASE.md, DECISIONS.md, TASKS.md
+   → Full specs: vibe/bugs/2026-04-29-wfl-placeholder-delete/BUG_TASKS.md
+
+## What just happened
+✅ BUG fix 2026-04-29 — WorkflowBuilderState: (1) warning text now reads "Click the amber values above to fill X placeholder(s)" — users can find the fill mechanism; (2) × delete button added per node card (hidden when only 1 node remains), handleDeleteNode in hook removes node + its filled placeholder entries. Lint clean.
+
 ## What just happened
 ✅ FEATURE-WORKFLOW-BUILDER complete 2026-04-29 — All 11 WFL tasks implemented. New "Workflow" mode adds two-phase Claude flow: Phase 1 analyses spoken automation idea → n8n node cards with placeholder chips; Phase 2 assembles importable n8n JSON. WorkflowBuilderState (node cards, amber chips, inline fill), WorkflowBuilderDoneState (HOW IT WORKS + syntax-highlighted JSON), useWorkflowBuilder hook (full lifecycle, reiterate merge). Build + lint clean.
 
