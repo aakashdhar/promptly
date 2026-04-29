@@ -351,7 +351,7 @@
 ---
 
 ### ONBD-013 · Skip option + settings recheck
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#skip-option-for-experienced-users + #re-run-wizard-option
 - **Dependencies**: ONBD-008
