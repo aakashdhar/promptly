@@ -41,6 +41,7 @@ export default function useVideoBuilder({
   setThinkTranscript,
   setThinkingLabel,
   setThinkingAccentColor,
+  startRecordingRef,
 }) {
   const [videoDefaults, setVideoDefaults] = useState(deepCopy(EMPTY_DEFAULTS))
   const [videoAnswers, setVideoAnswers] = useState(deepCopy(EMPTY_DEFAULTS))
@@ -273,31 +274,37 @@ Rules:
     transitionRef.current(STATES.VIDEO_BUILDER)
   }
 
-  return {
+  const videoBuilderProps = {
+    transcript: originalTranscript.current,
     videoDefaults,
     videoAnswers,
+    showAdvanced: showVideoAdvanced,
+    activePickerParam: videoActivePickerParam,
+    dialogueText: videoDialogueText,
+    settingDetail: videoSettingDetail,
     videoBuiltPrompt,
-    showVideoAdvanced,
-    videoActivePickerParam,
-    videoDialogueText,
-    videoSettingDetail,
     isSaved,
+    onChipRemove: handleVideoChipRemove,
+    onChipAdd: handleVideoChipAdd,
+    onParamChange: handleVideoParamChange,
+    onToggleAdvanced: handleVideoToggleAdvanced,
+    onOpenPicker: handleVideoOpenPicker,
+    onClosePicker: handleVideoClosePicker,
+    onDialogueChange: handleVideoDialogueChange,
+    onSettingChange: handleVideoSettingChange,
+    onConfirm: handleVideoConfirm,
+    onCopyNow: handleVideoCopyNow,
+    onCopyPrompt: handleVideoCopyPrompt,
+    onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },
+    onEditAnswers: handleVideoEditAnswers,
+    onStartOver: handleVideoStartOver,
+    onSave: handleVideoSave,
+  }
+
+  return {
     isReiteratingRef,
     runPreSelection,
-    assembleVideoPrompt,
-    handleVideoChipRemove,
-    handleVideoChipAdd,
-    handleVideoParamChange,
-    handleVideoOpenPicker,
-    handleVideoClosePicker,
-    handleVideoToggleAdvanced,
-    handleVideoConfirm,
-    handleVideoCopyNow,
-    handleVideoCopyPrompt,
-    handleVideoDialogueChange,
-    handleVideoSettingChange,
-    handleVideoSave,
     handleVideoStartOver,
-    handleVideoEditAnswers,
+    videoBuilderProps,
   }
 }

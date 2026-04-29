@@ -211,6 +211,7 @@ export default function App() {
     handleCopyNow,
     handleImageStartOver,
     handleImageEditAnswers,
+    imageBuilderProps,
   } = useImageBuilder({
     STATES,
     transitionRef,
@@ -219,33 +220,14 @@ export default function App() {
     resizeWindow,
     setThinkTranscript,
     setThinkingLabel,
+    startRecordingRef,
   })
 
   const {
-    videoDefaults,
-    videoAnswers,
-    videoBuiltPrompt,
-    showVideoAdvanced,
-    videoActivePickerParam,
-    videoDialogueText,
-    videoSettingDetail,
-    isSaved: videoIsSaved,
     isReiteratingRef: isVideoReiteratingRef,
     runPreSelection: runVideoPreSelection,
-    handleVideoChipRemove,
-    handleVideoChipAdd,
-    handleVideoParamChange,
-    handleVideoOpenPicker,
-    handleVideoClosePicker,
-    handleVideoToggleAdvanced,
-    handleVideoConfirm,
-    handleVideoCopyNow,
-    handleVideoCopyPrompt,
-    handleVideoDialogueChange,
-    handleVideoSettingChange,
-    handleVideoSave,
     handleVideoStartOver,
-    handleVideoEditAnswers,
+    videoBuilderProps,
   } = useVideoBuilder({
     STATES,
     transitionRef,
@@ -253,24 +235,14 @@ export default function App() {
     setThinkTranscript,
     setThinkingLabel,
     setThinkingAccentColor,
+    startRecordingRef,
   })
 
   const {
-    workflowAnalysis,
-    filledPlaceholders,
-    workflowJson,
-    isSaved: workflowIsSaved,
-    isCopied: workflowIsCopied,
     isReiteratingRef: isWorkflowReiteratingRef,
     runWorkflowAnalysis,
-    handleFillPlaceholder,
-    handleAddNode,
-    handleWorkflowConfirm,
-    handleWorkflowReiterate,
     handleWorkflowStartOver,
-    handleWorkflowEdit,
-    handleWorkflowSave,
-    handleWorkflowCopy,
+    workflowBuilderProps,
   } = useWorkflowBuilder({
     STATES,
     transitionRef,
@@ -278,6 +250,7 @@ export default function App() {
     setThinkTranscript,
     setThinkingLabel,
     setThinkingAccentColor,
+    startRecordingRef,
   })
 
   const handleGenerateResult = useCallback((genResult, transcript) => {
@@ -456,70 +429,6 @@ export default function App() {
     e.preventDefault()
     if (currentState !== STATES.IDLE) return
     if (window.electronAPI) window.electronAPI.showModeMenu(mode)
-  }
-
-  const imageBuilderProps = {
-    transcript: originalTranscript.current,
-    imageDefaults,
-    imageAnswers,
-    showAdvanced,
-    activePickerParam,
-    imageBuiltPrompt,
-    onChipRemove: handleChipRemove,
-    onChipAdd: handleChipAdd,
-    onParamChange: handleParamChange,
-    onToggleAdvanced: handleToggleAdvanced,
-    onOpenPicker: handleOpenPicker,
-    onClosePicker: handleClosePicker,
-    onConfirm: handleConfirm,
-    onCopyNow: handleCopyNow,
-    onReiterate: () => { isReiteratingRef.current = true; startRecording() },
-    onEditAnswers: handleImageEditAnswers,
-    onStartOver: () => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) },
-  }
-
-  const videoBuilderProps = {
-    transcript: originalTranscript.current,
-    videoDefaults,
-    videoAnswers,
-    showAdvanced: showVideoAdvanced,
-    activePickerParam: videoActivePickerParam,
-    dialogueText: videoDialogueText,
-    settingDetail: videoSettingDetail,
-    videoBuiltPrompt,
-    isSaved: videoIsSaved,
-    onChipRemove: handleVideoChipRemove,
-    onChipAdd: handleVideoChipAdd,
-    onParamChange: handleVideoParamChange,
-    onToggleAdvanced: handleVideoToggleAdvanced,
-    onOpenPicker: handleVideoOpenPicker,
-    onClosePicker: handleVideoClosePicker,
-    onDialogueChange: handleVideoDialogueChange,
-    onSettingChange: handleVideoSettingChange,
-    onConfirm: handleVideoConfirm,
-    onCopyNow: handleVideoCopyNow,
-    onCopyPrompt: handleVideoCopyPrompt,
-    onReiterate: () => { isVideoReiteratingRef.current = true; startRecording() },
-    onEditAnswers: handleVideoEditAnswers,
-    onStartOver: handleVideoStartOver,
-    onSave: handleVideoSave,
-  }
-
-  const workflowBuilderProps = {
-    transcript: originalTranscript.current,
-    workflowAnalysis,
-    filledPlaceholders,
-    workflowJson,
-    isSaved: workflowIsSaved,
-    isCopied: workflowIsCopied,
-    onFillPlaceholder: handleFillPlaceholder,
-    onAddNode: handleAddNode,
-    onConfirm: () => handleWorkflowConfirm(workflowAnalysis, filledPlaceholders),
-    onReiterate: () => { handleWorkflowReiterate(); isWorkflowReiteratingRef.current = true; startRecording() },
-    onStartOver: handleWorkflowStartOver,
-    onEdit: handleWorkflowEdit,
-    onSave: handleWorkflowSave,
-    onCopy: handleWorkflowCopy,
   }
 
   return (

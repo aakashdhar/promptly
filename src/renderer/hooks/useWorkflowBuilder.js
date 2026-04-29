@@ -10,6 +10,7 @@ export default function useWorkflowBuilder({
   setThinkTranscript,
   setThinkingLabel,
   setThinkingAccentColor,
+  startRecordingRef,
 }) {
   const [workflowAnalysis, setWorkflowAnalysis] = useState(null)
   const [filledPlaceholders, setFilledPlaceholders] = useState({})
@@ -191,13 +192,8 @@ Rules:
   }, [])
 
   const handleWorkflowConfirm = useCallback((analysis, placeholders) => {
-    setThinkingLabel('Assembling JSON...')
     assembleWorkflowJson(analysis, placeholders)
-  }, [assembleWorkflowJson, setThinkingLabel])
-
-  const handleWorkflowReiterate = useCallback(() => {
-    isReiteratingRef.current = true
-  }, [])
+  }, [assembleWorkflowJson])
 
   const handleWorkflowStartOver = useCallback(() => {
     setWorkflowAnalysis(null)
@@ -230,22 +226,27 @@ Rules:
     setTimeout(() => setIsCopied(false), 1800)
   }, [workflowJson])
 
-  return {
+  const workflowBuilderProps = {
+    transcript: originalTranscript.current,
     workflowAnalysis,
     filledPlaceholders,
     workflowJson,
     isSaved,
     isCopied,
+    onFillPlaceholder: handleFillPlaceholder,
+    onAddNode: handleAddNode,
+    onConfirm: () => handleWorkflowConfirm(workflowAnalysis, filledPlaceholders),
+    onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },
+    onStartOver: handleWorkflowStartOver,
+    onEdit: handleWorkflowEdit,
+    onSave: handleWorkflowSave,
+    onCopy: handleWorkflowCopy,
+  }
+
+  return {
     isReiteratingRef,
     runWorkflowAnalysis,
-    assembleWorkflowJson,
-    handleFillPlaceholder,
-    handleAddNode,
-    handleWorkflowConfirm,
-    handleWorkflowReiterate,
     handleWorkflowStartOver,
-    handleWorkflowEdit,
-    handleWorkflowSave,
-    handleWorkflowCopy,
+    workflowBuilderProps,
   }
 }

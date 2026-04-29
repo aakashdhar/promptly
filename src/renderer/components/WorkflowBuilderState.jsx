@@ -24,11 +24,13 @@ export default function WorkflowBuilderState({
   }, 0)
 
   const filledCount = nodes.reduce((sum, node) => {
-    const blankFilled = (node.name && node.type) ? ((!node.id || node.id > 0) ? 1 : 0) : 0
+    const blankFilled = (!node.name || !node.type)
+      ? (filledPlaceholders[`${node.id}-__name__`] && filledPlaceholders[`${node.id}-__type__`] ? 1 : 0)
+      : 0
     const paramsFilled = (node.placeholders || []).filter(
       pk => filledPlaceholders[`${node.id}-${pk}`]
     ).length
-    return sum + paramsFilled
+    return sum + paramsFilled + blankFilled
   }, 0)
 
   const allFilled = totalPlaceholders === 0 || filledCount >= totalPlaceholders
