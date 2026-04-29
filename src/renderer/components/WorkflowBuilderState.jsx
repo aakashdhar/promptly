@@ -430,7 +430,7 @@ export default function WorkflowBuilderState({
         <div>
           {unfilled > 0 && (
             <span style={{ fontSize: 11, color: 'rgba(255,189,46,0.5)' }}>
-              ⚠ Click the amber values above to fill {unfilled} placeholder{unfilled !== 1 ? 's' : ''}
+              {unfilled} placeholder{unfilled !== 1 ? 's' : ''} unfilled — fill here or in n8n after import
             </span>
           )}
         </div>
@@ -448,17 +448,13 @@ export default function WorkflowBuilderState({
           </button>
           <button
             onClick={onConfirm}
-            disabled={!allFilled}
             style={{
               fontSize: 12, fontWeight: 600,
-              color: allFilled ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
-              background: allFilled
-                ? 'linear-gradient(135deg, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.25) 100%)'
-                : 'rgba(255,255,255,0.04)',
-              border: `0.5px solid ${allFilled ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              color: 'rgba(255,255,255,0.9)',
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.25) 100%)',
+              border: '0.5px solid rgba(34,197,94,0.3)',
               borderRadius: 7, padding: '6px 14px',
-              cursor: allFilled ? 'pointer' : 'not-allowed',
-              opacity: allFilled ? 1 : 0.5,
+              cursor: 'pointer',
               WebkitAppRegion: 'no-drag',
             }}
           >
