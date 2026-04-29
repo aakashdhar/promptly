@@ -582,6 +582,9 @@ Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDE
    → Full specs: vibe/bugs/2026-04-29-wfl-placeholder-delete/BUG_TASKS.md
 
 ## What just happened
+🔄 Scope change 2026-04-29 (D-WFL-NOGATE) — Removed mandatory placeholder-fill gate from WORKFLOW_BUILDER confirm button. Button now always enabled; unfilled placeholders pass through to JSON as-is so user can edit in n8n after import. Advisory hint replaces blocking warning. FEATURE_SPEC + FEATURE_TASKS updated.
+
+## What just happened
 ✅ BUG fix 2026-04-29 — WorkflowBuilderState: (1) warning text now reads "Click the amber values above to fill X placeholder(s)" — users can find the fill mechanism; (2) × delete button added per node card (hidden when only 1 node remains), handleDeleteNode in hook removes node + its filled placeholder entries. Lint clean.
 
 ## What just happened

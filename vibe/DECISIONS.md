@@ -1498,3 +1498,19 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **CODEBASE.md update**: Yes — WorkflowBuilderState props + useWorkflowBuilder exports
 - **ARCHITECTURE.md update**: No
 ---
+
+---
+### D-WFL-NOGATE — 2026-04-29 — Remove mandatory placeholder-fill gate
+- **Date**: 2026-04-29 · **Type**: scope-change
+- **Trigger**: change: command — user-initiated
+- **Build stage**: Post-completion (FEATURE-WORKFLOW-BUILDER 11/11 ✅, on feat/workflow-builder branch)
+- **What changed**: Confirm button in WORKFLOW_BUILDER is no longer disabled when placeholders are unfilled. Blocking warning removed; replaced with advisory hint. Unfilled placeholder strings pass through to Phase 2 prompt and appear as-is in generated JSON.
+- **Why**: User prefers to paste JSON into n8n and fill placeholder values using n8n's node editor (autocomplete, credential pickers, live data). Filling inside Promptly is friction for their workflow.
+- **Before**: `disabled={!allFilled}` on Confirm button; warning "⚠ Click the amber values above to fill X placeholders"; button grayed out until all filled
+- **After**: Confirm always enabled; advisory hint "{n} placeholder(s) unfilled — fill here or in n8n after import"; amber chips remain tappable for users who want to fill here
+- **Tasks affected**: New: none · Retrofit: none · Code change: WorkflowBuilderState.jsx only
+- **Folders affected**: vibe/features/2026-04-27-workflow-builder/ (FEATURE_SPEC.md + FEATURE_TASKS.md)
+- **Architecture impact**: None
+- **BRIEF.md updated**: No
+- **Approved by**: human
+---

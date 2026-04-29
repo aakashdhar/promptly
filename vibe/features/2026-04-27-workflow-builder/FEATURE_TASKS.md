@@ -96,8 +96,8 @@ Render:
 - [x] Placeholder chips are amber, clicking opens inline input
 - [x] Filling placeholder updates chip to green value display
 - [x] Unfilled placeholder count shown in header badge
-- [x] Confirm button disabled while any placeholder unfilled
-- [x] Confirm button enabled when all placeholders filled
+- [x] ~~Confirm button disabled while any placeholder unfilled~~ (removed D-WFL-NOGATE 2026-04-29 — button always enabled)
+- [x] Advisory hint shown when placeholders unfilled (not a blocking gate)
 - [x] "Add another node" adds blank card with text inputs for name and type
 - [x] "↺ Reiterate" calls onReiterate
 - [x] "Start over" calls onStartOver
@@ -418,7 +418,7 @@ This is likely already partially implemented in WFL-006 handleWorkflowReiterate 
 - [x] THINKING phase 1: green spinner "Mapping your workflow..."
 - [x] WORKFLOW_BUILDER shows node cards — trigger green, action blue
 - [x] Placeholder chips amber, tappable → inline input → green on fill
-- [x] Confirm button disabled while any placeholder unfilled
+- [x] Confirm button always enabled — advisory hint shown if unfilled (D-WFL-NOGATE)
 - [x] Reiterate preserves filled placeholder values on matching keys
 - [x] User-added nodes discarded on reiterate
 - [x] THINKING phase 2: green spinner "Assembling JSON..."

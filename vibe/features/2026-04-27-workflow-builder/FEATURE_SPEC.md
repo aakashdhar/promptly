@@ -55,7 +55,7 @@ STEP 3 — THINKING phase 1 (analysis)
 
 STEP 4 — WORKFLOW_BUILDER state
   Review screen — node cards + placeholders
-  User reviews, fills placeholders, confirms
+  User reviews, optionally fills placeholders, confirms
 
 STEP 5 — THINKING phase 2 (JSON assembly)
   Top bar: green spinner + "Assembling JSON..."
@@ -187,13 +187,15 @@ Card fields:
   Clicking adds a blank node card with empty fields
 
 ### Action row
-  Left: warning if placeholders unfilled
-    "⚠ Fill {n} placeholders before generating"
+  Left: advisory hint if placeholders unfilled
+    "{n} placeholder{s} unfilled — fill here or in n8n after import"
     font-size 11px, color rgba(255,189,46,0.5)
     Hidden when all placeholders filled
   Right: "Start over" (secondary) + "Confirm & generate JSON →" (primary green)
-  Primary button disabled (opacity 0.4) if any placeholder still unfilled
-  Primary button active when all placeholders filled
+  Primary button always enabled — placeholder filling is optional
+  > ⚠️ Changed 2026-04-29 (D-WFL-NOGATE): removed mandatory fill gate.
+  > Unfilled placeholder strings pass through to the generated JSON as-is.
+  > Users fill them in n8n after import.
 
 ---
 
@@ -233,10 +235,10 @@ Right column — JSON preview:
     String values: rgba(74,222,128,0.8) — green
     Numbers: rgba(251,146,60,0.8) — orange
     Booleans/null: rgba(255,255,255,0.4)
-    Note: NO amber placeholder highlight — all PLACEHOLDER strings are
-    replaced with user-filled values before phase 2 runs. The Confirm button
-    requires all placeholders filled, so the generated JSON contains no
-    ALL_CAPS_PLACEHOLDER strings. Amber is not used in the done screen.
+    Note: NO amber placeholder highlight. If user filled all placeholders,
+    JSON contains real values. If some were left unfilled, those parameter
+    values appear as their original ALL_CAPS_PLACEHOLDER strings — user fills
+    them in n8n after import. Amber is not used in the done screen.
     font-family monospace, font-size 10.5px, line-height 1.6
 
 ### Action row
@@ -372,7 +374,7 @@ Same pattern as image and video builders:
 - [ ] Filled placeholder shows as green value
 - [ ] Connector arrows show correct relationship description
 - [ ] "Add another node" button adds blank card
-- [ ] Confirm button disabled while placeholders unfilled
+- [ ] Confirm button always enabled — placeholder filling is optional (D-WFL-NOGATE)
 - [ ] Reiterate preserves filled placeholders where key matches
 - [ ] THINKING phase 2: green spinner "Assembling JSON..."
 - [ ] WORKFLOW_BUILDER_DONE shows two-column layout
