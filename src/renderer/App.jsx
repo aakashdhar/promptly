@@ -47,6 +47,7 @@ const STATES = {
   VIDEO_BUILDER_DONE: 'VIDEO_BUILDER_DONE',
   WORKFLOW_BUILDER: 'WORKFLOW_BUILDER',
   WORKFLOW_BUILDER_DONE: 'WORKFLOW_BUILDER_DONE',
+  TRANSCRIPTION_ERROR: 'TRANSCRIPTION_ERROR',
 }
 
 const STATE_HEIGHTS = {
@@ -68,6 +69,7 @@ const STATE_HEIGHTS = {
   VIDEO_BUILDER_DONE: 860,
   WORKFLOW_BUILDER: 860,
   WORKFLOW_BUILDER_DONE: 860,
+  TRANSCRIPTION_ERROR: 860,
 }
 
 export default function App() {
@@ -81,6 +83,8 @@ export default function App() {
   const [thinkTranscript, setThinkTranscript] = useState('')
   const [thinkingLabel, setThinkingLabel] = useState('')
   const [thinkingAccentColor, setThinkingAccentColor] = useState('')
+  const [transcriptionError, setTranscriptionError] = useState(null)
+  const [transcriptionSlow, setTranscriptionSlow] = useState(false)
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -131,7 +135,7 @@ export default function App() {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
-    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor('') }
+    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setTranscriptionSlow(false) }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -191,6 +195,8 @@ export default function App() {
     onGenerateResult: handleGenerateResultRef,
     isIterated,
     originalTranscript,
+    isExpandedRef,
+    setTranscriptionError,
   })
 
   const {
@@ -391,6 +397,38 @@ export default function App() {
     handleGenerateResult(genResult, originalTranscript.current)
   }, [mode, handleGenerateResult])
 
+  const handleRetryTranscription = useCallback(async () => {
+    if (!window.electronAPI) return
+    const result = await window.electronAPI.retryTranscription()
+    if (!result.success) {
+      transitionRef.current(STATES.IDLE)
+      return
+    }
+    const text = result.transcript?.trim()
+    if (!text) { transitionRef.current(STATES.IDLE); return }
+
+    originalTranscript.current = text
+    setThinkTranscript(text)
+    setTranscriptionSlow(false)
+    transitionRef.current(STATES.THINKING)
+
+    const genResult = await window.electronAPI.generatePrompt(
+      text, modeRef.current,
+      modeRef.current === 'polish' ? { tone: polishToneRef.current } : undefined
+    )
+    if (!genResult.success) {
+      transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
+      return
+    }
+    handleGenerateResultRef.current(genResult, text)
+  }, [])
+
+  useEffect(() => {
+    if (!window.electronAPI?.onTranscriptionSlowWarning) return
+    const unsub = window.electronAPI.onTranscriptionSlowWarning(() => setTranscriptionSlow(true))
+    return () => unsub?.()
+  }, [])
+
   useEffect(() => {
     if (!window.electronAPI) return
     window.electronAPI.getTheme().then(({ dark }) => {
@@ -488,6 +526,8 @@ export default function App() {
             videoBuilderProps={videoBuilderProps}
             workflowBuilderProps={workflowBuilderProps}
             onAbort={handleAbort}
+            transcriptionErrorProps={{ ...transcriptionError, onRetry: handleRetryTranscription, onOpenSettings: openSettings }}
+            transcriptionSlow={transcriptionSlow}
           />
         ) : (
           <>
@@ -527,7 +567,7 @@ export default function App() {
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} transcriptionSlow={transcriptionSlow} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState

@@ -35,6 +35,8 @@ export default function ExpandedView({
   videoBuilderProps,
   workflowBuilderProps,
   onAbort,
+  transcriptionErrorProps,
+  transcriptionSlow,
 }) {
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
@@ -102,6 +104,8 @@ export default function ExpandedView({
           imageBuilderProps={imageBuilderProps}
           videoBuilderProps={videoBuilderProps}
           workflowBuilderProps={workflowBuilderProps}
+          transcriptionErrorProps={transcriptionErrorProps}
+          transcriptionSlow={transcriptionSlow}
         />
       </div>
     </div>

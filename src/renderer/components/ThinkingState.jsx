@@ -3,7 +3,7 @@ import MorphCanvas from './MorphCanvas.jsx'
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
 // accentColor must be rgba(R,G,B,A) format with no spaces — alpha digit replaced for bg/border variants
-export default function ThinkingState({ transcript, mode, label, accentColor }) {
+export default function ThinkingState({ transcript, mode, label, accentColor, transcriptionSlow }) {
   const pillStyle = accentColor
     ? { padding: '7px 16px', background: `${accentColor.replace(/[\d.]+\)$/, '0.1)')}`, border: `1px solid ${accentColor.replace(/[\d.]+\)$/, '0.2)')}`, color: accentColor }
     : { padding: '7px 16px', color: 'rgba(100,180,255,0.8)' }
@@ -27,6 +27,11 @@ export default function ThinkingState({ transcript, mode, label, accentColor }) 
         <MorphCanvas />
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" style={{marginLeft:'auto', marginRight:'auto', width:'60%', marginTop:24, marginBottom:24}} />
+      {transcriptionSlow && (
+        <div style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,189,46,0.7)', padding: '0 32px', marginBottom: '12px', lineHeight: 1.5 }}>
+          Taking longer than expected... Whisper may still be processing.
+        </div>
+      )}
       {/* POLISH-003: section label tracking 0.12em; POLISH-009: 0.14 → 0.45 */}
       <span
         className="block text-[9px] font-bold uppercase mb-3"

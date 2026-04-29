@@ -13,6 +13,109 @@ import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
 
+function getTranscriptionFix(error) {
+  if (!error) return null
+  const e = error.toLowerCase()
+  if (e.includes('ffmpeg')) return { label: 'Install ffmpeg:', code: 'brew install ffmpeg' }
+  if (e.includes('.pt') || (e.includes('no such file') && e.includes('whisper'))) return { label: 'Download the voice model:', code: 'whisper --model base /dev/null' }
+  if (e.includes('permission') || e.includes('access denied')) return { label: 'Fix permissions:', code: 'chmod +x $(which whisper)' }
+  return null
+}
+
+function TranscriptionErrorPanel({ transcriptionErrorProps, transcriptionSlow, fixCopied, setFixCopied }) {
+  const err = transcriptionErrorProps || {}
+  const fix = getTranscriptionFix(err.error)
+  const hasOpenSettings = !!err.onOpenSettings
+
+  function handleCopyFix() {
+    if (!fix) return
+    if (window.electronAPI) window.electronAPI.copyToClipboard(fix.code)
+    setFixCopied(true)
+    setTimeout(() => setFixCopied(false), 1800)
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 36px', gap: '14px', minHeight: 0 }}>
+      {/* Error icon */}
+      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="rgba(255,59,48,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {/* Title + body */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(255,255,255,0.75)', marginBottom: '6px' }}>
+          Transcription failed
+        </div>
+        <div style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.38)', lineHeight: 1.7 }}>
+          {err.timedOut ? 'Whisper timed out after 30 seconds.' : 'Whisper couldn\'t process the audio.'}
+        </div>
+      </div>
+
+      {/* Slow warning */}
+      {transcriptionSlow && (
+        <div style={{ fontSize: '11px', color: 'rgba(255,189,46,0.7)', textAlign: 'center' }}>
+          Taking longer than expected... Whisper may still be processing.
+        </div>
+      )}
+
+      {/* Error details */}
+      {err.error && (
+        <div style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: '9px', padding: '10px 14px' }}>
+          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.2)', marginBottom: '6px' }}>Error details</div>
+          <div style={{ fontFamily: 'monospace', fontSize: '10.5px', color: 'rgba(255,100,90,0.55)', maxHeight: '80px', overflowY: 'auto', lineHeight: 1.5 }}>
+            {err.error}
+          </div>
+        </div>
+      )}
+
+      {/* Fix box */}
+      {fix ? (
+        <div style={{ width: '100%', background: 'rgba(255,189,46,0.04)', border: '0.5px solid rgba(255,189,46,0.12)', borderRadius: '9px', padding: '10px 14px' }}>
+          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,189,46,0.55)', marginBottom: '6px' }}>Fix</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>{fix.label}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <code style={{ flex: 1, fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,189,46,0.75)', background: 'rgba(255,255,255,0.04)', padding: '4px 8px', borderRadius: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {fix.code}
+            </code>
+            <button onClick={handleCopyFix} style={{ padding: '4px 10px', borderRadius: '5px', fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer', background: fixCopied ? 'rgba(48,209,88,0.1)' : 'rgba(255,255,255,0.05)', border: `0.5px solid ${fixCopied ? 'rgba(48,209,88,0.25)' : 'rgba(255,255,255,0.1)'}`, color: fixCopied ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.4)', transition: 'all 150ms', flexShrink: 0 }}>
+              {fixCopied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ width: '100%', background: 'rgba(255,189,46,0.04)', border: '0.5px solid rgba(255,189,46,0.12)', borderRadius: '9px', padding: '10px 14px' }}>
+          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,189,46,0.55)', marginBottom: '6px' }}>Fix</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>Open settings to verify your Whisper and ffmpeg paths.</div>
+        </div>
+      )}
+
+      {/* Action row */}
+      <div style={{ display: 'flex', gap: '10px', width: '100%', marginTop: '4px' }}>
+        {hasOpenSettings && (
+          <button
+            onClick={err.onOpenSettings}
+            style={{ flex: 1, height: '38px', borderRadius: '9px', fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer', background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', transition: 'background 150ms' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+          >
+            Open settings
+          </button>
+        )}
+        <button
+          onClick={err.onRetry}
+          style={{ flex: 2, height: '38px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: 'linear-gradient(135deg,rgba(168,85,247,0.85),rgba(124,58,237,0.85))', border: 'none', color: 'white', boxShadow: '0 2px 14px rgba(139,92,246,0.3)', transition: 'opacity 150ms' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          Try again ↺
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ExpandedDetailPanel({
   selected,
   isViewingHistory,
@@ -38,9 +141,12 @@ export default function ExpandedDetailPanel({
   imageBuilderProps,
   videoBuilderProps,
   workflowBuilderProps,
+  transcriptionErrorProps,
+  transcriptionSlow,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
   const [entryExported, setEntryExported] = useState(false)
+  const [fixCopied, setFixCopied] = useState(false)
 
   const isRefine = mode === 'refine'
   const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
@@ -49,6 +155,7 @@ export default function ExpandedDetailPanel({
     || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
     || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
     || currentState === 'WORKFLOW_BUILDER' || currentState === 'WORKFLOW_BUILDER_DONE'
+    || currentState === 'TRANSCRIPTION_ERROR'
 
   const showEntryDetail = !isContentState && selected !== null
   const showEmpty = !isContentState && !selected
@@ -413,6 +520,15 @@ export default function ExpandedDetailPanel({
           isExpanded
         />
       )}
+      {currentState === 'TRANSCRIPTION_ERROR' && (
+        <TranscriptionErrorPanel
+          transcriptionErrorProps={transcriptionErrorProps}
+          transcriptionSlow={transcriptionSlow}
+          fixCopied={fixCopied}
+          setFixCopied={setFixCopied}
+        />
+      )}
+
       {currentState === 'WORKFLOW_BUILDER_DONE' && workflowBuilderProps && (
         <WorkflowBuilderDoneState
           workflowAnalysis={workflowBuilderProps.workflowAnalysis}

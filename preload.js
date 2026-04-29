@@ -161,4 +161,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   setLastPrompt: (prompt) =>
     ipcRenderer.invoke('set-last-prompt', prompt),
+
+  retryTranscription: () =>
+    ipcRenderer.invoke('retry-transcription'),
+
+  onTranscriptionSlowWarning: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('transcription-slow-warning', cb)
+    return () => ipcRenderer.removeListener('transcription-slow-warning', cb)
+  },
 });
