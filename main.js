@@ -751,6 +751,18 @@ app.whenReady().then(async () => {
     if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url);
   });
 
+  ipcMain.handle('check-setup-complete', () => {
+    return { complete: !!readConfig().setupComplete };
+  });
+
+  ipcMain.handle('set-setup-complete', () => {
+    writeConfig({ ...readConfig(), setupComplete: true });
+  });
+
+  ipcMain.handle('reset-setup-complete', () => {
+    writeConfig({ ...readConfig(), setupComplete: false });
+  });
+
   ipcMain.handle('request-mic', async () => {
     const status = systemPreferences.getMediaAccessStatus('microphone');
     return { ok: status === 'granted' };

@@ -188,6 +188,136 @@ html, body {
   cursor: pointer;
   -webkit-app-region: no-drag;
 }
+
+/* ── Welcome screen ── */
+#screen-welcome {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
+  border-radius: inherit;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 28px 28px 22px;
+  z-index: 30;
+  overflow: hidden;
+}
+
+#screen-welcome.visible { display: flex; }
+
+.wz-logo-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.wz-logo-ring {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(168,85,247,0.1);
+  border: 0.5px solid rgba(168,85,247,0.25);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+
+.wz-app-name {
+  font-size: 20px; font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+
+.wz-tagline {
+  font-size: 11px;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wz-body {
+  font-size: 12px;
+  color: rgba(255,255,255,0.42);
+  line-height: 1.55;
+  text-align: center;
+  max-width: 380px;
+  margin-bottom: 16px;
+}
+
+.wz-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.wz-step-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.wz-step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(168,85,247,0.15);
+  border: 0.5px solid rgba(168,85,247,0.3);
+  color: rgba(168,85,247,0.9);
+  font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.wz-step-info { flex: 1; }
+
+.wz-step-name {
+  font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,0.72);
+  margin-bottom: 1px;
+}
+
+.wz-step-desc {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.3);
+}
+
+.wz-step-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  white-space: nowrap;
+}
+
+.wz-cta {
+  width: 100%;
+  height: 44px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(124,58,237,0.85));
+  color: rgba(255,255,255,0.95);
+  border: 0.5px solid rgba(168,85,247,0.35);
+  border-radius: 12px;
+  font-size: 13px; font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  letter-spacing: 0.01em;
+}
+
+.wz-cta:hover { background: linear-gradient(135deg, rgba(168,85,247,0.95), rgba(124,58,237,0.95)); }
+
+/* ── Wizard screen 1 placeholder ── */
+#screen-1 {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
+  border-radius: inherit;
+  z-index: 31;
+}
 </style>
 </head>
 <body>
@@ -233,6 +363,52 @@ html, body {
   <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:0.08em;color:rgba(255,255,255,0.12);pointer-events:none;user-select:none;">
     built using vibe-* skills
   </div>
+
+  <!-- Screen 0: Welcome (wizard first-run) -->
+  <div id="screen-welcome">
+    <div class="wz-logo-row">
+      <div class="wz-logo-ring">
+        <svg width="20" height="24" viewBox="0 0 12 16" fill="none">
+          <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(168,85,247,0.8)" stroke-width="1"/>
+          <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(168,85,247,0.6)" stroke-width="1" stroke-linecap="round"/>
+          <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(168,85,247,0.6)" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="wz-app-name">Promptly</div>
+      <div class="wz-tagline">Speak · Engineer · Copy</div>
+    </div>
+    <div class="wz-body">Before you start, Promptly needs three tools installed on your Mac. This takes about 5 minutes and only happens once.</div>
+    <div class="wz-steps">
+      <div class="wz-step-card">
+        <div class="wz-step-num">1</div>
+        <div class="wz-step-info">
+          <div class="wz-step-name">Claude CLI</div>
+          <div class="wz-step-desc">The AI that writes your prompts</div>
+        </div>
+        <div class="wz-step-time">~1 min</div>
+      </div>
+      <div class="wz-step-card">
+        <div class="wz-step-num">2</div>
+        <div class="wz-step-info">
+          <div class="wz-step-name">Whisper + ffmpeg</div>
+          <div class="wz-step-desc">Converts your voice to text</div>
+        </div>
+        <div class="wz-step-time">~3 min</div>
+      </div>
+      <div class="wz-step-card">
+        <div class="wz-step-num">3</div>
+        <div class="wz-step-info">
+          <div class="wz-step-name">Voice model download</div>
+          <div class="wz-step-desc">One-time 148MB download for transcription</div>
+        </div>
+        <div class="wz-step-time">~1 min</div>
+      </div>
+    </div>
+    <button class="wz-cta" id="wzCtaBtn">Let's set up Promptly →</button>
+  </div>
+
+  <!-- Screen 1 placeholder (content added in ONBD-009) -->
+  <div id="screen-1"></div>
 
   <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:16px 20px 18px;z-index:20;flex-direction:column">
 
@@ -441,7 +617,23 @@ async function runChecks() {
   window.electronAPI.splashDone();
 }
 
-runChecks();
+document.getElementById('wzCtaBtn').addEventListener('click', () => {
+  document.getElementById('screen-welcome').classList.remove('visible');
+  document.getElementById('screen-1').style.display = 'block';
+});
+
+async function initSplash() {
+  const result = await window.electronAPI.checkSetupComplete();
+  if (result.complete) {
+    window.electronAPI.splashDone();
+    return;
+  }
+  // Hide legacy check content, show wizard
+  document.querySelector('.content').style.display = 'none';
+  document.getElementById('screen-welcome').classList.add('visible');
+}
+
+initSplash();
 </script>
 </body>
 </html>
