@@ -15,12 +15,15 @@ export default function ExpandedTransportBar({
   onOpenSettings,
   onTypePrompt,
   onAbort,
+  generationErrorType,
 }) {
   const isRecording = currentState === 'RECORDING'
   const isThinking = currentState === 'THINKING'
   const isTyping = currentState === 'TYPING'
   const isIterating = currentState === 'ITERATING'
   const isPaused = currentState === 'PAUSED'
+  const isTranscriptionError = currentState === 'TRANSCRIPTION_ERROR'
+  const isGenerationError = currentState === 'GENERATION_ERROR'
 
   const isVideo = mode === 'video'
   const isWorkflow = mode === 'workflow'
@@ -58,6 +61,18 @@ export default function ExpandedTransportBar({
     textLine1 = 'Paused'; textLine2 = 'Tap resume to continue'; textDot = null
   } else if (isTyping) {
     textLine1 = 'Type your prompt'; textLine2 = '⌘↵ to generate'; textDot = null
+  } else if (isTranscriptionError) {
+    textLine1 = 'Transcription failed'; textLine2 = ''; textDot = 'error'
+  } else if (isGenerationError) {
+    if (generationErrorType === 'auth') {
+      textLine1 = 'Not logged in'; textLine2 = ''; textDot = 'gen-warn'
+    } else if (generationErrorType === 'timeout') {
+      textLine1 = 'Claude timed out'; textLine2 = ''; textDot = 'gen-warn'
+    } else if (generationErrorType === 'empty') {
+      textLine1 = 'Empty response'; textLine2 = ''; textDot = 'gen-warn'
+    } else {
+      textLine1 = 'Generation failed'; textLine2 = ''; textDot = 'error'
+    }
   } else {
     textLine1 = 'Speak your prompt'; textLine2 = 'Press ⌥ Space or click mic to start'; textDot = null
   }
@@ -65,6 +80,8 @@ export default function ExpandedTransportBar({
   const dotColor = textDot === 'recording' ? 'rgba(200,50,35,0.85)'
     : textDot === 'thinking' ? 'rgba(10,132,255,0.85)'
     : textDot === 'iterating' ? 'rgba(10,132,255,0.85)'
+    : textDot === 'error' ? 'rgba(255,59,48,0.85)'
+    : textDot === 'gen-warn' ? 'rgba(255,189,46,0.85)'
     : 'transparent'
 
   return (

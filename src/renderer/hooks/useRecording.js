@@ -9,6 +9,8 @@ export default function useRecording({
   onGenerateResult,
   isIterated,
   originalTranscript,
+  isExpandedRef,
+  setTranscriptionError,
 }) {
   const [recSecs, setRecSecs] = useState(0)
   const mediaRecorderRef = useRef(null)
@@ -57,6 +59,7 @@ export default function useRecording({
 
     recorder.onstop = async () => {
       isIterated.current = false
+      setTranscriptionError?.(null)
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
       const arrayBuffer = await blob.arrayBuffer()
 
@@ -71,7 +74,16 @@ export default function useRecording({
 
       const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer)
       if (!transcribeResult.success) {
-        transitionRef.current(STATES.ERROR, { message: transcribeResult.error })
+        if (isExpandedRef?.current) {
+          setTranscriptionError?.({
+            error: transcribeResult.error || 'Unknown transcription error',
+            timedOut: !!transcribeResult.timedOut,
+            canRetry: true,
+          })
+          transitionRef.current(STATES.TRANSCRIPTION_ERROR)
+        } else {
+          transitionRef.current(STATES.ERROR, { message: 'Transcription failed — expand to retry' })
+        }
         return
       }
 
@@ -90,11 +102,6 @@ export default function useRecording({
         mode,
         mode === 'polish' ? { tone: polishToneRef.current } : undefined
       )
-      if (!genResult.success) {
-        transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
-        return
-      }
-
       onGenerateResult.current(genResult, text)
     }
   }, [])

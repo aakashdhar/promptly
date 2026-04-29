@@ -71,6 +71,38 @@ contextBridge.exposeInMainWorld('electronAPI', {
   splashOpenURL: (url) =>
     ipcRenderer.invoke('splash-open-url', url),
 
+  checkSetupComplete: () =>
+    ipcRenderer.invoke('check-setup-complete'),
+
+  setSetupComplete: () =>
+    ipcRenderer.invoke('set-setup-complete'),
+
+  resetSetupComplete: () =>
+    ipcRenderer.invoke('reset-setup-complete'),
+
+  reopenWizard: () =>
+    ipcRenderer.invoke('reopen-wizard'),
+
+  checkClaude: () =>
+    ipcRenderer.invoke('check-claude'),
+
+  checkWhisper: () =>
+    ipcRenderer.invoke('check-whisper'),
+
+  checkFfmpeg: () =>
+    ipcRenderer.invoke('check-ffmpeg'),
+
+  checkWhisperModel: () =>
+    ipcRenderer.invoke('check-whisper-model'),
+
+  downloadWhisperModel: () =>
+    ipcRenderer.invoke('download-whisper-model'),
+
+  onWhisperDownloadProgress: (callback) => {
+    ipcRenderer.on('whisper-download-progress', (_e, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners('whisper-download-progress');
+  },
+
   // main → renderer (on: event listener registration)
   onShortcutTriggered: (callback) => {
     ipcRenderer.on('shortcut-triggered', callback)
@@ -129,4 +161,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   setLastPrompt: (prompt) =>
     ipcRenderer.invoke('set-last-prompt', prompt),
+
+  retryTranscription: () =>
+    ipcRenderer.invoke('retry-transcription'),
+
+  onTranscriptionSlowWarning: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('transcription-slow-warning', cb)
+    return () => ipcRenderer.removeListener('transcription-slow-warning', cb)
+  },
+
+  retryGeneration: () =>
+    ipcRenderer.invoke('retry-generation'),
+
+  onGenerationSlowWarning: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('generation-slow-warning', cb)
+    return () => ipcRenderer.removeListener('generation-slow-warning', cb)
+  },
 });

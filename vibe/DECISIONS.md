@@ -1500,6 +1500,21 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 ---
 
 ---
+## — Feature Start: FEATURE-ONBOARDING-WIZARD — 2026-04-29
+> Folder: vibe/features/2026-04-28-onboarding-wizard/
+> Splash screen becomes a 4-screen setup wizard (verify tools work end-to-end, not just path check); expanded view gains error states for transcription + generation failures with retry.
+> Tasks: ONBD-001 through ONBD-017 | Estimated: 22–30 hours (S: 9, M: 8)
+> Drift logged below as tasks complete.
+---
+
+---
+## 2026-04-29 — Spec review: add-feature (FEATURE-ONBOARDING-WIZARD)
+> P0: 0 · P1: 8 · P2: 4
+> Action: all findings fixed inline
+> Report: vibe/spec-reviews/2026-04-29-add-feature-onboarding-wizard.md
+---
+
+---
 ### D-WFL-NOGATE — 2026-04-29 — Remove mandatory placeholder-fill gate
 - **Date**: 2026-04-29 · **Type**: scope-change
 - **Trigger**: change: command — user-initiated
@@ -1514,3 +1529,31 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **BRIEF.md updated**: No
 - **Approved by**: human
 ---
+
+---
+### D-ONBD-001 — ONBOARDING-WIZARD: inline error panels → shared OperationErrorPanel
+- **Date**: 2026-04-29 · **Task**: ONBD-016 · **Type**: tech-choice
+- **What was planned**: Separate `TranscriptionErrorPanel` and `GenerationErrorPanel` to be extracted to `OperationErrorPanel.jsx` (noted in ONBD-014/015 decisions as deferred)
+- **What was done**: Created `OperationErrorPanel.jsx` with single props API (`icon`, `title`, `body`, `errorDetails`, `slowWarning`, `fixLabel`, `fixCode`, `fixNote`, `fixPreNote`, `onRetry`, `retryLabel`, `onOpenSettings`). ExpandedDetailPanel uses IIFEs to compute the right props inline for each error state — no additional wrapper components.
+- **Why**: Both error panels share identical layout (icon circle → title/body → slow warning → error details box → fix box → action row). Single component eliminates ~220 lines of duplication and ensures visual consistency. IIFEs keep the prop-computation co-located with the render call for readability.
+- **Alternatives considered**: Keep both inline (simpler but duplicated); extract two separate typed components (cleaner API but still duplicated layout). Shared component with IIFE callers strikes the best balance.
+- **Impact on other tasks**: ONBD-017 (docs) — OperationErrorPanel.jsx added to CODEBASE.md file map. No runtime behaviour change.
+- **Approved by**: agent-autonomous
+
+---
+### D-ONBD-UX-FIX — 2026-04-29 — Wizard UX fixes post-completion (no-auto-advance, scroll, resize)
+- **Date**: 2026-04-29 · **Task**: post-ONBD-017 · **Type**: tech-choice
+- **What was planned**: Screens 1/2/3 auto-advance on success after 1–1.5s delay; splashWin 520×300; content clipped without scroll; 12px font
+- **What was done**:
+  - splashWin enlarged 520×300 → 560×620 (both initial create and reopen-wizard); all screen containers set to `overflow-y: auto`
+  - Removed all `await new Promise(r => setTimeout(r, Xms)); showScreen(n)` auto-advance calls from screens 1, 2, and 3
+  - Each screen now shows a "Continue →" primary button on success; "Check again ↺" demoted to secondary style
+  - Screen 3 success shows a dedicated `#s3-success-action` div with Continue →
+  - Screen 0 (welcome): on repeat launches (setupComplete=true), calls `runChecks()` instead of immediately calling `splashDone()` — restores legacy quick-check so returning users still get a fast path without re-running the full wizard
+  - `s1ShowError(stateId, showHelp)` helper extracted — consolidates recheck/continue button visibility logic for all screen 1 error states
+  - Font size bumped 12px → 13px; welcome screen centered (`justify-content: center`, padding increased)
+  - Path panel also `overflow-y: auto` + larger padding
+- **Why**: 1.5s auto-advance is disorienting — users miss the success state and don't know what happened. User-controlled Continue → matches standard installer UX. 520×300 was too small to show all wizard content without clipping. Legacy quick-check needed for users who've already completed setup.
+- **Alternatives considered**: Keep auto-advance with longer delay — still disorienting for users reading the success message. Keep 520×300 with clipping — broken on screens 2/3.
+- **Impact on other tasks**: None — all behaviour changes are isolated to splash.html + splashWin dimensions in main.js.
+- **Approved by**: human

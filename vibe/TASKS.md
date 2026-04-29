@@ -473,8 +473,13 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    Fix: corrected prop reference to `imageBuilderProps.imageAnswers`; defensive `answers || {}` guard added to `ImageBuilderDoneState.jsx`.
    → DECISIONS.md D-BUG-002 · DevTools shortcut Cmd+Option+I added to main.js for future debugging
 
+## What just happened
+✅ FEATURE-ONBOARDING-WIZARD complete (17/17) — 4-screen setup wizard (verify Claude/Whisper/ffmpeg/model end-to-end), transcription + generation error states with retry, OperationErrorPanel shared component. All tasks committed.
+
+✅ Post-ONBD-017 wizard UX fixes (2026-04-29) — splashWin enlarged 520×300 → 560×620; all screens scrollable; screens 1/2/3 no longer auto-advance on success — each shows "Continue →" so user controls pace; "Check again ↺" demoted to secondary; welcome screen centered; font bumped to 13px; legacy `runChecks()` restored for returning users (setupComplete=true path); `s1ShowError()` helper extracted. D-ONBD-UX-FIX logged in DECISIONS.md.
+
 ## What's next
-IMAGE-BUILDER redesign complete. Only IMG-010 (docs) remaining — done now.
+Ready for review gate (review: onboarding-wizard).
 
 ---
 
@@ -606,6 +611,29 @@ Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDE
 
 ## What's next
 Fix RFX-WFL tasks below before merging to main.
+
+---
+
+## FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling (17/17 ✅)
+> Spec: vibe/features/2026-04-28-onboarding-wizard/ | Added: 2026-04-29 | Completed: 2026-04-29
+   [x] ONBD-001 · main.js: check-claude IPC with test generation
+   [x] ONBD-002 · main.js: check-whisper + check-ffmpeg IPC
+   [x] ONBD-003 · main.js: check-whisper-model IPC
+   [x] ONBD-004 · main.js: download-whisper-model IPC with progress streaming
+   [x] ONBD-005 · main.js: lastTempAudioPath + lastTranscript + retry IPC
+   [x] ONBD-006 · main.js: transcription timeout (30s) with kill + warning events
+   [x] ONBD-007 · main.js: generation timeout (45s) with error type parsing
+   [x] ONBD-008 · splash.html: Screen 0 Welcome + setupComplete check
+   [x] ONBD-009 · splash.html: Screen 1 — Claude CLI wizard step
+   [x] ONBD-010 · splash.html: Screen 2 — Whisper + ffmpeg wizard step
+   [x] ONBD-011 · splash.html: Screen 3 — Model download with real progress bar
+   [x] ONBD-012 · splash.html: Screen 4 — All done + launch
+   [x] ONBD-013 · Skip option + settings recheck
+   [x] ONBD-014 · App.jsx + ExpandedView.jsx: transcription error state
+   [x] ONBD-015 · App.jsx + ExpandedView.jsx: generation error state
+   [x] ONBD-016 · OperationErrorPanel.jsx: shared error component
+   [x] ONBD-017 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md
+   → Full specs: vibe/features/2026-04-28-onboarding-wizard/FEATURE_TASKS.md (agent use)
 
 ---
 

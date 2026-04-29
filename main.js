@@ -9,7 +9,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nati
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { exec, spawn } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 const { deflateSync } = require('zlib');
 
 const configPath = path.join(app.getPath('userData'), 'config.json');
@@ -187,6 +187,9 @@ let pulseInterval = null;
 let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
 let preExpandBounds = null;
+let lastTempAudioPath = null;
+let lastTranscript = null;
+let currentMode = 'balanced';
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -433,6 +436,12 @@ function makeClaudeEnv(binPath) {
   return { ...process.env, PATH: base.includes(binDir) ? base : binDir + ':' + base };
 }
 
+function parseGenerationError(stderr, stdout) {
+  const combined = (stderr + stdout).toLowerCase();
+  if (combined.includes('not authenticated') || combined.includes('login') || combined.includes('unauthorized')) return 'auth';
+  return 'unknown';
+}
+
 async function resolveClaudePath() {
   const stored = readConfig().claudePath;
   if (stored && stored.trim()) {
@@ -538,6 +547,27 @@ async function resolveWhisperPath() {
     return resolveShimToRealBinary(shellResolved);
   }
   return shellResolved;
+}
+
+async function resolveFfmpegPath() {
+  const home = os.homedir();
+  const commonPaths = [
+    '/usr/local/bin/ffmpeg',
+    '/opt/homebrew/bin/ffmpeg',
+    path.join(home, '.local/bin/ffmpeg'),
+    '/usr/bin/ffmpeg',
+  ];
+  for (const p of commonPaths) {
+    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
+  }
+  return new Promise((resolve) => {
+    exec('zsh -lc "which ffmpeg"', (err, stdout) => {
+      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
+      exec('bash -lc "which ffmpeg"', (err2, stdout2) => {
+        resolve(stdout2?.trim() || null);
+      });
+    });
+  });
 }
 
 function winSend(channel, payload) {
@@ -666,8 +696,8 @@ app.whenReady().then(async () => {
   whisperPath = await resolveWhisperPath();
 
   splashWin = new BrowserWindow({
-    width: 520,
-    height: 300,
+    width: 560,
+    height: 620,
     show: false,
     frame: false,
     transparent: false,
@@ -721,6 +751,50 @@ app.whenReady().then(async () => {
     if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url);
   });
 
+  ipcMain.handle('check-setup-complete', () => {
+    return { complete: !!readConfig().setupComplete };
+  });
+
+  ipcMain.handle('set-setup-complete', () => {
+    writeConfig({ ...readConfig(), setupComplete: true });
+  });
+
+  ipcMain.handle('reset-setup-complete', () => {
+    writeConfig({ ...readConfig(), setupComplete: false });
+  });
+
+  ipcMain.handle('reopen-wizard', () => {
+    writeConfig({ ...readConfig(), setupComplete: false });
+    if (splashWin && !splashWin.isDestroyed()) {
+      splashWin.show();
+      splashWin.center();
+      return;
+    }
+    splashWin = new BrowserWindow({
+      width: 560,
+      height: 620,
+      show: false,
+      frame: false,
+      transparent: false,
+      backgroundColor: '#0A0A14',
+      resizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      alwaysOnTop: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js'),
+      },
+    });
+    splashWin.loadFile(path.join(__dirname, 'splash.html'));
+    splashWin.once('ready-to-show', () => {
+      splashWin.show();
+      splashWin.center();
+    });
+    if (win && !win.isDestroyed()) win.hide();
+  });
+
   ipcMain.handle('request-mic', async () => {
     const status = systemPreferences.getMediaAccessStatus('microphone');
     return { ok: status === 'granted' };
@@ -733,9 +807,10 @@ app.whenReady().then(async () => {
 
   // P1-008: IPC handlers
   ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} }) => {
+    currentMode = mode || 'balanced';
     return new Promise((resolve) => {
       if (!claudePath) {
-        resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code' });
+        resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
         return;
       }
       const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
@@ -757,34 +832,42 @@ app.whenReady().then(async () => {
       let stdout = '';
       let stderr = '';
       let resolved = false;
-      const timer = setTimeout(() => {
+
+      const slowTimer = setTimeout(() => {
+        if (!win.isDestroyed()) win.webContents.send('generation-slow-warning');
+      }, 30000);
+
+      const killTimer = setTimeout(() => {
         resolved = true;
         child.kill();
-        resolve({ success: false, error: 'Claude took too long — try again' });
-      }, 60000);
+        resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
+      }, 45000);
+
       child.stdout.on('data', (d) => { stdout += d.toString(); });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.end();
       child.on('close', (code) => {
         if (resolved) return;
-        clearTimeout(timer);
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
         resolved = true;
         if (code !== 0) {
-          resolve({ success: false, error: stderr.trim() || 'Claude CLI error' });
+          resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) });
           return;
         }
         const prompt = stdout.trim();
         if (!prompt) {
-          resolve({ success: false, error: 'Claude returned an empty response — try again' });
+          resolve({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' });
           return;
         }
         resolve({ success: true, prompt });
       });
       child.on('error', (err) => {
         if (resolved) return;
-        clearTimeout(timer);
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
         resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error' });
+        resolve({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' });
       });
     });
   });
@@ -792,30 +875,47 @@ app.whenReady().then(async () => {
   ipcMain.handle('generate-raw', (_event, { systemPrompt }) => {
     return new Promise((resolve) => {
       if (!claudePath) {
-        resolve({ success: false, error: 'Claude CLI not found.' });
+        resolve({ success: false, error: 'Claude CLI not found.', errorType: 'unknown' });
         return;
       }
       const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
       let stdout = '', stderr = '', resolved = false;
-      const timer = setTimeout(() => {
-        resolved = true; child.kill();
-        resolve({ success: false, error: 'Claude took too long — try again' });
-      }, 60000);
+
+      const slowTimer = setTimeout(() => {
+        if (!win.isDestroyed()) win.webContents.send('generation-slow-warning');
+      }, 30000);
+
+      const killTimer = setTimeout(() => {
+        resolved = true;
+        child.kill();
+        resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
+      }, 45000);
+
       child.stdout.on('data', (d) => { stdout += d.toString(); });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.end();
       child.on('close', (code) => {
         if (resolved) return;
-        clearTimeout(timer); resolved = true;
-        if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error' }); return; }
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
+        resolved = true;
+        if (code !== 0) {
+          resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) });
+          return;
+        }
         const prompt = stdout.trim();
-        if (!prompt) { resolve({ success: false, error: 'Claude returned empty response — try again' }); return; }
+        if (!prompt) {
+          resolve({ success: false, error: 'Claude returned empty response — try again', errorType: 'empty' });
+          return;
+        }
         resolve({ success: true, prompt });
       });
       child.on('error', (err) => {
         if (resolved) return;
-        clearTimeout(timer); resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error' });
+        clearTimeout(slowTimer);
+        clearTimeout(killTimer);
+        resolved = true;
+        resolve({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' });
       });
     });
   });
@@ -932,6 +1032,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
+    lastTempAudioPath = null; // reset on new recording
     if (!whisperPath) {
       return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
     }
@@ -940,6 +1041,7 @@ app.whenReady().then(async () => {
     const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
+      lastTempAudioPath = tmpFile; // capture for retry
       const transcript = await new Promise((resolve, reject) => {
         const whisperCmd = whisperPath === 'python3 -m whisper'
           ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
@@ -974,9 +1076,13 @@ app.whenReady().then(async () => {
           REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
         };
 
-        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, stdout, stderr) => {
+        const whisperChild = exec(whisperCmd, { env: whisperEnv }, (err, stdout, stderr) => {
+          clearTimeout(slowTimer);
+          clearTimeout(killTimer);
           if (err) {
-            reject(new Error(stderr || err.message || 'Whisper failed'));
+            const wrappedErr = new Error(stderr || err.message || 'Whisper failed');
+            if (err.killed) wrappedErr.timedOut = true;
+            reject(wrappedErr);
             return;
           }
           try {
@@ -988,12 +1094,105 @@ app.whenReady().then(async () => {
             reject(new Error('Whisper output not found'));
           }
         });
+
+        const slowTimer = setTimeout(() => {
+          if (!win.isDestroyed()) win.webContents.send('transcription-slow-warning');
+        }, 20000);
+
+        const killTimer = setTimeout(() => {
+          whisperChild.kill();
+          const timeoutErr = new Error('Transcription timed out after 30 seconds');
+          timeoutErr.timedOut = true;
+          reject(timeoutErr);
+        }, 30000);
       });
+      lastTranscript = transcript; // capture for retry
       return { success: true, transcript };
     } catch (err) {
-      try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+      // keep tmpFile on error so retry-transcription can reuse it
+      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
+    }
+  });
+
+  ipcMain.handle('retry-transcription', async () => {
+    if (!lastTempAudioPath) {
+      return { success: false, error: 'No audio available — please record again' };
+    }
+    try { if (!fs.existsSync(lastTempAudioPath)) return { success: false, error: 'No audio available — please record again' }; } catch {
+      return { success: false, error: 'No audio available — please record again' };
+    }
+    if (!whisperPath) return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    const tmpFile = lastTempAudioPath;
+    const outDir = os.tmpdir();
+    const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
+    try {
+      const transcript = await new Promise((resolve, reject) => {
+        const whisperCmd = whisperPath === 'python3 -m whisper'
+          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
+          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
+        const pyenvVersion = process.env.PYENV_VERSION || '';
+        const pythonPath = process.env.PYTHONPATH || '';
+        const whisperEnv = {
+          ...process.env,
+          PATH: ['/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin', '/opt/local/bin',
+            path.join(os.homedir(), '.local/bin'), path.join(os.homedir(), '.pyenv/bin'), path.join(os.homedir(), '.pyenv/shims'),
+            path.join(os.homedir(), 'anaconda3/bin'), path.join(os.homedir(), 'miniconda3/bin'), path.join(os.homedir(), 'miniforge3/bin'),
+            '/usr/local/opt/ffmpeg/bin', process.env.PATH].filter(Boolean).join(':'),
+          ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
+          ...(pythonPath && { PYTHONPATH: pythonPath }),
+          PYTHONUNBUFFERED: '1',
+          SSL_CERT_FILE: '/etc/ssl/cert.pem',
+          REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
+        };
+        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, _stdout, stderr) => {
+          if (err) { reject(new Error(stderr || err.message || 'Whisper failed')); return; }
+          try {
+            const text = fs.readFileSync(txtFile, 'utf8').trim();
+            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
+            resolve(text);
+          } catch { reject(new Error('Whisper output not found')); }
+        });
+      });
+      lastTranscript = transcript;
+      return { success: true, transcript };
+    } catch (err) {
       return { success: false, error: err.message || 'Transcription failed' };
     }
+  });
+
+  ipcMain.handle('retry-generation', () => {
+    if (!lastTranscript) return { success: false, error: 'No transcript available — please record again' };
+    const mode = currentMode || 'balanced';
+    const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
+    if (modeConf.passthrough) return { success: true, prompt: lastTranscript };
+    let systemPrompt = modeConf.standalone
+      ? modeConf.instruction.replace('{TRANSCRIPT}', lastTranscript)
+      : PROMPT_TEMPLATE.replace('{MODE_NAME}', modeConf.name).replace('{MODE_INSTRUCTION}', modeConf.instruction).replace('{TRANSCRIPT}', lastTranscript);
+    if (mode === 'polish') {
+      systemPrompt = systemPrompt.replace('{TONE}', 'Formal');
+    }
+    return new Promise((resolve) => {
+      if (!claudePath) { resolve({ success: false, error: 'Claude CLI not found.' }); return; }
+      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
+      let stdout = '', stderr = '', resolved = false;
+      const timer = setTimeout(() => { resolved = true; child.kill(); resolve({ success: false, error: 'Claude took too long — try again' }); }, 60000);
+      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stderr.on('data', (d) => { stderr += d.toString(); });
+      child.stdin.end();
+      child.on('close', (code) => {
+        if (resolved) return;
+        clearTimeout(timer); resolved = true;
+        if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error' }); return; }
+        const prompt = stdout.trim();
+        if (!prompt) { resolve({ success: false, error: 'Claude returned an empty response — try again' }); return; }
+        resolve({ success: true, prompt });
+      });
+      child.on('error', (err) => {
+        if (resolved) return;
+        clearTimeout(timer); resolved = true;
+        resolve({ success: false, error: err.message || 'Claude CLI error' });
+      });
+    });
   });
 
   ipcMain.handle('save-file', async (_event, { content, filename }) => {
@@ -1023,6 +1222,177 @@ app.whenReady().then(async () => {
       return { found: true, path: claudePath };
     }
     return { found: false, error: 'Claude CLI not found.' };
+  });
+
+  ipcMain.handle('check-claude', async () => {
+    // Step 1: resolve binary path (use cached or re-resolve)
+    const resolvedPath = claudePath || await resolveClaudePath();
+    if (!resolvedPath) {
+      return { found: false, path: null, version: null, working: false, error: 'Claude CLI not found', authError: false };
+    }
+
+    // Step 2: get version string
+    let version = null;
+    try {
+      version = await new Promise((resolve) => {
+        execFile(resolvedPath, ['--version'], { env: makeClaudeEnv(resolvedPath), timeout: 5000 }, (err, stdout) => {
+          resolve(err ? null : (stdout.trim() || null));
+        });
+      });
+    } catch { /* version not critical — continue */ }
+
+    // Step 3: test generation with 15s timeout
+    const testResult = await new Promise((resolve) => {
+      let stdout = '', stderr = '', settled = false;
+      const child = spawn(resolvedPath, ['-p', 'respond with only the word READY'], { env: makeClaudeEnv(resolvedPath) });
+      const timer = setTimeout(() => {
+        settled = true;
+        child.kill();
+        resolve({ ok: false, stdout, stderr, timedOut: true });
+      }, 15000);
+      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stderr.on('data', (d) => { stderr += d.toString(); });
+      child.stdin.end();
+      child.on('close', (code) => {
+        if (settled) return;
+        clearTimeout(timer); settled = true;
+        resolve({ ok: code === 0, stdout, stderr, timedOut: false });
+      });
+      child.on('error', (err) => {
+        if (settled) return;
+        clearTimeout(timer); settled = true;
+        resolve({ ok: false, stdout, stderr: err.message, timedOut: false });
+      });
+    });
+
+    const combined = (testResult.stdout + ' ' + testResult.stderr).toLowerCase();
+    const authError = combined.includes('not authenticated') || combined.includes('login') || combined.includes('unauthorized');
+    const working = testResult.ok && testResult.stdout.toLowerCase().includes('ready');
+
+    let error = null;
+    if (!working) {
+      if (testResult.timedOut) error = 'Claude is not responding (timed out after 15s)';
+      else if (authError) error = 'Claude is not logged in — run: claude login';
+      else error = testResult.stderr.trim() || 'Claude CLI returned an error';
+    }
+
+    return { found: true, path: resolvedPath, version, working, error, authError };
+  });
+
+  ipcMain.handle('check-whisper', async () => {
+    const resolvedPath = whisperPath || await resolveWhisperPath();
+    if (!resolvedPath) {
+      return { found: false, path: null, error: 'Whisper not found — install via: pip install openai-whisper' };
+    }
+    try {
+      await new Promise((resolve, reject) => {
+        if (resolvedPath === 'python3 -m whisper') {
+          exec('python3 -m whisper --help', { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
+        } else {
+          execFile(resolvedPath, ['--help'], { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
+        }
+      });
+      return { found: true, path: resolvedPath, error: null };
+    } catch (err) {
+      return { found: false, path: resolvedPath, error: err.message || 'Whisper failed to run' };
+    }
+  });
+
+  ipcMain.handle('check-ffmpeg', async () => {
+    const resolvedPath = await resolveFfmpegPath();
+    if (!resolvedPath) {
+      return { found: false, path: null, error: 'ffmpeg not found — install via: brew install ffmpeg' };
+    }
+    try {
+      await new Promise((resolve, reject) => {
+        execFile(resolvedPath, ['-version'], { timeout: 5000 }, (err) => { err ? reject(err) : resolve(); });
+      });
+      return { found: true, path: resolvedPath, error: null };
+    } catch (err) {
+      return { found: false, path: resolvedPath, error: err.message || 'ffmpeg failed to run' };
+    }
+  });
+
+  ipcMain.handle('check-whisper-model', () => {
+    const home = os.homedir();
+    const cachePaths = [
+      path.join(home, '.cache', 'whisper', 'base.pt'),
+      path.join(home, 'Library', 'Caches', 'whisper', 'base.pt'),
+    ];
+    const MIN_BYTES = 104857600; // 100 MB
+    for (const p of cachePaths) {
+      try {
+        const stat = fs.statSync(p);
+        if (stat.size > MIN_BYTES) {
+          return { downloaded: true, path: p, sizeMB: Math.round(stat.size / 1048576) };
+        }
+      } catch { /* file absent — try next */ }
+    }
+    return { downloaded: false, path: null, sizeMB: null };
+  });
+
+  ipcMain.handle('download-whisper-model', () => {
+    return new Promise((resolve) => {
+      if (!whisperPath) {
+        resolve({ success: false, error: 'Whisper not found — install Whisper first' });
+        return;
+      }
+
+      // tqdm remaining-time string "mm:ss" or "h:mm:ss" → seconds
+      function parseTqdmTime(s) {
+        if (!s) return null;
+        const parts = s.trim().split(':').map(Number);
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return parts[0] || null;
+      }
+
+      const [cmd, spawnArgs] = whisperPath === 'python3 -m whisper'
+        ? ['python3', ['-m', 'whisper', '/dev/null', '--model', 'base']]
+        : [whisperPath, ['/dev/null', '--model', 'base']];
+
+      const child = spawn(cmd, spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stderrBuf = '';
+      let resolved = false;
+
+      child.stderr.on('data', (d) => {
+        stderrBuf += d.toString();
+        // tqdm uses \r to rewrite the line in-place — split on both
+        const lines = stderrBuf.split(/[\r\n]/);
+        stderrBuf = lines.pop();
+        for (const line of lines) {
+          const m = line.match(/(\d+)%\|.*?\|\s*([\d.]+)M\/([\d.]+)M\s*\[(.+?)<(.+?),/);
+          if (m) {
+            const payload = {
+              percent:    parseInt(m[1], 10),
+              mbDone:     parseFloat(m[2]),
+              mbTotal:    parseFloat(m[3]),
+              secondsLeft: parseTqdmTime(m[5]),
+            };
+            if (!win || win.isDestroyed()) return;
+            win.webContents.send('whisper-download-progress', payload);
+          }
+        }
+      });
+
+      child.stdout.on('data', () => {}); // drain
+
+      child.on('close', (code) => {
+        if (resolved) return;
+        resolved = true;
+        if (code === 0) {
+          resolve({ success: true });
+        } else {
+          resolve({ success: false, error: stderrBuf.trim() || 'Download failed' });
+        }
+      });
+
+      child.on('error', (err) => {
+        if (resolved) return;
+        resolved = true;
+        resolve({ success: false, error: err.message || 'Download failed' });
+      });
+    });
   });
 
   ipcMain.handle('uninstall-promptly', () => handleUninstall());
