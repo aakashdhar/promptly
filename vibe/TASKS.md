@@ -623,7 +623,7 @@ Fix RFX-WFL tasks below before merging to main.
    [x] ONBD-009 · splash.html: Screen 1 — Claude CLI wizard step
    [x] ONBD-010 · splash.html: Screen 2 — Whisper + ffmpeg wizard step
    [x] ONBD-011 · splash.html: Screen 3 — Model download with real progress bar
-   [ ] ONBD-012 · splash.html: Screen 4 — All done + launch
+   [x] ONBD-012 · splash.html: Screen 4 — All done + launch
    [ ] ONBD-013 · Skip option + settings recheck
    [ ] ONBD-014 · App.jsx + ExpandedView.jsx: transcription error state
    [ ] ONBD-015 · App.jsx + ExpandedView.jsx: generation error state

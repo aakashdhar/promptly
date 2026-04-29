@@ -323,7 +323,7 @@
 ---
 
 ### ONBD-012 · splash.html — Screen 4: All done + launch
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#screen-4--all-done
 - **Dependencies**: ONBD-011
