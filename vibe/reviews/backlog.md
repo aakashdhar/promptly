@@ -376,5 +376,33 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| P3-VID-001 | src/renderer/components/ExpandedDetailPanel.jsx | props | 23 props after video additions — carryover P3-EXP-002 | Open |
+| P3-VID-001 | src/renderer/components/ExpandedDetailPanel.jsx | props | 24 props after workflow additions (was 23) — carryover P3-EXP-002 · 2nd review open | Open |
 | ~~P3-VID-002~~ | src/renderer/components/VideoBuilderState.jsx | 195 | Hardcoded `#1a1a24` picker background not in @theme token set | ✅ resolved — changed to `rgba(26,26,36,1)` |
+
+---
+
+## From FEATURE-WORKFLOW-BUILDER Review (2026-04-29)
+
+### P1 — Fix before merge (tracked in TASKS.md as RFX-WFL tasks)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-WFL-001~~ | src/renderer/components/WorkflowBuilderState.jsx | 33 | `blankFilled` computed but never added to `filledCount` sum — Confirm button permanently disabled after user adds + fills a blank node | ✅ resolved — blankFilled correctly checks filledPlaceholders state; added to sum 2026-04-29 |
+| ~~BL-WFL-002~~ | src/renderer/App.jsx | 1–750 | 750 lines — P1 SRP threshold (500). Extract workflowBuilderProps, imageBuilderProps, videoBuilderProps bundles to their respective hooks | ✅ partially resolved — bundles extracted; App.jsx 750→659; residual tracked as BL-WFL-008 |
+
+### P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-WFL-003~~ | vibe/ARCHITECTURE.md | 81 | State count "13 total" — should be 15; WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE absent from state diagram; 'workflow' absent from prompt modes table | ✅ resolved — ARCHITECTURE.md updated 2026-04-29 |
+| ~~BL-WFL-004~~ | tests/utils.test.js | 43–80 | `getModeTagStyle('workflow')` not tested — add green tones assertion | ✅ resolved — workflow + video tests added; 20→22 tests 2026-04-29 |
+| BL-WFL-007 | vibe/CODEBASE.md | 30, 36–38, 41, 44, 63 | Hook exports stale — useWorkflowBuilder/useVideoBuilder/useImageBuilder return values, params, App.jsx state vars, ExpandedView/ExpandedDetailPanel props chains, test count 20→22 | Open |
+| BL-WFL-008 | src/renderer/App.jsx | 1–659 | 659 lines — 159 over P1 threshold (500); bundle extraction applied; residual is irreducible orchestrator core | Open |
+
+### P3 — Monitor / minor cleanup
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-WFL-005~~ | src/renderer/hooks/useWorkflowBuilder.js | 193–196 | `handleWorkflowConfirm` calls `setThinkingLabel('Assembling JSON...')` redundantly | ✅ resolved — redundant call removed 2026-04-29 |
+| ~~BL-WFL-006~~ | src/renderer/App.jsx | 518 | `onReiterate` sets `isWorkflowReiteratingRef.current = true` explicitly — double-set | ✅ resolved — onReiterate moved to hook; sets ref once 2026-04-29 |
+| BL-WFL-009 | src/renderer/App.jsx | 296 | `runVideoPreSelection` missing from `handleGenerateResult` dep array — `[mode, runPreSelection, runWorkflowAnalysis]` should include `runVideoPreSelection` | Open |

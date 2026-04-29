@@ -592,4 +592,18 @@ Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDE
    → Full specs: vibe/features/2026-04-27-workflow-builder/FEATURE_TASKS.md (agent use)
 
 ## What's next
-Run `review: feature-workflow-builder` to gate the feature before merging.
+Fix RFX-WFL tasks below before merging to main.
+
+---
+
+## ✅ Review fixes — FEATURE-WORKFLOW-BUILDER gate (2/2 COMPLETE)
+
+- [x] RFX-WFL-001 · WorkflowBuilderState.jsx — blankFilled bug fixed; checks filledPlaceholders state (not stale node.name); added to filledCount sum
+- [x] RFX-WFL-002 · App.jsx SRP — imageBuilderProps, videoBuilderProps, workflowBuilderProps bundles moved to respective hooks; App.jsx 750 → 659 lines
+
+→ Full report: vibe/reviews/feature-workflow-builder-review-v2.md
+→ Score: 9.5/10 — Grade A — 0 P0, 0 P1
+→ Backlog: BL-WFL-007 (CODEBASE.md stale), BL-WFL-008 (App.jsx residual), BL-WFL-009 (dep array P3)
+
+## Phase gates
+FEATURE-WORKFLOW-BUILDER → main:  ✅ reviewed 2026-04-29 (v2) — 0 P0, 0 P1 — CLEAR TO MERGE
