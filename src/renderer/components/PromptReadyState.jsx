@@ -139,10 +139,10 @@ export default function PromptReadyState({
     <div
       id="panel-ready"
       className="relative z-[1] flex flex-col h-full"
-      style={{ WebkitAppRegion: 'drag' }}
+      onClick={(e) => { if (e.target === e.currentTarget && !isEditing) onReset() }}
     >
-      {/* Traffic light breathing room */}
-      <div className="flex-shrink-0" style={{ height: '36px' }} />
+      {/* Traffic light breathing room — drag region */}
+      <div className="flex-shrink-0" style={{ height: '36px', WebkitAppRegion: 'drag' }} />
 
       {/* Collapse button — absolute top-right, does not affect flex layout */}
       <button
