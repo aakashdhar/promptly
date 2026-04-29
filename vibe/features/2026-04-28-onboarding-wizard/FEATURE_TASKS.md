@@ -199,7 +199,7 @@
 ---
 
 ### ONBD-008 · splash.html — Screen 0 Welcome + setupComplete check
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#screen-0--welcome
 - **Dependencies**: None
