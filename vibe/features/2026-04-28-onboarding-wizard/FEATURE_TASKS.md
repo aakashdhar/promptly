@@ -482,7 +482,7 @@
 ---
 
 ### ONBD-017 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_PLAN.md#codebasemd-sections-to-update
 - **Dependencies**: ONBD-001 through ONBD-016

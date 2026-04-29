@@ -474,7 +474,7 @@ Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy
    → DECISIONS.md D-BUG-002 · DevTools shortcut Cmd+Option+I added to main.js for future debugging
 
 ## What's next
-ONBD-016 complete — OperationErrorPanel.jsx created (shared error component: 4 icon variants, error details box, fix box with copy, slow warning, Open settings + Try again action row). Both inline panels in ExpandedDetailPanel replaced with OperationErrorPanel calls. Next: ONBD-017 — docs update (CODEBASE.md + DECISIONS.md + TASKS.md).
+✅ FEATURE-ONBOARDING-WIZARD complete (17/17) — 4-screen setup wizard (verify Claude/Whisper/ffmpeg/model end-to-end), transcription + generation error states with retry, OperationErrorPanel shared component. All tasks committed. Ready for review gate.
 
 ---
 
@@ -609,9 +609,8 @@ Fix RFX-WFL tasks below before merging to main.
 
 ---
 
-## FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling (0/17)
-> Spec: vibe/features/2026-04-28-onboarding-wizard/ | Added: 2026-04-29
-> Estimated: approx. 22–30 hours (S: 9, M: 8)
+## FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling (17/17 ✅)
+> Spec: vibe/features/2026-04-28-onboarding-wizard/ | Added: 2026-04-29 | Completed: 2026-04-29
    [x] ONBD-001 · main.js: check-claude IPC with test generation
    [x] ONBD-002 · main.js: check-whisper + check-ffmpeg IPC
    [x] ONBD-003 · main.js: check-whisper-model IPC
@@ -626,9 +625,9 @@ Fix RFX-WFL tasks below before merging to main.
    [x] ONBD-012 · splash.html: Screen 4 — All done + launch
    [x] ONBD-013 · Skip option + settings recheck
    [x] ONBD-014 · App.jsx + ExpandedView.jsx: transcription error state
-   [ ] ONBD-015 · App.jsx + ExpandedView.jsx: generation error state
-   [ ] ONBD-016 · ErrorStatePanel.jsx: shared error component
-   [ ] ONBD-017 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md
+   [x] ONBD-015 · App.jsx + ExpandedView.jsx: generation error state
+   [x] ONBD-016 · OperationErrorPanel.jsx: shared error component
+   [x] ONBD-017 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md
    → Full specs: vibe/features/2026-04-28-onboarding-wizard/FEATURE_TASKS.md (agent use)
 
 ---
