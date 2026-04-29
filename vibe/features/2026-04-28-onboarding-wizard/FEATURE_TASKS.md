@@ -170,7 +170,7 @@
 ---
 
 ### ONBD-007 · main.js — generation timeout (45s) with error type parsing
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#timeout-handling
 - **Dependencies**: None
