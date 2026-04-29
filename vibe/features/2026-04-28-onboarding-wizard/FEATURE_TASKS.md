@@ -113,7 +113,7 @@
 ---
 
 ### ONBD-005 · main.js — lastTempAudioPath + lastTranscript + retry IPC
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#manual-retry-button
 - **Dependencies**: None

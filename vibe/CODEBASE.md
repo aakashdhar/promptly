@@ -121,6 +121,8 @@
 | `check-whisper-model` | renderer → main | ✅ registered — checks ~/.cache/whisper/base.pt and ~/Library/Caches/whisper/base.pt via fs.statSync. Downloaded = file exists AND size > 100MB. Returns `{ downloaded, path, sizeMB }`. (ONBD-003) |
 | `download-whisper-model` | renderer → main | ✅ registered — spawns `whisper /dev/null --model base` (python3 -m whisper handled). Parses tqdm stderr via regex on \r\n splits; pushes `whisper-download-progress` events. Returns `{ success: true }` or `{ success: false, error }`. (ONBD-004) |
 | `whisper-download-progress` | main → renderer | ✅ push — sent during model download; payload `{ percent, mbDone, mbTotal, secondsLeft }`. (ONBD-004) |
+| `retry-transcription` | renderer → main | ✅ registered — reuses `lastTempAudioPath` if file still exists, reruns Whisper CLI; returns same shape as `transcribe-audio`. Error if no audio available. (ONBD-005) |
+| `retry-generation` | renderer → main | ✅ registered — reuses `lastTranscript` + `currentMode`, reruns same spawn logic as `generate-prompt`; returns same shape. Error if no transcript available. (ONBD-005) |
 
 ---
 
@@ -218,6 +220,9 @@
 | `menuBarTray` | `createMenuBarIcon()` called from splash-done (FEATURE-017) | Tray instance — 44×44 PNG @2x mic icon; click=show/hide, right-click=context menu |
 | `pulseInterval` | MBAR-002 IPC handler (interval ID) or null | interval handle for dot-pulse animation; cleared on every state change and win hide/show |
 | `lastGeneratedPrompt` | `set-last-prompt` IPC handler | Last successfully generated prompt string — session memory only, null until first generation; used by "Copy last prompt" tray menu item (FEATURE-018) |
+| `lastTempAudioPath` | `transcribe-audio` handler — set after file write, reset to null at start of each new call | Path to last recorded audio temp file; kept on error for retry-transcription; null after reset (ONBD-005) |
+| `lastTranscript` | `transcribe-audio` and `retry-transcription` handlers — set on success | Last successfully transcribed text; used by retry-generation (ONBD-005) |
+| `currentMode` | `generate-prompt` handler — set at start of each call | Last mode used for generation; used by retry-generation; default 'balanced' (ONBD-005) |
 | `configPath` | module constant | `path.join(app.getPath('userData'), 'config.json')` — path to persisted path config file |
 | `readConfig()` | called on-demand | reads + parses config.json; returns `{}` on any error |
 | `writeConfig(data)` | called on-demand | JSON.stringify(data, null, 2) → config.json |
