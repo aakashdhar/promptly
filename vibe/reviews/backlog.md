@@ -406,3 +406,10 @@
 | ~~BL-WFL-005~~ | src/renderer/hooks/useWorkflowBuilder.js | 193–196 | `handleWorkflowConfirm` calls `setThinkingLabel('Assembling JSON...')` redundantly | ✅ resolved — redundant call removed 2026-04-29 |
 | ~~BL-WFL-006~~ | src/renderer/App.jsx | 518 | `onReiterate` sets `isWorkflowReiteratingRef.current = true` explicitly — double-set | ✅ resolved — onReiterate moved to hook; sets ref once 2026-04-29 |
 | ~~BL-WFL-009~~ | src/renderer/App.jsx | 296 | `runVideoPreSelection` missing from `handleGenerateResult` dep array — `[mode, runPreSelection, runWorkflowAnalysis]` should include `runVideoPreSelection` | ✅ resolved — dep array updated 2026-04-29 |
+
+### Bug fix: wfl-placeholder-delete (2026-04-29)
+
+### P3 — Monitor
+| ID | File | Line | Issue | Status |
+|----|------|------|-------|--------|
+| P3-WFL-DEL-001 | src/renderer/components/WorkflowBuilderState.jsx | 302–315 | × delete button has no hover state — very subtle at rgba(255,255,255,0.2); low discoverability for a destructive action | Open |

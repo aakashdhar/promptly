@@ -574,7 +574,7 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 Root cause: `saveToHistory` was only called in `handleVideoSave` (explicit Save button), which doesn't trigger a state change. `ExpandedHistoryList` refreshes on `currentState` changes only — so the list never reflected newly generated video prompts.
 Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDER_DONE` transition), matching the image builder pattern. `handleVideoSave` retains `isSaved` flag toggle for UI feedback but no longer writes history.
 
-✅ WorkflowBuilderState — placeholder fill UX + missing delete node (4/4 ✅)
+✅ WorkflowBuilderState — placeholder fill UX + missing delete node (4/4 ✅) — reviewed 2026-04-29 · 9.0/10 — A-
    [x] BUG-001 · Confirm both bugs reproduce (manual) — confirmed by user report
    [x] BUG-002 · Implement fix — warning text + handleDeleteNode + × button
    [x] BUG-003 · Verify — lint 0 errors, both bugs resolved
