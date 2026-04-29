@@ -4,17 +4,19 @@
 
 ### Files to modify (existing)
 - `splash.html` — full wizard rewrite (Screen 0-4, stepper, all check/download states)
-- `main.js` — 7 new IPC handlers + lastTempAudioPath + lastTranscript vars + timeout logic
-- `src/renderer/App.jsx` — TRANSCRIPTION_ERROR + GENERATION_ERROR states, retry handlers, timeout warnings
+- `main.js` — 11 new IPC handlers + 3 push channels + lastTempAudioPath + lastTranscript + currentMode vars + timeout logic
+- `preload.js` — contextBridge entries for all 11 new IPC channels + 3 push channel listeners
+- `src/renderer/App.jsx` — TRANSCRIPTION_ERROR + GENERATION_ERROR states, retry handlers, slow-warning IPC listeners
 - `src/renderer/components/ExpandedView.jsx` — forward error props to ExpandedDetailPanel
-- `src/renderer/components/ExpandedDetailPanel.jsx` — render ErrorStatePanel in right panel for error states
-- `src/renderer/components/SettingsPanel.jsx` — "Recheck setup" button
+- `src/renderer/components/ExpandedDetailPanel.jsx` — render OperationErrorPanel for TRANSCRIPTION_ERROR + GENERATION_ERROR states
+- `src/renderer/components/ExpandedTransportBar.jsx` — add TRANSCRIPTION_ERROR + GENERATION_ERROR hint text to hint-text-row switch
+- `src/renderer/components/SettingsPanel.jsx` — "Recheck setup ↺" button wired to reopen-wizard IPC
+- `src/renderer/components/ThinkingState.jsx` — add transcriptionSlow + generationSlow props; warning text node below MorphCanvas
 
 ### Files to create (new)
-- `src/renderer/components/ErrorStatePanel.jsx` — shared error UI component
+- `src/renderer/components/OperationErrorPanel.jsx` — shared error UI component (named to avoid confusion with existing ErrorState.jsx)
 
 ### Files explicitly out of scope — must NOT be touched
-- preload.js (only add entries if new IPC methods are added — ask first)
 - src/renderer/hooks/ (any hook)
 - src/renderer/components/ImageBuilderState.jsx
 - src/renderer/components/ImageBuilderDoneState.jsx
@@ -144,7 +146,7 @@ ONBD-015 (M) — App.jsx + ExpandedView.jsx: generation error state
   - ExpandedView: forward generationErrorProps to ExpandedDetailPanel
   - 30s warning: inline banner in ThinkingState (when generationSlow=true)
 
-ONBD-016 (S) — ErrorStatePanel.jsx: shared error component
+ONBD-016 (S) — OperationErrorPanel.jsx: shared error component
   - Props: { icon, title, body, errorDetails, fixLabel, fixCode, onCopy, onRetry, onOpenSettings }
   - icon: 'error' | 'lock' | 'clock' | 'warning'
   - Error details box: monospace, max-height 80px, scrollable
@@ -155,7 +157,7 @@ ONBD-016 (S) — ErrorStatePanel.jsx: shared error component
 ### Group D — Docs
 
 ONBD-017 (S) — Docs: CODEBASE.md + DECISIONS.md + TASKS.md
-  - CODEBASE.md: add ErrorStatePanel.jsx to file map; add 7 new IPC channels; add TRANSCRIPTION_ERROR + GENERATION_ERROR to state table; add lastTempAudioPath + lastTranscript to module-scope vars table
+  - CODEBASE.md: add OperationErrorPanel.jsx to file map; add 7 new IPC channels; add TRANSCRIPTION_ERROR + GENERATION_ERROR to state table; add lastTempAudioPath + lastTranscript to module-scope vars table
   - DECISIONS.md: add D-ONBD-001 feature start entry
   - TASKS.md: mark ONBD-001 through ONBD-017 complete
 
@@ -182,7 +184,7 @@ All changes are additive:
 - splash.html: keep existing runChecks() behind setupComplete guard — no existing code removed
 - main.js: new IPC handlers only + 2 new module vars — no existing handlers modified
 - App.jsx: 2 new states + 2 error transition paths — existing happy path unchanged
-- ErrorStatePanel.jsx: new file — delete to rollback
+- OperationErrorPanel.jsx: new file — delete to rollback
 - To fully revert: git revert feat(onboarding) commits
 
 ---
@@ -206,7 +208,7 @@ Lint: npm run lint — must pass before every commit.
 ---
 
 ## CODEBASE.md sections to update
-- File map: add ErrorStatePanel.jsx
+- File map: add OperationErrorPanel.jsx
 - IPC channels: 7 new channels
 - State machine table: TRANSCRIPTION_ERROR, GENERATION_ERROR
 - Module-scope variables (main.js): lastTempAudioPath, lastTranscript, currentMode

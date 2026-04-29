@@ -357,9 +357,9 @@
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#skip-option-for-experienced-users + #re-run-wizard-option
 - **Dependencies**: ONBD-008
-- **Touches**: `splash.html`, `src/renderer/components/SettingsPanel.jsx`
+- **Touches**: `splash.html`, `src/renderer/components/SettingsPanel.jsx`, `preload.js`, `main.js`
 
-**What to do**: In splash.html: add "Skip setup (advanced)" link (font-size 11px, rgba(255,255,255,0.18)) to Screen 1, 2, 3. Click shows an in-page confirmation overlay: "Are you sure? Promptly may not work correctly if dependencies are missing." + Cancel + Confirm. Cancel hides overlay. Confirm → set-setup-complete IPC → splash-done IPC. In SettingsPanel.jsx: add "Recheck setup ↺" button below existing path controls. OnClick: calls window.electronAPI.resetSetupComplete() (new preload method) → window.electronAPI.reopenSplash() or calls main.js IPC to reshow splash. Note: may need to ask first about reopening splash from renderer — check if this touches window lifecycle.
+**What to do**: In splash.html: add "Skip setup (advanced)" link (font-size 11px, rgba(255,255,255,0.18)) to Screen 1, 2, 3. Click shows an in-page confirmation overlay: "Are you sure? Promptly may not work correctly if dependencies are missing." + Cancel + Confirm. Cancel hides overlay. Confirm → set-setup-complete IPC → splash-done IPC. In SettingsPanel.jsx: add "Recheck setup ↺" button below existing path controls. OnClick: calls window.electronAPI.reopenWizard(). In main.js: register ipcMain.handle('reopen-wizard', ...) — (1) writeConfig({ ...readConfig(), setupComplete: false }); (2) recreate splashWin using same BrowserWindow config as original; (3) splashWin.loadFile('splash.html'); (4) splashWin.show(); win.hide(). In preload.js: expose reopenWizard() in contextBridge.
 
 **Acceptance criteria**:
 - [ ] "Skip setup (advanced)" link on Screens 1, 2, 3
@@ -367,12 +367,13 @@
 - [ ] Cancel hides overlay and does nothing
 - [ ] Confirm → set-setup-complete → splash-done → app opens
 - [ ] SettingsPanel.jsx has "Recheck setup ↺" button
-- [ ] Recheck button resets setupComplete and triggers splash reopen
+- [ ] Button calls reopen-wizard IPC
+- [ ] reopen-wizard resets setupComplete + recreates splashWin + hides main win
 
 **Self-verify**: Re-read FEATURE_SPEC.md#skip-option and #re-run-wizard-option. Tick every criterion.
-**Test requirement**: Manual: test skip on each screen; test recheck from settings.
-**⚠️ Boundaries**: SettingsPanel recheck needs a new IPC channel (reopen-splash) — ask first before adding.
-**CODEBASE.md update?**: No for splash; Yes for SettingsPanel if "Recheck setup" button is added
+**Test requirement**: Manual: test skip on each screen; test recheck from settings — verify splash reopens.
+**⚠️ Boundaries**: splashWin was destroyed after original splash-done — must recreate, not show.
+**CODEBASE.md update?**: Yes — add reopen-wizard to IPC table; update SettingsPanel.jsx row
 **Architecture compliance**: Inline overlay (not native dialog) for skip confirmation
 
 **Decisions**:
@@ -386,7 +387,7 @@
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#transcription-error-state
 - **Dependencies**: ONBD-005, ONBD-006
-- **Touches**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx`
+- **Touches**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx`, `src/renderer/components/ExpandedTransportBar.jsx`, `src/renderer/components/ThinkingState.jsx`
 
 **What to do**: Add TRANSCRIPTION_ERROR to STATES constant + STATE_HEIGHTS (860 — stays in expanded layout). Add transcriptionError useState: `{ error: string, errorType: string, canRetry: bool } | null`. In useRecording.js (or App.jsx): catch whisper error/timeout from transcribe-audio IPC result — if !success, transition to TRANSCRIPTION_ERROR with error data. Build transcriptionErrorProps bundle: `{ error, errorType, canRetry, onRetry, onOpenSettings }`. handleRetryTranscription(): call window.electronAPI.retryTranscription() → on success, set thinkTranscript + transition to THINKING; on failure with no audio, show "Please record again" + transition to IDLE. Add onTranscriptionSlowWarning IPC listener in useEffect: sets transcriptionSlow state (boolean). Pass transcriptionSlow as prop to ThinkingState for the 20s warning banner. Forward transcriptionErrorProps + currentState to ExpandedDetailPanel via ExpandedView.
 
@@ -418,7 +419,7 @@
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#generation-error-state
 - **Dependencies**: ONBD-005, ONBD-007
-- **Touches**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx`
+- **Touches**: `src/renderer/App.jsx`, `src/renderer/components/ExpandedView.jsx`, `src/renderer/components/ExpandedTransportBar.jsx`, `src/renderer/components/ThinkingState.jsx`
 
 **What to do**: Add GENERATION_ERROR to STATES + STATE_HEIGHTS (860). Add generationError useState: `{ error: string, errorType: 'auth' | 'timeout' | 'empty' | 'unknown', canRetry: bool } | null`. In handleGenerateResult (App.jsx): if !success, read result.errorType + result.timedOut; transition to GENERATION_ERROR with error data. Build generationErrorProps bundle. handleRetryGeneration(): call window.electronAPI.retryGeneration() → on success, handle result via handleGenerateResult normally. Add onGenerationSlowWarning IPC listener: sets generationSlow state. Pass generationSlow as prop to ThinkingState for the 30s warning banner. Forward generationErrorProps to ExpandedDetailPanel via ExpandedView.
 
@@ -444,14 +445,14 @@
 
 ---
 
-### ONBD-016 · ErrorStatePanel.jsx — shared error component
+### ONBD-016 · OperationErrorPanel.jsx — shared error component
 - **Status**: `[ ]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#transcription-error-state + #generation-error-state (visual specs)
 - **Dependencies**: None (can be built standalone, wired in ONBD-014/015)
-- **Touches**: `src/renderer/components/ErrorStatePanel.jsx` (new)
+- **Touches**: `src/renderer/components/OperationErrorPanel.jsx` (new — distinct from existing ErrorState.jsx which is the minimal ERROR panel)
 
-**What to do**: Create ErrorStatePanel.jsx. Props: `{ icon, title, body, errorDetails, fixLabel, fixCode, onCopy, onRetry, onOpenSettings }`. Icon variants: 'error' (red exclamation), 'lock' (amber lock), 'clock' (amber clock), 'warning' (amber warning). Layout: centred flex column, gap 14px. Error icon: 48px circle with rgba bg + border matching icon type. Title: 16px font-weight 500 rgba(255,255,255,0.75). Body: 12.5px rgba(255,255,255,0.38). Error details box (shown if errorDetails): monospace, 10.5px, rgba(255,100,90,0.55), max-height 80px overflow-y auto. Fix box (shown if fixCode): amber tinted bg rgba(255,189,46,0.04), border rgba(255,189,46,0.12), FIX label, code block, copy button. Action row: "Open settings" secondary (shown if onOpenSettings) + "Try again ↺" primary purple. Used by ExpandedDetailPanel for both error types.
+**What to do**: Create OperationErrorPanel.jsx. Props: `{ icon, title, body, errorDetails, fixLabel, fixCode, onCopy, onRetry, onOpenSettings }`. Icon variants: 'error' (red exclamation), 'lock' (amber lock), 'clock' (amber clock), 'warning' (amber warning). Layout: centred flex column, gap 14px. Error icon: 48px circle with rgba bg + border matching icon type. Title: 16px font-weight 500 rgba(255,255,255,0.75). Body: 12.5px rgba(255,255,255,0.38). Error details box (shown if errorDetails): monospace, 10.5px, rgba(255,100,90,0.55), max-height 80px overflow-y auto. Fix box (shown if fixCode): amber tinted bg rgba(255,189,46,0.04), border rgba(255,189,46,0.12), FIX label, code block, copy button. Action row: "Open settings" secondary (shown if onOpenSettings) + "Try again ↺" primary purple. Used by ExpandedDetailPanel for both error types.
 
 **Acceptance criteria**:
 - [ ] All 4 icon variants render correctly
@@ -466,7 +467,7 @@
 **Self-verify**: Re-read FEATURE_SPEC.md visual specs for both error states. Tick every criterion.
 **Test requirement**: Manual: render with all 4 icon types, with/without errorDetails, with/without onOpenSettings.
 **⚠️ Boundaries**: New file only. Do not modify ExpandedDetailPanel in this task (wiring done in ONBD-014/015).
-**CODEBASE.md update?**: Yes — add ErrorStatePanel.jsx to file map
+**CODEBASE.md update?**: Yes — add OperationErrorPanel.jsx to file map
 **Architecture compliance**: Functional React component; inline styles for dynamic; no dangerouslySetInnerHTML
 
 **Decisions**:
@@ -482,10 +483,10 @@
 - **Dependencies**: ONBD-001 through ONBD-016
 - **Touches**: `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
 
-**What to do**: CODEBASE.md updates: (1) Add ErrorStatePanel.jsx to file map with props list; (2) Add 7 new IPC channels to IPC table (check-claude, check-whisper, check-ffmpeg, check-whisper-model, download-whisper-model, retry-transcription, retry-generation) + 3 push channels (whisper-download-progress, transcription-slow-warning, generation-slow-warning) + 3 setup channels (check-setup-complete, set-setup-complete, reset-setup-complete); (3) Add TRANSCRIPTION_ERROR and GENERATION_ERROR rows to state machine table; (4) Add lastTempAudioPath, lastTranscript, currentMode to main.js module-scope vars table. DECISIONS.md: add D-ONBD-001 feature start entry. TASKS.md: mark ONBD-001 through ONBD-016 complete and update What just happened.
+**What to do**: CODEBASE.md updates: (1) Add OperationErrorPanel.jsx to file map with props list; (2) Add 7 new IPC channels to IPC table (check-claude, check-whisper, check-ffmpeg, check-whisper-model, download-whisper-model, retry-transcription, retry-generation) + 3 push channels (whisper-download-progress, transcription-slow-warning, generation-slow-warning) + 3 setup channels (check-setup-complete, set-setup-complete, reset-setup-complete); (3) Add TRANSCRIPTION_ERROR and GENERATION_ERROR rows to state machine table; (4) Add lastTempAudioPath, lastTranscript, currentMode to main.js module-scope vars table. DECISIONS.md: add D-ONBD-001 feature start entry. TASKS.md: mark ONBD-001 through ONBD-016 complete and update What just happened.
 
 **Acceptance criteria**:
-- [ ] ErrorStatePanel.jsx in CODEBASE.md file map
+- [ ] OperationErrorPanel.jsx in CODEBASE.md file map
 - [ ] All 13 new/new-push IPC channels in IPC table
 - [ ] TRANSCRIPTION_ERROR + GENERATION_ERROR in state table
 - [ ] lastTempAudioPath, lastTranscript, currentMode in module-scope vars table

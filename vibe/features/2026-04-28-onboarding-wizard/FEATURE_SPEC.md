@@ -32,7 +32,8 @@ command, a copy button, and a retry button.
 ## SETUP WIZARD — detailed spec
 
 ### Screen 0 — Welcome
-Shown on first launch only (check electron-store flag 'setupComplete').
+Shown on first launch only (check setupComplete in config.json via
+readConfig/writeConfig — the existing zero-dep persistence pattern).
 If setupComplete === true skip wizard entirely and go straight to app.
 If setupComplete is missing or false → show welcome screen.
 
@@ -101,6 +102,8 @@ NOT FOUND state:
     Copy button
     Note: "claude login opens a browser to authenticate"
   Buttons: "Need help?" (secondary) + "Check again ↺" (primary purple)
+    "Need help?" → opens https://docs.anthropic.com/en/docs/claude-code/
+      via existing splash-open-url IPC channel
 
 NOT LOGGED IN state (binary found, auth fails):
   Amber lock icon + "Claude CLI found but not logged in"
@@ -208,7 +211,8 @@ DOWNLOADING state (after button click):
     border-radius 2px
   Labels: "XX MB of 148 MB" left + "~XX seconds remaining" right
   Info box: "This only happens once"
-  Button: "Downloading... please wait" (disabled, grey)
+  Button: "Downloading... please wait"
+    opacity: 0.45, cursor: default, pointerEvents: none
 
 DOWNLOAD COMPLETE state:
   Green checkmark + "Voice model downloaded successfully"
@@ -218,7 +222,9 @@ DOWNLOAD FAILED state:
   Red dot + "Download failed"
   Show error details
   Retry button: "Try again"
-  Alternative: "Download manually" link to HuggingFace whisper-base
+  Alternative: "Download manually" text link
+    URL: https://huggingface.co/openai/whisper-base
+    Opens via existing splash-open-url IPC channel
 
 ### Screen 4 — All done
 
@@ -231,21 +237,27 @@ Layout:
     ✓ Whisper — installed, model ready  
     ✓ ffmpeg — installed
   Primary button: "Launch Promptly"
-    On click: set electron-store 'setupComplete' = true
-    Then close splash and show main app window
+    On click: call set-setup-complete IPC (writes setupComplete:true to
+      config.json via writeConfig) → then call splash-done IPC
 
 ### Re-run wizard option
-In main app settings panel, add a "Recheck dependencies" option:
-  Clicking it resets setupComplete = false and reopens splash
-  This allows manual re-verification anytime
-  Label: "Recheck setup" with a ↺ icon
+In main app settings panel, add a "Recheck setup ↺" button.
+  Clicking it calls the reopen-wizard IPC channel.
+  main.js 'reopen-wizard' handler:
+    1. Reset: writeConfig({ ...readConfig(), setupComplete: false })
+    2. Recreate splashWin (it was destroyed after original splash-done)
+       — use same BrowserWindow config as original app.whenReady() splash
+    3. splashWin.loadFile('splash.html')
+    4. splashWin.show()
+    5. win.hide()
+  This allows manual re-verification anytime.
 
 ### Skip option (for experienced users)
 On Screen 1, 2, 3 — show a small "Skip setup (advanced)" link at bottom
   font-size 11px, color rgba(255,255,255,0.18)
   Clicking shows a confirmation: "Are you sure? Promptly may not work
     correctly if dependencies are missing."
-  Confirm → set setupComplete = true, launch app
+  Confirm → call set-setup-complete IPC → call splash-done IPC
 
 ---
 
@@ -255,10 +267,18 @@ On Screen 1, 2, 3 — show a small "Skip setup (advanced)" link at bottom
 
 Trigger: whisper process exits with non-zero code OR times out (30s)
 
-Top bar update:
-  Red dot in text area + "Transcription failed"
-  Sub-label: "See details in the panel →"
-  Waveform becomes flat red hairline
+Collapsed (non-expanded) mode behaviour:
+  If transcription fails while app is collapsed, transition to the
+  existing ERROR state (STATE_HEIGHTS.ERROR = 101px) with message:
+  "Transcription failed — expand to retry"
+  Tap-to-dismiss returns to IDLE. No retry in collapsed mode.
+
+Expanded mode behaviour (TRANSCRIPTION_ERROR state, 860px):
+
+Top bar update (ExpandedTransportBar):
+  Hint text changes to "Transcription failed" with a red dot
+  (same hint-text-row pattern as existing state-aware labels)
+  Waveform zone hidden; hint text is the only content right of divider
 
 Right panel — error state:
   Centred layout, flex column, gap 14px
@@ -303,8 +323,21 @@ Right panel — error state:
 Trigger: claude process exits with non-zero code OR times out (45s)
 OR stdout is empty after process completes
 
-Top bar update:
-  Red/amber dot + error label based on type
+Collapsed (non-expanded) mode behaviour:
+  If generation fails while app is collapsed, transition to the
+  existing ERROR state (STATE_HEIGHTS.ERROR = 101px) with message:
+  "Generation failed — expand to retry"
+  Auth errors: "Claude not logged in — expand to fix"
+  Tap-to-dismiss returns to IDLE. No retry in collapsed mode.
+
+Expanded mode behaviour (GENERATION_ERROR state, 860px):
+
+Top bar update (ExpandedTransportBar):
+  Hint text changes based on errorType:
+    auth → amber dot + "Not logged in"
+    timeout → amber dot + "Claude timed out"
+    empty → amber dot + "Empty response"
+    unknown → red dot + "Generation failed"
 
 Error types and right panel content:
 
@@ -356,20 +389,45 @@ In both transcription and generation error states:
 
 ### Timeout handling
 Transcription timeout: 30 seconds
-  After 20 seconds show a warning inline below the spinner:
-    "Taking longer than expected... Whisper may still be processing."
-  After 30 seconds → kill process → show error state
+  After 20 seconds: show warning text node in ThinkingState layout,
+    positioned below the MorphCanvas and above the "YOU SAID" block.
+    Text: "Taking longer than expected... Whisper may still be processing."
+    Style: font-size 11px, color rgba(255,189,46,0.7), text-align center
+    Controlled by transcriptionSlow prop (boolean) on ThinkingState.
+  After 30 seconds → kill process → transition to TRANSCRIPTION_ERROR
+    (expanded) or ERROR (collapsed)
 
 Generation timeout: 45 seconds
-  After 30 seconds show warning:
-    "Claude is taking longer than usual..."
-  After 45 seconds → kill process → show timeout error state
+  After 30 seconds: show warning text node in same position in
+    ThinkingState (below MorphCanvas, above YOU SAID block).
+    Text: "Claude is taking longer than usual..."
+    Style: same as above.
+    Controlled by generationSlow prop (boolean) on ThinkingState.
+  After 45 seconds → kill process → transition to GENERATION_ERROR
+    (expanded) or ERROR (collapsed)
 
 ---
 
 ## IPC additions (main.js)
 
-New IPC handlers:
+New IPC handlers — wizard setup management:
+  'check-setup-complete' → reads setupComplete from config.json
+    Returns: { complete: bool }
+
+  'set-setup-complete' → writes setupComplete: true to config.json
+    Returns: { ok: true }
+
+  'reset-setup-complete' → writes setupComplete: false to config.json
+    Returns: { ok: true }
+
+  'reopen-wizard' → recreates splashWin + resets setupComplete
+    1. writeConfig({ ...readConfig(), setupComplete: false })
+    2. Create new BrowserWindow (same config as original splashWin)
+    3. splashWin.loadFile('splash.html')
+    4. splashWin.show(); win.hide()
+    Returns: { ok: true }
+
+New IPC handlers — dependency verification:
   'check-claude' → runs resolveClaudePath + version check + test generation
     Returns: { found, path, version, working, error, authError }
 
@@ -386,15 +444,22 @@ New IPC handlers:
     Streams progress updates via: win.webContents.send('whisper-download-progress', { percent, mbDone, mbTotal, secondsLeft })
     Returns: { success, error }
 
+New IPC handlers — retry:
   'retry-transcription' → re-runs whisper on lastTempAudioPath
-    Returns same as existing transcription IPC
+    Returns same shape as existing transcribe-audio IPC
 
   'retry-generation' → re-runs claude with lastTranscript and currentMode
-    Returns same as existing generation IPC
+    Returns same shape as existing generate-prompt IPC
+
+New push channels (main → renderer):
+  'whisper-download-progress' → { percent, mbDone, mbTotal, secondsLeft }
+  'transcription-slow-warning' → (no payload) fired at 20s
+  'generation-slow-warning' → (no payload) fired at 30s
 
 New state in main.js:
   let lastTempAudioPath = null  // set after each recording
   let lastTranscript = null     // set after each transcription
+  let currentMode = 'balanced'  // updated on each generate-prompt call
 
 ---
 
@@ -437,14 +502,28 @@ Expanded view errors:
 - splash.html — full wizard rewrite
 - main.js — new IPC handlers, lastTempAudioPath, lastTranscript,
   timeout handling, test generation
-- src/renderer/App.jsx — error states, retry handlers, timeout warnings
-- src/renderer/components/ExpandedView.jsx — error states in right panel
-- src/renderer/components/ExpandedDetailPanel.jsx — error UI in right panel
-- src/renderer/components/ErrorStatePanel.jsx (new shared component)
+- preload.js — must add contextBridge entries for all new IPC channels
+  (check-setup-complete, set-setup-complete, reset-setup-complete,
+  reopen-wizard, check-claude, check-whisper, check-ffmpeg,
+  check-whisper-model, download-whisper-model, retry-transcription,
+  retry-generation; listeners for whisper-download-progress,
+  transcription-slow-warning, generation-slow-warning)
+- src/renderer/App.jsx — TRANSCRIPTION_ERROR + GENERATION_ERROR states,
+  retry handlers, timeout warnings, slow-warning IPC listeners
+- src/renderer/components/ExpandedView.jsx — forward error props to panel
+- src/renderer/components/ExpandedDetailPanel.jsx — render OperationErrorPanel
+  for TRANSCRIPTION_ERROR + GENERATION_ERROR states
+- src/renderer/components/ExpandedTransportBar.jsx — hint text for
+  TRANSCRIPTION_ERROR + GENERATION_ERROR states (add to state-aware
+  hint-text-row switch)
+- src/renderer/components/SettingsPanel.jsx — "Recheck setup ↺" button
+- src/renderer/components/OperationErrorPanel.jsx (new — replaces
+  OperationErrorPanel.jsx name to avoid confusion with existing ErrorState.jsx)
 - vibe/CODEBASE.md, vibe/DECISIONS.md, vibe/TASKS.md
 
 ## Files out of scope
 All mode-specific components (image, video, workflow builders)
-All hooks except where error state props need passing
+All hooks (no hook changes required — error state wiring is in App.jsx)
 index.css
-preload.js (only if new IPC methods require contextBridge additions — ask first)
+ThinkingState.jsx — transcriptionSlow/generationSlow props added here
+  (in scope for prop addition only — no layout changes)

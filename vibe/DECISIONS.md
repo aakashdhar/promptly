@@ -1508,6 +1508,13 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 ---
 
 ---
+## 2026-04-29 — Spec review: add-feature (FEATURE-ONBOARDING-WIZARD)
+> P0: 0 · P1: 8 · P2: 4
+> Action: all findings fixed inline
+> Report: vibe/spec-reviews/2026-04-29-add-feature-onboarding-wizard.md
+---
+
+---
 ### D-WFL-NOGATE — 2026-04-29 — Remove mandatory placeholder-fill gate
 - **Date**: 2026-04-29 · **Type**: scope-change
 - **Trigger**: change: command — user-initiated
