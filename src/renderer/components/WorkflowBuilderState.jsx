@@ -6,6 +6,7 @@ export default function WorkflowBuilderState({
   filledPlaceholders,
   onFillPlaceholder,
   onAddNode,
+  onDeleteNode,
   onConfirm,
   onReiterate,
   onStartOver,
@@ -298,6 +299,22 @@ export default function WorkflowBuilderState({
                       {isTrigger ? 'Trigger' : 'Action'}
                     </div>
                   )}
+                  {nodes.length > 1 && (
+                    <button
+                      onClick={() => onDeleteNode(node.id)}
+                      style={{
+                        fontSize: 14, lineHeight: 1,
+                        color: 'rgba(255,255,255,0.2)',
+                        background: 'none', border: 'none',
+                        cursor: 'pointer',
+                        WebkitAppRegion: 'no-drag',
+                        padding: '0 2px',
+                        flexShrink: 0,
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
 
                 {/* Purpose */}
@@ -413,7 +430,7 @@ export default function WorkflowBuilderState({
         <div>
           {unfilled > 0 && (
             <span style={{ fontSize: 11, color: 'rgba(255,189,46,0.5)' }}>
-              ⚠ Fill {unfilled} placeholder{unfilled !== 1 ? 's' : ''} before generating
+              ⚠ Click the amber values above to fill {unfilled} placeholder{unfilled !== 1 ? 's' : ''}
             </span>
           )}
         </div>

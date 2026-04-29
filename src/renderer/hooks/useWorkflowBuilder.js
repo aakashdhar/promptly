@@ -191,6 +191,18 @@ Rules:
     })
   }, [])
 
+  const handleDeleteNode = useCallback((nodeId) => {
+    setWorkflowAnalysis(prev => {
+      if (!prev || prev.nodes.length <= 1) return prev
+      return { ...prev, nodes: prev.nodes.filter(n => n.id !== nodeId) }
+    })
+    setFilledPlaceholders(prev => {
+      const next = { ...prev }
+      Object.keys(next).forEach(k => { if (k.startsWith(`${nodeId}-`)) delete next[k] })
+      return next
+    })
+  }, [])
+
   const handleWorkflowConfirm = useCallback((analysis, placeholders) => {
     assembleWorkflowJson(analysis, placeholders)
   }, [assembleWorkflowJson])
@@ -235,6 +247,7 @@ Rules:
     isCopied,
     onFillPlaceholder: handleFillPlaceholder,
     onAddNode: handleAddNode,
+    onDeleteNode: handleDeleteNode,
     onConfirm: () => handleWorkflowConfirm(workflowAnalysis, filledPlaceholders),
     onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },
     onStartOver: handleWorkflowStartOver,
