@@ -575,4 +575,17 @@ Root cause: `saveToHistory` was only called in `handleVideoSave` (explicit Save 
 Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDER_DONE` transition), matching the image builder pattern. `handleVideoSave` retains `isSaved` flag toggle for UI feedback but no longer writes history.
 
 ## What's next
-No pending tasks. All active features complete.
+🔄 FEATURE-WORKFLOW-BUILDER — n8n workflow builder mode (0/11)
+   Estimated: approx. 8 hours (S: 8, M: 3)
+   [ ] WFL-001 · useMode.js workflow mode + green accent
+   [ ] WFL-002 · main.js MODE_CONFIG + system prompts
+   [ ] WFL-003 · WorkflowBuilderState.jsx node cards
+   [ ] WFL-004 · WorkflowBuilderDoneState.jsx done screen
+   [ ] WFL-005 · App.jsx states + auto-expand + disable collapse
+   [ ] WFL-006 · App.jsx handlers
+   [ ] WFL-007 · STATE_HEIGHTS
+   [ ] WFL-008 · Reiterate flow
+   [ ] WFL-009 · History saving
+   [ ] WFL-010 · Collapse button hidden in workflow mode
+   [ ] WFL-011 · Docs update
+   → Full specs: vibe/features/2026-04-27-workflow-builder/FEATURE_TASKS.md (agent use)

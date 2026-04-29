@@ -1460,3 +1460,19 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: keeping flanking layout and adding text inline → rejected, too cramped; keeping recording UI in right panel → rejected, conflicts with "pure history viewer" spec requirement
 - **Impact on other tasks**: none — purely visual, no logic changes to recording/generation flow
 - **Approved by**: human
+
+
+---
+## D-WORKFLOW-BUILDER-001 — 2026-04-29 — Feature Start: FEATURE-WORKFLOW-BUILDER
+> Folder: vibe/features/2026-04-27-workflow-builder/
+> New "Workflow" mode — user speaks automation idea, Claude maps to n8n nodes + JSON, user reviews and imports.
+> Tasks: WFL-001 through WFL-011 | Estimated: ~8 hours (S: 8, M: 3)
+> Drift logged below as tasks complete.
+---
+
+---
+## 2026-04-29 — Spec review: workflow-builder (add-feature)
+> P0: 0 · P1: 8 · P2: 3
+> Action: all P1 findings fixed — spec ready to build
+> Report: vibe/spec-reviews/2026-04-29-workflow-builder.md
+---
