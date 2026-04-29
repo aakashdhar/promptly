@@ -463,6 +463,20 @@ Remaining open items (BL-077, BL-075, BL-076, BL-078 — all P2/P3):
 ## Phase gates
 Full project review gate: ✅ reviewed 2026-04-28 (v2) — 0 P0, 0 P1 — deploy not blocked — 1 P2 + 3 P3 logged to backlog
 
+---
+
+## 🔴 Review fixes required — Final gate 2026-04-29 (0/1)
+Must complete before final deploy clearance.
+[ ] RFX-FINAL-001 · Extract `useOperationHandlers` hook from App.jsx — reduces 721→~655 lines
+                    File: `src/renderer/App.jsx` · Issue: 721 lines, P1 SRP threshold is 500
+                    Extract: `handleRetryTranscription`, `handleRetryGeneration`, `abortRef`, `handleAbort`,
+                    `transcriptionError`, `generationError`, `transcriptionSlow`, `generationSlow` + slow-warning IPC listeners
+                    New hook: `src/renderer/hooks/useOperationHandlers.js`
+→ Full report: vibe/reviews/final-review-2026-04-29.md
+
+## Final gate — 2026-04-29
+🔴 BLOCKED — 1 P1 issue — complete RFX-FINAL-001 above, then re-run `review: final`
+
 ✅ **BUG-RELEASE-NODE-PATH — release.sh fails on nvm-managed machines** (FIXED 2026-04-28)
    Root cause: `bash release.sh` skips .zshrc → nvm not loaded → `node`/`npx` not in PATH → "env: node: No such file or directory"
    Fix: nvm init block + preflight checks added to top of release.sh (same pattern as main.js resolveClaudePath)

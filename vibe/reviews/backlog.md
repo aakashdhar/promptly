@@ -413,3 +413,26 @@
 | ID | File | Line | Issue | Status |
 |----|------|------|-------|--------|
 | P3-WFL-DEL-001 | src/renderer/components/WorkflowBuilderState.jsx | 302–315 | × delete button has no hover state — very subtle at rgba(255,255,255,0.2); low discoverability for a destructive action | Open |
+
+---
+
+## From Final Review (2026-04-29) — Score 8.9/10 — Grade B+
+
+### P1 — Fix before deploy (tracked in TASKS.md as RFX-FINAL-001)
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-FINAL-001 | src/renderer/App.jsx | 1–721 | 721 lines — 221 over P1 SRP threshold (500). ONBD-014/015 + ABORT-RESET added ~62 lines on top of accepted 659 (BL-WFL-008). Extract `useOperationHandlers` hook: handleRetryTranscription, handleRetryGeneration, abortRef, handleAbort, transcriptionError/generationError state + slow warning IPC listeners. Expected reduction: ~655 lines. | Open — tracked as RFX-FINAL-001 |
+
+### P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-FINAL-002 | splash.html | 4 | Missing Content-Security-Policy meta tag. src/renderer/index.html has full CSP; splash.html BrowserWindow does not. Add `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />` to splash.html `<head>`. | Open |
+
+### P3 — Monitor
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-FINAL-003 | vibe/CODEBASE.md | OperationErrorPanel row | Stale line count: "105 lines" → actual 128 lines. | Open |
+| BL-FINAL-004 | src/renderer/components/ExpandedDetailPanel.jsx | 1–495 | 495 lines — 5 under P1 threshold. Monitor: if any further feature touches this file, extract error panel routing block (lines ~432–478) into ExpandedErrorContent.jsx first. | Open |
