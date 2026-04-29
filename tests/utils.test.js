@@ -73,6 +73,17 @@ describe('getModeTagStyle', () => {
     }
   })
 
+  it('returns green tones for workflow mode', () => {
+    const style = getModeTagStyle('workflow')
+    expect(style.background).toContain('34,197,94')
+    expect(style.color).toContain('74,222,128')
+  })
+
+  it('returns blue tones for video mode', () => {
+    const style = getModeTagStyle('video')
+    expect(style.background).toContain('10,132,255')
+  })
+
   it('returns blue tones for unknown mode', () => {
     const style = getModeTagStyle('unknown')
     expect(style.background).toContain('10,132,255')

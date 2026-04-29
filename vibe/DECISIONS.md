@@ -1460,3 +1460,57 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: keeping flanking layout and adding text inline → rejected, too cramped; keeping recording UI in right panel → rejected, conflicts with "pure history viewer" spec requirement
 - **Impact on other tasks**: none — purely visual, no logic changes to recording/generation flow
 - **Approved by**: human
+
+
+---
+## D-WORKFLOW-BUILDER-001 — 2026-04-29 — Feature Start: FEATURE-WORKFLOW-BUILDER
+> Folder: vibe/features/2026-04-27-workflow-builder/
+> New "Workflow" mode — user speaks automation idea, Claude maps to n8n nodes + JSON, user reviews and imports.
+> Tasks: WFL-001 through WFL-011 | Estimated: ~8 hours (S: 8, M: 3)
+> Drift logged below as tasks complete.
+---
+
+---
+## 2026-04-29 — Spec review: workflow-builder (add-feature)
+> P0: 0 · P1: 8 · P2: 3
+> Action: all P1 findings fixed — spec ready to build
+> Report: vibe/spec-reviews/2026-04-29-workflow-builder.md
+---
+
+---
+## D-WORKFLOW-BUILDER-002 — 2026-04-29 — FEATURE-WORKFLOW-BUILDER implementation decisions
+- **WorkflowBuilderState placeholder chips**: inline text inputs activate on chip click; commit on Enter or blur. activeInput keyed by `${nodeId}-${paramKey}`. Filled chips switch to green display and remain tappable to re-edit.
+- **Blank node handling**: blank nodes (added via Add another node) use `__name__` and `__type__` as special param keys sent via onFillPlaceholder; allFilled check examines `node.name && node.type` directly.
+- **useWorkflowBuilder lastHistoryIdRef**: saveToHistory doesn't return the entry, so we call getHistory()[0] immediately after to capture the entry id for bookmarking.
+- **ExpandedDetailPanel isContentState**: WORKFLOW_BUILDER and WORKFLOW_BUILDER_DONE added to `isContentState` — right panel shows WorkflowBuilder components, not the history viewer, when in these states.
+- **Collapse button**: extended isVideo check to `isFullViewMode = isVideo || isWorkflow`. pointerEvents: 'none' added (in addition to opacity 0.3) to ensure clicks don't propagate even if CSS opacity isn't blocking.
+- **IdleState + ExpandedTransportBar**: workflow green accent `rgba(34,197,94,...)` added to all mode-conditional colour chains (ringColor, micStroke, pillBg, pillBorder, pillColor).
+
+
+---
+### D-BUG-WFL-PLACEHOLDER-DELETE — 2026-04-29 — Bug fix: WorkflowBuilderState placeholder fill UX + delete node
+- **Type**: drift (bug)
+- **Folder**: vibe/bugs/2026-04-29-wfl-placeholder-delete/
+- **Bug 1 root cause**: Warning text "Fill X placeholders before generating" gave no instruction on HOW; amber chips with ✎ icon are the fill mechanism but users didn't discover them
+- **Bug 2 root cause**: handleAddNode existed but no handleDeleteNode in hook or × button in component
+- **Files in scope**: src/renderer/components/WorkflowBuilderState.jsx, src/renderer/hooks/useWorkflowBuilder.js
+- **Fix approach**: (1) update warning text to "Click the amber values above to fill..."; (2) add handleDeleteNode + onDeleteNode prop + × button per card (hidden when ≤1 node)
+- **CODEBASE.md update**: Yes — WorkflowBuilderState props + useWorkflowBuilder exports
+- **ARCHITECTURE.md update**: No
+---
+
+---
+### D-WFL-NOGATE — 2026-04-29 — Remove mandatory placeholder-fill gate
+- **Date**: 2026-04-29 · **Type**: scope-change
+- **Trigger**: change: command — user-initiated
+- **Build stage**: Post-completion (FEATURE-WORKFLOW-BUILDER 11/11 ✅, on feat/workflow-builder branch)
+- **What changed**: Confirm button in WORKFLOW_BUILDER is no longer disabled when placeholders are unfilled. Blocking warning removed; replaced with advisory hint. Unfilled placeholder strings pass through to Phase 2 prompt and appear as-is in generated JSON.
+- **Why**: User prefers to paste JSON into n8n and fill placeholder values using n8n's node editor (autocomplete, credential pickers, live data). Filling inside Promptly is friction for their workflow.
+- **Before**: `disabled={!allFilled}` on Confirm button; warning "⚠ Click the amber values above to fill X placeholders"; button grayed out until all filled
+- **After**: Confirm always enabled; advisory hint "{n} placeholder(s) unfilled — fill here or in n8n after import"; amber chips remain tappable for users who want to fill here
+- **Tasks affected**: New: none · Retrofit: none · Code change: WorkflowBuilderState.jsx only
+- **Folders affected**: vibe/features/2026-04-27-workflow-builder/ (FEATURE_SPEC.md + FEATURE_TASKS.md)
+- **Architecture impact**: None
+- **BRIEF.md updated**: No
+- **Approved by**: human
+---

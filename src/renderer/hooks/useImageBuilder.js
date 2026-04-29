@@ -22,6 +22,7 @@ export default function useImageBuilder({
   resizeWindow,
   setThinkTranscript,
   setThinkingLabel,
+  startRecordingRef,
 }) {
   const [imageDefaults, setImageDefaults] = useState(deepCopy(EMPTY_DEFAULTS))
   const [imageAnswers, setImageAnswers] = useState(deepCopy(EMPTY_DEFAULTS))
@@ -248,6 +249,26 @@ Rules:
     if (!isExpandedRef.current) resizeWindow(520)
   }
 
+  const imageBuilderProps = {
+    transcript: originalTranscript.current,
+    imageDefaults,
+    imageAnswers,
+    showAdvanced,
+    activePickerParam,
+    imageBuiltPrompt,
+    onChipRemove: handleChipRemove,
+    onChipAdd: handleChipAdd,
+    onParamChange: handleParamChange,
+    onToggleAdvanced: handleToggleAdvanced,
+    onOpenPicker: handleOpenPicker,
+    onClosePicker: handleClosePicker,
+    onConfirm: handleConfirm,
+    onCopyNow: handleCopyNow,
+    onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },
+    onEditAnswers: handleImageEditAnswers,
+    onStartOver: () => { handleImageStartOver(); transitionRef.current(STATES.IMAGE_BUILDER) },
+  }
+
   return {
     imageDefaults,
     imageAnswers,
@@ -256,7 +277,6 @@ Rules:
     imageBuiltPrompt,
     isReiteratingRef,
     runPreSelection,
-    assembleImagePrompt,
     handleChipRemove,
     handleChipAdd,
     handleParamChange,
@@ -267,5 +287,6 @@ Rules:
     handleCopyNow,
     handleImageStartOver,
     handleImageEditAnswers,
+    imageBuilderProps,
   }
 }

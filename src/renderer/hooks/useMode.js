@@ -11,6 +11,7 @@ const MODE_LABELS = {
   polish: 'Polish',
   image: 'Image',
   video: 'Video',
+  workflow: 'Workflow',
 }
 
 export default function useMode() {

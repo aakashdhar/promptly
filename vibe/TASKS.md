@@ -574,5 +574,52 @@ Review fixes applied (2 P1 + 1 P2 + docs):
 Root cause: `saveToHistory` was only called in `handleVideoSave` (explicit Save button), which doesn't trigger a state change. `ExpandedHistoryList` refreshes on `currentState` changes only — so the list never reflected newly generated video prompts.
 Fix: moved `saveToHistory` call into `assembleVideoPrompt` (before `VIDEO_BUILDER_DONE` transition), matching the image builder pattern. `handleVideoSave` retains `isSaved` flag toggle for UI feedback but no longer writes history.
 
+✅ WorkflowBuilderState — placeholder fill UX + missing delete node (4/4 ✅) — reviewed 2026-04-29 · 9.0/10 — A-
+   [x] BUG-001 · Confirm both bugs reproduce (manual) — confirmed by user report
+   [x] BUG-002 · Implement fix — warning text + handleDeleteNode + × button
+   [x] BUG-003 · Verify — lint 0 errors, both bugs resolved
+   [x] BUG-004 · Update docs — CODEBASE.md, DECISIONS.md, TASKS.md
+   → Full specs: vibe/bugs/2026-04-29-wfl-placeholder-delete/BUG_TASKS.md
+
+## What just happened
+🔄 Scope change 2026-04-29 (D-WFL-NOGATE) — Removed mandatory placeholder-fill gate from WORKFLOW_BUILDER confirm button. Button now always enabled; unfilled placeholders pass through to JSON as-is so user can edit in n8n after import. Advisory hint replaces blocking warning. FEATURE_SPEC + FEATURE_TASKS updated.
+
+## What just happened
+✅ BUG fix 2026-04-29 — WorkflowBuilderState: (1) warning text now reads "Click the amber values above to fill X placeholder(s)" — users can find the fill mechanism; (2) × delete button added per node card (hidden when only 1 node remains), handleDeleteNode in hook removes node + its filled placeholder entries. Lint clean.
+
+## What just happened
+✅ FEATURE-WORKFLOW-BUILDER complete 2026-04-29 — All 11 WFL tasks implemented. New "Workflow" mode adds two-phase Claude flow: Phase 1 analyses spoken automation idea → n8n node cards with placeholder chips; Phase 2 assembles importable n8n JSON. WorkflowBuilderState (node cards, amber chips, inline fill), WorkflowBuilderDoneState (HOW IT WORKS + syntax-highlighted JSON), useWorkflowBuilder hook (full lifecycle, reiterate merge). Build + lint clean.
+
+## FEATURE-WORKFLOW-BUILDER — n8n workflow builder mode (11/11 ✅)
+   [x] WFL-001 · useMode.js workflow mode + green accent
+   [x] WFL-002 · main.js MODE_CONFIG + system prompts
+   [x] WFL-003 · WorkflowBuilderState.jsx node cards
+   [x] WFL-004 · WorkflowBuilderDoneState.jsx done screen
+   [x] WFL-005 · App.jsx states + auto-expand + disable collapse
+   [x] WFL-006 · App.jsx handlers via useWorkflowBuilder hook
+   [x] WFL-007 · STATE_HEIGHTS WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE = 860
+   [x] WFL-008 · Reiterate flow with isReiteratingWorkflow flag + placeholder merge
+   [x] WFL-009 · History saving + getModeTagStyle green case
+   [x] WFL-010 · Collapse button disabled for workflow mode (opacity 0.3, pointerEvents none)
+   [x] WFL-011 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md, FEATURE_TASKS.md updated
+   → Full specs: vibe/features/2026-04-27-workflow-builder/FEATURE_TASKS.md (agent use)
+
 ## What's next
-No pending tasks. All active features complete.
+Fix RFX-WFL tasks below before merging to main.
+
+---
+
+## ✅ Review fixes — FEATURE-WORKFLOW-BUILDER gate (2/2 COMPLETE)
+
+- [x] RFX-WFL-001 · WorkflowBuilderState.jsx — blankFilled bug fixed; checks filledPlaceholders state (not stale node.name); added to filledCount sum
+- [x] RFX-WFL-002 · App.jsx SRP — imageBuilderProps, videoBuilderProps, workflowBuilderProps bundles moved to respective hooks; App.jsx 750 → 659 lines
+
+→ Full report: vibe/reviews/feature-workflow-builder-review-v2.md
+→ Score: 9.5/10 — Grade A — 0 P0, 0 P1
+→ Backlog: BL-WFL-007 (CODEBASE.md stale), BL-WFL-008 (App.jsx residual), BL-WFL-009 (dep array P3)
+
+→ v3 review (2026-04-29): BL-WFL-007 ✅ resolved, BL-WFL-008 accepted, BL-WFL-009 ✅ resolved
+→ Score: 10.0/10 — Grade A+ — 0 P0, 0 P1, 0 new findings
+
+## Phase gates
+FEATURE-WORKFLOW-BUILDER → main:  ✅ reviewed 2026-04-29 (v3) — 0 P0, 0 P1 — 10.0/10 — CLEAR TO MERGE

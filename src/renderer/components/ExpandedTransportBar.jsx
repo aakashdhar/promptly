@@ -23,11 +23,13 @@ export default function ExpandedTransportBar({
   const isPaused = currentState === 'PAUSED'
 
   const isVideo = mode === 'video'
+  const isWorkflow = mode === 'workflow'
+  const isFullViewMode = isVideo || isWorkflow
   const isPolish = mode === 'polish'
   const isRefine = mode === 'refine'
-  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : 'rgba(10,132,255,0.12)'
-  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
-  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : 'rgba(100,180,255,0.85)'
+  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : isWorkflow ? 'rgba(34,197,94,0.12)' : 'rgba(10,132,255,0.12)'
+  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : isWorkflow ? '0.5px solid rgba(34,197,94,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
+  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : isWorkflow ? 'rgba(74,222,128,0.9)' : 'rgba(100,180,255,0.85)'
 
   const pauseBtnBg = isRecording ? 'rgba(255,189,46,0.12)' : 'rgba(255,255,255,0.06)'
   const pauseBtnBorder = isRecording ? '0.5px solid rgba(255,189,46,0.3)' : '0.5px solid rgba(255,255,255,0.1)'
@@ -101,20 +103,20 @@ export default function ExpandedTransportBar({
           </svg>
         </button>
         <button
-          onClick={isVideo ? undefined : onCollapse}
-          title={isVideo ? 'Video mode requires expanded view' : 'Collapse'}
+          onClick={isFullViewMode ? undefined : onCollapse}
+          title={isWorkflow ? 'Workflow mode uses full view' : isVideo ? 'Video mode requires expanded view' : 'Collapse'}
           style={{
             width: '28px', height: '28px', borderRadius: '7px',
             background: 'rgba(255,255,255,0.05)',
             border: '0.5px solid rgba(255,255,255,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: isVideo ? 'not-allowed' : 'pointer', marginRight: '18px',
-            WebkitAppRegion: 'no-drag', padding: 0,
+            cursor: isFullViewMode ? 'not-allowed' : 'pointer', marginRight: '18px',
+            WebkitAppRegion: 'no-drag', padding: 0, pointerEvents: isFullViewMode ? 'none' : 'auto',
             transition: 'background 150ms', flexShrink: 0,
-            opacity: isVideo ? 0.4 : 1,
+            opacity: isFullViewMode ? 0.3 : 1,
           }}
-          onMouseEnter={e => { if (!isVideo) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
-          onMouseLeave={e => { if (!isVideo) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+          onMouseEnter={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+          onMouseLeave={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
         >
           <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
             <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />

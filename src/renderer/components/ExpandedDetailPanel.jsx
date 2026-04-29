@@ -7,6 +7,8 @@ import ImageBuilderState from './ImageBuilderState.jsx'
 import ImageBuilderDoneState from './ImageBuilderDoneState.jsx'
 import VideoBuilderState from './VideoBuilderState.jsx'
 import VideoBuilderDoneState from './VideoBuilderDoneState.jsx'
+import WorkflowBuilderState from './WorkflowBuilderState.jsx'
+import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -35,6 +37,7 @@ export default function ExpandedDetailPanel({
   thinkingAccentColor,
   imageBuilderProps,
   videoBuilderProps,
+  workflowBuilderProps,
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
   const [entryExported, setEntryExported] = useState(false)
@@ -45,6 +48,7 @@ export default function ExpandedDetailPanel({
   const isContentState = currentState === 'TYPING' || currentState === 'PROMPT_READY'
     || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
     || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
+    || currentState === 'WORKFLOW_BUILDER' || currentState === 'WORKFLOW_BUILDER_DONE'
 
   const showEntryDetail = !isContentState && selected !== null
   const showEmpty = !isContentState && !selected
@@ -393,6 +397,33 @@ export default function ExpandedDetailPanel({
           onStartOver={videoBuilderProps.onStartOver}
           isSaved={videoBuilderProps.isSaved}
           onSave={videoBuilderProps.onSave}
+        />
+      )}
+      {currentState === 'WORKFLOW_BUILDER' && workflowBuilderProps && (
+        <WorkflowBuilderState
+          transcript={workflowBuilderProps.transcript}
+          workflowAnalysis={workflowBuilderProps.workflowAnalysis}
+          filledPlaceholders={workflowBuilderProps.filledPlaceholders}
+          onFillPlaceholder={workflowBuilderProps.onFillPlaceholder}
+          onAddNode={workflowBuilderProps.onAddNode}
+          onDeleteNode={workflowBuilderProps.onDeleteNode}
+          onConfirm={workflowBuilderProps.onConfirm}
+          onReiterate={workflowBuilderProps.onReiterate}
+          onStartOver={workflowBuilderProps.onStartOver}
+          isExpanded
+        />
+      )}
+      {currentState === 'WORKFLOW_BUILDER_DONE' && workflowBuilderProps && (
+        <WorkflowBuilderDoneState
+          workflowAnalysis={workflowBuilderProps.workflowAnalysis}
+          workflowJson={workflowBuilderProps.workflowJson}
+          onEdit={workflowBuilderProps.onEdit}
+          onStartOver={workflowBuilderProps.onStartOver}
+          onSave={workflowBuilderProps.onSave}
+          isSaved={workflowBuilderProps.isSaved}
+          onCopy={workflowBuilderProps.onCopy}
+          isCopied={workflowBuilderProps.isCopied}
+          isExpanded
         />
       )}
     </div>

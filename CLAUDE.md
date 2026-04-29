@@ -170,6 +170,11 @@ Never let CODEBASE.md drift more than one task behind.
 > Completed feature sections removed 2026-04-27 (P2-008 — full-project review). Full specs remain in their respective `vibe/features/` and `vibe/bugs/` folders.
 
 ---
+
+## Execution mode
+VIBE_MODE=manual
+
+---
 ### Active Feature: FEATURE-IMAGE-BUILDER
 > Folder: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27
 
@@ -295,4 +300,73 @@ Never: touch files not in scope · change showEntryDetail logic · remove getHis
    git commit -m "docs(FEATURE_TASKS+TASKS): mark [TASK-ID] done — history-empty-state"
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---
+
+---
+### Active Feature: FEATURE-WORKFLOW-BUILDER
+> Folder: vibe/features/2026-04-27-workflow-builder/ | Added: 2026-04-29
+
+**Feature summary**: New "Workflow" mode — user speaks automation idea, Claude maps it to n8n nodes + generates importable JSON workflow.
+**Files in scope**: `src/renderer/components/WorkflowBuilderState.jsx` (new), `src/renderer/components/WorkflowBuilderDoneState.jsx` (new), `src/renderer/App.jsx`, `src/renderer/hooks/useMode.js`, `main.js`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: All other components, all hooks except useMode, preload.js, index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file in src/renderer/components/. Functional React components only.
+- All state transitions via transition() in App.jsx — never mutate state directly.
+- Inline styles for dynamic/stateful values; Tailwind only for static layout classes.
+- No dangerouslySetInnerHTML with user/Claude content — use JSX text nodes.
+- IPC via window.electronAPI only — never ipcRenderer directly.
+- localStorage only via useMode() / useTone() / utils/history.js wrappers.
+- Green accent: rgba(34,197,94) — not used by any existing mode.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md for new files ·
+        update TASKS.md after every task
+
+Ask first: adding new IPC channels · changing window dimensions · modifying existing mode flows
+Never: touch files not in scope · change behaviour of other modes · use innerHTML with generated text
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add src/renderer/components/WorkflowBuilderState.jsx src/renderer/components/WorkflowBuilderDoneState.jsx src/renderer/App.jsx src/renderer/hooks/useMode.js main.js
+   git commit -m "feat(workflow): WFL-XXX — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-27-workflow-builder/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark WFL-XXX done — workflow-builder"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---
+
+### Active Bug Fix: WorkflowBuilderState — placeholder fill UX + delete node
+> Folder: vibe/bugs/2026-04-29-wfl-placeholder-delete/ | Added: 2026-04-29
+
+**Files in scope**: `src/renderer/components/WorkflowBuilderState.jsx`, `src/renderer/hooks/useWorkflowBuilder.js`
+**Files out of scope**: All other components, all hooks except useWorkflowBuilder, App.jsx, preload.js, main.js
+
+**Boundaries:**
+Always: run lint after every change · smallest change only · follow ARCHITECTURE.md patterns ·
+        update CODEBASE.md if fix changes props/exports · update TASKS.md after every task
+Ask first: touching any file not in BUG_PLAN.md
+Never: fix other bugs noticed · introduce new patterns · change unrelated code
+
+**Done condition:**
+- [ ] Warning text updated to tell users HOW to fill placeholders
+- [ ] `handleDeleteNode` added to useWorkflowBuilder, exposed in workflowBuilderProps
+- [ ] × delete button in WorkflowBuilderState, hidden when ≤1 node
+- [ ] Linter clean · CODEBASE.md updated
+
+**Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
+**Between tasks:** "next" → lint → code commit → doc commit → state next task → confirm.
 ---
