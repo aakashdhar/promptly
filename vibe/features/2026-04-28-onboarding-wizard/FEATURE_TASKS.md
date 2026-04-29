@@ -261,7 +261,7 @@
 ---
 
 ### ONBD-010 · splash.html — Screen 2: Whisper + ffmpeg wizard step
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#screen-2--whisper--ffmpeg-check
 - **Dependencies**: ONBD-002, ONBD-009
