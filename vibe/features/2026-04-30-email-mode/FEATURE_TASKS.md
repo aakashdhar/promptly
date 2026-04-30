@@ -301,37 +301,37 @@ Body: `white-space: pre-wrap` to preserve line breaks.
 
 #### Conformance: FEATURE-EMAIL-MODE
 > Tick after every task. All items ✅ before feature is shippable.
-- [ ] Email appears in right-click mode menu with teal accent
-- [ ] Idle bar shows teal dot + "Describe your email situation naturally"
-- [ ] Idle bar: teal pulse ring + teal mode pill text + correct subtitle
-- [ ] ⌥ Space in email mode auto-expands if minimized
-- [ ] Collapse button hidden in email mode
-- [ ] Recording: right panel shows envelope icon + prompt text
-- [ ] Thinking: teal spinner + "Drafting your email..." in top bar
-- [ ] Thinking: teal morph wave (not default blue)
-- [ ] Thinking: right panel shows skeleton matching email layout
-- [ ] EMAIL_READY: right panel shows two-column grid (1fr 1.4fr)
-- [ ] Left column: transcript shown in italic
-- [ ] Left column: tone analysis rows (recipient, tone, core msg, approach)
-- [ ] Left column: "Why this tone" teal box with explanation
-- [ ] Right column: subject line with individual copy button
-- [ ] Right column: full email body with line breaks preserved
-- [ ] Header: tone badge shows inferred tone
-- [ ] "Copy subject" copies subject only
-- [ ] "Copy email" copies subject + double newline + body
-- [ ] Both copy buttons show "Copied ✓" for 2 seconds after click
-- [ ] Edit button: body becomes contenteditable; Done saves; Escape cancels
-- [ ] Save button: bookmarks entry; label shows "Saved ✓"
-- [ ] Iterate returns to recording, clears output
-- [ ] History saves with teal Email tag
-- [ ] Top bar properly dimmed in EMAIL_READY state
-- [ ] Waveform is flat teal hairline in EMAIL_READY
-- [ ] No minimized bar state for email mode
-- [ ] Auto-expand works from minimized bar
-- [ ] getModeTagStyle('email') test case passes in tests/utils.test.js
-- [ ] All existing tests still pass
-- [ ] Linter clean
-- [ ] No regressions in other modes
-- [ ] CODEBASE.md updated for all structural changes
-- [ ] DECISIONS.md D-EMAIL-001 entry present
+- [x] Email appears in right-click mode menu with teal accent
+- [x] Idle bar shows teal dot + "Describe your email situation naturally"
+- [x] Idle bar: teal pulse ring + teal mode pill text + correct subtitle
+- [x] ⌥ Space in email mode auto-expands if minimized
+- [x] Collapse button hidden in email mode
+- [x] Recording: right panel shows envelope icon + prompt text
+- [x] Thinking: teal spinner + "Drafting your email..." in top bar
+- [x] Thinking: teal morph wave (not default blue)
+- [x] Thinking: right panel shows skeleton matching email layout
+- [x] EMAIL_READY: right panel shows two-column grid (1fr 1.4fr)
+- [x] Left column: transcript shown in italic
+- [x] Left column: tone analysis rows (recipient, tone, core msg, approach)
+- [x] Left column: "Why this tone" teal box with explanation
+- [x] Right column: subject line with individual copy button
+- [x] Right column: full email body with line breaks preserved
+- [x] Header: tone badge shows inferred tone
+- [x] "Copy subject" copies subject only
+- [x] "Copy email" copies subject + double newline + body
+- [x] Both copy buttons show "Copied ✓" for 2 seconds after click
+- [x] Edit button: body becomes contenteditable; Done saves; Escape cancels
+- [x] Save button: bookmarks entry; label shows "Saved ✓"
+- [x] Iterate returns to recording, clears output
+- [x] History saves with teal Email tag
+- [x] Top bar properly dimmed in EMAIL_READY state
+- [x] Waveform is flat teal hairline in EMAIL_READY
+- [x] No minimized bar state for email mode
+- [x] Auto-expand works from minimized bar
+- [x] getModeTagStyle('email') test case passes in tests/utils.test.js
+- [x] All existing tests still pass
+- [x] Linter clean
+- [x] No regressions in other modes
+- [x] CODEBASE.md updated for all structural changes
+- [x] DECISIONS.md D-EMAIL-001 entry present
 ---
