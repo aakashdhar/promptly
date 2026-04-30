@@ -497,6 +497,71 @@ Ready for review gate (review: onboarding-wizard).
 
 ---
 
+## FEATURE-EMAIL-MODE — Email drafting mode (0/8)
+> Spec: vibe/features/2026-04-30-email-mode/ | Added: 2026-04-30 | Branch: feat/email-mode
+> Estimated: approx. 9–11 hours (S: 5, M: 3)
+
+✅ Email Mode — speak email situation → ready-to-send email (8/8 ✅)
+   Estimated: approx. 9–11 hours (S: 5, M: 3)
+   [x] EMAIL-001 · useMode.js email mode + teal accent
+   [x] EMAIL-002 · main.js MODE_CONFIG + system prompt
+   [x] EMAIL-003 · EmailReadyState.jsx two-column output
+   [x] EMAIL-004 · App.jsx EMAIL_READY state + auto-expand + thinking accent
+   [x] EMAIL-005 · STATE_HEIGHTS.EMAIL_READY = 860
+   [x] EMAIL-006 · History saving with teal Email tag
+   [x] EMAIL-007 · Expanded view routing + collapse button hidden
+   [x] EMAIL-008 · Docs + getModeTagStyle test
+   → Full specs: vibe/features/2026-04-30-email-mode/FEATURE_TASKS.md (agent use)
+
+## What just happened
+✅ FEATURE-EMAIL-MODE complete 2026-04-30 — All 8 tasks implemented via vibe-parallel. New 'email' mode: speak email situation → Claude drafts ready-to-send email (subject + body + tone analysis). Always expanded, teal accent. EmailReadyState.jsx two-column layout. Auto-expand on mode switch. History saving with teal tag. Build clean, lint 0 errors.
+
+🔴 FEATURE-EMAIL-MODE reviewed 2026-04-30 — Score 5.9/10 (F) — 0 P0, 3 P1, 4 P2 logged to backlog. Fix tasks below required before merge.
+
+---
+
+## ✅ Review fixes — FEATURE-EMAIL-MODE gate 2026-04-30 (3/3 COMPLETE)
+
+[x] RFX-EMAIL-001 · Fix THINKING state teal accent — useRecording.js:69–72 sets accent BEFORE transition(THINKING); duplicate lines removed from handleGenerateResult
+[x] RFX-EMAIL-002 · ExpandedDetailPanel → 484 lines (−47); ExpandedErrorContent.jsx extracted (67 lines)
+[x] RFX-EMAIL-003 · useOperationHandlers.js extracted (81 lines); App.jsx 756→724 lines
+→ P2 fixes: IdleState teal identity, useKeyboardShortcuts email guard, Save button bookmarks, Escape key edit cancel
+→ Full report: vibe/reviews/feature-email-mode-review-v2.md
+
+## Email mode gate — 2026-04-30
+✅ PASS — reviewed 2026-04-30 (v2) — 0 P0, 1 P1 (App.jsx 724 lines — logged to backlog) — Score 9.0/10 (A)
+
+## Post-email-mode bug fixes — 2026-04-30
+
+✅ **BUG-RESIZE-LOCK — Horizontal resize locked in expanded view** (FIXED 2026-04-30)
+   Two independent causes, both in `main.js` only:
+   1. `set-window-size` called `win.setMaximumSize(0, 0)` — Electron silently caps window at 0×0 instead of removing the constraint. Fix: resolve the current display and call `setMaximumSize(dw, dh)` using the display's work area dimensions.
+   2. `resize-window` and `resize-window-width` handlers unconditionally called `setResizable(false)` after every size change. These handlers fire on every state transition (IDLE, RECORDING, THINKING, etc.), so the expanded window was relocked after every state change. Fix: `isBar = (width <= 520)` guard — lock/unlock pair only runs in bar mode; expanded mode skips it entirely.
+   → DECISIONS.md D-BUG-RESIZE-LOCK
+
+✅ **BUG-RECORDING-FREEZE — Recording button frozen in all modes** (FIXED 2026-04-30)
+   Root cause: RFX-EMAIL-003 moved `transcriptionSlow`/`generationSlow` useState from App.jsx into `useOperationHandlers`, but left `setTranscriptionSlow(false)` and `setGenerationSlow(false)` calls inside `transition()` in App.jsx. Every `transition()` call to a non-THINKING state threw `ReferenceError: setTranscriptionSlow is not defined`. The error was silently caught by `startRecording()`'s try/catch — `stateRef.current` was mutated (partial execution before the throw) but `animateToState()` was never called, so the display stayed frozen on IDLE. Subsequent clicks failed because `stateRef.current !== STATES.IDLE`.
+   Fix: re-declared both useState in App.jsx (above `transition()`); passed setters as params to `useOperationHandlers`; hook removed its own declarations.
+   Lesson: when extracting hooks, grep for every moved symbol remaining in the source file — JS closure variables have no lint/TS coverage.
+   → DECISIONS.md D-BUG-RECORDING-FREEZE
+
+✅ **BUG-EMAIL-JSON-FENCE — Email mode: "Failed to parse email response" on every generation** (FIXED 2026-04-30)
+   Root cause: Claude wraps JSON responses in markdown code fences (` ```json\n{...}\n``` `) by default. `JSON.parse(genResult.prompt)` fails immediately on the backtick characters. This is consistent Claude behaviour regardless of system prompt instruction.
+   Fix: `parseEmailOutput(raw)` extracted to `src/renderer/utils/promptUtils.js` — strips ` ```json ` or ` ``` ` fences before `JSON.parse`. Follows `parsePolishOutput` pattern in the same file. Four regression tests added to `tests/utils.test.js`. App.jsx imports and uses `parseEmailOutput`.
+   Pattern: all future Claude JSON parsing should use fence-stripping. Do not rely on `JSON.parse` directly on raw Claude output.
+   → DECISIONS.md D-BUG-EMAIL-JSON-FENCE
+
+## What just happened
+✅ Three post-email-mode bugs fixed 2026-04-30:
+   1. Horizontal resize unlocked in expanded view (main.js — setMaximumSize + isBar guard in resize handlers)
+   2. Recording button frozen in all modes (App.jsx + useOperationHandlers.js — missing setTranscriptionSlow/setGenerationSlow scope after hook extraction)
+   3. Email JSON parse failure (promptUtils.js — parseEmailOutput strips markdown fences before JSON.parse)
+
+## What's next
+Email mode feature complete and stable. Merge feat/email-mode → main, or continue with next queued feature.
+
+---
+
 ## FEATURE-IMAGE-BUILDER — Nano Banana Image Prompt Builder (10/10 ✅)
 > Spec: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27 | Completed: 2026-04-27
    [x] IMG-001 · useMode.js image mode + purple accent — 'image' added to MODE_LABELS

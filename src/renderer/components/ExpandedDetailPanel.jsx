@@ -9,19 +9,12 @@ import VideoBuilderState from './VideoBuilderState.jsx'
 import VideoBuilderDoneState from './VideoBuilderDoneState.jsx'
 import WorkflowBuilderState from './WorkflowBuilderState.jsx'
 import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
-import OperationErrorPanel from './OperationErrorPanel.jsx'
+import ExpandedErrorContent from './ExpandedErrorContent.jsx'
+import EmailReadyState from './EmailReadyState.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
 
-function getTranscriptionFix(error) {
-  if (!error) return null
-  const e = error.toLowerCase()
-  if (e.includes('ffmpeg')) return { label: 'Install ffmpeg:', code: 'brew install ffmpeg' }
-  if (e.includes('.pt') || (e.includes('no such file') && e.includes('whisper'))) return { label: 'Download the voice model:', code: 'whisper --model base /dev/null' }
-  if (e.includes('permission') || e.includes('access denied')) return { label: 'Fix permissions:', code: 'chmod +x $(which whisper)' }
-  return null
-}
 
 export default function ExpandedDetailPanel({
   selected,
@@ -48,6 +41,11 @@ export default function ExpandedDetailPanel({
   imageBuilderProps,
   videoBuilderProps,
   workflowBuilderProps,
+  emailOutput,
+  emailSaved,
+  onEmailSave,
+  onEmailIterate,
+  onToneAdjust,
   transcriptionErrorProps,
   transcriptionSlow,
   generationErrorProps,
@@ -63,8 +61,10 @@ export default function ExpandedDetailPanel({
     || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
     || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
     || currentState === 'WORKFLOW_BUILDER' || currentState === 'WORKFLOW_BUILDER_DONE'
+    || currentState === 'EMAIL_READY'
     || currentState === 'TRANSCRIPTION_ERROR'
     || currentState === 'GENERATION_ERROR'
+    || (currentState === 'RECORDING' && mode === 'email')
 
   const showEntryDetail = !isContentState && selected !== null
   const showEmpty = !isContentState && !selected
@@ -429,53 +429,15 @@ export default function ExpandedDetailPanel({
           isExpanded
         />
       )}
-      {currentState === 'TRANSCRIPTION_ERROR' && (() => {
-        const err = transcriptionErrorProps || {}
-        const fix = getTranscriptionFix(err.error)
-        return (
-          <OperationErrorPanel
-            icon="error"
-            title="Transcription failed"
-            body={err.timedOut ? 'Whisper timed out after 30 seconds.' : "Whisper couldn't process the audio."}
-            errorDetails={err.error}
-            slowWarning={transcriptionSlow ? 'Taking longer than expected... Whisper may still be processing.' : null}
-            fixLabel={fix ? fix.label : null}
-            fixCode={fix ? fix.code : null}
-            onRetry={err.onRetry}
-            onOpenSettings={err.onOpenSettings}
-          />
-        )
-      })()}
-
-      {currentState === 'GENERATION_ERROR' && (() => {
-        const err = generationErrorProps || {}
-        const errorType = err.errorType || 'unknown'
-        const isAuth = errorType === 'auth'
-        const isTimeout = errorType === 'timeout'
-        const isEmpty = errorType === 'empty'
-        const isUnknown = errorType === 'unknown'
-        const iconMap = { auth: 'lock', timeout: 'clock', empty: 'warning', unknown: 'error' }
-        const titleMap = { auth: 'Claude is not logged in', timeout: 'Claude took too long to respond', empty: 'Claude returned an empty response', unknown: 'Generation failed' }
-        const bodyMap = { auth: "Your session expired or you haven't logged in yet.", timeout: 'This can happen with slow connections or if Claude CLI needs updating.', empty: 'The CLI ran successfully but returned nothing. This may be a Claude CLI version issue.', unknown: null }
-        const fixMap = { auth: { label: 'Log in to Claude:', code: 'claude login', note: 'This opens a browser to authenticate' }, timeout: { label: 'Update Claude CLI:', code: 'claude update' }, empty: { label: 'Update Claude CLI:', code: 'claude update' }, unknown: { label: 'Test manually in Terminal:', code: 'claude -p "hello"' } }
-        const fix = fixMap[errorType] || fixMap.unknown
-        return (
-          <OperationErrorPanel
-            icon={iconMap[errorType] || 'error'}
-            title={titleMap[errorType] || 'Generation failed'}
-            body={bodyMap[errorType] || null}
-            errorDetails={isUnknown ? err.error : null}
-            slowWarning={generationSlow ? 'Claude is taking longer than usual...' : null}
-            fixLabel={fix.label}
-            fixCode={fix.code}
-            fixNote={fix.note}
-            fixPreNote={isTimeout ? 'Check your internet connection, then:' : null}
-            retryLabel={isAuth ? "I've logged in — Try again ↺" : 'Try again ↺'}
-            onRetry={err.onRetry}
-            onOpenSettings={isUnknown ? err.onOpenSettings : null}
-          />
-        )
-      })()}
+      {(currentState === 'TRANSCRIPTION_ERROR' || currentState === 'GENERATION_ERROR') && (
+        <ExpandedErrorContent
+          currentState={currentState}
+          transcriptionErrorProps={transcriptionErrorProps}
+          transcriptionSlow={transcriptionSlow}
+          generationErrorProps={generationErrorProps}
+          generationSlow={generationSlow}
+        />
+      )}
 
       {currentState === 'WORKFLOW_BUILDER_DONE' && workflowBuilderProps && (
         <WorkflowBuilderDoneState
@@ -488,6 +450,35 @@ export default function ExpandedDetailPanel({
           onCopy={workflowBuilderProps.onCopy}
           isCopied={workflowBuilderProps.isCopied}
           isExpanded
+        />
+      )}
+
+      {currentState === 'RECORDING' && mode === 'email' && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: '14px',
+          minHeight: '200px',
+        }}>
+          <span style={{ fontSize: '40px', lineHeight: 1 }}>✉</span>
+          <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em', textAlign: 'center' }}>
+            Describe your email situation naturally
+          </span>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
+            Claude will draft a ready-to-send email
+          </span>
+        </div>
+      )}
+
+      {currentState === 'EMAIL_READY' && (
+        <EmailReadyState
+          emailOutput={emailOutput}
+          transcript={thinkTranscript}
+          onIterate={onEmailIterate}
+          onReset={onReset}
+          onSave={onEmailSave}
+          isSaved={emailSaved}
+          isExpanded={true}
+          onToneAdjust={onToneAdjust}
         />
       )}
     </div>

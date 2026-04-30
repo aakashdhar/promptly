@@ -6,6 +6,8 @@ export default function useRecording({
   modeRef,
   polishToneRef,
   setThinkTranscript,
+  setThinkingAccentColor,
+  setThinkingLabel,
   onGenerateResult,
   isIterated,
   originalTranscript,
@@ -64,6 +66,10 @@ export default function useRecording({
       const arrayBuffer = await blob.arrayBuffer()
 
       setThinkTranscript('')
+      if (modeRef.current === 'email') {
+        setThinkingAccentColor?.('rgba(20,184,166,0.85)')
+        setThinkingLabel?.('Drafting your email...')
+      }
       transitionRef.current(STATES.THINKING)
       isProcessingRef.current = false
 

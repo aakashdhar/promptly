@@ -1557,3 +1557,51 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: Keep auto-advance with longer delay — still disorienting for users reading the success message. Keep 520×300 with clipping — broken on screens 2/3.
 - **Impact on other tasks**: None — all behaviour changes are isolated to splash.html + splashWin dimensions in main.js.
 - **Approved by**: human
+
+---
+## — Feature Start: FEATURE-EMAIL-MODE — 2026-04-30
+> Folder: vibe/features/2026-04-30-email-mode/
+> New "Email" mode — speak email situation naturally → Claude drafts ready-to-send email (subject + body + tone analysis). Always expanded. Teal accent rgba(20,184,166). No prompt intermediary — output IS the email.
+> Tasks: EMAIL-001 through EMAIL-008 | Estimated: 9–11 hours
+> Drift logged below.
+
+## D-EMAIL-001 — FEATURE-EMAIL-MODE: Email drafting mode
+Date: 2026-04-30
+Decision: Added 'email' mode — user speaks email situation → Claude drafts ready-to-send email (subject + body + tone analysis). Direct output (no prompt intermediary — Claude's output IS the email). Teal accent (rgba(20,184,166)) to distinguish from all existing modes. Always expanded (same pattern as video/workflow). JSON parsing done in renderer (App.jsx handleGenerateResult email branch) — main.js returns raw Claude output string, renderer parses.
+Why: Email drafting is a complete task, not a prompt-construction aid. The output is the email itself, not a prompt about email writing. This is architecturally distinct from other modes where the output is used as input to another AI.
+
+---
+
+### D-BUG-RESIZE-LOCK — 2026-04-30 — Horizontal resize locked in expanded view
+- **Date**: 2026-04-30 · **Task**: post-email-mode · **Type**: blocker-resolution
+- **What was planned**: Expanded view (1100×860) should be freely resizable by the user — drag any edge or corner.
+- **What was done**: Fixed two independent causes in `main.js` only. No renderer changes.
+- **Why (root cause 1 — setMaximumSize)**: `set-window-size` IPC called `win.setMaximumSize(0, 0)` intending to clear the maximum constraint. Electron on macOS does not treat `(0, 0)` as "unconstrained" — it silently caps the window at 0×0, making resize impossible. Fix: resolve the current display via `screen.getDisplayNearestPoint(win.getBounds())` and call `win.setMaximumSize(dw, dh)` using the display's work area dimensions. This is the largest sensible value Electron accepts without capping.
+- **Why (root cause 2 — setResizable in resize handlers)**: `resize-window` and `resize-window-width` IPC handlers both unconditionally called `setResizable(true) → setSize() → setResizable(false)`. These handlers are called by the renderer on every state transition (IDLE, RECORDING, THINKING, etc.). In expanded mode the window must stay resizable, so the trailing `setResizable(false)` was locking it back after every state change. Fix: added `isBar = (width <= 520)` guard — the lock/unlock pair only fires in bar mode; expanded mode calls `setSize()` directly without touching resizability.
+- **Alternatives considered**: Removing `setResizable(false)` entirely — rejected because the bar should not be user-resizable (it is a fixed-width floating widget).
+- **Impact on other tasks**: None. Bar mode behaviour unchanged. Expanded view now correctly stays resizable after any state change.
+- **Approved by**: human
+
+---
+
+### D-BUG-RECORDING-FREEZE — 2026-04-30 — Recording button frozen after useOperationHandlers extraction
+- **Date**: 2026-04-30 · **Task**: post-email-mode-review · **Type**: drift
+- **What was planned**: `useOperationHandlers.js` extracted in RFX-EMAIL-003; App.jsx SRP improved.
+- **What was done**: Re-declared `transcriptionSlow`/`setTranscriptionSlow` and `generationSlow`/`setGenerationSlow` as `useState` in App.jsx (before `transition()` definition). Pass both setters as params to `useOperationHandlers`. Hook removed its own `useState` declarations and returns no state values (only handlers). App.jsx reads the state directly from its own declarations.
+- **Why (root cause)**: The RFX-EMAIL-003 extraction moved the two `useState` declarations from App.jsx into `useOperationHandlers`, but left `setTranscriptionSlow(false)` and `setGenerationSlow(false)` calls inside `transition()` in App.jsx (line 142: clears slow warnings on every non-THINKING state change). These names no longer existed in App.jsx scope — every call to `transition()` threw `ReferenceError: setTranscriptionSlow is not defined`. The error propagated into `startRecording()`'s `try/catch`, which attempted to call `transition(STATES.ERROR)` — that also threw. Net result: `stateRef.current` was set to RECORDING/ERROR by the partial execution before the throw, but `animateToState()` was never reached, so `displayState` stayed IDLE. App appeared frozen — button unresponsive to all subsequent clicks because `stateRef.current !== STATES.IDLE`.
+- **Lesson**: When extracting a hook, grep the source file for every symbol that moved — any remaining callsite becomes a silent runtime bomb. `setTranscriptionSlow` had zero TypeScript/ESLint coverage because it's a runtime JS closure variable, not a declared import.
+- **Alternatives considered**: Pass the setters back out of `useOperationHandlers` and assign via refs — more indirection for no benefit since App.jsx owns the state anyway.
+- **Impact on other tasks**: Recording now works in all modes. No other behaviour changed.
+- **Approved by**: human
+
+---
+
+### D-BUG-EMAIL-JSON-FENCE — 2026-04-30 — Email response fails to parse: Claude wraps JSON in markdown fences
+- **Date**: 2026-04-30 · **Task**: post-email-mode · **Type**: discovery
+- **What was planned**: `JSON.parse(genResult.prompt)` in App.jsx handleGenerateResult email branch parses Claude's raw output into `{ subject, body, toneAnalysis }`.
+- **What was done**: Extracted `parseEmailOutput(raw)` into `src/renderer/utils/promptUtils.js`. Function strips leading ` ```json ` or ` ``` ` fences and trailing ` ``` ` before calling `JSON.parse`. Throws on genuinely invalid JSON (error propagates to existing catch → GENERATION_ERROR). App.jsx imports and uses `parseEmailOutput` instead of bare `JSON.parse`. Four regression tests added to `tests/utils.test.js`.
+- **Why (root cause)**: Claude's email system prompt instructs it to return a JSON object, but Claude frequently wraps JSON responses in markdown code fences (` ```json\n{...}\n``` `). `JSON.parse()` fails immediately on the backtick characters. This is consistent across Claude model versions — markdown fencing of structured output is default behaviour unless the system prompt explicitly forbids it (and even then it's unreliable).
+- **Pattern**: Same issue exists latently for any mode that uses `JSON.parse` on Claude output. The fix pattern — strip fences first — should be applied defensively to all future JSON parsing of Claude responses. `parsePolishOutput` in the same file is a prior example of defensive parsing.
+- **Alternatives considered**: Update system prompt to say "return raw JSON, no code fences" — unreliable; Claude may still add fences. Strip fences inline in App.jsx — works but leaves logic untestable. Extracting to `promptUtils.js` is the established project pattern and enables regression tests.
+- **Impact on other tasks**: Email mode now reliably parses Claude responses. `parseEmailOutput` is unit-tested. Any future JSON-parsing Claude integration should follow this pattern.
+- **Approved by**: human

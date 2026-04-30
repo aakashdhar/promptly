@@ -34,6 +34,11 @@ export default function ExpandedView({
   imageBuilderProps,
   videoBuilderProps,
   workflowBuilderProps,
+  emailOutput,
+  emailSaved,
+  onEmailSave,
+  onEmailIterate,
+  onToneAdjust,
   onAbort,
   transcriptionErrorProps,
   transcriptionSlow,
@@ -107,6 +112,11 @@ export default function ExpandedView({
           imageBuilderProps={imageBuilderProps}
           videoBuilderProps={videoBuilderProps}
           workflowBuilderProps={workflowBuilderProps}
+          emailOutput={emailOutput}
+          emailSaved={emailSaved}
+          onEmailSave={onEmailSave}
+          onEmailIterate={onEmailIterate}
+          onToneAdjust={onToneAdjust}
           transcriptionErrorProps={transcriptionErrorProps}
           transcriptionSlow={transcriptionSlow}
           generationErrorProps={generationErrorProps}

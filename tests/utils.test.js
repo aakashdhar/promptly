@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSections, getModeTagStyle } from '../src/renderer/utils/promptUtils.js'
+import { parseSections, getModeTagStyle, parseEmailOutput } from '../src/renderer/utils/promptUtils.js'
 import { formatTime } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 
@@ -88,6 +88,12 @@ describe('getModeTagStyle', () => {
     const style = getModeTagStyle('unknown')
     expect(style.background).toContain('10,132,255')
   })
+
+  it('returns teal style for email mode', () => {
+    const style = getModeTagStyle('email')
+    expect(style.background).toBe('rgba(20,184,166,0.1)')
+    expect(style.color).toBe('rgba(45,212,191,0.65)')
+  })
 })
 
 describe('formatTime', () => {
@@ -110,6 +116,33 @@ describe('formatTime', () => {
     const result = formatTime(new Date('2024-01-15T12:00:00.000Z').toISOString())
     expect(result).toMatch(/Jan/)
     expect(result).toMatch(/15/)
+  })
+})
+
+describe('parseEmailOutput', () => {
+  const payload = { subject: 'Hello', body: 'Hi there', toneAnalysis: [] }
+
+  it('parses raw JSON without fences', () => {
+    const result = parseEmailOutput(JSON.stringify(payload))
+    expect(result.subject).toBe('Hello')
+    expect(result.body).toBe('Hi there')
+  })
+
+  it('strips ```json fences before parsing', () => {
+    const raw = '```json\n' + JSON.stringify(payload) + '\n```'
+    const result = parseEmailOutput(raw)
+    expect(result.subject).toBe('Hello')
+    expect(result.body).toBe('Hi there')
+  })
+
+  it('strips plain ``` fences before parsing', () => {
+    const raw = '```\n' + JSON.stringify(payload) + '\n```'
+    const result = parseEmailOutput(raw)
+    expect(result.subject).toBe('Hello')
+  })
+
+  it('throws on genuinely invalid JSON', () => {
+    expect(() => parseEmailOutput('not json')).toThrow()
   })
 })
 

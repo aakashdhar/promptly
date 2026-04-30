@@ -27,12 +27,13 @@ export default function ExpandedTransportBar({
 
   const isVideo = mode === 'video'
   const isWorkflow = mode === 'workflow'
-  const isFullViewMode = isVideo || isWorkflow
+  const isEmail = mode === 'email'
+  const isFullViewMode = isVideo || isWorkflow || isEmail
   const isPolish = mode === 'polish'
   const isRefine = mode === 'refine'
-  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : isWorkflow ? 'rgba(34,197,94,0.12)' : 'rgba(10,132,255,0.12)'
-  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : isWorkflow ? '0.5px solid rgba(34,197,94,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
-  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : isWorkflow ? 'rgba(74,222,128,0.9)' : 'rgba(100,180,255,0.85)'
+  const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : isWorkflow ? 'rgba(34,197,94,0.12)' : isEmail ? 'rgba(20,184,166,0.12)' : 'rgba(10,132,255,0.12)'
+  const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : isWorkflow ? '0.5px solid rgba(34,197,94,0.3)' : isEmail ? '0.5px solid rgba(20,184,166,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
+  const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : isWorkflow ? 'rgba(74,222,128,0.9)' : isEmail ? 'rgba(45,212,191,0.9)' : 'rgba(100,180,255,0.85)'
 
   const pauseBtnBg = isRecording ? 'rgba(255,189,46,0.12)' : 'rgba(255,255,255,0.06)'
   const pauseBtnBorder = isRecording ? '0.5px solid rgba(255,189,46,0.3)' : '0.5px solid rgba(255,255,255,0.1)'
@@ -50,6 +51,8 @@ export default function ExpandedTransportBar({
     return () => obs.disconnect()
   }, [])
 
+  const isEmailReady = currentState === 'EMAIL_READY'
+
   let textLine1, textLine2, textDot
   if (isRecording) {
     textLine1 = 'Listening...'; textLine2 = 'Tap stop when done'; textDot = 'recording'
@@ -61,6 +64,8 @@ export default function ExpandedTransportBar({
     textLine1 = 'Paused'; textLine2 = 'Tap resume to continue'; textDot = null
   } else if (isTyping) {
     textLine1 = 'Type your prompt'; textLine2 = '⌘↵ to generate'; textDot = null
+  } else if (isEmailReady) {
+    textLine1 = 'Email ready'; textLine2 = ''; textDot = 'email-ready'
   } else if (isTranscriptionError) {
     textLine1 = 'Transcription failed'; textLine2 = ''; textDot = 'error'
   } else if (isGenerationError) {
@@ -80,6 +85,7 @@ export default function ExpandedTransportBar({
   const dotColor = textDot === 'recording' ? 'rgba(200,50,35,0.85)'
     : textDot === 'thinking' ? 'rgba(10,132,255,0.85)'
     : textDot === 'iterating' ? 'rgba(10,132,255,0.85)'
+    : textDot === 'email-ready' ? 'rgba(20,184,166,0.85)'
     : textDot === 'error' ? 'rgba(255,59,48,0.85)'
     : textDot === 'gen-warn' ? 'rgba(255,189,46,0.85)'
     : 'transparent'
@@ -121,7 +127,7 @@ export default function ExpandedTransportBar({
         </button>
         <button
           onClick={isFullViewMode ? undefined : onCollapse}
-          title={isWorkflow ? 'Workflow mode uses full view' : isVideo ? 'Video mode requires expanded view' : 'Collapse'}
+          title={isWorkflow ? 'Workflow mode uses full view' : isVideo ? 'Video mode requires expanded view' : isEmail ? 'Email mode uses expanded view' : 'Collapse'}
           style={{
             width: '28px', height: '28px', borderRadius: '7px',
             background: 'rgba(255,255,255,0.05)',

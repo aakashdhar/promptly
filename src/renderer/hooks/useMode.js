@@ -12,6 +12,7 @@ const MODE_LABELS = {
   image: 'Image',
   video: 'Video',
   workflow: 'Workflow',
+  email: 'Email',
 }
 
 export default function useMode() {

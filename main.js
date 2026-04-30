@@ -142,6 +142,35 @@ The user said:
   image:     { name: 'Image',            passthrough: true, instruction: '' },
   video:     { name: 'Video',            passthrough: true, instruction: '' },
   workflow:  { name: 'Workflow',         passthrough: true, instruction: '' },
+  email:     { name: 'Email',            standalone: true, instruction: `You are an expert email writer. The user has described an email situation in natural language. Your job is to draft a professional, ready-to-send email based on their description.
+
+Analyse the situation and draft the email. Return your response as a JSON object with this exact structure:
+{
+  "subject": "the email subject line",
+  "body": "the full email body with proper formatting and line breaks",
+  "toneAnalysis": {
+    "recipient": "who this email is going to (inferred)",
+    "tone": "one of: Professional, Friendly, Assertive, Apologetic, Persuasive, Formal, Casual",
+    "coreMessage": "the single core message of this email in one sentence",
+    "approach": "brief description of the writing approach taken",
+    "whyThisTone": "1-2 sentence explanation of why this tone fits the situation"
+  }
+}
+
+Rules:
+1. Return ONLY the JSON object — no preamble, no explanation, no markdown fences
+2. The body should be complete and ready to send — no placeholders like [Name]
+3. Infer the recipient type from context (colleague, manager, client, friend, etc.)
+4. Match formality to the situation described
+5. Keep the subject line concise and descriptive
+6. Use appropriate greeting and sign-off
+7. If the user mentions their name, use it in the sign-off
+8. Preserve any specific details, dates, or numbers mentioned
+9. The body field must use actual newline characters (\\n) for line breaks, not literal backslash-n
+10. Ensure the JSON is valid and parseable
+
+User's description:
+{TRANSCRIPT}` },
   polish:    { name: 'Polish',           standalone: true, instruction: `You are an expert editor and writing coach. The user has spoken something rough — with filler words, repetition, grammatical errors, or unclear phrasing. Your job is to return two things and nothing else:
 
 1. The polished version of what they said — clean, grammatically correct, well-phrased prose that preserves their exact meaning and intent.
@@ -654,6 +683,18 @@ function createWindow() {
     if (menuBarTray && !menuBarTray.isDestroyed())
       menuBarTray.setImage(createMicIcon('idle'));
   });
+  win.on('maximize', () => {
+    win.setAlwaysOnTop(false);
+  });
+  win.on('unmaximize', () => {
+    win.setAlwaysOnTop(false);
+  });
+  win.on('enter-full-screen', () => {
+    win.setAlwaysOnTop(false);
+  });
+  win.on('leave-full-screen', () => {
+    win.setAlwaysOnTop(false);
+  });
   nativeTheme.on('updated', () => {
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
     updateMenuBarIcon(currentIconState);
@@ -818,6 +859,29 @@ app.whenReady().then(async () => {
         resolve({ success: true, prompt: transcript });
         return;
       }
+      if (options.overrideSystemPrompt) {
+        const child = spawn(claudePath, ['-p', options.overrideSystemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
+        let stdout = '';
+        let stderr = '';
+        let resolved = false;
+        const slowTimer = setTimeout(() => { if (!win.isDestroyed()) win.webContents.send('generation-slow-warning'); }, 30000);
+        const killTimer = setTimeout(() => { resolved = true; child.kill(); resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' }); }, 45000);
+        child.stdout.on('data', (d) => { stdout += d.toString(); });
+        child.stderr.on('data', (d) => { stderr += d.toString(); });
+        child.stdin.end();
+        child.on('close', (code) => {
+          if (resolved) return;
+          clearTimeout(slowTimer);
+          clearTimeout(killTimer);
+          resolved = true;
+          if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) }); return; }
+          const prompt = stdout.trim();
+          if (!prompt) { resolve({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' }); return; }
+          resolve({ success: true, prompt });
+        });
+        child.on('error', (err) => { if (resolved) return; clearTimeout(slowTimer); clearTimeout(killTimer); resolved = true; resolve({ success: false, error: err.message, errorType: 'unknown' }); });
+        return;
+      }
       let systemPrompt = modeConf.standalone
         ? modeConf.instruction.replace('{TRANSCRIPT}', transcript)
         : PROMPT_TEMPLATE
@@ -927,48 +991,75 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('resize-window', (_event, { height }) => {
     if (win) {
-      win.setResizable(true);
       const [currentWidth] = win.getSize();
+      // Only lock resize if in minimized bar mode (narrow window)
+      const isBar = currentWidth <= 520;
+      if (isBar) win.setResizable(true);
       win.setSize(currentWidth, height, true);
-      win.setResizable(false);
+      if (isBar) win.setResizable(false);
     }
     return { ok: true };
   });
 
   ipcMain.handle('resize-window-width', (_event, { width }) => {
     if (win) {
-      win.setResizable(true);
       const [, h] = win.getSize();
+      const isBar = width <= 520;
+      if (isBar) win.setResizable(true);
       win.setSize(width, h, true);
-      win.setResizable(false);
+      if (isBar) win.setResizable(false);
     }
     return { ok: true };
   });
 
   ipcMain.handle('set-window-size', (_event, { width, height }) => {
     if (win) {
-      win.setResizable(true);
-      win.setMinimumSize(width, 50);
-      win.setMaximumSize(width, 2000);
       if (width >= 1000) {
-        // Expanding to full view — store pre-expand position, centre on current display
         preExpandBounds = win.getBounds();
-        const display = screen.getDisplayNearestPoint({ x: preExpandBounds.x, y: preExpandBounds.y });
-        const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
-        const newX = Math.round(dx + (dw - width) / 2);
-        // Clamp Y: shift up only as much as needed to clear the bottom edge
-        const maxY = dy + dh - height;
-        const newY = Math.max(Math.min(preExpandBounds.y, maxY), dy);
-        win.setBounds({ x: newX, y: newY, width, height }, false);
+        win.setResizable(true);
+        win.setMaximizable(true);
+        win.setFullScreenable(true);
+        win.setAlwaysOnTop(false);
+        win.setMinimumSize(800, 600);
+        const expandDisplay = screen.getDisplayNearestPoint(win.getBounds());
+        const { width: dw, height: dh } = expandDisplay.workArea;
+        win.setMaximumSize(dw, dh);
+        const savedBounds = readConfig().expandedWindowBounds;
+        if (savedBounds) {
+          const displays = screen.getAllDisplays();
+          const isOnScreen = displays.some(d => {
+            const wa = d.workArea;
+            return (
+              savedBounds.x >= wa.x &&
+              savedBounds.y >= wa.y &&
+              savedBounds.x + savedBounds.width <= wa.x + wa.width &&
+              savedBounds.y + savedBounds.height <= wa.y + wa.height
+            );
+          });
+          if (isOnScreen) {
+            win.setBounds(savedBounds, false);
+          } else {
+            win.maximize();
+          }
+        } else {
+          win.maximize();
+        }
       } else if (width <= 520 && preExpandBounds) {
-        // Collapsing from expanded view — restore original x/y
+        writeConfig({ ...readConfig(), expandedWindowBounds: win.getBounds() });
+        win.setResizable(false);
+        win.setMaximizable(false);
+        win.setFullScreenable(false);
+        win.setAlwaysOnTop(true);
+        win.setMinimumSize(520, 50);
+        win.setMaximumSize(520, 2000);
+        if (win.isMaximized()) win.unmaximize();
+        if (win.isFullScreen()) win.setFullScreen(false);
         const { x, y } = preExpandBounds;
         win.setBounds({ x, y, width, height }, false);
         preExpandBounds = null;
       } else {
         win.setSize(width, height, true);
       }
-      win.setResizable(false);
     }
     return { ok: true };
   });
@@ -991,6 +1082,7 @@ app.whenReady().then(async () => {
       { key: 'image', label: 'Image' },
       { key: 'video', label: 'Video' },
       { key: 'workflow', label: 'Workflow' },
+      { key: 'email', label: 'Email' },
     ];
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({
