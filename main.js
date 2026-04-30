@@ -1011,24 +1011,27 @@ app.whenReady().then(async () => {
         win.setBounds({ x: newX, y: newY, width, height }, false);
         const fullDisplay = screen.getDisplayNearestPoint(win.getBounds());
         win.setMaximumSize(fullDisplay.workArea.width, 2000);
-        win.setMaximizable(true);
-        win.setFullScreenable(true);
         win.setAlwaysOnTop(false);
-        win.setResizable(false);
       } else if (width <= 520 && preExpandBounds) {
         // Collapsing from expanded view — restore original x/y
         const { x, y } = preExpandBounds;
         win.setBounds({ x, y, width, height }, false);
         preExpandBounds = null;
         win.setMaximumSize(520, 2000);
-        win.setMaximizable(false);
-        win.setFullScreenable(false);
         win.setAlwaysOnTop(true);
-        win.setResizable(false);
       } else {
         win.setSize(width, height, true);
       }
+      // setResizable first, then setMaximizable/setFullScreenable — on macOS, setResizable(false)
+      // resets the zoom button state, so these must come after to take effect
       win.setResizable(false);
+      if (width >= 1000) {
+        win.setMaximizable(true);
+        win.setFullScreenable(true);
+      } else if (width <= 520) {
+        win.setMaximizable(false);
+        win.setFullScreenable(false);
+      }
     }
     return { ok: true };
   });
