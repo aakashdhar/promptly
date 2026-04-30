@@ -466,3 +466,24 @@
 | ~~BL-EMAIL-009~~ | src/renderer/components/ExpandedDetailPanel.jsx | 521 | Dead onCopy prop | ✅ resolved — removed |
 | BL-EMAIL-010 | src/renderer/components/EmailReadyState.jsx | 3 | `const TEAL_FULL = 'rgba(20,184,166,1)'` declared but never used — all 4 usages are TEAL_85/TEAL_60/TEAL_12/TEAL_06; TEAL_FULL has no call site. | Open |
 | BL-EMAIL-011 | src/renderer/App.jsx | 96–97 | `transcriptionError` and `generationError` useState declared after transitionTimerRef useRef — out of order with other useState at lines 80–88. Cosmetic only. | Open |
+
+---
+
+## From FEATURE-IMAGE-BUILDER-V2 Review (2026-04-30) — Score 7.9/10 — Grade C+
+
+### P2 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| ~~BL-IMG2-001~~ | src/renderer/components/ImageBuilderState.jsx + ImageBuilderDoneState.jsx | 150, 3 | FIELD_LABELS constant duplicated in both files; already diverged: `angle: 'Camera angle'` vs `angle: 'Angle'`. Extract to ImageBuilderState.constants.js. | ✅ resolved 2026-04-30 — single source in constants file |
+| ~~BL-IMG2-002~~ | src/renderer/hooks/useImageBuilder.js | 3, 5–11 | fenceParse + parsePhase1/Variations/Phase2 local helpers never consolidated with promptUtils.js exports (parseImageAnalysisOutput, parseImageAssemblyOutput). Stale comment at line 3 implies consolidation was planned for IMG2-006 but not completed. | ✅ resolved 2026-04-30 — fenceParse removed; all three parse functions use promptUtils exports |
+| ~~BL-IMG2-003~~ | src/renderer/components/ImageBuilderDoneState.jsx | 133–170 | Dead compact layout block — author commented "dead path — image mode always expands" but left 37 lines of JSX. Delete block; remove `isExpanded` prop if unused. | ✅ resolved 2026-04-30 — dead block deleted, isExpanded prop removed |
+| ~~BL-IMG2-004~~ | vibe/ARCHITECTURE.md | 325 | Image mode entry still describes v1 two-phase flow and flat param schema. | ✅ resolved inline — updated to v2 three-phase description |
+
+### P3 — Monitor
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| P3-IMG2-001 | src/renderer/utils/promptUtils.js | 46–78 | parseImageAnalysisOutput and parseImageAssemblyOutput are identical implementations. One could delegate to the other. | Open |
+| P3-IMG2-002 | src/renderer/hooks/useImageBuilder.js | 211–226 | generateVariations fails silently — on error, isGeneratingVariations resets to false and 0 variations shown indefinitely. Consider a retry affordance or fallback state. | Open |
+| P3-IMG2-003 | src/renderer/hooks/useImageBuilder.js | 13–161 | buildPhase1Prompt, buildVariationsPrompt, buildPhase2Prompt are pure functions with no test coverage. | Open |

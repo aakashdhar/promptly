@@ -809,5 +809,13 @@ Feature complete — ready for smoke test and merge to main.
 ## What just happened
 ✅ FEATURE-IMAGE-BUILDER-V2 complete 2026-04-30 — Image builder rebuilt from 18-param flat screen to deep five-tab review (Subject/Lighting/Camera/Style/Technical) with VariationsPanel Zone B showing 3 live AI variations. 48 presets in 5 category rows. Technical tab exposes Stylise/Chaos/Weird/Seed numeric params. Phase 1.5 variation generation fires in background while review screen mounts. Phase 2 uses selected variation as narrative base; output is prompt + Nano Banana flags. Purple THINKING accent wired for both phases. Build clean, lint 0 errors.
 
+✅ Review fixes complete — FEATURE-IMAGE-BUILDER-V2 gate (2/2) — 2026-04-30
+   [x] RFX-IMG2-001 · Extract PRESET_CATEGORIES + param defs to ImageBuilderState.constants.js
+                      ImageBuilderState.jsx 733→589 lines
+   [x] RFX-IMG2-002 · Extract handleTypingSubmit + handleRegenerate into useTextInput hook
+                      App.jsx 758→742 lines
+   Also resolved P2: FIELD_LABELS unified, fenceParse consolidated, dead compact layout removed
+   → Full report: vibe/reviews/feature-image-builder-v2-review.md
+
 ## What's next
-Feature complete — ready for smoke test and review gate.
+✅ FEATURE-IMAGE-BUILDER-V2 P1+P2 fixes complete. Ready to merge to main.
