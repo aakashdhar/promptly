@@ -1644,3 +1644,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Alternatives considered**: Update system prompt to say "return raw JSON, no code fences" — unreliable; Claude may still add fences. Strip fences inline in App.jsx — works but leaves logic untestable. Extracting to `promptUtils.js` is the established project pattern and enables regression tests.
 - **Impact on other tasks**: Email mode now reliably parses Claude responses. `parseEmailOutput` is unit-tested. Any future JSON-parsing Claude integration should follow this pattern.
 - **Approved by**: human
+
+---
+
+## — Feature: FEATURE-THINKING-PROGRESS — 2026-04-30
+> Folder: vibe/features/2026-04-30-thinking-progress/
+> Adds rotating label + elapsed timer + mode accent spinner to top bar during THINKING.
+> Right panel unchanged. ThinkingState.jsx unchanged.
+> Phase detection in transition(): entering from IMAGE_BUILDER/VIDEO_BUILDER/WORKFLOW_BUILDER → phase 2.
+> State lifted to App.jsx via useThinkingProgress hook; passed down through ExpandedView.
+> Tasks: THINK-001–004 | Estimated: ~2-3 hours

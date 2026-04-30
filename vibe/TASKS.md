@@ -772,3 +772,20 @@ Fix RFX-WFL tasks below before merging to main.
 
 ## Phase gates
 FEATURE-WORKFLOW-BUILDER → main:  ✅ reviewed 2026-04-29 (v3) — 0 P0, 0 P1 — 10.0/10 — CLEAR TO MERGE
+
+---
+
+## FEATURE-THINKING-PROGRESS — Rotating label + timer + accent spinner during THINKING (4/4 ✅)
+> Spec: vibe/features/2026-04-30-thinking-progress/ | Added: 2026-04-30 | Branch: feat/thinking-progress
+> Estimated: approx. 2–3 hours (S: 3, M: 1)
+   [x] THINK-001 · thinkingLabels.js utility — getLabelSequence(mode, phase) + getModeAccent(mode)
+   [x] THINK-002 · useThinkingProgress hook + ExpandedTransportBar THINKING text block replaced with spinner/label/timer
+   [x] THINK-003 · App.jsx — thinkingPhase state + phase detection in transition() + hook call + prop forwarding through ExpandedView
+   [x] THINK-004 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md updated
+   → Full specs: vibe/features/2026-04-30-thinking-progress/FEATURE_TASKS.md
+
+## What just happened
+✅ FEATURE-THINKING-PROGRESS complete 2026-04-30 — During THINKING, the top bar now shows a 12px mode-accent spinner + rotating contextual label (fades between phrases every 4s) + M:SS elapsed timer. Phase detection in transition() ensures builder modes (image/video/workflow) use phase-2 label sequences when entering their assembly pass. All 4 tasks committed. Lint clean.
+
+## What's next
+Feature complete — ready for smoke test and merge to main.
