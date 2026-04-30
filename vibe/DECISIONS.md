@@ -1654,3 +1654,22 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Phase detection in transition(): entering from IMAGE_BUILDER/VIDEO_BUILDER/WORKFLOW_BUILDER → phase 2.
 > State lifted to App.jsx via useThinkingProgress hook; passed down through ExpandedView.
 > Tasks: THINK-001–004 | Estimated: ~2-3 hours
+
+---
+
+## — Feature: FEATURE-IMAGE-BUILDER-V2 — 2026-04-30
+> Folder: vibe/features/2026-04-30-image-builder-v2/
+> Rebuilds image builder with category tabs, 48 presets, variations panel, and Nano Banana technical params.
+> New nested JSON schema: { subject, lighting, camera, style, technical }.
+> Phase 1.5: variation generation fires alongside review screen (no await before mounting).
+> Always expanded. Zone A (flex:1) + Zone B (320px) layout within ExpandedDetailPanel.
+> Tasks: IMG2-001–009 | Estimated: ~18–22 hours
+
+### D-IMG2-001 — 2026-04-30 — Image phase 1 system prompt lives renderer-side (generate-raw), not in main.js
+- **Date**: 2026-04-30 · **Task**: IMG2-001 · **Type**: tech-choice
+- **What was planned**: IMG2-001 FEATURE_PLAN described "main.js: update phase 1 system prompt" suggesting the new nested JSON schema prompt would be placed in main.js.
+- **What was done**: No changes to main.js. Image mode remains `passthrough: true` in MODE_CONFIG. Phase 1 system prompt stays in `useImageBuilder.js`'s `runPreSelection` via `window.electronAPI.generateRaw(systemPrompt)`.
+- **Why**: The phase 1 prompt is constructed dynamically in the renderer (it embeds the live `{transcript}` value). Video and workflow builders use the same generate-raw pattern — keeping image consistent avoids divergence. The generate-raw IPC handler in main.js already handles arbitrary system prompts with no mode awareness needed. Adding the prompt to main.js's MODE_CONFIG `instruction` field would require passing the transcript through a different code path than the existing generate-raw pattern.
+- **Alternatives considered**: Store phase 1 system prompt template in main.js's MODE_CONFIG `instruction` field (like email mode) — rejected because it would require a new IPC variation or code path to embed the transcript server-side; generate-raw is simpler. Define a constant in main.js and export via a new IPC getter — adds IPC complexity with no benefit.
+- **Impact on other tasks**: IMG2-002 (useImageBuilder.js full rewrite) owns the actual phase 1 system prompt update (new nested schema). main.js has no changes for this feature.
+- **Approved by**: human

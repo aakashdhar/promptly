@@ -2,7 +2,7 @@
 
 > **Estimated effort:** 9 tasks — S: 4 (<2hrs each), M: 5 (2–4hrs each) — approx. 18–22 hours total
 
-- [ ] IMG2-001 — Updated phase 1 system prompt (main.js)
+- [x] IMG2-001 — Updated phase 1 system prompt (main.js) — no main.js changes needed; image mode stays passthrough: true; phase 1 prompt lives in useImageBuilder.js via generateRaw (see D-IMG2-001)
 - [ ] IMG2-002 — useImageBuilder.js full rewrite (new schema + variations)
 - [ ] IMG2-003 — ImageBuilderState.jsx: category tabs + param rows + Zone layout
 - [ ] IMG2-004 — ImageBuilderState.jsx: Technical tab + presets strip (48)
