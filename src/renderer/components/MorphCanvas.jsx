@@ -73,7 +73,7 @@ export default function MorphCanvas() {
     <canvas
       ref={canvasRef}
       id="morph-canvas"
-      style={{ width: '100%', height: '36px', display: 'block' }}
+      style={{ width: '130%', height: '36px', display: 'block', marginLeft: '-15%' }}
     />
   )
 }

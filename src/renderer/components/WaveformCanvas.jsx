@@ -66,7 +66,7 @@ export default function WaveformCanvas() {
     <canvas
       ref={canvasRef}
       id="recCanvas"
-      style={{ width: '100%', height: '36px', display: 'block' }}
+      style={{ width: '130%', height: '36px', display: 'block', marginLeft: '-15%' }}
     />
   )
 }
