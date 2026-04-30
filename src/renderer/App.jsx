@@ -215,23 +215,10 @@ export default function App() {
   })
 
   const {
-    imageDefaults,
-    imageAnswers,
-    showAdvanced,
-    activePickerParam,
     imageBuiltPrompt,
     isReiteratingRef,
     runPreSelection,
-    handleChipRemove,
-    handleChipAdd,
-    handleParamChange,
-    handleOpenPicker,
-    handleClosePicker,
-    handleToggleAdvanced,
-    handleConfirm,
-    handleCopyNow,
     handleImageStartOver,
-    handleImageEditAnswers,
     imageBuilderProps,
   } = useImageBuilder({
     STATES,
@@ -719,29 +706,15 @@ Return ONLY valid JSON:
             )}
             {displayState === STATES.IMAGE_BUILDER && (
               <ImageBuilderState
-                transcript={originalTranscript.current}
-                imageDefaults={imageDefaults}
-                imageAnswers={imageAnswers}
-                showAdvanced={showAdvanced}
-                activePickerParam={activePickerParam}
-                onChipRemove={handleChipRemove}
-                onChipAdd={handleChipAdd}
-                onParamChange={handleParamChange}
-                onToggleAdvanced={handleToggleAdvanced}
-                onOpenPicker={handleOpenPicker}
-                onClosePicker={handleClosePicker}
-                onConfirm={handleConfirm}
-                onCopyNow={handleCopyNow}
-                onReiterate={() => { isReiteratingRef.current = true; startRecording() }}
+                {...imageBuilderProps}
                 isExpanded={false}
               />
             )}
             {displayState === STATES.IMAGE_BUILDER_DONE && (
               <ImageBuilderDoneState
                 prompt={imageBuiltPrompt}
-                answers={imageAnswers}
+                answers={imageBuilderProps.imageAnswers}
                 transcript={originalTranscript.current}
-                onEditAnswers={handleImageEditAnswers}
                 onStartOver={() => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) }}
                 isExpanded={false}
               />

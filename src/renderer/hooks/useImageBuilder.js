@@ -1,17 +1,191 @@
 import { useState, useRef, useCallback } from 'react'
-import { PARAM_CONFIG } from '../components/ImageBuilderState.jsx'
 import { saveToHistory } from '../utils/history.js'
 
-const EMPTY_DEFAULTS = {
-  model: 'Nano Banana 2', useCase: '', style: [], lighting: [],
-  aspectRatio: '', subjectDetail: [], composition: [], cameraAngle: [],
-  colourPalette: [], background: [], mood: [], resolution: '',
-  lens: [], textInImage: '', detailLevel: '', avoid: [],
-  surfaceMaterial: [], postProcessing: [],
+// Inline fence-stripping parse helpers (will be moved to promptUtils.js in IMG2-006)
+function fenceParse(raw) {
+  try {
+    const stripped = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/i, '').trim()
+    return JSON.parse(stripped)
+  } catch {
+    return null
+  }
 }
+
+function buildPhase1Prompt(transcript) {
+  return `You are an expert Nano Banana (Midjourney) prompt engineer.
+Analyse the user's spoken image idea and return pre-selected
+parameter values across five categories.
+
+User's spoken idea: ${transcript}
+
+Return ONLY valid JSON — no preamble, no markdown fences:
+{
+  "subject": {
+    "subject": "Young woman",
+    "setting": "Ocean/beach",
+    "emotion": "Serene",
+    "framing": "Close-up",
+    "negativePrompts": []
+  },
+  "lighting": {
+    "timeOfDay": "Golden hour",
+    "lightType": "Directional sun",
+    "quality": "Warm amber",
+    "lensFlare": "None"
+  },
+  "camera": {
+    "lens": "85mm portrait",
+    "aperture": "f/1.4 shallow",
+    "aspectRatio": "4:5 portrait",
+    "angle": "Eye level",
+    "filmSim": "Kodak Portra 400"
+  },
+  "style": {
+    "visualStyle": "Cinematic film still",
+    "colorGrade": "Warm teal-orange",
+    "filmGrain": "35mm grain",
+    "reference": "Emmanuel Lubezki"
+  },
+  "technical": {
+    "resolution": "Ultra HD 4K",
+    "renderQuality": "Photorealistic",
+    "stylise": 750,
+    "chaos": 20,
+    "weird": 0,
+    "seed": null
+  }
+}
+
+Rules:
+- Only pre-select values you are confident about from the transcript
+- Leave a field empty string "" if not mentioned or unclear
+- negativePrompts: array of strings the user mentioned avoiding
+- For filmSim pick from: Kodak Portra 400, Fuji Velvia, Ilford HP5,
+  CineStill 800T, Digital clean, Lomography, Medium format
+- For reference pick a relevant photographer/cinematographer if applicable
+- For technical params use Nano Banana's actual parameter ranges:
+    stylise: 0-1000 (default 100, higher = more stylised; suggest 750 for cinematic)
+    chaos: 0-100 (default 0, higher = more varied; suggest 20 for most subjects)
+    weird: 0-3000 (default 0; suggest 0 unless user implies surreal)
+    seed: null (user sets manually for reproducibility)
+- Respond ONLY with the JSON object`
+}
+
+function buildVariationsPrompt(transcript) {
+  return `You are an expert Nano Banana prompt engineer. Based on this image
+idea: ${transcript}
+
+Generate exactly 3 distinct prompt variations. Each variation should
+interpret the idea differently — different creative angle, different
+emphasis, different mood, while staying true to the core subject.
+
+Return ONLY valid JSON — no preamble, no markdown fences:
+{
+  "variations": [
+    {
+      "id": 1,
+      "prompt": "complete ready-to-use Nano Banana prompt text",
+      "focus": "one short phrase describing the creative angle"
+    },
+    {
+      "id": 2,
+      "prompt": "...",
+      "focus": "..."
+    },
+    {
+      "id": 3,
+      "prompt": "...",
+      "focus": "..."
+    }
+  ]
+}
+
+Rules for each variation:
+- Write complete, ready-to-use prompts (not fragments)
+- 40-80 words per prompt
+- Each variation must be meaningfully different from the others
+- Include subject, setting, mood, lighting, and technical style
+- Do NOT include --parameter flags in the prompt text
+- Variation 1: closest to what user described, warm/natural
+- Variation 2: more dramatic/editorial interpretation
+- Variation 3: most cinematic/artistic interpretation
+Respond ONLY with the JSON object`
+}
+
+function buildPhase2Prompt(activeVariation, imageAnswers) {
+  const negatives = imageAnswers.subject?.negativePrompts || []
+  const negativeInstruction = negatives.length > 0
+    ? `Avoid these elements: ${negatives.join(', ')}. Do NOT include 'no X' or 'without X' syntax — instead omit those elements entirely.\n`
+    : ''
+  return `You are an expert Nano Banana prompt engineer. Assemble a final
+optimised prompt from these confirmed parameters and selected variation.
+
+Selected variation base: ${activeVariation?.prompt || ''}
+Confirmed parameters: ${JSON.stringify(imageAnswers, null, 2)}
+${negativeInstruction}
+Rules:
+1. Use the selected variation as the narrative foundation
+2. Weave in all confirmed parameters naturally
+3. Word order matters: subject -> setting -> mood -> lighting ->
+   camera/technical -> style reference
+4. Keep the assembled prompt 60-100 words
+5. Do NOT include --parameter flags in the prompt text
+6. Append technical flags as a separate "flags" field
+7. Return ONLY valid JSON — no markdown fences:
+{
+  "prompt": "the assembled natural language prompt",
+  "flags": "--ar 4:5 --stylize 750 --chaos 20"
+}
+
+flags format rules:
+- --ar from aspectRatio (e.g. "4:5 portrait" -> "--ar 4:5")
+- --stylize from stylise value
+- --chaos from chaos value (omit if 0)
+- --weird from weird value (omit if 0)
+- --seed from seed value (omit if null)`
+}
+
+const EMPTY_DEFAULTS = {
+  subject:   { subject: '', setting: '', emotion: '', framing: '', negativePrompts: [] },
+  lighting:  { timeOfDay: '', lightType: '', quality: '', lensFlare: '' },
+  camera:    { lens: '', aperture: '', aspectRatio: '', angle: '', filmSim: '' },
+  style:     { visualStyle: '', colorGrade: '', filmGrain: '', reference: '' },
+  technical: { resolution: '', renderQuality: '', stylise: '', chaos: '', weird: '', seed: null },
+}
+
+const TABS = ['subject', 'lighting', 'camera', 'style', 'technical']
 
 function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj))
+}
+
+function parsePhase1(raw) {
+  const parsed = fenceParse(raw)
+  if (!parsed || typeof parsed !== 'object') return null
+  const result = deepCopy(EMPTY_DEFAULTS)
+  for (const tab of TABS) {
+    if (parsed[tab] && typeof parsed[tab] === 'object') {
+      result[tab] = { ...EMPTY_DEFAULTS[tab], ...parsed[tab] }
+    }
+  }
+  result.subject.negativePrompts = Array.isArray(parsed.subject?.negativePrompts)
+    ? parsed.subject.negativePrompts
+    : []
+  return result
+}
+
+function parseVariations(raw, idOffset) {
+  const parsed = fenceParse(raw)
+  if (!parsed || !Array.isArray(parsed.variations)) return []
+  return parsed.variations.map((v, i) => ({
+    id: idOffset + i + 1,
+    prompt: v.prompt || '',
+    focus: v.focus || '',
+  }))
+}
+
+function parsePhase2(raw) {
+  return fenceParse(raw)
 }
 
 export default function useImageBuilder({
@@ -26,12 +200,95 @@ export default function useImageBuilder({
 }) {
   const [imageDefaults, setImageDefaults] = useState(deepCopy(EMPTY_DEFAULTS))
   const [imageAnswers, setImageAnswers] = useState(deepCopy(EMPTY_DEFAULTS))
-  const [showAdvanced, setShowAdvanced] = useState(false)
-  const [activePickerParam, setActivePickerParam] = useState(null)
   const [removedByUser, setRemovedByUser] = useState({})
   const [imageBuiltPrompt, setImageBuiltPrompt] = useState('')
+  const [imageVariations, setImageVariations] = useState([])
+  const [selectedVariation, setSelectedVariation] = useState(1)
+  const [isGeneratingVariations, setIsGeneratingVariations] = useState(false)
+  const [activePreset, setActivePreset] = useState(null)
   const isReiteratingRef = useRef(false)
 
+  // Phase 1.5 — fires in background; idOffset=0 replaces list, >0 appends
+  const generateVariations = useCallback(async (transcript, idOffset) => {
+    if (!window.electronAPI) return
+    setIsGeneratingVariations(true)
+    const result = await window.electronAPI.generateRaw(buildVariationsPrompt(transcript))
+    setIsGeneratingVariations(false)
+    if (!result.success) return
+    const newVars = parseVariations(result.prompt, idOffset)
+    if (newVars.length === 0) return
+    if (idOffset === 0) {
+      setImageVariations(newVars)
+      setSelectedVariation(1)
+    } else {
+      setImageVariations(prev => [...prev, ...newVars])
+    }
+  }, [])
+
+  // Phase 1 — analysis; isReiterate=true preserves user-confirmed values
+  const runPreSelection = useCallback(async (transcript, isReiterate = false) => {
+    if (!window.electronAPI) {
+      transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
+      return
+    }
+
+    const result = await window.electronAPI.generateRaw(buildPhase1Prompt(transcript))
+    let newDefaults = deepCopy(EMPTY_DEFAULTS)
+    if (result.success) {
+      const parsed = parsePhase1(result.prompt)
+      if (parsed) newDefaults = parsed
+    }
+
+    if (isReiterate) {
+      // Merge: keep user-confirmed values, update AI-filled values, respect removedByUser
+      // Read current state from closure (runPreSelection recreated when they change)
+      const mergedAnswers = deepCopy(imageAnswers)
+      for (const tab of TABS) {
+        for (const field of Object.keys(EMPTY_DEFAULTS[tab])) {
+          const key = `${tab}.${field}`
+          const removed = removedByUser[key] || []
+          if (field === 'negativePrompts') {
+            const existing = Array.isArray(imageAnswers[tab]?.negativePrompts)
+              ? imageAnswers[tab].negativePrompts
+              : []
+            const newNeg = Array.isArray(newDefaults[tab]?.negativePrompts)
+              ? newDefaults[tab].negativePrompts
+              : []
+            mergedAnswers[tab].negativePrompts = [
+              ...existing,
+              ...newNeg.filter(v => !existing.includes(v)),
+            ]
+          } else {
+            const oldAiDefault = imageDefaults[tab]?.[field]
+            const currentVal = imageAnswers[tab]?.[field]
+            const newAiDefault = newDefaults[tab]?.[field]
+            const userChanged = currentVal !== oldAiDefault && currentVal !== ''
+            if (!userChanged) {
+              mergedAnswers[tab][field] = removed.includes(newAiDefault) ? '' : (newAiDefault ?? '')
+            }
+            // else keep current user value (already in mergedAnswers from deepCopy)
+          }
+        }
+      }
+      setImageDefaults(newDefaults)
+      setImageAnswers(mergedAnswers)
+      setActivePreset(null)
+      setImageVariations([])
+      setSelectedVariation(1)
+      generateVariations(transcript, 0)
+    } else {
+      setImageDefaults(newDefaults)
+      setImageAnswers(deepCopy(newDefaults))
+      setRemovedByUser({})
+      setActivePreset(null)
+      generateVariations(transcript, 0)
+    }
+
+    transitionRef.current(STATES.IMAGE_BUILDER)
+    if (!isExpandedRef.current) resizeWindow(520)
+  }, [imageDefaults, imageAnswers, removedByUser, generateVariations])
+
+  // Phase 2 — assembly with selected variation as narrative base
   const assembleImagePrompt = useCallback(async (answers) => {
     if (!window.electronAPI) {
       transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
@@ -41,252 +298,133 @@ export default function useImageBuilder({
     setThinkTranscript(originalTranscript.current)
     transitionRef.current(STATES.THINKING)
 
-    const modelLine = answers.model ? `The user has selected the following model: ${answers.model}` : ''
-    const useCaseLine = answers.useCase ? `The use case is: ${answers.useCase}` : ''
-    const proLine = answers.model === 'Nano Banana Pro'
-      ? `Since Nano Banana Pro was selected, add 'high fidelity' and 'precise text rendering' to the prompt.`
-      : ''
-    const resolutionLine = answers.resolution && answers.resolution !== 'Standard quality'
-      ? `A resolution level was specified ('${answers.resolution}'). Weave those keywords into the prompt naturally rather than appending them.`
-      : ''
-
-    const systemPrompt = `You are an expert image prompt engineer for Nano Banana (Google Gemini image generation) and ChatGPT image generation. The user has spoken a rough image idea and selected parameters through a guided review.
-
-Assemble these into a single, flowing natural language image generation prompt. Do NOT use section headers or structured formatting. Write it as one or two paragraphs of vivid, specific description that image generation models respond to.
-${modelLine ? '\n' + modelLine : ''}${useCaseLine ? '\n' + useCaseLine : ''}
-
-Start the prompt appropriately for the use case:
-- Photorealistic scene: start with 'A photo of...'
-- Product mockup / commercial: start with 'Professional product shot of...'
-- 3D render / isometric: start with 'A perfectly isometric 3D scene of...'
-- Stylized illustration / sticker: start with 'A stylized illustration of...'
-- Icon / UI asset: start with 'An icon of...'
-- Infographic / text layout: start with 'An infographic showing...'
-- Style transfer: start with 'Apply [style] to...'
-If no use case was selected, infer a natural opening from the transcript.
-${proLine ? '\n' + proLine : ''}${resolutionLine ? '\n' + resolutionLine : ''}
-
-User's spoken idea: ${originalTranscript.current}
-Selected parameters: ${JSON.stringify(answers, null, 2)}
-
-Rules:
-1. Weave the parameters naturally into the description
-2. Be specific and vivid — avoid vague adjectives
-3. Put the most important visual elements first
-4. Include the aspect ratio as a natural phrase
-5. If text was specified, include it in quotes
-6. End with any negative specifications (what to avoid)
-7. Maximum 60 words — concise but complete
-8. Output ONLY the prompt — no preamble, no explanation`
-
-    const genResult = await window.electronAPI.generateRaw(systemPrompt)
-    if (!genResult.success) {
+    const activeVar = imageVariations.find(v => v.id === selectedVariation) || imageVariations[0] || null
+    const result = await window.electronAPI.generateRaw(buildPhase2Prompt(activeVar, answers))
+    if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'Could not generate image prompt — try again' })
       return
     }
-    setImageBuiltPrompt(genResult.prompt)
-    saveToHistory({ transcript: originalTranscript.current, prompt: genResult.prompt, mode: 'image', imageAnswers: answers })
-    window.electronAPI?.setLastPrompt?.(genResult.prompt)
+    const parsed = parsePhase2(result.prompt)
+    const builtPrompt = parsed?.prompt && parsed?.flags
+      ? `${parsed.prompt}\n\n${parsed.flags}`
+      : result.prompt.trim()
+    setImageBuiltPrompt(builtPrompt)
+    saveToHistory({ transcript: originalTranscript.current, prompt: builtPrompt, mode: 'image' })
+    window.electronAPI?.setLastPrompt?.(builtPrompt)
     transitionRef.current(STATES.IMAGE_BUILDER_DONE)
-  }, [])
+  }, [imageVariations, selectedVariation])
 
-  // Phase 1: pre-selection Claude call. isReiterate=true → merge with existing answers.
-  const runPreSelection = useCallback(async (transcript, isReiterate = false) => {
-    if (!window.electronAPI) {
-      transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
-      return
-    }
+  // Param handlers
+  function handleParamChange(tab, field, value) {
+    setImageAnswers(prev => ({
+      ...prev,
+      [tab]: { ...prev[tab], [field]: value },
+    }))
+  }
 
-    const systemPrompt = `You are an expert image prompt engineer for Nano Banana (Google Gemini image generation). Analyse the user's spoken idea and return a JSON object with pre-selected values for each parameter.
+  // Called by ImageBuilderState when user clicks a chip that was AI-pre-filled
+  // key format: "tab.field" — prevents that value re-appearing after reiterate
+  function handleRemoveDefault(tabField, value) {
+    setRemovedByUser(prev => ({
+      ...prev,
+      [tabField]: [...(prev[tabField] || []), value],
+    }))
+  }
 
-User's spoken idea: ${transcript}
+  function handleSelectVariation(id) {
+    setSelectedVariation(id)
+  }
 
-Return ONLY valid JSON, no preamble, no explanation, no markdown:
-{
-  "model": "Nano Banana 2",
-  "useCase": "Photorealistic scene",
-  "style": ["Photorealistic"],
-  "lighting": ["Golden hour"],
-  "aspectRatio": "Portrait 9:16",
-  "subjectDetail": [],
-  "composition": ["Close-up portrait"],
-  "cameraAngle": ["Eye level"],
-  "colourPalette": ["Warm & golden"],
-  "background": ["Natural / contextual"],
-  "mood": ["Serene"],
-  "resolution": "Standard quality",
-  "lens": [],
-  "textInImage": "No text needed",
-  "detailLevel": "",
-  "avoid": [],
-  "surfaceMaterial": [],
-  "postProcessing": []
-}
+  function handleGenerateMoreVariations() {
+    generateVariations(originalTranscript.current, imageVariations.length)
+  }
 
-Rules:
-- Only pre-select values you are confident about from the transcript
-- Arrays can have multiple values if clearly implied
-- Leave arrays empty [] if not mentioned or unclear
-- Leave strings empty '' if not mentioned or unclear
-- model default: Nano Banana 2
-- useCase: infer from context
-- Respond ONLY with the JSON object`
-
-    const genResult = await window.electronAPI.generateRaw(systemPrompt)
-    let newDefaults = deepCopy(EMPTY_DEFAULTS)
-    if (genResult.success) {
-      try {
-        const parsed = JSON.parse(genResult.prompt.replace(/```json\n?|\n?```/g, '').trim())
-        newDefaults = { ...EMPTY_DEFAULTS, ...parsed }
-      } catch {}
-    }
-
-    if (isReiterate) {
-      // Merge: preserve user-added chips, refresh AI chips, respect removedByUser
+  function handleApplyPreset(presetName, presetParams) {
+    // presetParams: { subject:{...}, lighting:{...}, camera:{...}, style:{...}, technical:{...} }
+    if (presetParams) {
       setImageAnswers(prev => {
-        const merged = {}
-        setImageDefaults(newDefaults)
-        for (const { key, multi } of PARAM_CONFIG) {
-          const oldDef = imageDefaults[key]
-          const removed = removedByUser[key] || []
-          if (multi) {
-            const prevValues = Array.isArray(prev[key]) ? prev[key] : []
-            const oldDefArr = Array.isArray(oldDef) ? oldDef : []
-            // user-added = in answers but NOT in old AI defaults
-            const userChips = prevValues.filter(v => !oldDefArr.includes(v))
-            // new AI chips filtered through removedByUser
-            const newAiChips = (Array.isArray(newDefaults[key]) ? newDefaults[key] : [])
-              .filter(v => !removed.includes(v))
-            // combine, dedup
-            const seen = new Set()
-            merged[key] = [...newAiChips, ...userChips].filter(v => { if (seen.has(v)) return false; seen.add(v); return true })
-          } else {
-            const newVal = newDefaults[key]
-            if (newVal && !removed.includes(newVal)) {
-              merged[key] = newVal
-            } else {
-              // keep old user value if it wasn't an AI default, else keep empty
-              const oldDefVal = typeof oldDef === 'string' ? oldDef : ''
-              merged[key] = (prev[key] && prev[key] !== oldDefVal) ? prev[key] : ''
-            }
+        const merged = deepCopy(prev)
+        for (const tab of TABS) {
+          if (presetParams[tab] && typeof presetParams[tab] === 'object') {
+            merged[tab] = { ...prev[tab], ...presetParams[tab] }
           }
         }
         return merged
       })
-    } else {
-      setImageDefaults(newDefaults)
-      setImageAnswers(deepCopy(newDefaults))
-      setRemovedByUser({})
     }
+    setActivePreset(presetName)
+  }
 
-    transitionRef.current(STATES.IMAGE_BUILDER)
-    if (!isExpandedRef.current) resizeWindow(520)
-  }, [imageDefaults, removedByUser])
+  function handleSetNegative(text) {
+    if (!text.trim()) return
+    setImageAnswers(prev => {
+      const existing = Array.isArray(prev.subject?.negativePrompts) ? prev.subject.negativePrompts : []
+      if (existing.includes(text)) return prev
+      return { ...prev, subject: { ...prev.subject, negativePrompts: [...existing, text] } }
+    })
+  }
 
-  function handleChipRemove(param, value) {
-    setRemovedByUser(prev => ({
+  function handleRemoveNegative(text) {
+    setImageAnswers(prev => ({
       ...prev,
-      [param]: [...(prev[param] || []), value],
+      subject: {
+        ...prev.subject,
+        negativePrompts: (prev.subject?.negativePrompts || []).filter(n => n !== text),
+      },
     }))
-    setImageAnswers(prev => {
-      const cfg = PARAM_CONFIG.find(p => p.key === param)
-      if (!cfg) return prev
-      if (cfg.multi) {
-        return { ...prev, [param]: (Array.isArray(prev[param]) ? prev[param] : []).filter(v => v !== value) }
-      }
-      return { ...prev, [param]: '' }
-    })
   }
 
-  function handleChipAdd(param, value) {
-    setImageAnswers(prev => {
-      const cfg = PARAM_CONFIG.find(p => p.key === param)
-      if (!cfg) return prev
-      if (cfg.multi) {
-        const cur = Array.isArray(prev[param]) ? prev[param] : []
-        if (cur.includes(value)) return prev
-        return { ...prev, [param]: [...cur, value] }
-      }
-      return { ...prev, [param]: value }
-    })
-  }
-
-  function handleParamChange(param, value) {
-    setImageAnswers(prev => ({ ...prev, [param]: value }))
-  }
-
-  function handleOpenPicker(param) {
-    setActivePickerParam(param)
-  }
-
-  function handleClosePicker() {
-    setActivePickerParam(null)
-  }
-
-  function handleToggleAdvanced() {
-    setShowAdvanced(prev => !prev)
+  function handleSetSeed(value) {
+    const seed = value === '' || value === null ? null : Number(value)
+    setImageAnswers(prev => ({
+      ...prev,
+      technical: { ...prev.technical, seed },
+    }))
   }
 
   function handleConfirm() {
     assembleImagePrompt(imageAnswers)
   }
 
-  function handleCopyNow() {
-    assembleImagePrompt(imageAnswers)
-  }
-
   function handleImageStartOver() {
     setImageDefaults(deepCopy(EMPTY_DEFAULTS))
     setImageAnswers(deepCopy(EMPTY_DEFAULTS))
-    setShowAdvanced(false)
-    setActivePickerParam(null)
     setRemovedByUser({})
+    setImageBuiltPrompt('')
+    setImageVariations([])
+    setSelectedVariation(1)
+    setIsGeneratingVariations(false)
+    setActivePreset(null)
     isReiteratingRef.current = false
-  }
-
-  function handleImageEditAnswers() {
-    transitionRef.current(STATES.IMAGE_BUILDER)
-    if (!isExpandedRef.current) resizeWindow(520)
   }
 
   const imageBuilderProps = {
     transcript: originalTranscript.current,
     imageDefaults,
     imageAnswers,
-    showAdvanced,
-    activePickerParam,
+    activePreset,
+    imageVariations,
+    selectedVariation,
+    isGeneratingVariations,
     imageBuiltPrompt,
-    onChipRemove: handleChipRemove,
-    onChipAdd: handleChipAdd,
     onParamChange: handleParamChange,
-    onToggleAdvanced: handleToggleAdvanced,
-    onOpenPicker: handleOpenPicker,
-    onClosePicker: handleClosePicker,
+    onRemoveDefault: handleRemoveDefault,
+    onApplyPreset: handleApplyPreset,
+    onSelectVariation: handleSelectVariation,
+    onGenerateMore: handleGenerateMoreVariations,
+    onSetSeed: handleSetSeed,
+    onSetNegative: handleSetNegative,
+    onRemoveNegative: handleRemoveNegative,
     onConfirm: handleConfirm,
-    onCopyNow: handleCopyNow,
     onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },
-    onEditAnswers: handleImageEditAnswers,
     onStartOver: () => { handleImageStartOver(); transitionRef.current(STATES.IMAGE_BUILDER) },
   }
 
   return {
-    imageDefaults,
-    imageAnswers,
-    showAdvanced,
-    activePickerParam,
     imageBuiltPrompt,
     isReiteratingRef,
     runPreSelection,
-    handleChipRemove,
-    handleChipAdd,
-    handleParamChange,
-    handleOpenPicker,
-    handleClosePicker,
-    handleToggleAdvanced,
-    handleConfirm,
-    handleCopyNow,
     handleImageStartOver,
-    handleImageEditAnswers,
     imageBuilderProps,
   }
 }
