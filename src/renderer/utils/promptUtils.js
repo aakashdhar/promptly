@@ -30,6 +30,11 @@ export function parseSections(text) {
   return sections
 }
 
+export function parseEmailOutput(raw) {
+  const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+  return JSON.parse(stripped)
+}
+
 export function getModeTagStyle(mode) {
   if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'rgba(100,220,130,0.6)' }
   if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'rgba(167,139,250,0.65)' }

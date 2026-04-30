@@ -25,6 +25,7 @@ import ExpandedView from './components/ExpandedView.jsx'
 import ImageBuilderState from './components/ImageBuilderState.jsx'
 import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
 import { saveToHistory, bookmarkHistoryItem } from './utils/history.js'
+import { parseEmailOutput } from './utils/promptUtils.js'
 
 const STATES = {
   IDLE: 'IDLE',
@@ -312,7 +313,7 @@ export default function App() {
     if (mode === 'email') {
       if (!isExpandedRef.current) handleExpand()
       try {
-        const parsed = JSON.parse(genResult.prompt)
+        const parsed = parseEmailOutput(genResult.prompt)
         setEmailOutput(parsed)
         setEmailSaved(false)
         emailHistoryIdRef.current = saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email' })
