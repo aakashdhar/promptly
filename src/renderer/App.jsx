@@ -366,6 +366,46 @@ export default function App() {
     startRecordingRef.current()
   }
 
+  async function handleToneAdjust(adjustment) {
+    if (!emailOutput) return
+    setThinkingLabel('Adjusting tone...')
+    setThinkingAccentColor('rgba(20,184,166,0.85)')
+    transition(STATES.THINKING)
+    const systemPrompt = `You are an expert email writer. Rewrite the following email applying this tone adjustment: ${adjustment}
+
+Original situation: ${originalTranscript.current}
+Current subject: ${emailOutput.subject}
+Current body: ${emailOutput.body}
+
+Keep the same core message and facts.
+Return ONLY valid JSON:
+{
+  "subject": "revised subject if needed",
+  "body": "revised email body",
+  "toneAnalysis": {
+    "recipient": "...",
+    "tone": "...",
+    "coreMessage": "...",
+    "approach": "...",
+    "whyThisTone": "..."
+  }
+}`
+    const result = await window.electronAPI.generatePrompt('', 'email', { overrideSystemPrompt: systemPrompt })
+    if (result?.success) {
+      try {
+        const parsed = parseEmailOutput(result.prompt)
+        setEmailOutput(parsed)
+        transitionRef.current(STATES.EMAIL_READY)
+      } catch {
+        setGenerationError({ errorType: 'unknown', error: 'Failed to parse tone adjustment response', canRetry: true })
+        transitionRef.current(STATES.GENERATION_ERROR)
+      }
+    } else {
+      setGenerationError({ errorType: result?.errorType || 'unknown', error: result?.error || 'Tone adjustment failed', canRetry: true })
+      transitionRef.current(STATES.GENERATION_ERROR)
+    }
+  }
+
   const {
     handleAbort,
     handleRetryTranscription,
@@ -551,6 +591,7 @@ export default function App() {
             emailSaved={emailSaved}
             onEmailSave={handleEmailSave}
             onEmailIterate={handleEmailIterate}
+            onToneAdjust={handleToneAdjust}
             onAbort={handleAbort}
             transcriptionErrorProps={{ ...transcriptionError, onRetry: handleRetryTranscription, onOpenSettings: openSettings }}
             transcriptionSlow={transcriptionSlow}

@@ -45,6 +45,7 @@ export default function ExpandedDetailPanel({
   emailSaved,
   onEmailSave,
   onEmailIterate,
+  onToneAdjust,
   transcriptionErrorProps,
   transcriptionSlow,
   generationErrorProps,
@@ -477,6 +478,7 @@ export default function ExpandedDetailPanel({
           onSave={onEmailSave}
           isSaved={emailSaved}
           isExpanded={true}
+          onToneAdjust={onToneAdjust}
         />
       )}
     </div>

@@ -6,6 +6,8 @@ const TEAL_60 = 'rgba(20,184,166,0.6)'
 const TEAL_12 = 'rgba(20,184,166,0.12)'
 const TEAL_06 = 'rgba(20,184,166,0.06)'
 
+const TONE_CHIPS = ['More formal', 'More casual', 'More direct', 'More diplomatic', 'Shorter', 'More detailed']
+
 export default function EmailReadyState({
   emailOutput,
   transcript,
@@ -14,16 +16,31 @@ export default function EmailReadyState({
   onSave,
   isSaved,
   isExpanded,
+  onToneAdjust,
 }) {
   const [copiedSubject, setCopiedSubject] = useState(false)
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editedBody, setEditedBody] = useState(emailOutput?.body || '')
   const [preEditBody, setPreEditBody] = useState('')
+  const [selectedChip, setSelectedChip] = useState(null)
+  const [customText, setCustomText] = useState('')
   const bodyRef = useRef(null)
 
   const subject = emailOutput?.subject || ''
   const toneAnalysis = emailOutput?.toneAnalysis || {}
+
+  function handleChipClick(chip) {
+    setSelectedChip(prev => prev === chip ? null : chip)
+  }
+
+  function handleApply() {
+    const adjustment = selectedChip || customText.trim()
+    if (!adjustment) return
+    onToneAdjust?.(adjustment)
+    setSelectedChip(null)
+    setCustomText('')
+  }
 
   function handleCopySubject() {
     navigator.clipboard.writeText(subject)
@@ -215,6 +232,82 @@ export default function EmailReadyState({
               </p>
             </div>
           )}
+
+          {/* ADJUST TONE */}
+          <div style={{
+            fontSize: 9,
+            letterSpacing: '0.1em',
+            color: 'rgba(255,255,255,0.22)',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            marginTop: 14,
+            marginBottom: 8,
+            flexShrink: 0,
+          }}>Adjust Tone</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {TONE_CHIPS.map(chip => (
+              <button
+                key={chip}
+                onClick={() => handleChipClick(chip)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 8,
+                  background: selectedChip === chip ? 'rgba(20,184,166,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: `0.5px solid ${selectedChip === chip ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                  fontSize: 11.5,
+                  color: selectedChip === chip ? 'rgba(45,212,191,0.9)' : 'rgba(255,255,255,0.5)',
+                  fontWeight: selectedChip === chip ? 500 : 400,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  WebkitAppRegion: 'no-drag',
+                }}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={customText}
+            onChange={e => setCustomText(e.target.value)}
+            placeholder="Custom instruction — e.g. 'sound more like me'"
+            rows={2}
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '0.5px solid rgba(255,255,255,0.08)',
+              borderRadius: 9,
+              padding: '9px 12px',
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.65)',
+              fontFamily: 'inherit',
+              resize: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
+              WebkitAppRegion: 'no-drag',
+              outline: 'none',
+              marginBottom: 8,
+            }}
+          />
+          <button
+            onClick={handleApply}
+            disabled={!selectedChip && !customText.trim()}
+            style={{
+              height: 32,
+              padding: '0 16px',
+              background: 'rgba(20,184,166,0.75)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: !selectedChip && !customText.trim() ? 'default' : 'pointer',
+              opacity: !selectedChip && !customText.trim() ? 0.4 : 1,
+              fontFamily: 'inherit',
+              WebkitAppRegion: 'no-drag',
+              alignSelf: 'flex-start',
+            }}
+          >
+            Apply adjustment
+          </button>
         </div>
 
         {/* Right panel */}

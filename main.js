@@ -859,6 +859,29 @@ app.whenReady().then(async () => {
         resolve({ success: true, prompt: transcript });
         return;
       }
+      if (options.overrideSystemPrompt) {
+        const child = spawn(claudePath, ['-p', options.overrideSystemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
+        let stdout = '';
+        let stderr = '';
+        let resolved = false;
+        const slowTimer = setTimeout(() => { if (!win.isDestroyed()) win.webContents.send('generation-slow-warning'); }, 30000);
+        const killTimer = setTimeout(() => { resolved = true; child.kill(); resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' }); }, 45000);
+        child.stdout.on('data', (d) => { stdout += d.toString(); });
+        child.stderr.on('data', (d) => { stderr += d.toString(); });
+        child.stdin.end();
+        child.on('close', (code) => {
+          if (resolved) return;
+          clearTimeout(slowTimer);
+          clearTimeout(killTimer);
+          resolved = true;
+          if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) }); return; }
+          const prompt = stdout.trim();
+          if (!prompt) { resolve({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' }); return; }
+          resolve({ success: true, prompt });
+        });
+        child.on('error', (err) => { if (resolved) return; clearTimeout(slowTimer); clearTimeout(killTimer); resolved = true; resolve({ success: false, error: err.message, errorType: 'unknown' }); });
+        return;
+      }
       let systemPrompt = modeConf.standalone
         ? modeConf.instruction.replace('{TRANSCRIPT}', transcript)
         : PROMPT_TEMPLATE
