@@ -43,13 +43,13 @@ export default function EmailReadyState({
   }
 
   function handleCopySubject() {
-    navigator.clipboard.writeText(subject)
+    window.electronAPI.copyToClipboard(subject)
     setCopiedSubject(true)
     setTimeout(() => setCopiedSubject(false), 2000)
   }
 
   function handleCopyEmail() {
-    navigator.clipboard.writeText(subject + '\n\n' + editedBody)
+    window.electronAPI.copyToClipboard(subject + '\n\n' + editedBody)
     setCopiedEmail(true)
     setTimeout(() => setCopiedEmail(false), 2000)
   }
