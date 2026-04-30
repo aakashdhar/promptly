@@ -419,3 +419,52 @@ Never: touch files not in scope · change behaviour of existing features · add 
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
 ---
+
+---
+### Active Feature: FEATURE-EMAIL-MODE
+> Folder: vibe/features/2026-04-30-email-mode/ | Added: 2026-04-30
+
+**Feature summary**: New "Email" mode — speak email situation naturally → Claude drafts ready-to-send email (subject + body + tone analysis). Always expanded. Teal accent. No prompt intermediary — output IS the email.
+**Files in scope**: `src/renderer/components/EmailReadyState.jsx` (new), `src/renderer/components/IdleState.jsx`, `src/renderer/components/ExpandedTransportBar.jsx`, `src/renderer/components/ExpandedDetailPanel.jsx`, `src/renderer/App.jsx`, `src/renderer/hooks/useMode.js`, `src/renderer/hooks/useKeyboardShortcuts.js`, `src/renderer/utils/promptUtils.js`, `main.js`, `tests/utils.test.js`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: All other components, all hooks except useMode and useKeyboardShortcuts, preload.js, index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file in src/renderer/components/. Functional React components only.
+- All state transitions via transition() in App.jsx — never mutate state directly.
+- Inline styles for dynamic/stateful values; Tailwind only for static layout classes.
+- No dangerouslySetInnerHTML with user/Claude content — use JSX text nodes.
+- IPC via window.electronAPI only — never ipcRenderer directly.
+- localStorage only via useMode() / useTone() / utils/history.js wrappers.
+- Teal accent: rgba(20,184,166) — not used by any existing mode.
+- Call setThinkingAccentColor('rgba(20,184,166,0.85)') before THINKING in email mode.
+- Auto-expand: check modeRef.current === 'email' && !isExpandedRef.current before startRecording.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md for new files ·
+        update TASKS.md after every task
+
+Ask first: adding new IPC channels · changing window dimensions · modifying existing mode flows
+Never: touch files not in scope · change behaviour of other modes · use innerHTML with generated text
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add src/renderer/components/EmailReadyState.jsx src/renderer/components/IdleState.jsx src/renderer/components/ExpandedTransportBar.jsx src/renderer/components/ExpandedDetailPanel.jsx src/renderer/App.jsx src/renderer/hooks/useMode.js src/renderer/hooks/useKeyboardShortcuts.js src/renderer/utils/promptUtils.js main.js tests/utils.test.js
+   git commit -m "feat(email): EMAIL-XXX — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-04-30-email-mode/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark EMAIL-XXX done — email-mode"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---

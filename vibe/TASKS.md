@@ -497,6 +497,33 @@ Ready for review gate (review: onboarding-wizard).
 
 ---
 
+## FEATURE-EMAIL-MODE — Email drafting mode (0/8)
+> Spec: vibe/features/2026-04-30-email-mode/ | Added: 2026-04-30 | Branch: feat/email-mode
+> Estimated: approx. 9–11 hours (S: 5, M: 3)
+
+🔄 Email Mode — speak email situation → ready-to-send email (0/8)
+   Estimated: approx. 9–11 hours (S: 5, M: 3)
+   [ ] EMAIL-001 · useMode.js email mode + teal accent
+   [ ] EMAIL-002 · main.js MODE_CONFIG + system prompt
+   [ ] EMAIL-003 · EmailReadyState.jsx two-column output
+   [ ] EMAIL-004 · App.jsx EMAIL_READY state + auto-expand + thinking accent
+   [ ] EMAIL-005 · STATE_HEIGHTS.EMAIL_READY = 860
+   [ ] EMAIL-006 · History saving with teal Email tag
+   [ ] EMAIL-007 · Expanded view routing + collapse button hidden
+   [ ] EMAIL-008 · Docs + getModeTagStyle test
+   → Full specs: vibe/features/2026-04-30-email-mode/FEATURE_TASKS.md (agent use)
+
+## What just happened
+✅ FEATURE-EMAIL-MODE spec kit created 2026-04-30 — FEATURE_SPEC.md, FEATURE_PLAN.md,
+   FEATURE_TASKS.md written. Spec review run: 0 P0, 6 P1, 3 P2 found and all fixed.
+   Branch: feat/email-mode. Ready to begin EMAIL-001.
+
+## What's next
+⬜ EMAIL-001 · useMode.js — add 'email' to MODE_LABELS with teal accent
+   Say "next" to begin.
+
+---
+
 ## FEATURE-IMAGE-BUILDER — Nano Banana Image Prompt Builder (10/10 ✅)
 > Spec: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27 | Completed: 2026-04-27
    [x] IMG-001 · useMode.js image mode + purple accent — 'image' added to MODE_LABELS

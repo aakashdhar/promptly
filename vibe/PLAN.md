@@ -198,6 +198,13 @@ Build order from Feature Map above:
 > Shared data: none — UI only
 > Spec: vibe/features/2026-04-28-history-empty-state/
 
+#### FEATURE-EMAIL-MODE — Email drafting mode ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-04-30
+> Added: 2026-04-30 · See DECISIONS.md D-EMAIL-001 for context
+> Build order: after FEATURE-WORKFLOW-BUILDER — extends mode infrastructure (same pattern)
+> Depends on: MODE_CONFIG pattern (main.js), STATES/STATE_HEIGHTS (App.jsx), expanded-only mode pattern (video/workflow), getModeTagStyle (promptUtils.js)
+> Shared data: reads `mode` (useMode hook); writes history entries with mode:'email'; no new localStorage keys
+> Spec: vibe/features/2026-04-30-email-mode/
+
 #### FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-04-29
 > Added: 2026-04-29 · See DECISIONS.md D-ONBD-001 for context
 > Build order: independent — modifies splash.html + main.js + App.jsx error paths; no mode dependencies

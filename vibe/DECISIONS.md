@@ -1557,3 +1557,10 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Alternatives considered**: Keep auto-advance with longer delay — still disorienting for users reading the success message. Keep 520×300 with clipping — broken on screens 2/3.
 - **Impact on other tasks**: None — all behaviour changes are isolated to splash.html + splashWin dimensions in main.js.
 - **Approved by**: human
+
+---
+## — Feature Start: FEATURE-EMAIL-MODE — 2026-04-30
+> Folder: vibe/features/2026-04-30-email-mode/
+> New "Email" mode — speak email situation naturally → Claude drafts ready-to-send email (subject + body + tone analysis). Always expanded. Teal accent rgba(20,184,166). No prompt intermediary — output IS the email.
+> Tasks: EMAIL-001 through EMAIL-008 | Estimated: 9–11 hours
+> Drift logged below.
