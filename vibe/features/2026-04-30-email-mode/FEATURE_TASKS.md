@@ -5,7 +5,7 @@
 ---
 
 ### EMAIL-001 · useMode.js — add 'email' mode + teal accent
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#mode-identity
 - **Dependencies**: None
@@ -30,7 +30,7 @@
 ---
 
 ### EMAIL-002 · main.js — MODE_CONFIG + show-mode-menu + email system prompt
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#claude-system-prompt-for-email-generation
 - **Dependencies**: EMAIL-001
@@ -60,7 +60,7 @@
 ---
 
 ### EMAIL-003 · EmailReadyState.jsx — two-column email output component
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#email_ready-layout--expanded-view
 - **Dependencies**: EMAIL-001, EMAIL-002
@@ -118,7 +118,7 @@ Body: `white-space: pre-wrap` to preserve line breaks.
 ---
 
 ### EMAIL-004 · App.jsx — EMAIL_READY state + email mode flow + auto-expand
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#flow--start-to-end, FEATURE_SPEC.md#auto-expand-on-mode-switch
 - **Dependencies**: EMAIL-003
@@ -169,7 +169,7 @@ Body: `white-space: pre-wrap` to preserve line breaks.
 ---
 
 ### EMAIL-005 · App.jsx — STATE_HEIGHTS.EMAIL_READY = 860
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#critical-behaviour--always-expanded-never-minimized
 - **Dependencies**: EMAIL-004
@@ -193,7 +193,7 @@ Body: `white-space: pre-wrap` to preserve line breaks.
 ---
 
 ### EMAIL-006 · History saving — email entries with teal tag
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#history-saving
 - **Dependencies**: EMAIL-004
@@ -221,7 +221,7 @@ Body: `white-space: pre-wrap` to preserve line breaks.
 ---
 
 ### EMAIL-007 · Expanded view — hide collapse button + RECORDING standby + THINKING skeleton + EMAIL_READY routing
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#critical-behaviour--always-expanded-never-minimized, FEATURE_SPEC.md#flow--start-to-end
 - **Dependencies**: EMAIL-003, EMAIL-004
@@ -251,7 +251,7 @@ Body: `white-space: pre-wrap` to preserve line breaks.
 ---
 
 ### EMAIL-008 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: All
 - **Dependencies**: EMAIL-001 through EMAIL-007

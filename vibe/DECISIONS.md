@@ -1564,3 +1564,8 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 > New "Email" mode — speak email situation naturally → Claude drafts ready-to-send email (subject + body + tone analysis). Always expanded. Teal accent rgba(20,184,166). No prompt intermediary — output IS the email.
 > Tasks: EMAIL-001 through EMAIL-008 | Estimated: 9–11 hours
 > Drift logged below.
+
+## D-EMAIL-001 — FEATURE-EMAIL-MODE: Email drafting mode
+Date: 2026-04-30
+Decision: Added 'email' mode — user speaks email situation → Claude drafts ready-to-send email (subject + body + tone analysis). Direct output (no prompt intermediary — Claude's output IS the email). Teal accent (rgba(20,184,166)) to distinguish from all existing modes. Always expanded (same pattern as video/workflow). JSON parsing done in renderer (App.jsx handleGenerateResult email branch) — main.js returns raw Claude output string, renderer parses.
+Why: Email drafting is a complete task, not a prompt-construction aid. The output is the email itself, not a prompt about email writing. This is architecturally distinct from other modes where the output is used as input to another AI.
