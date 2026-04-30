@@ -95,6 +95,8 @@ export default function App() {
   const transitionTimerRef = useRef(null)
   const [transcriptionError, setTranscriptionError] = useState(null)
   const [generationError, setGenerationError] = useState(null)
+  const [transcriptionSlow, setTranscriptionSlow] = useState(false)
+  const [generationSlow, setGenerationSlow] = useState(false)
   const transitionRef = useRef(null)
   const abortRef = useRef(false)
   const emailHistoryIdRef = useRef(null)
@@ -364,8 +366,6 @@ export default function App() {
   }
 
   const {
-    transcriptionSlow,
-    generationSlow,
     handleAbort,
     handleRetryTranscription,
     handleRetryGeneration,
@@ -385,6 +385,8 @@ export default function App() {
     handleVideoStartOver,
     handleWorkflowStartOver,
     setEmailOutput,
+    setTranscriptionSlow,
+    setGenerationSlow,
   })
 
   function openHistory() {

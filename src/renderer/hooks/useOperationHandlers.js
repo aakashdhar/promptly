@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 
 export default function useOperationHandlers({
   STATES,
@@ -16,9 +16,9 @@ export default function useOperationHandlers({
   handleVideoStartOver,
   handleWorkflowStartOver,
   setEmailOutput,
+  setTranscriptionSlow,
+  setGenerationSlow,
 }) {
-  const [transcriptionSlow, setTranscriptionSlow] = useState(false)
-  const [generationSlow, setGenerationSlow] = useState(false)
 
   function handleAbort() {
     const s = stateRef.current
@@ -72,8 +72,6 @@ export default function useOperationHandlers({
   }, [])
 
   return {
-    transcriptionSlow,
-    generationSlow,
     handleAbort,
     handleRetryTranscription,
     handleRetryGeneration,
