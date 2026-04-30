@@ -789,3 +789,25 @@ FEATURE-WORKFLOW-BUILDER → main:  ✅ reviewed 2026-04-29 (v3) — 0 P0, 0 P1 
 
 ## What's next
 Feature complete — ready for smoke test and merge to main.
+
+---
+
+## FEATURE-IMAGE-BUILDER-V2 — Deeper Nano Banana image builder (9/9 ✅)
+> Spec: vibe/features/2026-04-30-image-builder-v2/ | Added: 2026-04-30 | Branch: feat/image-builder-v2
+> Estimated: approx. 18–22 hours (S: 4, M: 5)
+   [x] IMG2-001 · main.js — no changes needed; image mode stays passthrough:true; phase 1 prompt lives in useImageBuilder.js (D-IMG2-001)
+   [x] IMG2-002 · useImageBuilder.js full rewrite — new nested schema, variations, handleApplyPreset, handleSetNegative, handleRemoveNegative, handleSetSeed, reiterate merge for nested structure
+   [x] IMG2-003 · ImageBuilderState.jsx full rebuild — five category tabs (Subject/Lighting/Camera/Style/Technical), ParamRow/NumericParamRow/NegativeRow/SeedRow, VariationsPanel Zone B
+   [x] IMG2-004 · ImageBuilderState.jsx — Technical tab (Stylise/Chaos/Weird/Seed) + 48 presets in 5 rows (Photography/Cinematic/Art/Commercial/Mood), show/hide toggle
+   [x] IMG2-005 · VariationsPanel.jsx — new 87-line component; skeleton loading, selected border, "Generate 3 more" + "All different →"
+   [x] IMG2-006 · promptUtils.js — parseImageAnalysisOutput + parseImageAssemblyOutput + 12 tests in utils.test.js
+   [x] IMG2-007 · App.jsx — setThinkingAccentColor passed to useImageBuilder; purple accent set in handleGenerateResult image branch + assembleImagePrompt
+   [x] IMG2-008 · ImageBuilderDoneState.jsx — split prompt on \n\n, flags in purple monospace box, flattenAnswers for nested schema, hardcoded optimised-for chips, onEditAnswers added to bundle
+   [x] IMG2-009 · Docs — CODEBASE.md, DECISIONS.md, TASKS.md updated
+   → Full specs: vibe/features/2026-04-30-image-builder-v2/FEATURE_TASKS.md
+
+## What just happened
+✅ FEATURE-IMAGE-BUILDER-V2 complete 2026-04-30 — Image builder rebuilt from 18-param flat screen to deep five-tab review (Subject/Lighting/Camera/Style/Technical) with VariationsPanel Zone B showing 3 live AI variations. 48 presets in 5 category rows. Technical tab exposes Stylise/Chaos/Weird/Seed numeric params. Phase 1.5 variation generation fires in background while review screen mounts. Phase 2 uses selected variation as narrative base; output is prompt + Nano Banana flags. Purple THINKING accent wired for both phases. Build clean, lint 0 errors.
+
+## What's next
+Feature complete — ready for smoke test and review gate.

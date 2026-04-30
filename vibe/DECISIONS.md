@@ -1673,3 +1673,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Alternatives considered**: Store phase 1 system prompt template in main.js's MODE_CONFIG `instruction` field (like email mode) — rejected because it would require a new IPC variation or code path to embed the transcript server-side; generate-raw is simpler. Define a constant in main.js and export via a new IPC getter — adds IPC complexity with no benefit.
 - **Impact on other tasks**: IMG2-002 (useImageBuilder.js full rewrite) owns the actual phase 1 system prompt update (new nested schema). main.js has no changes for this feature.
 - **Approved by**: human
+
+### D-IMG2-002 — 2026-04-30 — onEditAnswers returns to IMAGE_BUILDER without reset; fenceParse inline in hook
+- **Date**: 2026-04-30 · **Task**: IMG2-008, IMG2-007 · **Type**: tech-choice
+- **What was planned**: FEATURE_SPEC listed `onEditAnswers` in imageBuilderProps bundle but IMG2-007 plan did not explicitly add it.
+- **What was done**: `onEditAnswers: () => transitionRef.current(STATES.IMAGE_BUILDER)` added to imageBuilderProps in useImageBuilder.js. ExpandedDetailPanel passes it to ImageBuilderDoneState. Button shows as "← Edit answers" only when prop provided. Collapsed path omits it (dead path — image always expands).
+- **Why**: Transitioning back to IMAGE_BUILDER without calling handleImageStartOver preserves all current imageAnswers, imageVariations, selectedVariation, and activePreset — user can tweak one chip and reassemble without starting over. A "Start over" button exists for the full reset path.
+- **Alternatives considered**: Call handleImageStartOver before transitioning back — rejected (destroys all user work). Add a separate "edit" state — unnecessary indirection.
+- **Second decision**: `useImageBuilder.js` uses its own `fenceParse` helper (not importing from promptUtils.js). `parseImageAnalysisOutput` and `parseImageAssemblyOutput` exported from promptUtils.js are used in `tests/utils.test.js` for test coverage. Both helpers implement identical fence-stripping logic — consolidated into promptUtils for testing purposes; hook keeps inline copy to avoid a cross-module import cycle.
+- **Impact on other tasks**: IMG2-009 (docs). No further tasks.
+- **Approved by**: agent-autonomous

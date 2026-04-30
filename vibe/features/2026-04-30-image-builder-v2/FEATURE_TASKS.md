@@ -10,4 +10,4 @@
 - [x] IMG2-006 — promptUtils.js parse utilities + tests
 - [x] IMG2-007 — App.jsx: wire updated imageBuilderProps bundle
 - [x] IMG2-008 — ImageBuilderDoneState.jsx: flags display + copy
-- [ ] IMG2-009 — Docs update (CODEBASE.md, DECISIONS.md, TASKS.md)
+- [x] IMG2-009 — Docs update (CODEBASE.md, DECISIONS.md, TASKS.md)
