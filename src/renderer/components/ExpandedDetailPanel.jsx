@@ -351,20 +351,7 @@ export default function ExpandedDetailPanel({
 
       {currentState === 'IMAGE_BUILDER' && imageBuilderProps && (
         <ImageBuilderState
-          transcript={imageBuilderProps.transcript}
-          imageDefaults={imageBuilderProps.imageDefaults}
-          imageAnswers={imageBuilderProps.imageAnswers}
-          showAdvanced={imageBuilderProps.showAdvanced}
-          activePickerParam={imageBuilderProps.activePickerParam}
-          onChipRemove={imageBuilderProps.onChipRemove}
-          onChipAdd={imageBuilderProps.onChipAdd}
-          onParamChange={imageBuilderProps.onParamChange}
-          onToggleAdvanced={imageBuilderProps.onToggleAdvanced}
-          onOpenPicker={imageBuilderProps.onOpenPicker}
-          onClosePicker={imageBuilderProps.onClosePicker}
-          onConfirm={imageBuilderProps.onConfirm}
-          onCopyNow={imageBuilderProps.onCopyNow}
-          onReiterate={imageBuilderProps.onReiterate}
+          {...imageBuilderProps}
           isExpanded={true}
         />
       )}
@@ -374,7 +361,6 @@ export default function ExpandedDetailPanel({
           prompt={imageBuilderProps.imageBuiltPrompt}
           answers={imageBuilderProps.imageAnswers}
           transcript={imageBuilderProps.transcript}
-          onEditAnswers={imageBuilderProps.onEditAnswers}
           onStartOver={imageBuilderProps.onStartOver}
           isExpanded={true}
         />

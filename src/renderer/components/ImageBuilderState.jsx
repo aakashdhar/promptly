@@ -1,303 +1,637 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
-export const PARAM_CONFIG = [
-  // Essential (11 rows — shown by default)
-  { key: 'model', label: 'Model', multi: false, options: ['Nano Banana', 'Nano Banana 2', 'Nano Banana Pro'] },
-  { key: 'useCase', label: 'Use case', multi: false, options: ['Photorealistic scene', 'Stylized illustration / sticker', 'Style transfer', 'Product mockup / commercial', 'Icon / UI asset', 'Infographic / text layout', '3D render / isometric'] },
-  { key: 'subjectDetail', label: 'Subject detail', multi: true, options: ['Add age / appearance', 'Add expression', 'Add clothing', 'Add skin / texture detail', 'Keep as spoken'] },
-  { key: 'style', label: 'Style', multi: true, options: ['Photorealistic', 'Illustration', 'Oil painting', 'Film photography', '3D render', 'Cinematic', 'Watercolour', 'Anime / manga', 'Isometric', 'Claymation'] },
-  { key: 'lighting', label: 'Lighting', multi: true, options: ['Golden hour', 'Studio softbox', 'Natural overcast', 'Dramatic side light', 'Neon / artificial', 'Backlit silhouette', 'Blue hour / dusk', 'Candlelight'] },
-  { key: 'composition', label: 'Composition', multi: true, options: ['Close-up portrait', 'Medium shot', 'Wide establishing', 'Rule of thirds', 'Symmetrical', 'Aerial / overhead', 'Macro / extreme close'] },
-  { key: 'cameraAngle', label: 'Camera angle', multi: true, options: ['Eye level', 'Low angle', 'High angle', 'Dutch tilt', "Bird's eye", "Worm's eye"] },
-  { key: 'aspectRatio', label: 'Ratio', multi: false, options: ['Square 1:1', 'Portrait 9:16', 'Landscape 16:9', 'Widescreen 21:9', '4:3 classic', '3:2 photo'] },
-  { key: 'colourPalette', label: 'Colour', multi: true, options: ['Warm & golden', 'Cool & blue', 'Muted & desaturated', 'Vivid & saturated', 'Monochrome', 'Pastel', 'High contrast'] },
-  { key: 'background', label: 'Background', multi: true, options: ['Natural / contextual', 'White background', 'Transparent / no background', 'Solid colour', 'Gradient', 'Blurred / bokeh background', 'Black background', 'Custom / describe it'], custom: 'Custom / describe it' },
-  { key: 'mood', label: 'Mood', multi: true, options: ['Serene', 'Dramatic', 'Nostalgic', 'Mysterious', 'Energetic', 'Melancholic', 'Futuristic', 'Dreamlike'] },
-  // Advanced (7 rows — hidden by default)
-  { key: 'resolution', label: 'Resolution', multi: false, options: ['Standard quality', 'High detail', 'Ultra detailed / 4K', 'Hyperreal / 8K', 'Professional print quality'] },
-  { key: 'lens', label: 'Lens', multi: true, options: ['35mm film', '50mm portrait', '85mm bokeh', 'Wide angle', 'Macro', 'Anamorphic', 'Fisheye'] },
-  { key: 'textInImage', label: 'Text', multi: false, options: ['No text needed', 'Yes — title/headline', 'Yes — label/caption', 'Yes — logo/wordmark', 'Yes — signage'] },
-  { key: 'detailLevel', label: 'Detail level', multi: false, options: ['Minimal / clean', 'Moderate detail', 'Highly detailed', 'Ultra detailed / hyperreal'] },
-  { key: 'avoid', label: 'Avoid', multi: true, options: ['No text', 'No people', 'No shadows', 'No background', 'Keep minimal', 'Custom (type it)'], custom: 'Custom (type it)' },
-  { key: 'surfaceMaterial', label: 'Surface', multi: true, options: ['Matte', 'Glossy', 'Metallic', 'Fabric / textile', 'Natural / organic', 'Glass'] },
-  { key: 'postProcessing', label: 'Post-process', multi: true, options: ['Film grain', 'Vintage / faded', 'HDR', 'Matte grade', 'Clean / neutral', 'Tilt-shift'] },
-]
-
-const ADVANCED_KEYS = new Set(['resolution', 'lens', 'textInImage', 'detailLevel', 'avoid', 'surfaceMaterial', 'postProcessing'])
-
-function chipIsAi(imageDefaults, key, value) {
-  const def = imageDefaults?.[key]
-  if (!def) return false
-  if (Array.isArray(def)) return def.includes(value)
-  return def === value
+// ─── Required params — gate Confirm button ───────────────────────────────────
+const REQUIRED = {
+  subject:   ['subject', 'setting', 'framing'],
+  lighting:  ['timeOfDay', 'lightType'],
+  camera:    ['lens', 'aspectRatio'],
+  style:     ['visualStyle'],
+  technical: ['renderQuality'],
 }
 
-function getChipValues(imageAnswers, key, multi) {
-  const v = imageAnswers?.[key]
-  if (multi) return Array.isArray(v) ? v : []
-  return v ? [v] : []
+function countUnfilled(answers) {
+  return Object.entries(REQUIRED).reduce((sum, [tab, fields]) => {
+    return sum + fields.filter(f => {
+      const v = answers[tab]?.[f]
+      return !v || (typeof v === 'string' && v.trim() === '')
+    }).length
+  }, 0)
 }
 
+// ─── Tab param definitions ────────────────────────────────────────────────────
+const SUBJECT_PARAMS = {
+  subject:  ['Young woman', 'Man', 'Child', 'Couple', 'Group', 'Animal'],
+  setting:  ['Ocean/beach', 'Forest', 'Urban street', 'Studio', 'Desert', 'Mountains', 'Interior'],
+  emotion:  ['Serene', 'Joyful', 'Pensive', 'Mysterious', 'Confident', 'Melancholic'],
+  framing:  ['Close-up', 'Mid shot', 'Full body', 'Over shoulder', 'Dutch angle'],
+}
+const LIGHTING_PARAMS = {
+  timeOfDay: ['Golden hour', 'Blue hour', 'Midday', 'Overcast', 'Night', 'Dawn'],
+  lightType: ['Directional sun', 'Rembrandt', 'Butterfly', 'Split', 'Rim light', 'Practical', 'Ambient'],
+  quality:   ['Warm amber', 'Soft diffused', 'Hard shadows', 'Dappled', 'Backlit', 'Contre-jour'],
+  lensFlare: ['None', 'Subtle', 'Anamorphic', 'Strong'],
+}
+const CAMERA_PARAMS = {
+  lens:        ['24mm wide', '35mm street', '50mm standard', '85mm portrait', '135mm telephoto', 'Macro', 'Fisheye'],
+  aperture:    ['f/1.4 shallow', 'f/2.8', 'f/5.6', 'f/11 deep'],
+  aspectRatio: ['1:1 square', '4:5 portrait', '2:3', '9:16 vertical', '16:9 wide', '3:2'],
+  angle:       ['Eye level', 'Low angle', 'High angle', "Bird's eye", "Worm's eye"],
+  filmSim:     ['Kodak Portra 400', 'Fuji Velvia', 'Ilford HP5', 'CineStill 800T', 'Digital clean', 'Lomography', 'Medium format'],
+}
+const STYLE_PARAMS = {
+  visualStyle: ['Cinematic film still', 'Editorial fashion', 'Documentary', 'Fine art', 'Commercial', 'Conceptual'],
+  colorGrade:  ['Warm teal-orange', 'Desaturated', 'Hyper-saturated', 'Monochrome', 'Duotone', 'Cross-processed'],
+  filmGrain:   ['35mm grain', 'Medium format', 'Heavy grain', 'Digital clean', 'Lomography'],
+  reference:   ['Roger Deakins', 'Emmanuel Lubezki', 'Annie Leibovitz', 'Nan Goldin', 'Gregory Crewdson'],
+}
+const TECHNICAL_PARAMS = {
+  resolution:    ['Ultra HD 4K', '1080p', 'Medium', 'Standard'],
+  renderQuality: ['Photorealistic', 'Hyper-real', 'Stylised', 'Painterly'],
+  stylise:       ['250 subtle', '500', '750', '1000 strong'],
+  chaos:         ['0 precise', '20', '50', '100 wild'],
+  weird:         ['0', '250', '500', '1000'],
+}
+
+const FIELD_LABELS = {
+  subject: 'Subject', setting: 'Setting', emotion: 'Emotion', framing: 'Framing',
+  timeOfDay: 'Time of day', lightType: 'Light type', quality: 'Quality', lensFlare: 'Lens flare',
+  lens: 'Lens', aperture: 'Aperture', aspectRatio: 'Aspect ratio', angle: 'Camera angle', filmSim: 'Film sim',
+  visualStyle: 'Visual style', colorGrade: 'Color grade', filmGrain: 'Film grain', reference: 'Reference',
+  resolution: 'Resolution', renderQuality: 'Render quality', stylise: 'Stylise', chaos: 'Chaos', weird: 'Weird', seed: 'Seed',
+}
+
+// ─── Chip ─────────────────────────────────────────────────────────────────────
+function Chip({ label, isSelected, isAi, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
+        cursor: 'pointer', userSelect: 'none', transition: 'background 150ms',
+        border: isSelected
+          ? isAi ? '0.5px solid rgba(139,92,246,0.5)' : '0.5px solid rgba(255,255,255,0.18)'
+          : isAi ? '0.5px solid rgba(139,92,246,0.25)' : '0.5px solid rgba(255,255,255,0.1)',
+        background: isSelected
+          ? isAi ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.1)'
+          : isAi ? 'rgba(139,92,246,0.07)' : 'rgba(255,255,255,0.04)',
+        color: isSelected
+          ? isAi ? 'rgba(196,168,255,0.95)' : 'rgba(255,255,255,0.85)'
+          : isAi ? 'rgba(196,168,255,0.65)' : 'rgba(255,255,255,0.5)',
+      }}
+    >
+      {isAi && <span style={{ color: 'rgba(139,92,246,0.7)', fontSize: '10px' }}>·</span>}
+      {label}
+    </button>
+  )
+}
+
+// ─── ParamRow ─────────────────────────────────────────────────────────────────
+function ParamRow({ tab, field, options, answers, defaults, onParamChange, onRemoveDefault, allowCustom }) {
+  const [addMode, setAddMode] = useState(false)
+  const [inputVal, setInputVal] = useState('')
+  const inputRef = useRef(null)
+
+  const currentVal = answers[tab]?.[field] ?? ''
+  const aiDefault = defaults[tab]?.[field] ?? ''
+
+  function handleChipClick(value) {
+    if (currentVal === value) {
+      if (aiDefault === value) onRemoveDefault(`${tab}.${field}`, value)
+      onParamChange(tab, field, '')
+    } else {
+      onParamChange(tab, field, value)
+    }
+  }
+
+  function handleCustomSubmit() {
+    const v = inputVal.trim()
+    if (v) onParamChange(tab, field, v)
+    setInputVal('')
+    setAddMode(false)
+  }
+
+  const displayOptions = currentVal && !options.includes(currentVal)
+    ? [...options, currentVal]
+    : options
+
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
+      <div style={{
+        minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
+        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+      }}>
+        {FIELD_LABELS[field] || field}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', flex: 1 }}>
+        {displayOptions.map(opt => (
+          <Chip
+            key={opt}
+            label={opt}
+            isSelected={currentVal === opt}
+            isAi={aiDefault === opt}
+            onClick={() => handleChipClick(opt)}
+          />
+        ))}
+        {allowCustom && !addMode && (
+          <button
+            type="button"
+            onClick={() => { setAddMode(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+            style={{
+              padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
+              background: 'transparent', border: '0.5px dashed rgba(255,255,255,0.15)',
+              color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
+            }}
+          >
+            + add
+          </button>
+        )}
+        {addMode && (
+          <input
+            ref={inputRef}
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleCustomSubmit()
+              if (e.key === 'Escape') { setAddMode(false); setInputVal('') }
+            }}
+            onBlur={handleCustomSubmit}
+            placeholder="Type & enter…"
+            style={{
+              padding: '3px 10px', borderRadius: '7px', fontSize: '11.5px',
+              background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.2)',
+              color: 'rgba(255,255,255,0.85)', outline: 'none', width: '130px',
+              WebkitAppRegion: 'no-drag',
+            }}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── NegativeRow ──────────────────────────────────────────────────────────────
+function NegativeRow({ negativePrompts, onSetNegative, onRemoveNegative }) {
+  const [addMode, setAddMode] = useState(false)
+  const [inputVal, setInputVal] = useState('')
+  const inputRef = useRef(null)
+
+  function handleAdd() {
+    const v = inputVal.trim()
+    if (v) { onSetNegative(v); setInputVal('') }
+    setAddMode(false)
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
+      <div style={{
+        minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
+        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+      }}>
+        Negative
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', flex: 1 }}>
+        {negativePrompts.map(neg => (
+          <span key={neg} style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            padding: '4px 9px', borderRadius: '7px', fontSize: '11.5px',
+            background: 'rgba(255,59,48,0.08)', border: '0.5px solid rgba(255,59,48,0.2)',
+            color: 'rgba(255,150,140,0.85)',
+          }}>
+            {neg}
+            <button type="button" onClick={() => onRemoveNegative(neg)} style={{
+              background: 'none', border: 'none', padding: '0 1px', cursor: 'pointer',
+              color: 'rgba(255,150,140,0.6)', fontSize: '11px', lineHeight: 1,
+            }}>✕</button>
+          </span>
+        ))}
+        {!addMode && (
+          <button
+            type="button"
+            onClick={() => { setAddMode(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+            style={{
+              padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
+              background: 'transparent', border: '0.5px dashed rgba(255,59,48,0.2)',
+              color: 'rgba(255,150,140,0.4)', cursor: 'pointer',
+            }}
+          >
+            + add exclusions
+          </button>
+        )}
+        {addMode && (
+          <input
+            ref={inputRef}
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleAdd()
+              if (e.key === 'Escape') { setAddMode(false); setInputVal('') }
+            }}
+            onBlur={handleAdd}
+            placeholder="e.g. blur, grain…"
+            style={{
+              padding: '3px 10px', borderRadius: '7px', fontSize: '11.5px',
+              background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.2)',
+              color: 'rgba(255,255,255,0.85)', outline: 'none', width: '140px',
+              WebkitAppRegion: 'no-drag',
+            }}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── SeedRow ──────────────────────────────────────────────────────────────────
+function SeedRow({ seed, onSetSeed }) {
+  const [inputMode, setInputMode] = useState(false)
+  const [inputVal, setInputVal] = useState('')
+  const inputRef = useRef(null)
+
+  function handleConfirm() {
+    onSetSeed(inputVal)
+    setInputMode(false)
+    setInputVal('')
+  }
+
+  const hasSeed = seed !== null && seed !== undefined && seed !== ''
+
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
+      <div style={{
+        minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
+        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+      }}>
+        Seed
+      </div>
+      <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+        {hasSeed && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            padding: '4px 9px', borderRadius: '7px', fontSize: '11.5px',
+            background: 'rgba(139,92,246,0.1)', border: '0.5px solid rgba(139,92,246,0.3)',
+            color: 'rgba(196,168,255,0.85)',
+          }}>
+            {seed}
+            <button type="button" onClick={() => onSetSeed(null)} style={{
+              background: 'none', border: 'none', padding: '0 1px', cursor: 'pointer',
+              color: 'rgba(196,168,255,0.5)', fontSize: '11px', lineHeight: 1,
+            }}>✕</button>
+          </span>
+        )}
+        {!hasSeed && !inputMode && (
+          <button
+            type="button"
+            onClick={() => { setInputMode(true); setTimeout(() => inputRef.current?.focus(), 50) }}
+            style={{
+              padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
+              background: 'transparent', border: '0.5px dashed rgba(255,255,255,0.15)',
+              color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
+            }}
+          >
+            + set seed
+          </button>
+        )}
+        {inputMode && (
+          <input
+            ref={inputRef}
+            type="number"
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleConfirm()
+              if (e.key === 'Escape') { setInputMode(false); setInputVal('') }
+            }}
+            onBlur={handleConfirm}
+            placeholder="e.g. 12345"
+            style={{
+              padding: '3px 10px', borderRadius: '7px', fontSize: '11.5px',
+              background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.2)',
+              color: 'rgba(255,255,255,0.85)', outline: 'none', width: '100px',
+              WebkitAppRegion: 'no-drag',
+            }}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Inline variations panel (extracted to VariationsPanel.jsx in IMG2-005) ──
+function InlineVariationsPanel({ variations, selectedVariation, isLoading, onSelectVariation, onGenerateMore }) {
+  return (
+    <div style={{
+      width: '320px', flexShrink: 0,
+      borderLeft: '0.5px solid rgba(255,255,255,0.06)',
+      background: 'rgba(10,10,15,1)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{
+        padding: '12px 16px 10px', borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
+      }}>
+        <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(255,255,255,0.25)' }}>
+          {isLoading ? 'Generating variations…' : `${variations.length} variation${variations.length !== 1 ? 's' : ''} · tap to select`}
+        </span>
+        <button type="button" onClick={onGenerateMore} disabled={isLoading} style={{
+          background: 'none', border: 'none', padding: 0,
+          cursor: isLoading ? 'default' : 'pointer',
+          fontSize: '11px', color: isLoading ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.7)',
+        }}>
+          All different →
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {isLoading && [1, 2, 3].map(i => (
+          <div key={i} style={{ padding: '11px 16px', borderBottom: '0.5px solid rgba(255,255,255,0.04)' }}>
+            <div className="skeleton-pulse" style={{ height: '9px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', width: '50%', marginBottom: '7px' }} />
+            <div className="skeleton-pulse" style={{ height: '9px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', width: '85%', marginBottom: '4px' }} />
+            <div className="skeleton-pulse" style={{ height: '9px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', width: '70%', marginBottom: '4px' }} />
+            <div className="skeleton-pulse" style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', width: '40%', marginTop: '4px' }} />
+          </div>
+        ))}
+        {!isLoading && variations.map(v => {
+          const isSelected = v.id === selectedVariation
+          return (
+            <div
+              key={v.id}
+              onClick={() => onSelectVariation(v.id)}
+              style={{
+                padding: '11px 16px', paddingLeft: isSelected ? '14px' : '16px',
+                borderBottom: '0.5px solid rgba(255,255,255,0.04)',
+                cursor: 'pointer',
+                background: isSelected ? 'rgba(139,92,246,0.07)' : 'transparent',
+                borderLeft: isSelected ? '2px solid rgba(139,92,246,0.5)' : '2px solid transparent',
+                transition: 'background 150ms',
+              }}
+            >
+              <div style={{
+                fontSize: '9px', fontWeight: 700, letterSpacing: '.06em',
+                textTransform: 'uppercase', color: 'rgba(139,92,246,0.5)', marginBottom: '5px',
+              }}>
+                Variation {v.id}{isSelected ? ' · selected' : ''}
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55 }}>
+                {isSelected ? v.prompt : (v.prompt.length > 120 ? v.prompt.slice(0, 120) + '…' : v.prompt)}
+              </div>
+              {v.focus && (
+                <div style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.28)', marginTop: '3px' }}>
+                  {v.focus}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ padding: '10px 14px', borderTop: '0.5px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={onGenerateMore}
+          disabled={isLoading}
+          style={{
+            width: '100%', height: '34px',
+            background: 'rgba(139,92,246,0.08)',
+            border: '0.5px solid rgba(139,92,246,0.2)', borderRadius: '8px',
+            fontSize: '12px', color: 'rgba(196,168,255,0.7)',
+            cursor: isLoading ? 'default' : 'pointer',
+            opacity: isLoading ? 0.4 : 1,
+          }}
+        >
+          {isLoading ? 'Generating…' : '+ Generate 3 more variations'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function ImageBuilderState({
   transcript,
   imageDefaults,
   imageAnswers,
-  showAdvanced,
-  activePickerParam,
-  onChipRemove,
-  onChipAdd,
+  activePreset,
+  imageVariations,
+  selectedVariation,
+  isGeneratingVariations,
   onParamChange,
-  onToggleAdvanced,
-  onOpenPicker,
-  onClosePicker,
+  onRemoveDefault,
+  onSelectVariation,
+  onGenerateMore,
+  onSetSeed,
+  onSetNegative,
+  onRemoveNegative,
   onConfirm,
-  onCopyNow,
   onReiterate,
-  isExpanded,
+  onStartOver,
 }) {
-  const [customActiveParam, setCustomActiveParam] = useState(null)
-  const [customText, setCustomText] = useState('')
+  const [activeTab, setActiveTab] = useState('subject')
 
-  function handlePickerOption(key, multi, value, customOption) {
-    if (customOption && value === customOption) {
-      onClosePicker()
-      setCustomActiveParam(key)
-      setCustomText('')
-      return
+  if (!imageAnswers) return null
+
+  const unfilled = countUnfilled(imageAnswers)
+  const isGeneratingVars = Boolean(isGeneratingVariations)
+  const confirmDisabled = unfilled > 0 || isGeneratingVars
+
+  const TABS = ['subject', 'lighting', 'camera', 'style', 'technical']
+  const TAB_LABELS = { subject: 'Subject', lighting: 'Lighting', camera: 'Camera', style: 'Style', technical: 'Technical' }
+  const def = imageDefaults || {}
+  const ans = imageAnswers
+
+  function renderTabContent() {
+    if (activeTab === 'subject') {
+      return (
+        <>
+          {Object.entries(SUBJECT_PARAMS).map(([field, opts]) => (
+            <ParamRow key={field} tab="subject" field={field} options={opts} answers={ans} defaults={def}
+              onParamChange={onParamChange} onRemoveDefault={onRemoveDefault}
+              allowCustom={field === 'subject' || field === 'setting'}
+            />
+          ))}
+          <NegativeRow
+            negativePrompts={ans.subject?.negativePrompts || []}
+            onSetNegative={onSetNegative}
+            onRemoveNegative={onRemoveNegative}
+          />
+        </>
+      )
     }
-    if (multi) onChipAdd(key, value)
-    else onParamChange(key, value)
-    onClosePicker()
+    if (activeTab === 'lighting') {
+      return Object.entries(LIGHTING_PARAMS).map(([field, opts]) => (
+        <ParamRow key={field} tab="lighting" field={field} options={opts} answers={ans} defaults={def}
+          onParamChange={onParamChange} onRemoveDefault={onRemoveDefault} />
+      ))
+    }
+    if (activeTab === 'camera') {
+      return Object.entries(CAMERA_PARAMS).map(([field, opts]) => (
+        <ParamRow key={field} tab="camera" field={field} options={opts} answers={ans} defaults={def}
+          onParamChange={onParamChange} onRemoveDefault={onRemoveDefault} />
+      ))
+    }
+    if (activeTab === 'style') {
+      return Object.entries(STYLE_PARAMS).map(([field, opts]) => (
+        <ParamRow key={field} tab="style" field={field} options={opts} answers={ans} defaults={def}
+          onParamChange={onParamChange} onRemoveDefault={onRemoveDefault}
+          allowCustom={field === 'reference'}
+        />
+      ))
+    }
+    if (activeTab === 'technical') {
+      return (
+        <>
+          {Object.entries(TECHNICAL_PARAMS).map(([field, opts]) => (
+            <ParamRow key={field} tab="technical" field={field} options={opts} answers={ans} defaults={def}
+              onParamChange={onParamChange} onRemoveDefault={onRemoveDefault} />
+          ))}
+          <SeedRow seed={ans.technical?.seed ?? null} onSetSeed={onSetSeed} />
+        </>
+      )
+    }
+    return null
   }
 
-  function handleCustomConfirm(key, multi) {
-    const text = customText.trim()
-    if (text) {
-      if (multi) onChipAdd(key, text)
-      else onParamChange(key, text)
-    }
-    setCustomActiveParam(null)
-    setCustomText('')
-  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'row', height: '100%', overflow: 'hidden' }}>
 
-  const visibleParams = PARAM_CONFIG.filter(p => showAdvanced || !ADVANCED_KEYS.has(p.key))
+      {/* Zone A — tabs + params + presets + action */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
-  function renderRow(param, labelW) {
-    const { key, label, multi, options, custom } = param
-    const values = getChipValues(imageAnswers, key, multi)
+        {/* Header */}
+        <div style={{
+          padding: '14px 22px 10px', borderBottom: '0.5px solid rgba(255,255,255,0.06)', flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <span style={{
+              width: '7px', height: '7px', borderRadius: '50%',
+              background: 'rgba(139,92,246,0.8)', flexShrink: 0,
+            }} />
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+              Image builder
+            </span>
+            <span style={{
+              padding: '2px 7px', borderRadius: '5px', fontSize: '9.5px',
+              background: 'rgba(139,92,246,0.12)', border: '0.5px solid rgba(139,92,246,0.25)',
+              color: 'rgba(196,168,255,0.7)',
+            }}>Nano Banana</span>
+            {unfilled > 0 && (
+              <span style={{
+                padding: '2px 7px', borderRadius: '5px', fontSize: '9.5px',
+                background: 'rgba(255,196,0,0.08)', border: '0.5px solid rgba(255,196,0,0.2)',
+                color: 'rgba(255,210,80,0.7)',
+              }}>⚠ {unfilled} unfilled</span>
+            )}
+            {activePreset && (
+              <span style={{
+                padding: '2px 7px', borderRadius: '5px', fontSize: '9.5px',
+                background: 'rgba(251,146,60,0.08)', border: '0.5px solid rgba(251,146,60,0.2)',
+                color: 'rgba(251,180,100,0.7)',
+              }}>Preset: {activePreset}</span>
+            )}
+            <div style={{ flex: 1 }} />
+            <button type="button" onClick={onReiterate} style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              fontSize: '11px', color: 'rgba(255,255,255,0.35)', WebkitAppRegion: 'no-drag',
+            }}>↺ Reiterate</button>
+          </div>
+          {transcript && (
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+              &ldquo;{transcript.length > 120 ? transcript.slice(0, 120) + '…' : transcript}&rdquo;
+            </div>
+          )}
+        </div>
 
-    const pickerOptions = options.filter(opt => {
-      if (multi) return !values.includes(opt)
-      return opt !== imageAnswers?.[key]
-    })
-
-    const isPicker = activePickerParam === key
-    const isCustomActive = customActiveParam === key
-
-    return (
-      <div key={key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.08em', color: 'rgba(255,255,255,0.22)',
-            minWidth: labelW, flexShrink: 0, lineHeight: 1,
-          }}>{label}</span>
-
-          {values.map(value => {
-            const ai = chipIsAi(imageDefaults, key, value)
-            const display = value.length > 20 ? value.slice(0, 20) + '…' : value
+        {/* Tab bar */}
+        <div style={{
+          display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+          padding: '0 22px', gap: '2px', flexShrink: 0,
+        }}>
+          {TABS.map(tab => {
+            const isActive = activeTab === tab
             return (
               <button
-                key={value}
-                onClick={() => onChipRemove(key, value)}
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '4px',
-                  padding: '4px 10px', borderRadius: '8px', fontSize: '11px',
-                  cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
-                  background: ai ? 'rgba(139,92,246,0.14)' : 'rgba(139,92,246,0.22)',
-                  border: `0.5px solid ${ai ? 'rgba(139,92,246,0.38)' : 'rgba(139,92,246,0.55)'}`,
-                  color: ai ? 'rgba(167,139,250,0.95)' : 'rgba(200,180,255,1)',
-                  fontWeight: ai ? 500 : 600,
+                  padding: '8px 14px', fontSize: '11.5px', background: 'none', border: 'none',
+                  borderBottom: isActive ? '2px solid rgba(139,92,246,0.7)' : '2px solid transparent',
+                  color: isActive ? 'rgba(196,168,255,0.9)' : 'rgba(255,255,255,0.35)',
+                  fontWeight: isActive ? 500 : 400, cursor: 'pointer',
+                  transition: 'color 150ms, border-color 150ms', WebkitAppRegion: 'no-drag',
                 }}
               >
-                {ai && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'rgba(139,92,246,0.9)', flexShrink: 0 }} />}
-                {display}
+                {TAB_LABELS[tab]}
               </button>
             )
           })}
-
-          <button
-            onClick={() => onOpenPicker(key)}
-            style={{
-              padding: '4px 10px', borderRadius: '8px', fontSize: '11px',
-              cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
-              border: '0.5px dashed rgba(255,255,255,0.15)',
-              background: 'transparent', color: 'rgba(255,255,255,0.25)',
-            }}
-          >+ add</button>
         </div>
 
-        {isCustomActive && (
-          <input
-            autoFocus
-            type="text"
-            value={customText}
-            onChange={e => setCustomText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleCustomConfirm(key, multi) }}
-            onBlur={() => handleCustomConfirm(key, multi)}
-            placeholder="Describe it…"
-            style={{
-              marginLeft: labelW,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(139,92,246,0.3)', borderRadius: '8px',
-              padding: '6px 10px', fontSize: '11.5px', color: 'rgba(255,255,255,0.75)',
-              outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
-            }}
-          />
-        )}
+        {/* Params scroll area */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 22px 0' }}>
+          {renderTabContent()}
+        </div>
 
-        {isPicker && (
-          <>
-            <div
-              onMouseDown={e => { e.preventDefault(); onClosePicker() }}
-              style={{ position: 'fixed', inset: 0, zIndex: 10 }}
-            />
-            <div style={{
-              position: 'absolute', top: 'calc(100% + 2px)', left: labelW,
-              zIndex: 20, background: '#1a1a24',
-              border: '0.5px solid rgba(255,255,255,0.1)',
-              borderRadius: '10px', padding: '8px',
-              maxHeight: '160px', overflowY: 'auto',
-              display: 'flex', flexWrap: 'wrap', gap: '5px',
-              minWidth: '180px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-            }}>
-              {pickerOptions.map(opt => (
-                <button
-                  key={opt}
-                  onMouseDown={e => { e.preventDefault(); handlePickerOption(key, multi, opt, custom) }}
-                  style={{
-                    padding: '4px 9px', borderRadius: '7px', fontSize: '11px',
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '0.5px solid rgba(255,255,255,0.12)',
-                    color: 'rgba(255,255,255,0.6)',
-                  }}
-                >{opt}</button>
-              ))}
-              {pickerOptions.length === 0 && (
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', padding: '2px 4px' }}>All selected</span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    )
-  }
-
-  if (isExpanded) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px 28px', overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="1" y="3" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.45)" strokeWidth="1.3" fill="none"/>
-              <circle cx="5.5" cy="6.5" r="1.5" fill="rgba(255,255,255,0.45)"/>
-              <path d="M1 11l4-3 3 2.5 3-3.5 4 4" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinejoin="round" fill="none"/>
-            </svg>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>Nano Banana builder</span>
+        {/* Presets strip — placeholder; full 48 presets in IMG2-004 */}
+        <div style={{
+          padding: '10px 22px', borderTop: '0.5px solid rgba(255,255,255,0.04)', flexShrink: 0,
+        }}>
+          <div style={{
+            fontSize: '9px', textTransform: 'uppercase', letterSpacing: '.08em',
+            color: 'rgba(255,255,255,0.18)', marginBottom: '4px',
+          }}>
+            Nano Banana Pro presets
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-              <path d="M6 1L7 4.5L10.5 5.5L7 6.5L6 10L5 6.5L1.5 5.5L5 4.5L6 1Z" fill="rgba(139,92,246,0.6)"/>
-            </svg>
-            <span style={{ fontSize: '11px', color: 'rgba(139,92,246,0.55)' }}>Claude filled these for you</span>
+          <div style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>
+            48 presets — coming in next update
           </div>
         </div>
 
-        {/* YOU SAID */}
-        <div style={{ flexShrink: 0, marginBottom: '10px' }}>
-          <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', marginBottom: '4px' }}>YOU SAID</div>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>{transcript}</p>
-        </div>
-
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', flexShrink: 0, marginBottom: '10px' }} />
-
-        {/* Scrollable params */}
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '7px', paddingRight: '2px' }}>
-          {visibleParams.map(param => renderRow(param, '80px'))}
+        {/* Action row */}
+        <div style={{
+          padding: '12px 22px', borderTop: '0.5px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', flexShrink: 0,
+        }}>
+          {unfilled > 0 && (
+            <span style={{ fontSize: '11px', color: 'rgba(255,200,60,0.65)', marginRight: 'auto' }}>
+              ⚠ {unfilled} required field{unfilled !== 1 ? 's' : ''} unfilled
+            </span>
+          )}
+          <button type="button" onClick={onStartOver} style={{
+            padding: '8px 14px', borderRadius: '8px', fontSize: '12px',
+            background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
+          }}>
+            Start over
+          </button>
           <button
-            onClick={onToggleAdvanced}
-            style={{ fontSize: '10.5px', color: 'rgba(139,92,246,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', textAlign: 'left', alignSelf: 'flex-start', fontFamily: 'inherit' }}
+            type="button"
+            onClick={confirmDisabled ? undefined : onConfirm}
+            disabled={confirmDisabled}
+            title={isGeneratingVars ? 'Generating variations…' : undefined}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
+              background: confirmDisabled ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.85)',
+              border: '0.5px solid rgba(139,92,246,0.4)',
+              color: confirmDisabled ? 'rgba(196,168,255,0.3)' : 'rgba(255,255,255,0.95)',
+              cursor: confirmDisabled ? 'default' : 'pointer',
+              opacity: confirmDisabled ? 0.5 : 1, pointerEvents: confirmDisabled ? 'none' : 'auto',
+            }}
           >
-            {showAdvanced ? '− Hide advanced parameters' : '+ Show advanced parameters'}
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '10px' }}>
-          <button onClick={onReiterate} style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>↺ Reiterate</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button onClick={onCopyNow} style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Copy now →</button>
-            <button onClick={onConfirm} style={{ padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600, background: 'rgba(139,92,246,0.75)', border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-              Confirm & generate →
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Compact bar layout
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '10px 14px', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: '6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-            <rect x="1" y="3" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.45)" strokeWidth="1.3" fill="none"/>
-            <circle cx="5.5" cy="6.5" r="1.5" fill="rgba(255,255,255,0.45)"/>
-            <path d="M1 11l4-3 3 2.5 3-3.5 4 4" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinejoin="round" fill="none"/>
-          </svg>
-          <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>Nano Banana builder</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M6 1L7 4.5L10.5 5.5L7 6.5L6 10L5 6.5L1.5 5.5L5 4.5L6 1Z" fill="rgba(139,92,246,0.6)"/>
-          </svg>
-          <span style={{ fontSize: '10px', color: 'rgba(139,92,246,0.55)' }}>Claude filled these</span>
-        </div>
-      </div>
-
-      {/* YOU SAID */}
-      <div style={{ flexShrink: 0, marginBottom: '6px' }}>
-        <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', marginBottom: '3px' }}>YOU SAID</div>
-        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>{transcript}</p>
-      </div>
-
-      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', flexShrink: 0, marginBottom: '6px' }} />
-
-      {/* Scrollable params */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {visibleParams.map(param => renderRow(param, '72px'))}
-        <button
-          onClick={onToggleAdvanced}
-          style={{ fontSize: '10.5px', color: 'rgba(139,92,246,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', textAlign: 'left', alignSelf: 'flex-start', fontFamily: 'inherit' }}
-        >
-          {showAdvanced ? '− Hide advanced parameters' : '+ Show advanced parameters'}
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '6px' }}>
-        <button onClick={onReiterate} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>↺ Reiterate</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={onCopyNow} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Copy now →</button>
-          <button onClick={onConfirm} style={{ padding: '5px 14px', borderRadius: '8px', fontSize: '11.5px', fontWeight: 600, background: 'rgba(139,92,246,0.75)', border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Confirm & generate →
+            Confirm & assemble prompt →
           </button>
         </div>
       </div>
+
+      {/* Zone B — variations */}
+      <InlineVariationsPanel
+        variations={imageVariations || []}
+        selectedVariation={selectedVariation}
+        isLoading={isGeneratingVars}
+        onSelectVariation={onSelectVariation}
+        onGenerateMore={onGenerateMore}
+      />
     </div>
   )
 }
