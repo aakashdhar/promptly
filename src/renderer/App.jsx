@@ -228,6 +228,7 @@ export default function App() {
     resizeWindow,
     setThinkTranscript,
     setThinkingLabel,
+    setThinkingAccentColor,
     startRecordingRef,
   })
 
@@ -284,6 +285,7 @@ export default function App() {
       isReiteratingRef.current = false
       if (!isExpandedRef.current) handleExpand()
       setThinkingLabel('Analysing your idea...')
+      setThinkingAccentColor('rgba(139,92,246,0.85)')
       runPreSelection(originalTranscript.current, isReiterate)
       return
     }

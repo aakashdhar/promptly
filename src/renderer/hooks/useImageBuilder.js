@@ -196,6 +196,7 @@ export default function useImageBuilder({
   resizeWindow,
   setThinkTranscript,
   setThinkingLabel,
+  setThinkingAccentColor,
   startRecordingRef,
 }) {
   const [imageDefaults, setImageDefaults] = useState(deepCopy(EMPTY_DEFAULTS))
@@ -295,6 +296,7 @@ export default function useImageBuilder({
       return
     }
     setThinkingLabel('Assembling prompt...')
+    setThinkingAccentColor?.('rgba(139,92,246,0.85)')
     setThinkTranscript(originalTranscript.current)
     transitionRef.current(STATES.THINKING)
 
