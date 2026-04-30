@@ -1,15 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory } from '../utils/history.js'
-
-// Inline fence-stripping parse helpers (will be moved to promptUtils.js in IMG2-006)
-function fenceParse(raw) {
-  try {
-    const stripped = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/i, '').trim()
-    return JSON.parse(stripped)
-  } catch {
-    return null
-  }
-}
+import { parseImageAnalysisOutput, parseImageAssemblyOutput } from '../utils/promptUtils.js'
 
 function buildPhase1Prompt(transcript) {
   return `You are an expert Nano Banana (Midjourney) prompt engineer.
@@ -160,7 +151,7 @@ function deepCopy(obj) {
 }
 
 function parsePhase1(raw) {
-  const parsed = fenceParse(raw)
+  const parsed = parseImageAnalysisOutput(raw)
   if (!parsed || typeof parsed !== 'object') return null
   const result = deepCopy(EMPTY_DEFAULTS)
   for (const tab of TABS) {
@@ -175,7 +166,7 @@ function parsePhase1(raw) {
 }
 
 function parseVariations(raw, idOffset) {
-  const parsed = fenceParse(raw)
+  const parsed = parseImageAnalysisOutput(raw)
   if (!parsed || !Array.isArray(parsed.variations)) return []
   return parsed.variations.map((v, i) => ({
     id: idOffset + i + 1,
@@ -185,7 +176,7 @@ function parseVariations(raw, idOffset) {
 }
 
 function parsePhase2(raw) {
-  return fenceParse(raw)
+  return parseImageAssemblyOutput(raw)
 }
 
 export default function useImageBuilder({

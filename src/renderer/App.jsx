@@ -9,6 +9,7 @@ import useImageBuilder from './hooks/useImageBuilder.js'
 import useVideoBuilder from './hooks/useVideoBuilder.js'
 import useWorkflowBuilder from './hooks/useWorkflowBuilder.js'
 import useOperationHandlers from './hooks/useOperationHandlers.js'
+import useTextInput from './hooks/useTextInput.js'
 import { useThinkingProgress } from './hooks/useThinkingProgress.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
@@ -425,6 +426,17 @@ Return ONLY valid JSON:
     setGenerationSlow,
   })
 
+  const { handleTypingSubmit, handleRegenerate } = useTextInput({
+    STATES,
+    transitionRef,
+    isIterated,
+    originalTranscript,
+    setThinkTranscript,
+    modeRef,
+    polishToneRef,
+    handleGenerateResultRef,
+  })
+
   const { elapsed: thinkingElapsed, currentLabel: thinkingCurrentLabel, labelOpacity: thinkingLabelOpacity } = useThinkingProgress({
     mode,
     phase: thinkingPhase,
@@ -461,34 +473,6 @@ Return ONLY valid JSON:
   function closeSettings() {
     transition(prevStateRef.current || STATES.IDLE)
   }
-
-  const handleTypingSubmit = useCallback(async (typedText) => {
-    isIterated.current = false
-    originalTranscript.current = typedText
-    setThinkTranscript(typedText)
-    transition(STATES.THINKING)
-
-    if (!window.electronAPI) {
-      transition(STATES.ERROR, { message: 'Electron API not available' })
-      return
-    }
-
-    const genResult = await window.electronAPI.generatePrompt(typedText, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
-    handleGenerateResult(genResult, typedText)
-  }, [mode, handleGenerateResult])
-
-  const handleRegenerate = useCallback(async () => {
-    transition(STATES.THINKING)
-    setThinkTranscript(originalTranscript.current)
-
-    if (!window.electronAPI) {
-      transition(STATES.ERROR, { message: 'Electron API not available' })
-      return
-    }
-
-    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
-    handleGenerateResult(genResult, originalTranscript.current)
-  }, [mode, handleGenerateResult])
 
   useEffect(() => {
     if (!window.electronAPI) return

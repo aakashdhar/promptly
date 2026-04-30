@@ -1,13 +1,5 @@
 import { useState } from 'react'
-
-const FIELD_LABELS = {
-  subject: 'Subject', setting: 'Setting', emotion: 'Emotion', framing: 'Framing',
-  timeOfDay: 'Time of day', lightType: 'Light type', quality: 'Quality', lensFlare: 'Lens flare',
-  lens: 'Lens', aperture: 'Aperture', aspectRatio: 'Aspect ratio', angle: 'Angle', filmSim: 'Film sim',
-  visualStyle: 'Visual style', colorGrade: 'Color grade', filmGrain: 'Film grain', reference: 'Reference',
-  resolution: 'Resolution', renderQuality: 'Render quality',
-  stylise: 'Stylise', chaos: 'Chaos', weird: 'Weird', seed: 'Seed',
-}
+import { FIELD_LABELS } from './ImageBuilderState.constants.js'
 
 function flattenAnswers(answers) {
   if (!answers || typeof answers !== 'object') return []
@@ -35,7 +27,6 @@ export default function ImageBuilderDoneState({
   transcript,
   onEditAnswers,
   onStartOver,
-  isExpanded,
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -50,116 +41,76 @@ export default function ImageBuilderDoneState({
   const flags = parts.length > 1 ? parts.slice(1).join('\n\n') : ''
   const answeredEntries = flattenAnswers(answers)
 
-  if (isExpanded) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px 28px', gap: '14px', overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(139,92,246,0.9)' }} />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>Image prompt ready</span>
-        </div>
-
-        {/* Two-column grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
-          {/* Left column: prompt + flags */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', margin: 0, fontWeight: 600 }}>Assembled prompt</p>
-            <div style={{
-              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '10px', padding: '12px', flex: 1, overflowY: 'auto', minHeight: 0,
-            }}>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, margin: 0 }}>{promptText}</p>
-            </div>
-            {flags && (
-              <div style={{
-                background: 'rgba(139,92,246,0.06)', border: '0.5px solid rgba(139,92,246,0.2)',
-                borderRadius: '8px', padding: '9px 12px', flexShrink: 0,
-              }}>
-                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(139,92,246,0.5)', margin: '0 0 5px 0', fontWeight: 600 }}>Nano Banana flags</p>
-                <code style={{ fontSize: '12px', color: 'rgba(196,168,255,0.8)', fontFamily: 'monospace', lineHeight: 1.5 }}>{flags}</code>
-              </div>
-            )}
-            <div style={{ flexShrink: 0 }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {['Nano Banana', 'ChatGPT image gen'].map((tool) => (
-                  <span key={tool} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '3px 9px', fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{tool}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right column: param summary */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflowY: 'auto' }}>
-            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
-            {answeredEntries.length === 0 && (
-              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>No parameters selected</p>
-            )}
-            {answeredEntries.map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-                <span style={{ fontSize: '11px', color: 'rgba(196,168,255,0.6)', minWidth: '90px', flexShrink: 0 }}>{label}</span>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Action row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {onEditAnswers && (
-            <button
-              onClick={onEditAnswers}
-              style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px', padding: '6px 13px', cursor: 'pointer' }}
-            >← Edit answers</button>
-          )}
-          <button
-            onClick={onStartOver}
-            style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px' }}
-          >Start over</button>
-          <div style={{ flex: 1 }} />
-          <button
-            onClick={handleCopy}
-            style={{
-              padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
-              background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(139,92,246,0.75)',
-              border: 'none', color: 'white', cursor: 'pointer', transition: 'background 200ms ease',
-            }}
-          >{copied ? 'Copied ✓' : 'Copy prompt'}</button>
-        </div>
-      </div>
-    )
-  }
-
-  // Compact bar layout (dead path — image mode always expands)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', padding: '11px 14px', gap: '9px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-        <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: 'rgba(139,92,246,0.9)' }} />
-        <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>Image prompt ready</span>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px 28px', gap: '14px', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(139,92,246,0.9)' }} />
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>Image prompt ready</span>
       </div>
-      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
-      <div>
-        <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.25)', fontWeight: 600, margin: '0 0 6px 0' }}>Assembled prompt</p>
-        <div style={{
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: '9px', padding: '10px 12px',
-        }}>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, margin: 0 }}>{promptText}</p>
+
+      {/* Two-column grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
+        {/* Left column: prompt + flags */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
+          <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', margin: 0, fontWeight: 600 }}>Assembled prompt</p>
+          <div style={{
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '10px', padding: '12px', flex: 1, overflowY: 'auto', minHeight: 0,
+          }}>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, margin: 0 }}>{promptText}</p>
+          </div>
+          {flags && (
+            <div style={{
+              background: 'rgba(139,92,246,0.06)', border: '0.5px solid rgba(139,92,246,0.2)',
+              borderRadius: '8px', padding: '9px 12px', flexShrink: 0,
+            }}>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(139,92,246,0.5)', margin: '0 0 5px 0', fontWeight: 600 }}>Nano Banana flags</p>
+              <code style={{ fontSize: '12px', color: 'rgba(196,168,255,0.8)', fontFamily: 'monospace', lineHeight: 1.5 }}>{flags}</code>
+            </div>
+          )}
+          <div style={{ flexShrink: 0 }}>
+            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {['Nano Banana', 'ChatGPT image gen'].map((tool) => (
+                <span key={tool} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '3px 9px', fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{tool}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right column: param summary */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflowY: 'auto' }}>
+          <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
+          {answeredEntries.length === 0 && (
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>No parameters selected</p>
+          )}
+          {answeredEntries.map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(196,168,255,0.6)', minWidth: '90px', flexShrink: 0 }}>{label}</span>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>{value}</span>
+            </div>
+          ))}
         </div>
       </div>
-      {flags && (
-        <code style={{ fontSize: '11px', color: 'rgba(196,168,255,0.7)', fontFamily: 'monospace', padding: '5px 8px', background: 'rgba(139,92,246,0.06)', borderRadius: '6px', border: '0.5px solid rgba(139,92,246,0.15)' }}>{flags}</code>
-      )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+
+      {/* Action row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        {onEditAnswers && (
+          <button
+            onClick={onEditAnswers}
+            style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px', padding: '6px 13px', cursor: 'pointer' }}
+          >← Edit answers</button>
+        )}
         <button
           onClick={onStartOver}
-          style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '5px 6px' }}
+          style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px' }}
         >Start over</button>
         <div style={{ flex: 1 }} />
         <button
           onClick={handleCopy}
           style={{
-            padding: '6px 15px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
+            padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
             background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(139,92,246,0.75)',
             border: 'none', color: 'white', cursor: 'pointer', transition: 'background 200ms ease',
           }}
