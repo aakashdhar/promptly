@@ -1,924 +1,2970 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promptly — Voice to Prompt for Claude</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     :root {
-      --bg-bar: rgba(255,255,255,0.04);
-      --border-top: 0.5px solid rgba(255,255,255,0.18);
-      --border-left: 0.5px solid rgba(255,255,255,0.1);
-      --border-right: 0.5px solid rgba(255,255,255,0.06);
-      --border-bottom: 0.5px solid rgba(255,255,255,0.04);
-      --bar-radius: 18px;
-      --bar-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
-      --bar-backdrop: blur(40px) saturate(180%);
-      --highlight-top: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
-      --accent-bottom: linear-gradient(90deg, transparent, rgba(255,59,48,0.2), transparent);
-      --divider: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
-      --blue: #0A84FF;
-      --red: #FF3B30;
-      --green: #30D158;
-      --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      --ink: #0A0A0F;
+      --ink-mid: #1C1C24;
+      --paper: #F5F3EE;
+      --paper-warm: #EDE9E1;
+      --amber: #B45309;
+      --amber-light: #D97706;
+      --amber-pale: #FEF3C7;
+      --text-primary: #1A1814;
+      --text-secondary: #5C5648;
+      --text-muted: #8C8478;
+      --border: rgba(0, 0, 0, 0.08);
+      --serif: 'Fraunces', Georgia, serif;
+      --sans: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
     }
 
-    body.light {
-      --bg-bar: rgba(0,0,0,0.02);
-      --border-top: 0.5px solid rgba(0,0,0,0.12);
-      --border-left: 0.5px solid rgba(0,0,0,0.08);
-      --border-right: 0.5px solid rgba(0,0,0,0.05);
-      --border-bottom: 0.5px solid rgba(0,0,0,0.03);
-      --bar-shadow: 0 0 0 0.5px rgba(0,0,0,0.06) inset, 0 16px 48px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1);
-      --highlight-top: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
-      --accent-bottom: linear-gradient(90deg, transparent, rgba(10,132,255,0.1), transparent);
-      --divider: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
-      --blue: #007AFF;
-      --red: #FF3B30;
-      --green: #34C759;
-    }
-
-    body.light .bar::before { background: rgba(255,255,255,0.7); }
-    body.light .ready-title  { color: rgba(0,0,0,0.7); }
-    body.light .ready-sub    { color: rgba(0,0,0,0.35); }
-    body.light .think-title  { color: rgba(0,0,0,0.5); }
-    body.light .mode-pill    { background: rgba(0,122,255,0.1); border-color: rgba(0,122,255,0.2); color: rgba(0,100,200,0.8); }
-    body.light .pr-status    { color: rgba(0,0,0,0.45); }
-    body.light .pr-btn       { color: rgba(0,0,0,0.3); }
-    body.light .pr-btn:hover { color: #007AFF; }
-    body.light .ys-label     { color: rgba(0,0,0,0.25); }
-    body.light .ys-text      { color: rgba(0,0,0,0.6); }
-    body.light .ys-label-s   { color: rgba(0,0,0,0.2); }
-    body.light .ys-text-s    { color: rgba(0,0,0,0.55); }
-    body.light .prompt-out   { color: rgba(0,0,0,0.8); }
-    body.light .pt-sl        { color: rgba(0,100,200,0.5); }
-    body.light .btn-edit     { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.03); color: rgba(0,0,0,0.5); }
-    body.light .btn-edit:hover { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.15); }
-    body.light .ready-title#error-message { color: rgba(0,0,0,0.7); }
-    body.light .transcript-text { color: rgba(0,0,0,0.45); }
-    body.light .rec-dur      { color: rgba(0,0,0,0.35); }
-    body.light .dismiss-btn  { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
-    body.light .dismiss-btn:hover { background: rgba(0,0,0,0.08); }
-
-    html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background: transparent !important;
-      background-color: transparent !important;
-      overflow: hidden !important;
-    }
-
-    #app, #root, .app, .container, .wrapper {
-      background: transparent !important;
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
-      font-family: var(--font);
-      -webkit-font-smoothing: antialiased;
-      user-select: none;
+      font-family: var(--sans);
+      background: var(--ink);
+      color: var(--paper);
+      overflow-x: hidden;
     }
 
-    .bar {
-      width: 520px;
-      min-height: 100vh;
-      background: transparent;
-      border-radius: var(--bar-radius);
-      border-top: var(--border-top);
-      border-left: var(--border-left);
-      border-right: var(--border-right);
-      border-bottom: var(--border-bottom);
-      backdrop-filter: var(--bar-backdrop);
-      -webkit-backdrop-filter: var(--bar-backdrop);
-      box-shadow: var(--bar-shadow);
-      position: relative;
-      overflow: hidden;
-    }
-    .bar::before {
+    /* ─── NOISE TEXTURE ─── */
+    body::before {
       content: '';
-      position: absolute;
+      position: fixed;
       inset: 0;
-      background: rgba(255,255,255,0.06);
-      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
       pointer-events: none;
       z-index: 0;
-    }
-    .bar::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 15%; right: 15%; height: 1px;
-      background: var(--accent-bottom);
-      pointer-events: none;
-      z-index: 2;
+      opacity: 0.4;
     }
 
-    #panel-idle, #panel-recording, #panel-thinking, #panel-ready, #panel-error {
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      background: rgba(10, 10, 15, 0.85);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+
+    .nav-logo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber-light);
+      box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .nav-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(180, 83, 9, 0.15);
+      border: 0.5px solid rgba(180, 83, 9, 0.35);
+      color: rgba(217, 119, 6, 0.85);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── HERO SPLIT ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      overflow: hidden;
+      background: var(--ink);
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(180, 83, 9, 0.1) 0%, transparent 65%);
+      top: 50%;
+      left: 25%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse 55% 80% at 25% 50%, black, transparent);
+      pointer-events: none;
+    }
+
+    .hero-copy {
+      padding: 120px 52px 80px 72px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       position: relative;
       z-index: 1;
     }
 
-    /* Traffic light spacer — native macOS buttons render here via titleBarStyle: hiddenInset */
-    .traf { height: 28px; -webkit-app-region: drag; }
-
-    .div-line {
-      height: 0.5px;
-      background: var(--divider);
-      margin: 0 18px;
-    }
-
-    .mode-pill {
-      background: rgba(10,132,255,0.12);
-      border: 0.5px solid rgba(10,132,255,0.25);
-      border-radius: 20px;
-      padding: 3px 11px;
-      font-size: 10px;
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 10.5px;
       font-weight: 500;
-      color: rgba(100,180,255,0.85);
-      letter-spacing: 0.03em;
-      flex-shrink: 0;
-      -webkit-appearance: none;
-      -webkit-app-region: no-drag;
-    }
-
-    /* === IDLE === */
-    .cr-idle {
-      height: 76px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--amber-light);
+      margin-bottom: 28px;
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      -webkit-app-region: drag;
-      cursor: pointer;
+      gap: 10px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.2s forwards;
     }
 
-    .pulse-ring {
-      width: 40px;
-      height: 40px;
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 0.5px;
+      background: rgba(217, 119, 6, 0.5);
+    }
+
+    .hero-headline {
+      font-family: var(--serif);
+      font-size: clamp(42px, 3.8vw, 64px);
+      font-weight: 300;
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      color: rgba(255, 255, 255, 0.92);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.35s forwards;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      color: var(--amber-light);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1.75;
+      color: rgba(255, 255, 255, 0.4);
+      max-width: 400px;
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+    }
+
+    .hero-modes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.65s forwards;
+    }
+
+    .mode-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 500;
+      border: 0.5px solid;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      opacity: 0.55;
+    }
+
+    .mode-chip:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    .mode-chip.active-mode {
+      opacity: 1 !important;
+      transform: scale(1.05);
+    }
+
+    .mode-chip.balanced {
+      background: rgba(10, 132, 255, 0.1);
+      border-color: rgba(10, 132, 255, 0.25);
+      color: rgba(100, 170, 255, 0.85);
+    }
+
+    .mode-chip.code {
+      background: rgba(10, 132, 255, 0.08);
+      border-color: rgba(10, 132, 255, 0.2);
+      color: rgba(100, 170, 255, 0.75);
+    }
+
+    .mode-chip.image {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.3);
+      color: rgba(196, 168, 255, 0.85);
+    }
+
+    .mode-chip.video {
+      background: rgba(251, 146, 60, 0.1);
+      border-color: rgba(251, 146, 60, 0.3);
+      color: rgba(253, 186, 116, 0.85);
+    }
+
+    .mode-chip.workflow {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: rgba(74, 222, 128, 0.85);
+    }
+
+    .mode-chip.email {
+      background: rgba(20, 184, 166, 0.1);
+      border-color: rgba(20, 184, 166, 0.3);
+      color: rgba(45, 212, 191, 0.85);
+    }
+
+    .mode-chip.polish {
+      background: rgba(48, 209, 88, 0.08);
+      border-color: rgba(48, 209, 88, 0.2);
+      color: rgba(100, 220, 130, 0.75);
+    }
+
+    .mode-chip.design {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .mode-chip.balanced.active-mode {
+      opacity: 1;
+      border-color: rgba(10, 132, 255, 0.6);
+      box-shadow: 0 0 8px rgba(10, 132, 255, 0.2);
+    }
+
+    .mode-chip.code.active-mode {
+      opacity: 1;
+      border-color: rgba(10, 132, 255, 0.6);
+      box-shadow: 0 0 8px rgba(10, 132, 255, 0.2);
+    }
+
+    .mode-chip.image.active-mode {
+      opacity: 1;
+      border-color: rgba(139, 92, 246, 0.7);
+      box-shadow: 0 0 8px rgba(139, 92, 246, 0.25);
+    }
+
+    .mode-chip.video.active-mode {
+      opacity: 1;
+      border-color: rgba(251, 146, 60, 0.7);
+      box-shadow: 0 0 8px rgba(251, 146, 60, 0.2);
+    }
+
+    .mode-chip.workflow.active-mode {
+      opacity: 1;
+      border-color: rgba(34, 197, 94, 0.7);
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+    }
+
+    .mode-chip.email.active-mode {
+      opacity: 1;
+      border-color: rgba(20, 184, 166, 0.7);
+      box-shadow: 0 0 8px rgba(20, 184, 166, 0.2);
+    }
+
+    .mode-chip.polish.active-mode {
+      opacity: 1;
+      border-color: rgba(48, 209, 88, 0.6);
+      box-shadow: 0 0 8px rgba(48, 209, 88, 0.15);
+    }
+
+    .mode-chip.design.active-mode {
+      opacity: 1;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.08);
+    }
+
+    /* Carousel screen switcher */
+    .mode-screens {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .mode-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .mode-screen.visible {
+      display: flex;
+    }
+
+    .mode-screen>div {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* RIGHT: app window */
+    .hero-app {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: stretch;
+      padding-top: 64px;
+      overflow: hidden;
+      opacity: 0;
+      animation: fadeUp 1s 0.7s forwards;
+    }
+
+    .app-window {
+      width: 100%;
+      height: 100%;
+      background: #0C0C12;
+      border-radius: 12px 0 0 0;
+      border-top: 0.5px solid rgba(255, 255, 255, 0.12);
+      border-left: 0.5px solid rgba(255, 255, 255, 0.08);
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5), 0 -4px 30px rgba(139, 92, 246, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .win-traf {
+      display: flex;
+      gap: 6px;
+      padding: 11px 13px 0;
+      flex-shrink: 0;
+    }
+
+    .wdot {
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
-      background: rgba(10,132,255,0.15);
-      border: 1px solid rgba(10,132,255,0.4);
+    }
+
+    .wr {
+      background: #FF5F57
+    }
+
+    .wy {
+      background: #FFBD2E
+    }
+
+    .wg {
+      background: #28C840
+    }
+
+    .win-topbar {
+      padding: 7px 0 10px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+      background: #111118;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .win-transport {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      height: 40px;
+    }
+
+    .wsb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
+      opacity: 0.35;
       flex-shrink: 0;
-      -webkit-app-region: no-drag;
-      box-shadow: 0 0 12px rgba(10,132,255,0.3), 0 0 24px rgba(10,132,255,0.12);
     }
-    .pulse-ring::before {
+
+    .win-mode-pill {
+      background: rgba(139, 92, 246, 0.12);
+      border: 0.5px solid rgba(139, 92, 246, 0.3);
+      border-radius: 20px;
+      padding: 3px 11px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: rgba(196, 168, 255, 0.9);
+    }
+
+    .win-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .win-hist {
+      width: 200px;
+      flex-shrink: 0;
+      border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      background: #0C0C12;
+      overflow: hidden;
+    }
+
+    .win-histh {
+      padding: 10px 13px 8px;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.22);
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .win-entry {
+      padding: 8px 13px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .win-entry.active {
+      background: rgba(139, 92, 246, 0.07);
+      border-left: 2px solid rgba(139, 92, 246, 0.45);
+      padding-left: 11px;
+    }
+
+    .wen-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .wen-time {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.2);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .wen-title {
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.42);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wen-tag {
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .win-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .win-content-header {
+      padding: 9px 16px 8px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .win-said {
+      padding: 6px 16px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.015);
+      flex-shrink: 0;
+    }
+
+    .win-tabs {
+      display: flex;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+      padding: 0 16px;
+      gap: 1px;
+      flex-shrink: 0;
+    }
+
+    .win-tab {
+      padding: 5px 11px;
+      font-size: 10px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .win-tab.active {
+      color: rgba(196, 168, 255, 0.9);
+      border-bottom-color: rgba(139, 92, 246, 0.65);
+      font-weight: 500;
+    }
+
+    .win-main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .win-params {
+      flex: 1;
+      padding: 10px 16px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .win-param-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin-bottom: 9px;
+    }
+
+    .wpl {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.25);
+      min-width: 68px;
+      flex-shrink: 0;
+      padding-top: 4px;
+    }
+
+    .wchips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      flex: 1;
+    }
+
+    .wchip {
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 10px;
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.42);
+    }
+
+    .wchip.ai {
+      border-color: rgba(139, 92, 246, 0.3);
+      background: rgba(139, 92, 246, 0.08);
+      color: rgba(196, 168, 255, 0.8);
+    }
+
+    .wchip.ai::before {
+      content: '·';
+      color: rgba(139, 92, 246, 0.6);
+      margin-right: 2px;
+      font-weight: 700;
+    }
+
+    .win-presets {
+      padding: 7px 16px 9px;
+      border-top: 0.5px solid rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+    }
+
+    .wpreset-cat {
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255, 189, 46, 0.4);
+      margin-bottom: 3px;
+    }
+
+    .wpreset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-bottom: 5px;
+    }
+
+    .wpreset-chip {
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 9.5px;
+      border: 0.5px solid rgba(255, 189, 46, 0.15);
+      background: rgba(255, 189, 46, 0.05);
+      color: rgba(255, 189, 46, 0.55);
+    }
+
+    .wpreset-chip::before {
+      content: '·';
+      color: rgba(255, 189, 46, 0.45);
+      margin-right: 2px;
+      font-weight: 700;
+    }
+
+    .win-vars {
+      width: 220px;
+      flex-shrink: 0;
+      border-left: 0.5px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      background: rgba(8, 8, 14, 1);
+    }
+
+    .wvarh {
+      padding: 9px 12px 7px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.22);
+    }
+
+    .wvar {
+      padding: 8px 12px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .wvar.active {
+      background: rgba(139, 92, 246, 0.07);
+      border-left: 2px solid rgba(139, 92, 246, 0.4);
+      padding-left: 10px;
+    }
+
+    .wvar-num {
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: rgba(139, 92, 246, 0.5);
+      margin-bottom: 2px;
+    }
+
+    .wvar-text {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.48);
+      line-height: 1.5;
+    }
+
+    .wvar-focus {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.2);
+      margin-top: 2px;
+    }
+
+    .win-actions {
+      padding: 8px 16px 10px;
+      border-top: 0.5px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .wbtn-sec {
+      height: 28px;
+      padding: 0 11px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 7px;
+      font-size: 10.5px;
+      font-family: inherit;
+      color: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+    }
+
+    .wbtn-pri {
+      height: 28px;
+      padding: 0 16px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.88), rgba(109, 62, 216, 0.88));
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 10.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* ─── TRANSITION ─── */
+    .section-transition {
+      height: 180px;
+      background: linear-gradient(to bottom, var(--ink) 0%, var(--paper) 100%);
+    }
+
+    /* ─── LIGHT SECTIONS ─── */
+    .light-body {
+      background: var(--paper);
+      color: var(--text-primary);
+    }
+
+    /* ─── HOW IT WORKS ─── */
+    .how-section {
+      padding: 100px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
       content: '';
-      position: absolute;
+      display: block;
+      flex: 1;
+      height: 0.5px;
+      background: var(--amber);
+      opacity: 0.25;
+      max-width: 60px;
+    }
+
+    .section-headline {
+      font-family: var(--serif);
+      font-size: clamp(36px, 4vw, 54px);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .section-headline em {
+      font-style: italic;
+      color: var(--amber);
+    }
+
+    .section-body {
+      font-size: 17px;
+      font-weight: 300;
+      line-height: 1.75;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin-bottom: 64px;
+    }
+
+    /* Flow steps */
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .flow-step {
+      padding: 32px 28px;
+      border-right: 0.5px solid var(--border);
+      position: relative;
+    }
+
+    .flow-step:last-child {
+      border-right: none;
+    }
+
+    .flow-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--amber);
+      margin-bottom: 16px;
+      letter-spacing: 0.08em;
+    }
+
+    .flow-icon {
       width: 40px;
       height: 40px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(10,132,255,0.35);
-      animation: pulse-expand 1.8s ease-out infinite;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 18px;
     }
-    .pulse-ring::after {
-      content: '';
+
+    .flow-title {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .flow-desc {
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--text-secondary);
+    }
+
+    .flow-arrow {
       position: absolute;
-      width: 40px;
-      height: 40px;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      background: var(--paper);
+      border: 0.5px solid var(--border);
       border-radius: 50%;
-      border: 1px solid rgba(10,132,255,0.18);
-      animation: pulse-expand 1.8s ease-out infinite 0.6s;
-    }
-    @keyframes pulse-expand {
-      0% { transform: scale(1); opacity: 1; }
-      100% { transform: scale(2.2); opacity: 0; }
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      font-size: 10px;
+      color: var(--amber);
     }
 
-    .ready-text { flex: 1; margin-left: 14px; -webkit-app-region: no-drag; }
-    .ready-title { font-size: 13px; color: rgba(255,255,255,0.5); font-weight: 500; letter-spacing: 0.01em; margin-bottom: 3px; }
-    .ready-sub { font-size: 11px; color: rgba(255,255,255,0.18); letter-spacing: 0.01em; }
+    /* ─── MODES SECTION ─── */
+    .modes-section {
+      padding: 80px 48px 100px;
+      background: var(--paper-warm);
+      border-top: 0.5px solid var(--border);
+      border-bottom: 0.5px solid var(--border);
+    }
 
-    /* === THINKING === */
-    .cr-think {
-      height: 80px; display: flex; align-items: center;
-      padding: 0 22px; gap: 14px;
+    /* ─── BENTO GRID ─── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 14px;
+      margin-top: 56px;
     }
-    .status-badge {
-      background: rgba(10,132,255,0.1);
-      border: 0.5px solid rgba(10,132,255,0.2);
-      border-radius: 20px; padding: 4px 12px;
-      font-size: 10px; font-weight: 500;
-      color: rgba(100,180,255,0.8); letter-spacing: 0.04em;
-      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
-    }
-    .status-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: rgba(10,132,255,0.9);
-      box-shadow: 0 0 6px rgba(10,132,255,0.7);
-      animation: status-pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes status-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .think-title { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 500; letter-spacing: 0.01em; }
-    .morph-wrap { padding: 10px 22px 24px; }
-    .ys-label-s {
-      font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(255,255,255,0.14);
-      margin-bottom: 12px; padding: 0 22px; display: block;
-    }
-    .ys-text-s { padding: 0 22px 28px; font-size: 13px; color: rgba(255,255,255,0.26); line-height: 1.75; letter-spacing: 0.01em; max-height: 120px; overflow-y: auto; scrollbar-width: thin; }
-    .ys-text-s::-webkit-scrollbar { width: 3px; }
-    .ys-text-s::-webkit-scrollbar-track { background: transparent; }
-    .ys-text-s::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
-    /* === PROMPT READY === */
-    .top-row { display: flex; justify-content: space-between; align-items: center; padding: 26px 22px 20px; }
-    .pr-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.01em; }
-    .pr-check { color: var(--green); font-size: 15px; text-shadow: 0 0 8px rgba(48,209,88,0.5); }
-    .pr-actions { display: flex; gap: 18px; }
-    .pr-btn {
-      font-size: 11px; color: rgba(255,255,255,0.2); background: none; border: none;
-      cursor: pointer; font-family: var(--font); padding: 0; letter-spacing: 0.01em;
-      transition: color 150ms;
+    .bento-cell {
+      background: var(--paper);
+      border: 0.5px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
     }
-    .pr-btn:hover { color: var(--blue); }
 
-    .you-said-block { padding: 28px 22px 0; }
-    .ys-label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.16); margin-bottom: 12px; }
-    .ys-text {
-      font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.7; letter-spacing: 0.01em;
-      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    .bento-cell:hover {
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+    }
+
+    .bento-image {
+      grid-column: 1;
+      grid-row: 1 / 3;
+    }
+
+    .bento-video {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .bento-email {
+      grid-column: 3;
+      grid-row: 1 / 3;
+    }
+
+    .bento-workflow {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .bento-prompt {
+      grid-column: 1 / 3;
+      grid-row: 3;
+    }
+
+    .bento-polish {
+      grid-column: 3;
+      grid-row: 3;
+    }
+
+    .bento-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      border-radius: 18px 18px 0 0;
+    }
+
+    .bento-label {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .bento-name {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+
+    .bento-desc {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      margin-bottom: 18px;
+    }
+
+    .bento-example {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--text-muted);
+      background: var(--paper-warm);
+      border: 0.5px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 13px;
+      line-height: 1.6;
+      margin-top: auto;
+    }
+
+    .bento-sublabel {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* Mini UI inside image cell */
+    .bento-mini-ui {
+      background: #0e0e14;
+      border-radius: 12px;
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+      padding: 14px;
+      margin: 18px 0;
+    }
+
+    .bmi-tabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 12px;
+    }
+
+    .bmi-tab {
+      font-size: 9.5px;
+      padding: 4px 10px;
+      color: rgba(255, 255, 255, 0.3);
+      border-bottom: 1.5px solid transparent;
+      cursor: pointer;
+    }
+
+    .bmi-tab.active {
+      color: rgba(196, 168, 255, 0.9);
+      border-bottom-color: rgba(139, 92, 246, 0.7);
+      font-weight: 500;
+    }
+
+    .bmi-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .bmi-lbl {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.22);
+      min-width: 52px;
+      flex-shrink: 0;
+    }
+
+    .bmi-chips {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .bmi-chip {
+      font-size: 9.5px;
+      padding: 2px 8px;
+      border-radius: 5px;
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .bmi-chip.ai {
+      border-color: rgba(139, 92, 246, 0.3);
+      background: rgba(139, 92, 246, 0.08);
+      color: rgba(196, 168, 255, 0.82);
+    }
+
+    .bmi-chip.ai::before {
+      content: '·';
+      color: rgba(139, 92, 246, 0.6);
+      margin-right: 3px;
+      font-weight: 700;
+    }
+
+    .bmi-vars {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 12px;
+    }
+
+    .bmi-var {
+      font-size: 10px;
+      padding: 7px 9px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 0.5px solid rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.38);
+      line-height: 1.5;
+    }
+
+    .bmi-var.sel {
+      background: rgba(139, 92, 246, 0.07);
+      border-color: rgba(139, 92, 246, 0.22);
+      color: rgba(196, 168, 255, 0.7);
+      border-left: 2px solid rgba(139, 92, 246, 0.45);
+      padding-left: 7px;
+    }
+
+    .bmi-var-num {
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: rgba(139, 92, 246, 0.5);
+      margin-bottom: 2px;
+    }
+
+    .bmi-var-text {
+      font-size: 10px;
+      color: inherit;
+      line-height: 1.5;
+    }
+
+    /* Video model chips */
+    .bento-model-chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      color: var(--text-secondary);
+      background: var(--paper-warm);
+      font-weight: 400;
+    }
+
+    .bento-model-chip.active {
+      background: rgba(251, 146, 60, 0.08);
+      border-color: rgba(251, 146, 60, 0.28);
+      color: rgba(194, 65, 12, 0.9);
+      font-weight: 500;
+    }
+
+    /* Email preview */
+    .bento-email-preview {
+      background: var(--paper-warm);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 16px 0;
+    }
+
+    .bep-subject-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: rgba(20, 184, 166, 0.6);
       margin-bottom: 4px;
     }
 
-    .inner-div { height: 0.5px; background: linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent); margin: 26px 22px; }
-
-    .prompt-out {
-      padding: 0 22px; padding-bottom: 4px;
-      font-size: 13.5px; line-height: 1.9;
-      color: rgba(255,255,255,0.82);
-      letter-spacing: 0.01em;
-      max-height: 200px; overflow-y: auto;
-      white-space: pre-wrap;
-    }
-    .prompt-out::-webkit-scrollbar { width: 3px; }
-    .prompt-out::-webkit-scrollbar-track { background: transparent; }
-    .prompt-out::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-    .pt-sl {
-      font-size: 8.5px; font-weight: 700;
-      letter-spacing: 0.14em; text-transform: uppercase;
-      color: rgba(100,170,255,0.42);
-      display: block; margin-bottom: 8px; margin-top: 26px;
-    }
-
-    .btn-row { display: flex; gap: 10px; padding: 32px 22px 28px; }
-    .btn-edit {
-      height: 44px; padding: 0 24px;
-      border: 0.5px solid rgba(255,255,255,0.1);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.04);
-      font-size: 13px; font-family: var(--font);
-      color: rgba(255,255,255,0.4); cursor: pointer;
-      letter-spacing: 0.01em;
-      transition: background 150ms, border-color 150ms;
-    }
-    .btn-edit:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
-
-    .btn-copy {
-      flex: 1; height: 44px;
-      background: linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92));
-      color: white; border: none; border-radius: 10px;
-      font-size: 13px; font-weight: 600; font-family: var(--font);
-      cursor: pointer; letter-spacing: 0.02em;
-      border-top: 0.5px solid rgba(255,255,255,0.18);
-      box-shadow: 0 2px 20px rgba(10,132,255,0.4);
-      transition: box-shadow 150ms, background 150ms;
-    }
-    .btn-copy:hover { box-shadow: 0 4px 28px rgba(10,132,255,0.65); }
-    .btn-copy.copied { background: linear-gradient(135deg, rgba(48,209,88,0.9), rgba(36,160,68,0.9)); box-shadow: 0 2px 20px rgba(48,209,88,0.4); }
-
-    /* === RECORDING === */
-    .cr-rec {
-      height: 68px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      gap: 12px;
-      -webkit-app-region: drag;
-    }
-    .dismiss-btn {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      border: 0.5px solid rgba(255,255,255,0.1);
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; flex-shrink: 0;
-      -webkit-app-region: no-drag;
-      transition: background 150ms;
-    }
-    .dismiss-btn:hover { background: rgba(255,255,255,0.12); }
-    .wave-wrap { flex: 1; display: flex; align-items: center; height: 36px; -webkit-app-region: no-drag; }
-    .rec-dur {
-      font-size: 11px; font-weight: 500;
-      color: rgba(255,255,255,0.3);
-      letter-spacing: 0.06em;
-      font-variant-numeric: tabular-nums;
-      flex-shrink: 0;
-      -webkit-app-region: no-drag;
-      min-width: 28px;
-      text-align: right;
-    }
-    .stop-btn {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--red); border: none;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; flex-shrink: 0;
-      -webkit-app-region: no-drag;
-      animation: stop-glow 2s ease-in-out infinite;
-    }
-    @keyframes stop-glow {
-      0%,100% { box-shadow: 0 0 14px rgba(255,59,48,0.5), 0 2px 8px rgba(0,0,0,0.4); }
-      50% { box-shadow: 0 0 28px rgba(255,59,48,0.9), 0 2px 8px rgba(0,0,0,0.4); }
-    }
-    .rec-div-line {
-      height: 0.5px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
-      margin: 0 18px;
-    }
-    .transcript-wrap {
-      padding: 12px 18px 14px;
-      max-height: 100px;
-      overflow-y: auto;
-    }
-    .transcript-wrap::-webkit-scrollbar { width: 3px; }
-    .transcript-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-    .transcript-text {
+    .bep-subject {
       font-size: 12.5px;
-      color: rgba(255,255,255,0.42);
-      line-height: 1.6;
-      letter-spacing: 0.01em;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 10px;
     }
-    .cursor-b {
-      display: inline-block; width: 1.5px; height: 13px;
-      background: rgba(255,255,255,0.6);
-      margin-left: 1px; vertical-align: middle;
-      animation: cb 1s step-end infinite;
-    }
-    @keyframes cb { 0%,100%{opacity:1} 50%{opacity:0} }
 
-    /* === ERROR === */
-    .cr-error {
-      height: 76px;
+    .bep-body {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      line-height: 1.75;
+    }
+
+    /* Tone chips */
+    .bento-tone-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .btone-chip {
+      font-size: 11px;
+      padding: 4px 11px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      color: var(--text-secondary);
+      background: var(--paper-warm);
+    }
+
+    .btone-chip.active {
+      background: rgba(20, 184, 166, 0.07);
+      border-color: rgba(20, 184, 166, 0.3);
+      color: rgba(15, 118, 110, 0.9);
+      font-weight: 500;
+    }
+
+    /* Workflow nodes */
+    .bento-node-flow {
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      cursor: pointer;
-      -webkit-app-region: drag;
-    }
-    .error-badge {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: rgba(255,59,48,0.1);
-      border: 0.5px solid rgba(255,59,48,0.25);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      font-size: 14px;
-      -webkit-app-region: no-drag;
+      gap: 8px;
+      margin: 14px 0;
+      flex-wrap: wrap;
     }
 
+    .bento-node {
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-weight: 500;
+      border: 0.5px solid;
+      white-space: nowrap;
+    }
+
+    .bento-arrow {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Prompt mode chips */
+    .bento-prompt-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .bpchip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 11px;
+      border: 0.5px solid var(--border);
+      background: var(--paper-warm);
+    }
+
+    .bpc-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .bpc-name {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 1px;
+    }
+
+    .bpc-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Polish split */
+    .bento-polish-split {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .bpolish-before {
+      font-size: 11.5px;
+      font-style: italic;
+      color: var(--text-muted);
+      line-height: 1.65;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--paper-warm);
+      border: 0.5px solid var(--border);
+    }
+
+    .bpolish-after {
+      font-size: 11.5px;
+      color: var(--text-primary);
+      line-height: 1.65;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--paper-warm);
+      border: 0.5px solid rgba(48, 209, 88, 0.25);
+    }
+
+    @media (max-width: 1100px) {
+      .bento-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bento-image {
+        grid-column: 1;
+        grid-row: auto;
+      }
+
+      .bento-video {
+        grid-column: 2;
+        grid-row: auto;
+      }
+
+      .bento-email {
+        grid-column: 1 / 3;
+        grid-row: auto;
+      }
+
+      .bento-workflow {
+        grid-column: 1;
+        grid-row: auto;
+      }
+
+      .bento-prompt {
+        grid-column: 1 / 3;
+        grid-row: auto;
+      }
+
+      .bento-polish {
+        grid-column: 2;
+        grid-row: auto;
+      }
+    }
+
+    .mode-card-example {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--text-muted);
+      background: var(--paper-warm);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    .mode-card-example::before {
+      content: '"';
+      color: var(--amber);
+    }
+
+    .mode-card-example::after {
+      content: '"';
+      color: var(--amber);
+    }
+
+    /* ─── VIBE SECTION ─── */
+    .vibe-section {
+      padding: 100px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .vibe-intro {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+      margin-bottom: 72px;
+    }
+
+    .vibe-skills-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .skill-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 22px;
+      border-bottom: 0.5px solid var(--border);
+      gap: 14px;
+      transition: background 0.15s;
+    }
+
+    .skill-row:last-child {
+      border-bottom: none;
+    }
+
+    .skill-row:hover {
+      background: var(--paper-warm);
+    }
+
+    .skill-phase {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--amber);
+      min-width: 52px;
+    }
+
+    .skill-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    .skill-desc {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text-secondary);
+      flex: 2;
+    }
+
+    .skill-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(180, 83, 9, 0.1);
+      border: 0.5px solid rgba(180, 83, 9, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 9px;
+      color: var(--amber);
+    }
+
+    /* ─── QUOTE ─── */
+    .quote-section {
+      padding: 80px 48px;
+      background: var(--ink);
+      text-align: center;
+    }
+
+    .big-quote {
+      font-family: var(--serif);
+      font-size: clamp(28px, 3.5vw, 48px);
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: rgba(255, 255, 255, 0.75);
+      max-width: 800px;
+      margin: 0 auto 32px;
+    }
+
+    .big-quote em {
+      color: var(--amber-light);
+      font-style: normal;
+    }
+
+    .quote-attr {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 40px 48px;
+      background: var(--paper);
+      border-top: 0.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .footer-note {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text-muted);
+    }
+
+    .footer-bc {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+
+    .footer-bc a {
+      color: var(--amber);
+      text-decoration: none;
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── SCROLL INDICATOR ─── */
+    .scroll-hint {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp 0.8s 1.2s forwards;
+    }
+
+    .scroll-hint-text {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    .scroll-line {
+      width: 0.5px;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollPulse {
+
+      0%,
+      100% {
+        opacity: 0.4;
+        transform: scaleY(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scaleY(1.1);
+      }
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1024px) {
+      nav {
+        padding: 16px 24px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .hero-copy {
+        padding: 100px 32px 48px;
+      }
+
+      .hero-app {
+        height: 520px;
+        padding-top: 0;
+      }
+
+      .app-window {
+        border-radius: 12px;
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .how-section,
+      .vibe-section {
+        padding: 64px 24px;
+      }
+
+      .modes-section {
+        padding: 64px 24px;
+      }
+
+      .flow {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .modes-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .vibe-intro {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+    }
   </style>
 </head>
+
 <body>
 
-  <div class="bar" id="bar">
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-dot"></div>
+      Promptly
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#modes">Modes</a></li>
+      <li><a href="#vibe">Built with vibe-*</a></li>
+      <li><span class="nav-tag">macOS · Beta</span></li>
+    </ul>
+  </nav>
 
-    <!-- IDLE -->
-    <div id="panel-idle">
-      <div class="traf"></div>
-      <div class="cr-idle" id="idle-area">
-        <div class="pulse-ring">
-          <svg width="13" height="15" viewBox="0 0 12 16" fill="none">
-            <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,180,255,1)" stroke-width="1"/>
-            <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,180,255,0.85)" stroke-width="1" stroke-linecap="round"/>
-            <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,180,255,0.85)" stroke-width="1" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="ready-text">
-          <div class="ready-title">Promptly is ready</div>
-          <div class="ready-sub">Press ⌥ Space or click to speak your prompt</div>
-        </div>
-        <span class="mode-pill" id="mode-pill">Balanced</span>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-grid"></div>
+
+    <!-- LEFT: copy -->
+    <div class="hero-copy">
+      <div class="hero-eyebrow">Voice to Prompt — for Claude</div>
+      <h1 class="hero-headline">
+        Speak your idea.<br>
+        Get a <em>structured<br>prompt</em> ready to use.
+      </h1>
+      <p class="hero-sub">
+        Promptly turns rough spoken thoughts into precisely engineered Claude prompts.
+        Image generation, video scripts, n8n workflows, professional emails — all from your voice.
+      </p>
+      <div class="hero-modes" id="heroModes">
+        <span class="mode-chip balanced" data-mode="balanced" onclick="switchMode('balanced',true)">Balanced</span>
+        <span class="mode-chip code" data-mode="code" onclick="switchMode('code',true)">Code</span>
+        <span class="mode-chip design" data-mode="design" onclick="switchMode('design',true)">Design</span>
+        <span class="mode-chip image active-mode" data-mode="image" onclick="switchMode('image',true)">Image</span>
+        <span class="mode-chip video" data-mode="video" onclick="switchMode('video',true)">Video</span>
+        <span class="mode-chip workflow" data-mode="workflow" onclick="switchMode('workflow',true)">Workflow</span>
+        <span class="mode-chip email" data-mode="email" onclick="switchMode('email',true)">Email</span>
+        <span class="mode-chip polish" data-mode="polish" onclick="switchMode('polish',true)">Polish</span>
       </div>
     </div>
 
-    <!-- RECORDING -->
-    <div id="panel-recording" style="display:none">
-      <div style="height:13px;-webkit-app-region:drag;"></div>
-      <div class="cr-rec">
-        <div class="dismiss-btn" id="dismissBtn">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="wave-wrap">
-          <canvas id="recCanvas" width="340" height="36" style="width:100%;height:36px;display:block"></canvas>
-        </div>
-        <span class="rec-dur" id="recDur">0:00</span>
-        <div class="stop-btn" id="stopBtn">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <rect x="1.5" y="1.5" width="7" height="7" rx="1.5" fill="white"/>
-          </svg>
-        </div>
-      </div>
-      <div class="rec-div-line"></div>
-      <div class="transcript-wrap" id="transcriptWrap" style="display:none">
-        <div class="transcript-text" id="transcriptText"></div>
-      </div>
-    </div>
+    <!-- RIGHT: mode carousel -->
+    <div class="hero-app">
+      <div class="app-window">
 
-    <!-- THINKING -->
-    <div id="panel-thinking" style="display:none">
-      <div class="traf"></div>
-      <div class="cr-think">
-        <div class="status-badge">
-          <div class="status-dot"></div>
-          Processing
+        <!-- Shared traffic lights + topbar (updates per mode) -->
+        <div class="win-traf">
+          <div class="wdot wr"></div>
+          <div class="wdot wy"></div>
+          <div class="wdot wg"></div>
         </div>
-        <div class="think-title">Building your prompt</div>
-      </div>
-      <div class="morph-wrap">
-        <canvas id="morph-canvas" width="476" height="32"></canvas>
-      </div>
-      <div class="div-line"></div>
-      <span class="ys-label-s">You said</span>
-      <div class="ys-text-s" id="think-transcript"></div>
-    </div>
+        <div class="win-topbar">
+          <div class="win-transport">
+            <div class="wsb" style="opacity:0.35">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                <rect x="2" y="2" width="3" height="8" rx="1" fill="rgba(255,255,255,0.5)" />
+                <rect x="7" y="2" width="3" height="8" rx="1" fill="rgba(255,255,255,0.5)" />
+              </svg>
+            </div>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.2)">0:00</span>
+            <div
+              style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;opacity:0.35;flex-shrink:0">
+              <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
+                <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(255,255,255,0.5)" stroke-width="1" />
+                <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(255,255,255,0.5)"
+                  stroke-width="1" stroke-linecap="round" />
+                <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(255,255,255,0.5)" stroke-width="1"
+                  stroke-linecap="round" />
+              </svg>
+            </div>
+            <div id="topModePill"
+              style="background:rgba(139,92,246,0.12);border:0.5px solid rgba(139,92,246,0.3);border-radius:20px;padding:3px 11px;font-size:10.5px;font-weight:500;color:rgba(196,168,255,0.9);">
+              Image</div>
+            <div class="wsb" style="opacity:0.35">
+              <svg width="11" height="9" viewBox="0 0 14 12" fill="none">
+                <rect x="1" y="1" width="12" height="8" rx="2" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" />
+                <line x1="3.5" y1="4" x2="10.5" y2="4" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"
+                  stroke-linecap="round" />
+                <line x1="3.5" y1="6.5" x2="7.5" y2="6.5" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"
+                  stroke-linecap="round" />
+              </svg>
+            </div>
+            <div style="width:0.5px;height:26px;background:rgba(255,255,255,0.1)"></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div style="display:flex;align-items:center;gap:5px">
+                <div id="topStatusDot" style="width:5px;height:5px;border-radius:50%;background:rgba(139,92,246,0.9)">
+                </div>
+                <span id="topStatusLabel"
+                  style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62);white-space:nowrap">Parameters
+                  ready · review and confirm</span>
+              </div>
+              <span id="topStatusSub" style="font-size:9.5px;color:rgba(255,255,255,0.22);white-space:nowrap">AI
+                pre-filled · tap to adjust · choose a variation</span>
+            </div>
+          </div>
+          <canvas id="heroWave" style="width:480px;height:20px;display:block"></canvas>
+        </div>
 
-    <!-- PROMPT READY -->
-    <div id="panel-ready" style="display:none">
-      <div class="traf"></div>
-      <div class="top-row">
-        <div class="pr-status">
-          <span class="pr-check">✓</span>
-          <span>Prompt ready</span>
-        </div>
-        <div class="pr-actions">
-          <button class="pr-btn" id="btn-regenerate">Regenerate</button>
-          <button class="pr-btn" id="btn-reset">Reset</button>
-        </div>
-      </div>
-      <div class="div-line"></div>
-      <div class="you-said-block">
-        <div class="ys-label">You said</div>
-        <div class="ys-text" id="you-said-text"></div>
-      </div>
-      <div class="inner-div"></div>
-      <div class="prompt-out" id="prompt-output"></div>
-      <div class="btn-row">
-        <button class="btn-edit" id="btn-edit">Edit</button>
-        <button class="btn-copy" id="btn-copy">Copy prompt</button>
-      </div>
-    </div>
+        <!-- Carousel: one content area that swaps -->
+        <div class="win-body" id="modeBody">
 
-    <!-- ERROR -->
-    <div id="panel-error" style="display:none">
-      <div class="traf"></div>
-      <div class="cr-error" id="error-area">
-        <div class="error-badge" style="-webkit-app-region:no-drag">⚠</div>
-        <div class="ready-text" style="margin-left:14px;-webkit-app-region:no-drag">
-          <div class="ready-title" id="error-message">Something went wrong</div>
-          <div class="ready-sub">Tap to retry</div>
+          <!-- Shared history panel — always visible -->
+          <div class="win-hist">
+            <div class="win-histh">Session history</div>
+            <div style="flex:1;overflow:hidden">
+              <div class="win-entry active" id="histActiveEntry"
+                style="border-left-color:rgba(139,92,246,0.45);background:rgba(139,92,246,0.07);">
+                <div class="wen-row"><span class="wen-time">Now</span><span class="wen-tag" id="histActiveTag"
+                    style="background:rgba(139,92,246,0.1);color:rgba(196,168,255,0.65)">Image</span></div>
+                <div class="wen-title" id="histActiveTitle" style="color:rgba(255,255,255,0.75)">Portrait at golden
+                  hour...</div>
+              </div>
+              <div class="win-entry">
+                <div class="wen-row"><span class="wen-time">2:44 PM</span><span class="wen-tag"
+                    style="background:rgba(20,184,166,0.1);color:rgba(45,212,191,0.6)">Email</span></div>
+                <div class="wen-title">Project delay update...</div>
+              </div>
+              <div class="win-entry">
+                <div class="wen-row"><span class="wen-time">1:30 PM</span><span class="wen-tag"
+                    style="background:rgba(34,197,94,0.1);color:rgba(74,222,128,0.6)">Workflow</span></div>
+                <div class="wen-title">Sheets → Trello...</div>
+              </div>
+              <div class="win-entry">
+                <div class="wen-row"><span class="wen-time">11:20 AM</span><span class="wen-tag"
+                    style="background:rgba(10,132,255,0.1);color:rgba(100,170,255,0.6)">Code</span></div>
+                <div class="wen-title">Binary search tree...</div>
+              </div>
+              <div class="win-entry">
+                <div class="wen-row"><span class="wen-time">Yesterday</span><span class="wen-tag"
+                    style="background:rgba(251,146,60,0.1);color:rgba(253,186,116,0.6)">Video</span></div>
+                <div class="wen-title">Surfer at dawn...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content area that swaps -->
+          <div class="win-content" id="modeContent">
+
+            <!-- IMAGE screen -->
+            <div id="screen-image" class="mode-screen visible">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:rgba(139,92,246,0.9)"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Image builder</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(139,92,246,0.08);border:0.5px solid rgba(139,92,246,0.2);color:rgba(196,168,255,0.55)">Nano
+                      Banana</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(255,189,46,0.06);border:0.5px solid rgba(255,189,46,0.15);color:rgba(255,189,46,0.5)">2
+                      unfilled</span>
+                  </div>
+                  <div style="display:flex;gap:12px"><span style="font-size:10px;color:rgba(255,255,255,0.2)">↺
+                      Reiterate</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">Reset</span></div>
+                </div>
+                <div class="win-said">
+                  <div
+                    style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(139,92,246,0.45);margin-bottom:2px">
+                    You said</div>
+                  <div style="font-size:10.5px;color:rgba(255,255,255,0.35);font-style:italic;line-height:1.5">"A
+                    portrait of a young woman at golden hour near the ocean, cinematic film still, shallow depth of
+                    field, warm color grade"</div>
+                </div>
+                <div class="win-tabs">
+                  <div class="win-tab active">Subject</div>
+                  <div class="win-tab">Lighting</div>
+                  <div class="win-tab">Camera</div>
+                  <div class="win-tab">Style</div>
+                  <div class="win-tab">Technical</div>
+                </div>
+                <div style="flex:1;display:flex;overflow:hidden;min-height:0;">
+                  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                    <div class="win-params">
+                      <div class="win-param-row"><span class="wpl">Subject</span>
+                        <div class="wchips">
+                          <div class="wchip ai">Young woman</div>
+                          <div class="wchip">Man</div>
+                          <div class="wchip">Child</div>
+                          <div class="wchip">Couple</div>
+                          <div class="wchip">+ add</div>
+                        </div>
+                      </div>
+                      <div class="win-param-row"><span class="wpl">Setting</span>
+                        <div class="wchips">
+                          <div class="wchip ai">Ocean / beach</div>
+                          <div class="wchip">Forest</div>
+                          <div class="wchip">Urban</div>
+                          <div class="wchip">Studio</div>
+                          <div class="wchip">Mountains</div>
+                        </div>
+                      </div>
+                      <div class="win-param-row"><span class="wpl">Emotion</span>
+                        <div class="wchips">
+                          <div class="wchip ai">Serene</div>
+                          <div class="wchip">Joyful</div>
+                          <div class="wchip">Pensive</div>
+                          <div class="wchip">Mysterious</div>
+                        </div>
+                      </div>
+                      <div class="win-param-row"><span class="wpl">Framing</span>
+                        <div class="wchips">
+                          <div class="wchip">Close-up</div>
+                          <div class="wchip ai">Mid shot</div>
+                          <div class="wchip">Full body</div>
+                        </div>
+                      </div>
+                      <div class="win-param-row"><span class="wpl">Negative</span>
+                        <div class="wchips">
+                          <div class="wchip" style="border-style:dashed;color:rgba(255,255,255,0.25);font-size:9.5px">+
+                            add exclusions</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="win-presets">
+                      <div class="wpreset-cat">Photography</div>
+                      <div class="wpreset-chips">
+                        <div class="wpreset-chip">Golden hour portrait</div>
+                        <div class="wpreset-chip">Studio editorial</div>
+                        <div class="wpreset-chip">Fashion beauty</div>
+                        <div class="wpreset-chip">Street documentary</div>
+                      </div>
+                      <div class="wpreset-cat">Cinematic</div>
+                      <div class="wpreset-chips">
+                        <div class="wpreset-chip">Film noir</div>
+                        <div class="wpreset-chip">Wes Anderson</div>
+                        <div class="wpreset-chip">Indie drama</div>
+                      </div>
+                    </div>
+                    <div class="win-actions"><span style="font-size:9.5px;color:rgba(255,189,46,0.45)">⚠ 2 parameters
+                        unfilled</span>
+                      <div style="flex:1"></div><button class="wbtn-sec">Start over</button><button
+                        class="wbtn-pri">Confirm & assemble →</button>
+                    </div>
+                  </div>
+                  <div class="win-vars">
+                    <div class="wvarh">3 variations · tap to select</div>
+                    <div style="flex:1;overflow-y:auto">
+                      <div class="wvar active">
+                        <div class="wvar-num">Variation 1 · selected</div>
+                        <div class="wvar-text">A young woman at the water's edge, golden hour amber light, shallow depth
+                          of field blurring the ocean. Cinematic 35mm grain.</div>
+                        <div class="wvar-focus">Warm · intimate · film</div>
+                      </div>
+                      <div class="wvar">
+                        <div class="wvar-num">Variation 2</div>
+                        <div class="wvar-text">Silhouette against molten sunset over ocean. Backlit, glowing edges,
+                          anamorphic lens flare, editorial quality.</div>
+                        <div class="wvar-focus">Dramatic · silhouette</div>
+                      </div>
+                      <div class="wvar">
+                        <div class="wvar-num">Variation 3</div>
+                        <div class="wvar-text">Close-up portrait, face lit by warm directional light, hair catching the
+                          breeze. Kodak Portra 400 film simulation.</div>
+                        <div class="wvar-focus">Intimate · film emulation</div>
+                      </div>
+                    </div>
+                    <div style="padding:8px 12px;border-top:0.5px solid rgba(255,255,255,0.05)"><button
+                        style="width:100%;height:28px;background:rgba(139,92,246,0.08);border:0.5px solid rgba(139,92,246,0.2);border-radius:7px;font-size:10px;font-family:inherit;color:rgba(196,168,255,0.6);cursor:pointer">+
+                        Generate 3 more variations</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- EMAIL screen -->
+            <div id="screen-email" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:rgba(20,184,166,0.9)"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Email ready</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(20,184,166,0.08);border:0.5px solid rgba(20,184,166,0.2);color:rgba(45,212,191,0.55)">Diplomatic</span>
+                  </div>
+                  <div style="display:flex;gap:12px"><span style="font-size:10px;color:rgba(255,255,255,0.2)">Iterate
+                      ↻</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">Reset</span></div>
+                </div>
+                <div style="flex:1;display:grid;grid-template-columns:1fr 1.3fr;overflow:hidden;min-height:0;">
+                  <div
+                    style="padding:12px 14px;border-right:0.5px solid rgba(255,255,255,0.05);overflow-y:auto;display:flex;flex-direction:column;gap:12px;">
+                    <div>
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(20,184,166,0.45);margin-bottom:4px">
+                        You said</div>
+                      <div style="font-size:10.5px;color:rgba(255,255,255,0.35);font-style:italic;line-height:1.55">"The
+                        client is unhappy with the delivery timeline, push back two weeks, be diplomatic, client is
+                        Sarah from Acme Corp"</div>
+                    </div>
+                    <div>
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:6px">
+                        Tone analysis</div>
+                      <div style="display:flex;flex-direction:column;gap:5px">
+                        <div style="display:flex;gap:6px"><span
+                            style="font-size:8px;font-weight:700;text-transform:uppercase;color:rgba(20,184,166,0.5);min-width:58px">Recipient</span><span
+                            style="font-size:10.5px;color:rgba(255,255,255,0.55)">Sarah, Acme — client</span></div>
+                        <div style="display:flex;gap:6px"><span
+                            style="font-size:8px;font-weight:700;text-transform:uppercase;color:rgba(20,184,166,0.5);min-width:58px">Tone</span><span
+                            style="font-size:10.5px;color:rgba(255,255,255,0.55)">Diplomatic, professional</span></div>
+                        <div style="display:flex;gap:6px"><span
+                            style="font-size:8px;font-weight:700;text-transform:uppercase;color:rgba(20,184,166,0.5);min-width:58px">Core
+                            msg</span><span style="font-size:10.5px;color:rgba(255,255,255,0.55)">2-week delay, scope
+                            change</span></div>
+                      </div>
+                    </div>
+                    <div
+                      style="padding:8px 10px;background:rgba(20,184,166,0.04);border:0.5px solid rgba(20,184,166,0.1);border-radius:8px">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(20,184,166,0.45);margin-bottom:3px">
+                        Why this tone</div>
+                      <div style="font-size:10px;color:rgba(255,255,255,0.35);line-height:1.6">You said "diplomatic" —
+                        blame avoided. Delay framed as shared scope decisions.</div>
+                    </div>
+                  </div>
+                  <div style="padding:12px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span
+                          style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(20,184,166,0.5)">Subject
+                          line</span><button
+                          style="height:18px;padding:0 7px;background:rgba(20,184,166,0.08);border:0.5px solid rgba(20,184,166,0.18);border-radius:4px;font-size:9px;font-weight:600;font-family:inherit;color:rgba(45,212,191,0.65);cursor:pointer">Copy</button>
+                      </div>
+                      <div
+                        style="padding:7px 10px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.07);border-radius:7px;font-size:11px;font-weight:500;color:rgba(255,255,255,0.72)">
+                        Project Timeline Update — Revised Delivery</div>
+                    </div>
+                    <div style="flex:1">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(20,184,166,0.5);margin-bottom:4px">
+                        Email body</div>
+                      <div
+                        style="padding:10px 12px;background:rgba(255,255,255,0.02);border:0.5px solid rgba(255,255,255,0.06);border-radius:7px;font-size:10.5px;color:rgba(255,255,255,0.65);line-height:1.85">
+                        Hi Sarah,<br><br>I wanted to reach out about the project timeline. After reviewing our progress
+                        and the expanded requirements, we need to move the delivery date by two weeks to November
+                        29th.<br><br>This reflects the scope we aligned on together. I'd love a quick call — would
+                        Thursday work?<br><br>Best,<br>Aakash</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="win-actions"><button class="wbtn-sec">Edit</button>
+                  <div style="flex:1"></div><button
+                    style="height:28px;padding:0 12px;background:rgba(20,184,166,0.08);border:0.5px solid rgba(20,184,166,0.2);border-radius:7px;font-size:10.5px;font-weight:500;font-family:inherit;color:rgba(45,212,191,0.75);cursor:pointer">Copy
+                    subject</button><button
+                    style="height:28px;padding:0 16px;background:linear-gradient(135deg,rgba(20,184,166,0.88),rgba(13,148,136,0.88));color:white;border:none;border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Copy
+                    email</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- WORKFLOW screen -->
+            <div id="screen-workflow" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:rgba(34,197,94,0.9)"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Sheets → Trello +
+                      Slack</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(34,197,94,0.08);border:0.5px solid rgba(34,197,94,0.18);color:rgba(74,222,128,0.55)">3
+                      nodes</span>
+                  </div>
+                  <div style="display:flex;gap:12px"><span style="font-size:10px;color:rgba(255,255,255,0.2)">← Edit
+                      nodes</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">Reset</span></div>
+                </div>
+                <div style="flex:1;display:grid;grid-template-columns:1fr 1.2fr;overflow:hidden;min-height:0;">
+                  <div
+                    style="padding:12px 14px;border-right:0.5px solid rgba(255,255,255,0.05);overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:2px">
+                      How it works</div>
+                    <div style="display:flex;gap:8px">
+                      <div
+                        style="width:20px;height:20px;border-radius:50%;background:rgba(34,197,94,0.15);border:0.5px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(74,222,128,0.9);flex-shrink:0">
+                        1</div>
+                      <div>
+                        <div style="font-size:10.5px;font-weight:500;color:rgba(255,255,255,0.7);margin-bottom:2px">
+                          Google Sheets watches for new rows</div>
+                        <div style="font-size:9.5px;color:rgba(255,255,255,0.35);line-height:1.55">Triggers when a new
+                          row is added. Passes all data downstream.</div>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                      <div
+                        style="width:20px;height:20px;border-radius:50%;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(100,170,255,0.9);flex-shrink:0">
+                        2</div>
+                      <div>
+                        <div style="font-size:10.5px;font-weight:500;color:rgba(255,255,255,0.7);margin-bottom:2px">
+                          Creates a Trello card from row data</div>
+                        <div style="font-size:9.5px;color:rgba(255,255,255,0.35);line-height:1.55">Automatically creates
+                          a card in your chosen board.</div>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                      <div
+                        style="width:20px;height:20px;border-radius:50%;background:rgba(139,92,246,0.15);border:0.5px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(167,139,250,0.9);flex-shrink:0">
+                        3</div>
+                      <div>
+                        <div style="font-size:10.5px;font-weight:500;color:rgba(255,255,255,0.7);margin-bottom:2px">
+                          Sends Slack notification</div>
+                        <div style="font-size:9.5px;color:rgba(255,255,255,0.35);line-height:1.55">Posts to your channel
+                          in parallel with Trello.</div>
+                      </div>
+                    </div>
+                    <div
+                      style="padding:8px 10px;background:rgba(34,197,94,0.04);border:0.5px solid rgba(34,197,94,0.1);border-radius:8px;margin-top:4px">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(74,222,128,0.45);margin-bottom:4px">
+                        How to import</div>
+                      <div style="font-size:9.5px;color:rgba(255,255,255,0.32);line-height:1.65">1. Copy the JSON
+                        →<br>2. Open n8n → New workflow<br>3. ⌘V to paste → Map credentials</div>
+                    </div>
+                  </div>
+                  <div style="padding:12px 14px;overflow-y:auto;background:rgba(0,0,0,0.15);">
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:7px">
+                      n8n workflow JSON</div>
+                    <pre
+                      style="font-size:9.5px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.5);line-height:1.6;white-space:pre-wrap"><span style="color:rgba(100,170,255,0.7)">"name"</span>: <span style="color:rgba(74,222,128,0.7)">"Sheets → Trello + Slack"</span>,
+<span style="color:rgba(100,170,255,0.7)">"nodes"</span>: [
+  {
+    <span style="color:rgba(100,170,255,0.7)">"name"</span>: <span style="color:rgba(74,222,128,0.7)">"Google Sheets"</span>,
+    <span style="color:rgba(100,170,255,0.7)">"type"</span>: <span style="color:rgba(74,222,128,0.7)">"googleSheetsTrigger"</span>,
+    <span style="color:rgba(100,170,255,0.7)">"spreadsheetId"</span>: <span style="color:rgba(255,189,46,0.7)">"YOUR_ID"</span>
+  },
+  {
+    <span style="color:rgba(100,170,255,0.7)">"name"</span>: <span style="color:rgba(74,222,128,0.7)">"Create Trello Card"</span>,
+    <span style="color:rgba(100,170,255,0.7)">"boardId"</span>: <span style="color:rgba(255,189,46,0.7)">"YOUR_BOARD"</span>
+  },
+  {
+    <span style="color:rgba(100,170,255,0.7)">"name"</span>: <span style="color:rgba(74,222,128,0.7)">"Slack Notification"</span>,
+    <span style="color:rgba(100,170,255,0.7)">"channel"</span>: <span style="color:rgba(255,189,46,0.7)">"#general"</span>
+  }
+]</pre>
+                  </div>
+                </div>
+                <div class="win-actions">
+                  <div style="flex:1"></div><button
+                    style="height:28px;padding:0 16px;background:linear-gradient(135deg,rgba(34,197,94,0.88),rgba(22,163,74,0.88));color:white;border:none;border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Copy
+                    JSON</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- VIDEO screen -->
+            <div id="screen-video" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:rgba(251,146,60,0.9)"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Video builder</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(251,146,60,0.08);border:0.5px solid rgba(251,146,60,0.2);color:rgba(253,186,116,0.55)">Veo
+                      3.1</span>
+                  </div>
+                  <div style="display:flex;gap:12px"><span style="font-size:10px;color:rgba(255,255,255,0.2)">↺
+                      Reiterate</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">Reset</span></div>
+                </div>
+                <div
+                  style="padding:6px 14px;border-bottom:0.5px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                  <span
+                    style="font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);flex-shrink:0">Model</span>
+                  <div
+                    style="padding:2px 9px;border-radius:12px;font-size:9.5px;border:0.5px solid rgba(251,146,60,0.3);background:rgba(251,146,60,0.1);color:rgba(253,186,116,0.85);font-weight:500">
+                    · Veo 3.1</div>
+                  <div
+                    style="padding:2px 9px;border-radius:12px;font-size:9.5px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.38)">
+                    Sora</div>
+                  <div
+                    style="padding:2px 9px;border-radius:12px;font-size:9.5px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.38)">
+                    Runway</div>
+                  <div
+                    style="padding:2px 9px;border-radius:12px;font-size:9.5px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.38)">
+                    Kling</div>
+                  <div
+                    style="padding:2px 9px;border-radius:12px;font-size:9.5px;border:0.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.38)">
+                    Pika</div>
+                </div>
+                <div class="win-tabs" style="padding:0 14px;">
+                  <div class="win-tab active">Shot</div>
+                  <div class="win-tab">Movement</div>
+                  <div class="win-tab">Mood</div>
+                  <div class="win-tab">Sound</div>
+                  <div class="win-tab" style="color:rgba(251,146,60,0.45)">Veo extras</div>
+                </div>
+                <div style="flex:1;display:flex;overflow:hidden;min-height:0;">
+                  <div style="flex:1;padding:10px 14px;overflow-y:auto;">
+                    <div class="win-param-row"><span class="wpl">Subject</span>
+                      <div class="wchips">
+                        <div class="wchip"
+                          style="border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.08);color:rgba(253,186,116,0.82)">
+                          · Surfer</div>
+                        <div class="wchip">Person</div>
+                        <div class="wchip">Landscape</div>
+                      </div>
+                    </div>
+                    <div class="win-param-row"><span class="wpl">Setting</span>
+                      <div class="wchips">
+                        <div class="wchip"
+                          style="border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.08);color:rgba(253,186,116,0.82)">
+                          · Ocean at dawn</div>
+                        <div class="wchip">Forest</div>
+                        <div class="wchip">Desert</div>
+                      </div>
+                    </div>
+                    <div class="win-param-row"><span class="wpl">Shot type</span>
+                      <div class="wchips">
+                        <div class="wchip"
+                          style="border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.08);color:rgba(253,186,116,0.82)">
+                          · Wide angle</div>
+                        <div class="wchip">Close-up</div>
+                        <div class="wchip">POV</div>
+                      </div>
+                    </div>
+                    <div class="win-param-row"><span class="wpl">Time of day</span>
+                      <div class="wchips">
+                        <div class="wchip"
+                          style="border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.08);color:rgba(253,186,116,0.82)">
+                          · Dawn</div>
+                        <div class="wchip">Golden hour</div>
+                        <div class="wchip">Dusk</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style="width:200px;flex-shrink:0;border-left:0.5px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;background:rgba(8,8,14,1);">
+                    <div
+                      style="padding:8px 11px 7px;border-bottom:0.5px solid rgba(255,255,255,0.05);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.22)">
+                      3 variations</div>
+                    <div class="wvar active"
+                      style="border-left-color:rgba(251,146,60,0.4);background:rgba(251,146,60,0.05);">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(251,146,60,0.5);margin-bottom:2px">
+                        Variation 1 · selected</div>
+                      <div style="font-size:10px;color:rgba(255,255,255,0.48);line-height:1.5">Lone surfer paddles at
+                        dawn, mist rising, slow cinematic push-in.</div>
+                      <div style="font-size:8.5px;color:rgba(255,255,255,0.2);margin-top:2px">Peaceful · behind POV
+                      </div>
+                    </div>
+                    <div class="wvar">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(251,146,60,0.4);margin-bottom:2px">
+                        Variation 2</div>
+                      <div style="font-size:10px;color:rgba(255,255,255,0.45);line-height:1.5">Low water-level shot,
+                        silhouette against glowing horizon.</div>
+                      <div style="font-size:8.5px;color:rgba(255,255,255,0.2);margin-top:2px">Dramatic · water level
+                      </div>
+                    </div>
+                    <div class="wvar">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(251,146,60,0.4);margin-bottom:2px">
+                        Variation 3</div>
+                      <div style="font-size:10px;color:rgba(255,255,255,0.45);line-height:1.5">Aerial drone descending,
+                        vast misty ocean, surfer tiny below.</div>
+                      <div style="font-size:8.5px;color:rgba(255,255,255,0.2);margin-top:2px">Epic scale · aerial</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="win-actions">
+                  <div style="flex:1"></div><button class="wbtn-sec">Start over</button><button
+                    style="height:28px;padding:0 16px;background:linear-gradient(135deg,rgba(251,146,60,0.88),rgba(220,100,20,0.88));color:white;border:none;border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Confirm
+                    & assemble →</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CODE / GENERAL screen -->
+            <div id="screen-code" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#30D158"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Prompt ready</span>
+                  </div>
+                  <span style="font-size:10px;color:rgba(255,255,255,0.18)">⌘C to copy</span>
+                </div>
+                <div
+                  style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;overflow-y:auto;min-height:0;">
+                  <div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Role</div>
+                    <div id="promptRole"
+                      style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:14px">You are an
+                      expert software engineer specialising in data structures and algorithms with deep TypeScript
+                      expertise.</div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Task</div>
+                    <div id="promptTask" style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7">Implement a
+                      complete Binary Search Tree in TypeScript with insert, delete, search, and all traversal methods.
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Constraints</div>
+                    <div id="promptConstraints"
+                      style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:14px">Use strict
+                      TypeScript generics. No any types. Handle edge cases. Add JSDoc for all public methods.</div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Output format</div>
+                    <div id="promptOutput" style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7">Complete
+                      TypeScript file with a usage example demonstrating each method.</div>
+                  </div>
+                </div>
+                <div class="win-actions">
+                  <div style="flex:1"></div><button
+                    style="height:28px;padding:0 18px;background:linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9));color:white;border:none;border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Copy
+                    prompt &nbsp;⌘C</button>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- BALANCED screen -->
+            <div id="screen-balanced" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#30D158"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Prompt ready</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.35)">Balanced</span>
+                  </div>
+                  <span style="font-size:10px;color:rgba(255,255,255,0.18)">⌘C to copy</span>
+                </div>
+                <div
+                  style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;overflow-y:auto;min-height:0;">
+                  <div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Role</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:14px">You are
+                      an expert AI systems architect with deep knowledge of retrieval-augmented generation patterns and
+                      production AI infrastructure.</div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Task</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7">Design a production-ready
+                      RAG architecture for a knowledge base with 100k+ documents and sub-300ms query latency.</div>
+                  </div>
+                  <div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Context</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:14px">Existing
+                      Pinecone setup. Budget under $200/month. Must integrate with current Node.js backend and support
+                      real-time document updates.</div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Output format</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7">Architecture diagram
+                      description, technology choices with rationale, cost estimate, and phased implementation plan.
+                    </div>
+                  </div>
+                </div>
+                <div class="win-actions">
+                  <div style="flex:1"></div><button
+                    style="height:28px;padding:0 18px;background:linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9));color:white;border:none;border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Copy
+                    prompt &nbsp;⌘C</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- DESIGN screen -->
+            <div id="screen-design" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#30D158"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Prompt ready</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.35)">Design</span>
+                  </div>
+                  <span style="font-size:10px;color:rgba(255,255,255,0.18)">⌘C to copy</span>
+                </div>
+                <div
+                  style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:14px 16px;overflow-y:auto;min-height:0;">
+                  <div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Role</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:14px">You are
+                      a senior UX designer and design systems expert with deep expertise in component architecture,
+                      accessibility, and design tokens.</div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Task</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7">Audit the current design
+                      system and identify inconsistencies, missing components, and accessibility gaps across the core
+                      user flow.</div>
+                  </div>
+                  <div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Constraints</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:14px">Focus on
+                      components used in the onboarding and checkout flows. Flag anything that violates WCAG 2.1 AA.
+                      Note any colour contrast failures.</div>
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(100,170,255,0.45);margin-bottom:5px">
+                      Output format</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.7">Structured audit report
+                      with P0/P1/P2 severity levels, specific component names, and prioritised fix recommendations.
+                    </div>
+                  </div>
+                </div>
+                <div class="win-actions">
+                  <div style="flex:1"></div><button
+                    style="height:28px;padding:0 18px;background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.08));color:rgba(255,255,255,0.85);border:0.5px solid rgba(255,255,255,0.2);border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Copy
+                    prompt &nbsp;⌘C</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- POLISH screen -->
+            <div id="screen-polish" class="mode-screen">
+              <div style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="win-content-header">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#30D158"></div><span
+                      style="font-size:11.5px;font-weight:500;color:rgba(255,255,255,0.62)">Polished text
+                      ready</span><span
+                      style="font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(48,209,88,0.08);border:0.5px solid rgba(48,209,88,0.2);color:rgba(100,220,130,0.6)">Polish</span>
+                  </div>
+                  <span style="font-size:10px;color:rgba(255,255,255,0.18)">⌘C to copy</span>
+                </div>
+                <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0;overflow:hidden;min-height:0;">
+                  <!-- Original -->
+                  <div style="padding:14px 16px;border-right:0.5px solid rgba(255,255,255,0.05);overflow-y:auto;">
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:8px">
+                      Original draft</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.35);line-height:1.8;font-style:italic">The thing
+                      we are trying to do basically is we want to make sure that users who come to our platform are able
+                      to like find what they need pretty quickly and also we want to make sure the experience doesn't
+                      feel bad or confusing to them when they are trying to do stuff.</div>
+                  </div>
+                  <!-- Polished -->
+                  <div style="padding:14px 16px;overflow-y:auto;background:rgba(48,209,88,0.02);">
+                    <div
+                      style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(48,209,88,0.5);margin-bottom:8px">
+                      Polished</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.75);line-height:1.8">Our goal is to help users
+                      find what they need quickly and navigate the platform with confidence — reducing friction at every
+                      step of their journey.</div>
+                    <div
+                      style="margin-top:16px;padding:8px 10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:7px">
+                      <div
+                        style="font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(48,209,88,0.45);margin-bottom:3px">
+                        Changes made</div>
+                      <div style="font-size:10px;color:rgba(255,255,255,0.35);line-height:1.65">Removed filler phrases ·
+                        Tightened to one sentence · Replaced "feel bad" with "friction" · Preserved original intent
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="win-actions">
+                  <div style="flex:1"></div><button
+                    style="height:28px;padding:0 18px;background:linear-gradient(135deg,rgba(48,209,88,0.85),rgba(22,163,74,0.85));color:white;border:none;border-radius:7px;font-size:10.5px;font-weight:600;font-family:inherit;cursor:pointer">Copy
+                    polished &nbsp;⌘C</button>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- end modeContent -->
+        </div><!-- end win-body -->
+      </div><!-- end app-window -->
+    </div><!-- end hero-app -->
+  </section>
+  <!-- TRANSITION -->
+  <div class="section-transition"></div>
+
+  <!-- LIGHT BODY -->
+  <div class="light-body">
+
+    <!-- HOW IT WORKS -->
+    <section id="how" class="how-section">
+      <div class="section-label">How it works</div>
+      <h2 class="section-headline">Four steps.<br><em>One voice recording.</em></h2>
+      <p class="section-body">
+        Most people write mediocre prompts because prompt engineering is a skill.
+        Promptly handles the structure so you can focus on the idea.
+      </p>
+
+      <div class="flow reveal">
+        <div class="flow-step">
+          <div class="flow-num">01</div>
+          <div class="flow-icon" style="background:rgba(10,132,255,0.08)">🎙</div>
+          <div class="flow-title">Speak</div>
+          <div class="flow-desc">Press ⌥ Space from anywhere on your Mac. Describe your idea naturally — no formatting,
+            no structure needed.</div>
+          <div class="flow-arrow">→</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">02</div>
+          <div class="flow-icon" style="background:rgba(139,92,246,0.08)">✦</div>
+          <div class="flow-title">Transcribe</div>
+          <div class="flow-desc">Whisper converts your voice to text locally on your Mac. Your voice never leaves your
+            device.</div>
+          <div class="flow-arrow">→</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">03</div>
+          <div class="flow-icon" style="background:rgba(180,83,9,0.08)">⚡</div>
+          <div class="flow-title">Structure</div>
+          <div class="flow-desc">Claude CLI engineers your transcript into a structured prompt with Role, Task, Context,
+            Constraints, and Output format.</div>
+          <div class="flow-arrow">→</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">04</div>
+          <div class="flow-icon" style="background:rgba(34,197,94,0.08)">⌘</div>
+          <div class="flow-title">Copy</div>
+          <div class="flow-desc">Hit ⌘C. Paste into Claude.ai, Claude Code, or any AI tool. Get dramatically better
+            responses immediately.</div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- MODES -->
+    <section id="modes" class="modes-section">
+      <div style="max-width:1400px;margin:0 auto">
+        <div class="section-label">Specialist modes</div>
+        <h2 class="section-headline">Not a general tool.<br><em>Built for specific workflows.</em></h2>
+        <p class="section-body">Every mode has its own prompt engineering strategy, its own output structure, and its
+          own understanding of what makes a great result in that domain.</p>
+
+        <!-- BENTO GRID -->
+        <div class="bento-grid reveal">
+
+          <!-- IMAGE — tall left, spans 2 rows -->
+          <div class="bento-cell bento-image">
+            <div class="bento-accent" style="background:rgba(139,92,246,0.6)"></div>
+            <div class="bento-label">Specialist · AI imaging</div>
+            <div class="bento-name">Image</div>
+            <div class="bento-desc">Voice-to-prompt for Nano Banana. Five parameter categories, AI pre-filled from your
+              speech. Three prompt variations generated in parallel before you even look at the screen.</div>
+
+            <div class="bento-mini-ui">
+              <div class="bmi-tabs">
+                <div class="bmi-tab active">Subject</div>
+                <div class="bmi-tab">Lighting</div>
+                <div class="bmi-tab">Camera</div>
+                <div class="bmi-tab">Style</div>
+                <div class="bmi-tab">Technical</div>
+              </div>
+              <div class="bmi-row"><span class="bmi-lbl">Subject</span>
+                <div class="bmi-chips">
+                  <div class="bmi-chip ai">Young woman</div>
+                  <div class="bmi-chip">Man</div>
+                  <div class="bmi-chip">Child</div>
+                  <div class="bmi-chip">Couple</div>
+                </div>
+              </div>
+              <div class="bmi-row"><span class="bmi-lbl">Setting</span>
+                <div class="bmi-chips">
+                  <div class="bmi-chip ai">Ocean / beach</div>
+                  <div class="bmi-chip">Forest</div>
+                  <div class="bmi-chip">Studio</div>
+                </div>
+              </div>
+              <div class="bmi-row"><span class="bmi-lbl">Emotion</span>
+                <div class="bmi-chips">
+                  <div class="bmi-chip ai">Serene</div>
+                  <div class="bmi-chip">Pensive</div>
+                  <div class="bmi-chip">Mysterious</div>
+                </div>
+              </div>
+              <div class="bmi-row"><span class="bmi-lbl">Framing</span>
+                <div class="bmi-chips">
+                  <div class="bmi-chip">Close-up</div>
+                  <div class="bmi-chip ai">Mid shot</div>
+                  <div class="bmi-chip">Full body</div>
+                </div>
+              </div>
+              <div class="bmi-vars">
+                <div class="bmi-var sel">
+                  <div class="bmi-var-num">Variation 1 · selected</div>
+                  <div class="bmi-var-text">Young woman at water's edge, golden hour amber light, shallow DOF, cinematic
+                    35mm grain.</div>
+                </div>
+                <div class="bmi-var">
+                  <div class="bmi-var-num">Variation 2</div>
+                  <div class="bmi-var-text">Silhouette against molten sunset, backlit, anamorphic lens flare, editorial.
+                  </div>
+                </div>
+                <div class="bmi-var">
+                  <div class="bmi-var-num">Variation 3</div>
+                  <div class="bmi-var-text">Close-up portrait, Kodak Portra 400 film simulation, directional light.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bento-example">"A portrait of a young woman at golden hour near the ocean, cinematic film still,
+              shallow depth of field"</div>
+          </div>
+
+          <!-- VIDEO — top centre -->
+          <div class="bento-cell bento-video">
+            <div class="bento-accent" style="background:rgba(251,146,60,0.6)"></div>
+            <div class="bento-label">Specialist · AI video</div>
+            <div class="bento-name">Video</div>
+            <div class="bento-desc">Shot, movement, mood, and audio — structured for each model's own parameter
+              vocabulary.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin:14px 0">
+              <span class="bento-model-chip active">· Veo 3.1</span>
+              <span class="bento-model-chip">Sora</span>
+              <span class="bento-model-chip">Runway Gen-4</span>
+              <span class="bento-model-chip">Kling 2.0</span>
+              <span class="bento-model-chip">Pika 2.2</span>
+            </div>
+            <div class="bento-example">"A surfer at dawn, slow cinematic push-in, misty ocean, native ambient sound"
+            </div>
+          </div>
+
+          <!-- EMAIL — tall right, spans 2 rows -->
+          <div class="bento-cell bento-email">
+            <div class="bento-accent" style="background:rgba(20,184,166,0.6)"></div>
+            <div class="bento-label">Specialist · communication</div>
+            <div class="bento-name">Email</div>
+            <div class="bento-desc">Speak the situation. Get a ready-to-send email with subject line, body, and tone
+              note. Adjust tone with chips — no re-recording needed.</div>
+
+            <div class="bento-email-preview">
+              <div class="bep-subject-label">Subject</div>
+              <div class="bep-subject">Project Timeline Update — Revised Delivery</div>
+              <div class="bep-body">Hi Sarah,<br><br>I wanted to reach out about the project timeline. After reviewing
+                our progress and the expanded scope, we need to move delivery by two weeks to November
+                29th.<br><br>Best, Aakash</div>
+            </div>
+
+            <div class="bento-sublabel">Adjust tone</div>
+            <div class="bento-tone-chips">
+              <span class="btone-chip active">· More diplomatic</span>
+              <span class="btone-chip">More formal</span>
+              <span class="btone-chip">Shorter</span>
+              <span class="btone-chip">More direct</span>
+            </div>
+          </div>
+
+          <!-- WORKFLOW — bottom centre -->
+          <div class="bento-cell bento-workflow">
+            <div class="bento-accent" style="background:rgba(34,197,94,0.6)"></div>
+            <div class="bento-label">Specialist · automation</div>
+            <div class="bento-name">Workflow</div>
+            <div class="bento-desc">Describe an automation in plain English. Get importable n8n JSON with nodes and
+              connections ready to paste.</div>
+            <div class="bento-node-flow">
+              <div class="bento-node"
+                style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.25);color:rgba(21,128,61,0.9)">
+                Google Sheets</div>
+              <div class="bento-arrow">→</div>
+              <div class="bento-node"
+                style="background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.25);color:rgba(29,78,216,0.9)">
+                Trello card</div>
+              <div class="bento-arrow">+</div>
+              <div class="bento-node"
+                style="background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.25);color:rgba(109,40,217,0.9)">
+                Slack notify</div>
+            </div>
+          </div>
+
+          <!-- PROMPT MODES — wide bottom spanning cols 1+2 -->
+          <div class="bento-cell bento-prompt">
+            <div class="bento-label">General prompt modes</div>
+            <div class="bento-name" style="font-size:22px">Eight ways to structure any idea</div>
+            <div class="bento-desc">From a quick concise question to a full chain-of-thought analysis — pick the depth
+              that fits the task.</div>
+            <div class="bento-prompt-chips">
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(10,132,255,0.8)"></div>
+                <div>
+                  <div class="bpc-name">Balanced</div>
+                  <div class="bpc-desc">Role · Task · Context · Output</div>
+                </div>
+              </div>
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(10,132,255,0.9)"></div>
+                <div>
+                  <div class="bpc-name">Code</div>
+                  <div class="bpc-desc">Stack · constraints · format</div>
+                </div>
+              </div>
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(10,132,255,0.65)"></div>
+                <div>
+                  <div class="bpc-name">Detailed</div>
+                  <div class="bpc-desc">Maximum depth and nuance</div>
+                </div>
+              </div>
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(100,116,139,0.8)"></div>
+                <div>
+                  <div class="bpc-name">Concise</div>
+                  <div class="bpc-desc">Sharp, focused, minimal</div>
+                </div>
+              </div>
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(10,132,255,0.7)"></div>
+                <div>
+                  <div class="bpc-name">Chain</div>
+                  <div class="bpc-desc">Step-by-step reasoning</div>
+                </div>
+              </div>
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(107,114,128,0.8)"></div>
+                <div>
+                  <div class="bpc-name">Design</div>
+                  <div class="bpc-desc">UI · UX · component thinking</div>
+                </div>
+              </div>
+              <div class="bpchip">
+                <div class="bpc-dot" style="background:rgba(167,139,250,0.9)"></div>
+                <div>
+                  <div class="bpc-name">Refine</div>
+                  <div class="bpc-desc">Improve an existing prompt</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- POLISH — bottom right -->
+          <div class="bento-cell bento-polish">
+            <div class="bento-accent" style="background:rgba(48,209,88,0.6)"></div>
+            <div class="bento-label">Specialist · writing</div>
+            <div class="bento-name">Polish</div>
+            <div class="bento-desc">Paste rough text, speak the change. Get it back clean.</div>
+            <div class="bento-polish-split">
+              <div>
+                <div class="bento-sublabel" style="color:var(--text-muted)">Before</div>
+                <div class="bpolish-before">The thing we want to do basically is make the experience not feel bad for
+                  users when they're trying to find stuff.</div>
+              </div>
+              <div>
+                <div class="bento-sublabel" style="color:rgba(48,209,88,0.7)">After</div>
+                <div class="bpolish-after">Help users find what they need quickly, with zero friction.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- VIBE SECTION -->
+    <section id="vibe" class="vibe-section">
+      <div class="section-label">Built with vibe-* skills</div>
+      <h2 class="section-headline">Structured AI development.<br><em>Not vibe coding.</em></h2>
+
+      <div class="vibe-intro reveal">
+        <div>
+          <p style="font-size:17px;font-weight:300;line-height:1.75;color:var(--text-secondary);margin-bottom:24px">
+            Promptly was built using the <strong style="font-weight:500;color:var(--text-primary)">vibe-* skills
+              framework</strong> —
+            a structured Claude Code workflow system that brings engineering discipline to AI-assisted development.
+          </p>
+          <p style="font-size:17px;font-weight:300;line-height:1.75;color:var(--text-secondary);margin-bottom:24px">
+            Every feature starts with a spec. Every spec gets a review. Every task gets
+            one commit. Nothing merges without passing a code review gate.
+            The result is a production app, not a prototype.
+          </p>
+          <p style="font-size:17px;font-weight:300;line-height:1.75;color:var(--text-secondary)">
+            The framework covers 20 skills across six phases — Plan, Build, Gate,
+            Ship, Observe, and Accelerate — each designed to keep AI-assisted
+            development on the rails.
+          </p>
+
+          <div style="margin-top:36px;display:flex;gap:32px">
+            <div>
+              <div
+                style="font-family:var(--serif);font-size:42px;font-weight:300;color:var(--text-primary);letter-spacing:-0.03em">
+                20</div>
+              <div style="font-size:13px;font-weight:300;color:var(--text-muted);margin-top:2px">vibe-* skills</div>
+            </div>
+            <div>
+              <div
+                style="font-family:var(--serif);font-size:42px;font-weight:300;color:var(--text-primary);letter-spacing:-0.03em">
+                12+</div>
+              <div style="font-size:13px;font-weight:300;color:var(--text-muted);margin-top:2px">modes shipped</div>
+            </div>
+            <div>
+              <div
+                style="font-family:var(--serif);font-size:42px;font-weight:300;color:var(--text-primary);letter-spacing:-0.03em">
+                0</div>
+              <div style="font-size:13px;font-weight:300;color:var(--text-muted);margin-top:2px">features without a spec
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vibe-skills-chain">
+          <div style="padding:14px 22px 12px;border-bottom:0.5px solid var(--border);background:var(--paper-warm)">
+            <div
+              style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--amber)">
+              Skill chain used to build Promptly</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Plan</span>
+            <span class="skill-name">vibe-brainstorm</span>
+            <span class="skill-desc">Idea → validated brief</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Plan</span>
+            <span class="skill-name">vibe-architect</span>
+            <span class="skill-desc">Brief → architecture doc</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Build</span>
+            <span class="skill-name">vibe-new-app</span>
+            <span class="skill-desc">Spec → working app scaffold</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Build</span>
+            <span class="skill-name">vibe-add-feature</span>
+            <span class="skill-desc">Feature spec → implementation</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Build</span>
+            <span class="skill-name">vibe-design</span>
+            <span class="skill-desc">Components → polished UI</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Gate</span>
+            <span class="skill-name">vibe-review</span>
+            <span class="skill-desc">Code → P0/P1/P2 audit</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row">
+            <span class="skill-phase">Gate</span>
+            <span class="skill-name">vibe-test</span>
+            <span class="skill-desc">Blast-radius test coverage</span>
+            <div class="skill-check">✓</div>
+          </div>
+          <div class="skill-row" style="border-bottom:none">
+            <span class="skill-phase">Ship</span>
+            <span class="skill-name">vibe-progress</span>
+            <span class="skill-desc">Live task dashboard</span>
+            <div class="skill-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Built by -->
+      <div
+        style="border-top:0.5px solid var(--border);padding-top:48px;display:flex;align-items:center;justify-content:space-between"
+        class="reveal">
+        <div>
+          <div
+            style="font-family:var(--serif);font-size:22px;font-weight:400;color:var(--text-primary);letter-spacing:-0.01em;margin-bottom:6px">
+            Built by Aakash Dhar</div>
+          <div style="font-size:14px;font-weight:300;color:var(--text-secondary)">Built by Aakash Dhar using vibe-*
+            skills framework</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text-muted);text-align:right">
+          macOS · Electron · React<br>
+          Whisper · Claude CLI · Local-first
+        </div>
+      </div>
+    </section>
 
   </div>
 
-  <script>
-    const STATES = { IDLE:'IDLE', RECORDING:'RECORDING', THINKING:'THINKING', PROMPT_READY:'PROMPT_READY', ERROR:'ERROR' };
-    const MODES = [
-      { key: 'balanced', label: 'Balanced' },
-      { key: 'detailed', label: 'Detailed' },
-      { key: 'concise', label: 'Concise' },
-      { key: 'chain', label: 'Chain' },
-      { key: 'code', label: 'Code' },
-      { key: 'design', label: 'Design' },
-    ];
+  <!-- QUOTE -->
+  <div class="quote-section">
+    <blockquote class="big-quote">
+      "The best prompt is the one you'd write<br>
+      if you had <em>unlimited time</em> to think."
+    </blockquote>
+    <div class="quote-attr">Promptly does the thinking. You do the speaking.</div>
+  </div>
 
-    const STATE_HEIGHTS = {
-      IDLE: 101,
-      RECORDING: 89,
-      THINKING: 320,
-      PROMPT_READY: 540,
-      ERROR: 101,
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Promptly</div>
+    <div class="footer-note">macOS · Beta · Built with vibe-* skills</div>
+    <div class="footer-bc">A <a href="#">BetaCraft</a> product by Aakash Dhar</div>
+  </footer>
+
+  <script>
+    const modeConfigs = {
+      image: { label: 'Image', pillBg: 'rgba(139,92,246,0.12)', pillBorder: 'rgba(139,92,246,0.3)', pillColor: 'rgba(196,168,255,0.9)', dot: 'rgba(139,92,246,0.9)', waveColor: 'rgba(139,92,246,', status: 'Parameters ready · review and confirm', sub: 'AI pre-filled · tap to adjust · choose a variation', histTag: 'Image', histTagBg: 'rgba(139,92,246,0.1)', histTagColor: 'rgba(196,168,255,0.65)', histTitle: 'Portrait at golden hour...', histBorder: 'rgba(139,92,246,0.45)', histBg: 'rgba(139,92,246,0.07)' },
+      email: { label: 'Email', pillBg: 'rgba(20,184,166,0.12)', pillBorder: 'rgba(20,184,166,0.3)', pillColor: 'rgba(45,212,191,0.9)', dot: 'rgba(20,184,166,0.9)', waveColor: 'rgba(20,184,166,', status: 'Email ready', sub: 'Review and copy to send', histTag: 'Email', histTagBg: 'rgba(20,184,166,0.1)', histTagColor: 'rgba(45,212,191,0.65)', histTitle: 'Project delay update...', histBorder: 'rgba(20,184,166,0.45)', histBg: 'rgba(20,184,166,0.06)' },
+      workflow: { label: 'Workflow', pillBg: 'rgba(34,197,94,0.12)', pillBorder: 'rgba(34,197,94,0.3)', pillColor: 'rgba(74,222,128,0.9)', dot: 'rgba(34,197,94,0.9)', waveColor: 'rgba(34,197,94,', status: 'Workflow JSON ready', sub: 'Copy and import into n8n', histTag: 'Workflow', histTagBg: 'rgba(34,197,94,0.1)', histTagColor: 'rgba(74,222,128,0.65)', histTitle: 'Sheets → Trello + Slack', histBorder: 'rgba(34,197,94,0.45)', histBg: 'rgba(34,197,94,0.05)' },
+      video: { label: 'Video', pillBg: 'rgba(251,146,60,0.12)', pillBorder: 'rgba(251,146,60,0.3)', pillColor: 'rgba(253,186,116,0.9)', dot: 'rgba(251,146,60,0.9)', waveColor: 'rgba(251,146,60,', status: 'Video builder · review parameters', sub: 'Select model · AI pre-filled · choose variation', histTag: 'Video', histTagBg: 'rgba(251,146,60,0.1)', histTagColor: 'rgba(253,186,116,0.65)', histTitle: 'Surfer at dawn...', histBorder: 'rgba(251,146,60,0.45)', histBg: 'rgba(251,146,60,0.05)' },
+      code: { label: 'Code', pillBg: 'rgba(10,132,255,0.12)', pillBorder: 'rgba(10,132,255,0.3)', pillColor: 'rgba(100,170,255,0.9)', dot: '#30D158', waveColor: 'rgba(10,132,255,', status: 'Prompt ready', sub: '⌘C to copy · Press ⌥ Space to record again', histTag: 'Code', histTagBg: 'rgba(10,132,255,0.1)', histTagColor: 'rgba(100,170,255,0.65)', histTitle: 'Binary search tree...', histBorder: 'rgba(48,209,88,0.45)', histBg: 'rgba(48,209,88,0.05)' },
+      balanced: { label: 'Balanced', pillBg: 'rgba(10,132,255,0.12)', pillBorder: 'rgba(10,132,255,0.3)', pillColor: 'rgba(100,170,255,0.9)', dot: '#30D158', waveColor: 'rgba(10,132,255,', status: 'Prompt ready', sub: '⌘C to copy · Press ⌥ Space to record again', histTag: 'Balanced', histTagBg: 'rgba(255,255,255,0.06)', histTagColor: 'rgba(255,255,255,0.35)', histTitle: 'RAG architecture...', histBorder: 'rgba(48,209,88,0.45)', histBg: 'rgba(48,209,88,0.05)' },
+      design: { label: 'Design', pillBg: 'rgba(255,255,255,0.08)', pillBorder: 'rgba(255,255,255,0.15)', pillColor: 'rgba(255,255,255,0.7)', dot: '#30D158', waveColor: 'rgba(255,255,255,', status: 'Prompt ready', sub: '⌘C to copy · Press ⌥ Space to record again', histTag: 'Design', histTagBg: 'rgba(255,255,255,0.06)', histTagColor: 'rgba(255,255,255,0.35)', histTitle: 'Design system audit...', histBorder: 'rgba(48,209,88,0.45)', histBg: 'rgba(48,209,88,0.05)' },
+      polish: { label: 'Polish', pillBg: 'rgba(48,209,88,0.1)', pillBorder: 'rgba(48,209,88,0.25)', pillColor: 'rgba(100,220,130,0.85)', dot: '#30D158', waveColor: 'rgba(48,209,88,', status: 'Prompt ready', sub: '⌘C to copy · Press ⌥ Space to record again', histTag: 'Polish', histTagBg: 'rgba(48,209,88,0.08)', histTagColor: 'rgba(100,220,130,0.6)', histTitle: 'Polish this draft...', histBorder: 'rgba(48,209,88,0.45)', histBg: 'rgba(48,209,88,0.05)' },
     };
 
-    let state = STATES.IDLE;
-    let originalTranscript = '';
-    let generatedPrompt = '';
+    const screenMap = {
+      image: 'screen-image', email: 'screen-email', workflow: 'screen-workflow',
+      video: 'screen-video', code: 'screen-code', balanced: 'screen-balanced',
+      design: 'screen-design', polish: 'screen-polish'
+    };
 
-    // Morph wave RAF handle — cancelled by stopMorphAnim() at every setState()
-    let morphAnimFrame = null;
-
-    function getMode() { return localStorage.getItem('mode') || 'balanced'; }
-    function setMode(m) {
-      localStorage.setItem('mode', m);
-      if (state === STATES.IDLE) {
-        document.getElementById('mode-pill').textContent = getModeLabel();
-      }
-    }
-    function getModeLabel() {
-      return { balanced:'Balanced', detailed:'Detailed', concise:'Concise', chain:'Chain', code:'Code', design:'Design' }[getMode()];
-    }
-
-    // --- Canvas: thinking morph wave (very slow, low-amplitude breathing) ---
-    function drawMorphWave(canvas, t) {
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height, mid = H / 2;
-      ctx.clearRect(0, 0, W, H);
-
-      const grad = ctx.createLinearGradient(0, 0, W, 0);
-      grad.addColorStop(0, 'rgba(10,132,255,0)');
-      grad.addColorStop(0.1, 'rgba(10,132,255,0.5)');
-      grad.addColorStop(0.9, 'rgba(10,132,255,0.5)');
-      grad.addColorStop(1, 'rgba(10,132,255,0)');
-
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(10,132,255,0.06)';
-      ctx.lineWidth = 5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.moveTo(0, mid);
-      for (let i = 0; i <= 100; i++) {
-        const x = (i / 100) * W;
-        const a = Math.sin(i * 0.18 + t * 0.04) * 3.5 + Math.sin(i * 0.42 + t * 0.025) * 1.5 + 0.5;
-        ctx.lineTo(x, mid + a);
-      }
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 1.5;
-      ctx.moveTo(0, mid);
-      for (let i = 0; i <= 100; i++) {
-        const x = (i / 100) * W;
-        const a = Math.sin(i * 0.18 + t * 0.04) * 3.5 + Math.sin(i * 0.42 + t * 0.025) * 1.5 + 0.5;
-        ctx.lineTo(x, mid + a);
-      }
-      ctx.stroke();
-    }
-
-    function stopMorphAnim() {
-      if (morphAnimFrame) cancelAnimationFrame(morphAnimFrame);
-      morphAnimFrame = null;
-    }
-
-    // --- Recording waveform + timer ---
-    let recSecs = 0;
-    let recTimer = null;
+    let currentMode = 'image';
+    let waveRaf = null;
     let waveT = 0;
-    let waveRAF = null;
 
-    function drawRecordingWave(t) {
-      const canvas = document.getElementById('recCanvas');
+    function drawWave(colorBase) {
+      const canvas = document.getElementById('heroWave');
       if (!canvas) return;
+      if (waveRaf) cancelAnimationFrame(waveRaf);
+      const dpr = window.devicePixelRatio || 1;
+      const W = 480, H = 20, mid = 10;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
       const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height, mid = H / 2;
-      ctx.clearRect(0, 0, W, H);
-      const grad = ctx.createLinearGradient(0, 0, W, 0);
-      grad.addColorStop(0, 'rgba(255,59,48,0)');
-      grad.addColorStop(0.08, 'rgba(255,59,48,0.85)');
-      grad.addColorStop(0.92, 'rgba(255,59,48,0.85)');
-      grad.addColorStop(1, 'rgba(255,59,48,0)');
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255,59,48,0.1)';
-      ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.moveTo(0, mid);
-      for (let i = 0; i <= 100; i++) {
-        const x = (i / 100) * W;
-        const a = (Math.sin(i * 0.42 + t * 0.13) * 0.5 + 0.5) * 10 + (Math.sin(i * 0.85 + t * 0.08) * 0.4) * 4 + 1;
-        ctx.lineTo(x, mid + (i % 2 === 0 ? a : -a));
-      }
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.strokeStyle = grad; ctx.lineWidth = 1.5; ctx.moveTo(0, mid);
-      for (let i = 0; i <= 100; i++) {
-        const x = (i / 100) * W;
-        const a = (Math.sin(i * 0.42 + t * 0.13) * 0.5 + 0.5) * 10 + (Math.sin(i * 0.85 + t * 0.08) * 0.4) * 4 + 1;
-        ctx.lineTo(x, mid + (i % 2 === 0 ? a : -a));
-      }
-      ctx.stroke();
-    }
-
-    function startRecTimer() {
-      recSecs = 0;
-      recTimer = setInterval(() => {
-        recSecs++;
-        const m = Math.floor(recSecs / 60);
-        const s = recSecs % 60;
-        const el = document.getElementById('recDur');
-        if (el) el.textContent = m + ':' + String(s).padStart(2, '0');
-      }, 1000);
-      function animateWave() {
-        drawRecordingWave(waveT++);
-        waveRAF = requestAnimationFrame(animateWave);
-      }
-      animateWave();
-    }
-
-    function setRecordingTranscript(text) {
-      const wrap = document.getElementById('transcriptWrap');
-      const textEl = document.getElementById('transcriptText');
-      if (!wrap || !textEl) return;
-      textEl.textContent = text;
-      if (!text) {
-        wrap.style.display = 'none';
-        window.electronAPI.resizeWindow(89);
-      } else {
-        wrap.style.display = 'block';
-        const newH = 89 + Math.min(wrap.scrollHeight + 26, 120);
-        window.electronAPI.resizeWindow(newH);
-      }
-    }
-
-    function stopRecTimer() {
-      clearInterval(recTimer);
-      cancelAnimationFrame(waveRAF);
-      recSecs = 0;
+      ctx.scale(dpr, dpr);
       waveT = 0;
+      function frame() {
+        ctx.clearRect(0, 0, W, H);
+        const g = ctx.createLinearGradient(0, 0, W, 0);
+        g.addColorStop(0, colorBase + '0)');
+        g.addColorStop(0.04, colorBase + '0.45)');
+        g.addColorStop(0.96, colorBase + '0.45)');
+        g.addColorStop(1, colorBase + '0)');
+        ctx.beginPath(); ctx.strokeStyle = g; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+        ctx.moveTo(0, mid);
+        for (let i = 0; i <= 140; i++) {
+          const x = (i / 140) * W;
+          const a = Math.sin(i * 0.18 + waveT * 0.025) * 3.5 + Math.sin(i * 0.45 + waveT * 0.015) * 1.5;
+          ctx.lineTo(x, mid + a);
+        }
+        ctx.stroke(); waveT++;
+        waveRaf = requestAnimationFrame(frame);
+      }
+      frame();
     }
 
-    // Parse **Header:** lines into pt-sl spans; rest is pre-wrapped text
-    function renderPromptOutput(text) {
-      const el = document.getElementById('prompt-output');
-      el.textContent = '';
-      const lines = text.split('\n');
-      let buf = [];
+    function switchMode(mode, userClicked) {
+      if (mode === currentMode) return;
+      if (userClicked) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+        // Resume after 16 seconds when user manually clicks
+        setTimeout(() => {
+          autoIdx = autoModes.indexOf(mode);
+          scheduleNext();
+        }, 16000);
+      }
+      const cfg = modeConfigs[mode];
+      if (!cfg) return;
 
-      function flush() {
-        const t = buf.join('\n').trim();
-        if (t) {
-          const s = document.createElement('span');
-          s.textContent = t;
-          el.appendChild(s);
-        }
-        buf = [];
+      // Chips
+      document.querySelectorAll('.mode-chip').forEach(c => c.classList.remove('active-mode'));
+      const chip = document.querySelector('[data-mode="' + mode + '"]');
+      if (chip) chip.classList.add('active-mode');
+
+      // Top bar pill
+      const pill = document.getElementById('topModePill');
+      if (pill) { pill.textContent = cfg.label; pill.style.background = cfg.pillBg; pill.style.borderColor = cfg.pillBorder; pill.style.color = cfg.pillColor; }
+
+      // Status
+      const dot = document.getElementById('topStatusDot');
+      if (dot) dot.style.background = cfg.dot;
+      const lbl = document.getElementById('topStatusLabel');
+      if (lbl) lbl.textContent = cfg.status;
+      const sub = document.getElementById('topStatusSub');
+      if (sub) sub.textContent = cfg.sub;
+
+      // History
+      const htag = document.getElementById('histActiveTag');
+      if (htag) { htag.textContent = cfg.histTag; htag.style.background = cfg.histTagBg; htag.style.color = cfg.histTagColor; }
+      const htitle = document.getElementById('histActiveTitle');
+      if (htitle) htitle.textContent = cfg.histTitle;
+      const hentry = document.getElementById('histActiveEntry');
+      if (hentry) { hentry.style.borderLeftColor = cfg.histBorder; hentry.style.background = cfg.histBg; }
+
+      // Screen swap — fade via opacity then swap display
+      const currentScreen = document.querySelector('.mode-screen.visible');
+      const nextScreen = document.getElementById(screenMap[mode]);
+      if (currentScreen && nextScreen && currentScreen !== nextScreen) {
+        currentScreen.classList.remove('visible');
+        nextScreen.classList.add('visible');
       }
 
-      for (const line of lines) {
-        const m = line.trim().match(/^([A-Za-z][A-Za-z\s]*):\s*$/);
-        if (m) {
-          flush();
-          const h = document.createElement('span');
-          h.className = 'pt-sl';
-          h.textContent = m[1].trim();
-          el.appendChild(h);
-        } else {
-          buf.push(line);
-        }
-      }
-      flush();
+      // Waveform
+      drawWave(cfg.waveColor);
+
+      currentMode = mode;
     }
 
-    function setState(newState, payload = {}) {
-      state = newState;
+    // Auto-rotate with variable timing — longer on content-heavy screens
+    const autoModes = ['image', 'email', 'workflow', 'video', 'code', 'balanced', 'design', 'polish'];
+    const autoDelays = {
+      image: 7000,     // Builder screen — lots to read
+      email: 8000,     // Full email to read
+      workflow: 8000,  // JSON + steps to read
+      video: 7000,     // Builder with variations
+      code: 6000,      // Prompt content
+      balanced: 6000,
+      design: 6000,
+      polish: 7000,    // Side by side comparison
+    };
+    let autoIdx = 0;
+    let autoTimer = null;
 
-      stopMorphAnim();
+    function scheduleNext() {
+      const currentModeName = autoModes[autoIdx];
+      const delay = autoDelays[currentModeName] || 6000;
+      autoTimer = setTimeout(() => {
+        autoIdx = (autoIdx + 1) % autoModes.length;
+        switchMode(autoModes[autoIdx]);
+        scheduleNext();
+      }, delay);
+    }
 
-      const bar = document.getElementById('bar');
-      bar.style.display = 'none';
-      ['panel-idle','panel-recording','panel-thinking','panel-ready','panel-error'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
+    scheduleNext();
+
+    // Init waveform on load
+    window.addEventListener('load', () => { drawWave('rgba(139,92,246,'); });
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+          observer.unobserve(entry.target);
+        }
       });
-
-      if (newState === STATES.IDLE) {
-        bar.style.display = '';
-        document.getElementById('panel-idle').style.display = '';
-        document.getElementById('mode-pill').textContent = getModeLabel();
-        // BUG-003-C: resize after DOM paints
-        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.IDLE));
-      }
-
-      if (newState === STATES.RECORDING) {
-        window.electronAPI.setWindowButtonsVisible(false);
-        bar.style.display = '';
-        document.getElementById('panel-recording').style.display = '';
-        const durEl = document.getElementById('recDur');
-        if (durEl) durEl.textContent = '0:00';
-        const textEl = document.getElementById('transcriptText');
-        if (textEl) textEl.textContent = '';
-        const wrapEl = document.getElementById('transcriptWrap');
-        if (wrapEl) wrapEl.style.display = 'none';
-        stopRecTimer();
-        startRecTimer();
-        requestAnimationFrame(() => window.electronAPI.resizeWindow(89));
-      }
-
-      if (newState === STATES.THINKING) {
-        window.electronAPI.setWindowButtonsVisible(true);
-        bar.style.display = '';
-        document.getElementById('panel-thinking').style.display = '';
-        document.getElementById('think-transcript').textContent = '';
-        let morphT = 0;
-        const morphCanvas = document.getElementById('morph-canvas');
-        if (morphCanvas) {
-          const animMorph = () => { drawMorphWave(morphCanvas, morphT++); morphAnimFrame = requestAnimationFrame(animMorph); };
-          morphAnimFrame = requestAnimationFrame(animMorph);
-        }
-        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.THINKING));
-      }
-
-      if (newState === STATES.PROMPT_READY) {
-        window.electronAPI.setWindowButtonsVisible(true);
-        bar.style.display = '';
-        document.getElementById('panel-ready').style.display = '';
-        document.getElementById('you-said-text').textContent = originalTranscript;
-        renderPromptOutput(generatedPrompt);
-        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.PROMPT_READY));
-      }
-
-      if (newState === STATES.ERROR) {
-        bar.style.display = '';
-        document.getElementById('panel-error').style.display = '';
-        document.getElementById('error-message').textContent = payload.message || 'Something went wrong';
-        requestAnimationFrame(() => window.electronAPI.resizeWindow(STATE_HEIGHTS.ERROR));
-      }
-
-    }
-
-    // Idle area click → start recording
-    document.getElementById('idle-area').addEventListener('click', () => {
-      if (state === STATES.IDLE) startRecording();
-    });
-
-    // Mode pill click → open native mode menu
-    document.getElementById('mode-pill').addEventListener('click', (e) => {
-      e.stopPropagation();
-      window.electronAPI.showModeMenu(getMode());
-    });
-
-    // Error area click → retry
-    document.getElementById('error-area').addEventListener('click', () => {
-      if (state === STATES.ERROR) setState(STATES.IDLE);
-    });
-
-    // Dismiss button — cancel recording
-    document.getElementById('dismissBtn').addEventListener('click', () => {
-      if (mediaRecorder) {
-        mediaRecorder.stream.getTracks().forEach(t => t.stop());
-        mediaRecorder = null;
-      }
-      audioChunks = [];
-      isProcessing = false;
-      stopRecTimer();
-      setState(STATES.IDLE);
-    });
-
-    // Stop button — end recording and process
-    document.getElementById('stopBtn').addEventListener('click', () => {
-      stopRecording();
-    });
-
-    // Global shortcut from main process
-    window.electronAPI.onShortcutTriggered(() => {
-      if (state === STATES.IDLE) startRecording();
-      else if (state === STATES.RECORDING) stopRecording();
-    });
-
-    // --- Recording ---
-    let mediaRecorder = null;
-    let audioChunks = [];
-
-    let isProcessing = false;
-
-    async function startRecording() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.start();
-        setState(STATES.RECORDING);
-      } catch(e) {
-        setState(STATES.ERROR, { message: 'Microphone access denied' });
-      }
-    }
-
-    async function stopRecording() {
-      if (!mediaRecorder || isProcessing) return;
-      isProcessing = true;
-      stopRecTimer();
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(t => t.stop());
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-        const arrayBuffer = await blob.arrayBuffer();
-        setState(STATES.THINKING);
-        isProcessing = false;
-        const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer);
-        if (!transcribeResult.success) {
-          setState(STATES.ERROR, { message: transcribeResult.error });
-          return;
-        }
-        originalTranscript = transcribeResult.transcript.trim();
-        if (!originalTranscript) {
-          setState(STATES.IDLE);
-          return;
-        }
-        document.getElementById('think-transcript').textContent = originalTranscript;
-        const thinkingPanel = document.getElementById('panel-thinking');
-        window.electronAPI.resizeWindow(320);
-        const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
-        if (!genResult.success) {
-          setState(STATES.ERROR, { message: genResult.error || 'Claude error' });
-          return;
-        }
-        generatedPrompt = genResult.prompt;
-        setState(STATES.PROMPT_READY);
-      };
-    }
-
-    // Copy
-    document.getElementById('btn-copy').addEventListener('click', () => {
-      window.electronAPI.copyToClipboard(generatedPrompt);
-      const btn = document.getElementById('btn-copy');
-      btn.classList.add('copied');
-      btn.textContent = 'Copied ✓';
-      setTimeout(() => {
-        btn.classList.remove('copied');
-        btn.textContent = 'Copy prompt';
-      }, 1800);
-    });
-
-    // Edit / Done
-    document.getElementById('btn-edit').addEventListener('click', () => {
-      const out = document.getElementById('prompt-output');
-      const btn = document.getElementById('btn-edit');
-      if (btn.textContent === 'Edit') {
-        out.contentEditable = 'true';
-        out.style.outline = '1.5px solid rgba(10,132,255,0.6)';
-        out.style.outlineOffset = '4px';
-        out.style.borderRadius = '6px';
-        out.focus();
-        btn.textContent = 'Done';
-      } else {
-        generatedPrompt = out.textContent;
-        out.contentEditable = 'false';
-        out.style.outline = 'none';
-        btn.textContent = 'Edit';
-      }
-    });
-
-    // Escape: cancel edit or stop recording
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const out = document.getElementById('prompt-output');
-        if (out.contentEditable === 'true') {
-          out.contentEditable = 'false';
-          out.style.outline = 'none';
-          renderPromptOutput(generatedPrompt);
-          document.getElementById('btn-edit').textContent = 'Edit';
-        } else if (state === STATES.RECORDING) {
-          stopRecording();
-        }
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && state === STATES.PROMPT_READY) {
-        const out = document.getElementById('prompt-output');
-        if (out.contentEditable !== 'true') {
-          window.electronAPI.copyToClipboard(generatedPrompt);
-        }
-      }
-    });
-
-    // Regenerate
-    document.getElementById('btn-regenerate').addEventListener('click', async () => {
-      setState(STATES.THINKING);
-      document.getElementById('think-transcript').textContent = originalTranscript;
-      const regenPanel = document.getElementById('panel-thinking');
-      window.electronAPI.resizeWindow(320);
-      const genResult = await window.electronAPI.generatePrompt(originalTranscript, getMode());
-      if (!genResult.success) {
-        setState(STATES.ERROR, { message: genResult.error || 'Claude error' });
-        return;
-      }
-      generatedPrompt = genResult.prompt;
-      setState(STATES.PROMPT_READY);
-    });
-
-    // Reset
-    document.getElementById('btn-reset').addEventListener('click', () => setState(STATES.IDLE));
-
-    // Mode menu — native Electron menu (avoids HTML overflow clipping)
-    window.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      if (state !== STATES.IDLE) return;
-      window.electronAPI.showModeMenu(getMode());
-    });
-
-    window.electronAPI.onModeSelected((key) => {
-      setMode(key);
-    });
-
-    // Init
-    setState(STATES.IDLE);
-
-    window.electronAPI.getTheme().then(({ dark }) => {
-      document.body.classList.toggle('light', !dark);
-    });
-    window.electronAPI.onThemeChanged(({ dark }) => {
-      document.body.classList.toggle('light', !dark);
-    });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => observer.observe(el));
   </script>
+
 </body>
+
 </html>
