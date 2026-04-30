@@ -968,20 +968,23 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('resize-window', (_event, { height }) => {
     if (win) {
-      win.setResizable(true);
       const [currentWidth] = win.getSize();
+      // Only lock resize if in minimized bar mode (narrow window)
+      const isBar = currentWidth <= 520;
+      if (isBar) win.setResizable(true);
       win.setSize(currentWidth, height, true);
-      win.setResizable(false);
+      if (isBar) win.setResizable(false);
     }
     return { ok: true };
   });
 
   ipcMain.handle('resize-window-width', (_event, { width }) => {
     if (win) {
-      win.setResizable(true);
       const [, h] = win.getSize();
+      const isBar = width <= 520;
+      if (isBar) win.setResizable(true);
       win.setSize(width, h, true);
-      win.setResizable(false);
+      if (isBar) win.setResizable(false);
     }
     return { ok: true };
   });
@@ -995,7 +998,9 @@ app.whenReady().then(async () => {
         win.setFullScreenable(true);
         win.setAlwaysOnTop(false);
         win.setMinimumSize(800, 600);
-        win.setMaximumSize(0, 0);
+        const expandDisplay = screen.getDisplayNearestPoint(win.getBounds());
+        const { width: dw, height: dh } = expandDisplay.workArea;
+        win.setMaximumSize(dw, dh);
         const savedBounds = readConfig().expandedWindowBounds;
         if (savedBounds) {
           const displays = screen.getAllDisplays();
