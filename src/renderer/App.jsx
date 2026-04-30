@@ -9,6 +9,7 @@ import useImageBuilder from './hooks/useImageBuilder.js'
 import useVideoBuilder from './hooks/useVideoBuilder.js'
 import useWorkflowBuilder from './hooks/useWorkflowBuilder.js'
 import useOperationHandlers from './hooks/useOperationHandlers.js'
+import { useThinkingProgress } from './hooks/useThinkingProgress.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -85,6 +86,7 @@ export default function App() {
   const [thinkTranscript, setThinkTranscript] = useState('')
   const [thinkingLabel, setThinkingLabel] = useState('')
   const [thinkingAccentColor, setThinkingAccentColor] = useState('')
+  const [thinkingPhase, setThinkingPhase] = useState(1)
   const [emailOutput, setEmailOutput] = useState(null)
   const [emailSaved, setEmailSaved] = useState(false)
 
@@ -142,7 +144,11 @@ export default function App() {
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
-    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setTranscriptionSlow(false); setGenerationSlow(false) }
+    if (newState === STATES.THINKING) {
+      const builderStates = [STATES.IMAGE_BUILDER, STATES.VIDEO_BUILDER, STATES.WORKFLOW_BUILDER]
+      setThinkingPhase(builderStates.includes(stateRef.current) ? 2 : 1)
+    }
+    if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -430,6 +436,12 @@ Return ONLY valid JSON:
     setGenerationSlow,
   })
 
+  const { elapsed: thinkingElapsed, currentLabel: thinkingCurrentLabel, labelOpacity: thinkingLabelOpacity } = useThinkingProgress({
+    mode,
+    phase: thinkingPhase,
+    isActive: currentState === STATES.THINKING,
+  })
+
   function openHistory() {
     isExpandedRef.current = false
     setIsExpanded(false)
@@ -597,6 +609,9 @@ Return ONLY valid JSON:
             transcriptionSlow={transcriptionSlow}
             generationErrorProps={{ ...generationError, onRetry: handleRetryGeneration, onOpenSettings: openSettings }}
             generationSlow={generationSlow}
+            thinkingElapsed={thinkingElapsed}
+            thinkingCurrentLabel={thinkingCurrentLabel}
+            thinkingLabelOpacity={thinkingLabelOpacity}
           />
         ) : (
           <>
