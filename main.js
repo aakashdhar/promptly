@@ -683,6 +683,16 @@ function createWindow() {
     if (menuBarTray && !menuBarTray.isDestroyed())
       menuBarTray.setImage(createMicIcon('idle'));
   });
+  win.on('maximize', () => {
+    win.setAlwaysOnTop(false);
+    win.setResizable(false);
+  });
+  win.on('unmaximize', () => {
+    win.setAlwaysOnTop(false);
+    win.setResizable(false);
+    const [currentWidth] = win.getSize();
+    win.setMaximumSize(currentWidth, 2000);
+  });
   nativeTheme.on('updated', () => {
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
     updateMenuBarIcon(currentIconState);
@@ -989,11 +999,20 @@ app.whenReady().then(async () => {
         const maxY = dy + dh - height;
         const newY = Math.max(Math.min(preExpandBounds.y, maxY), dy);
         win.setBounds({ x: newX, y: newY, width, height }, false);
+        const fullDisplay = screen.getDisplayNearestPoint(win.getBounds());
+        win.setMaximumSize(fullDisplay.workArea.width, 2000);
+        win.setMaximizable(true);
+        win.setAlwaysOnTop(false);
+        win.setResizable(false);
       } else if (width <= 520 && preExpandBounds) {
         // Collapsing from expanded view — restore original x/y
         const { x, y } = preExpandBounds;
         win.setBounds({ x, y, width, height }, false);
         preExpandBounds = null;
+        win.setMaximumSize(520, 2000);
+        win.setMaximizable(false);
+        win.setAlwaysOnTop(true);
+        win.setResizable(false);
       } else {
         win.setSize(width, height, true);
       }
