@@ -331,8 +331,8 @@ export default function ExpandedTransportBar({
           {/* Divider */}
           <div style={{ width: '0.5px', height: '28px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
-          {/* State text block */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '140px' }}>
+          {/* State text block — fixed width so label changes never shift buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '220px', flexShrink: 0, overflow: 'hidden' }}>
             {isThinking ? (
               <>
                 <div style={{
