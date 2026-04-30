@@ -1596,6 +1596,45 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 
 ---
 
+### D-SESSION-2026-04-30 — Paste blocked in Electron input fields inside draggable regions
+- **Date**: 2026-04-30 · **Task**: BUG-PASTE-INPUTS · **Type**: discovery
+- **What was done**: Added `-webkit-app-region: no-drag` / `WebkitAppRegion: 'no-drag'` to every `<input>` in `SettingsPanel.jsx` and `splash.html` pathPanel.
+- **Why**: Electron intercepts all pointer events in `-webkit-app-region: drag` containers for window dragging. Child `<input>` elements inside those containers cannot receive focus or paste events unless they explicitly opt out with `no-drag`. This is not a CSS specificity issue — it is an OS-level event routing decision.
+- **Pattern**: Any `<input>`, `<textarea>`, or interactive element inside a draggable region must declare `-webkit-app-region: no-drag`. Apply defensively to all future input fields.
+- **Approved by**: human
+
+---
+
+### D-BUG-ONBOARDING-MANUAL-PATH — 2026-04-30 — Onboarding fails silently for nvm-managed installs
+- **Date**: 2026-04-30 · **Task**: BUG-ONBOARDING-MANUAL-PATH · **Type**: blocker-resolution
+- **What was planned**: Wizard shows install commands if Claude CLI / Whisper not found.
+- **What was done**: Added "Already installed?" section to Screen 1 (s1-notfound) and Screen 2 (s2-whisper-notfound) — `which claude` / `which whisper` copy command + pasteable path input + "Use path →" button. JS functions `s1UseManualPath()` / `s2UseManualPath()` fetch current stored paths first (to preserve the other path), then call `savePaths()` and re-run the screen check.
+- **Why**: Auto-detection scans well-known static paths and shell fallbacks. nvm-managed Node installs place binaries in `~/.nvm/versions/node/<version>/bin/` — paths that vary per user and version and are not discoverable without running a login shell. The wizard had no recovery path for users who already had tools installed but in non-standard locations.
+- **Alternatives considered**: Run full login shell (`zsh -lc "which claude"`) during wizard — already done in `resolveClaudePath()` for the main app; the wizard's `check-claude` IPC does the same. The issue is nvm not loading in some shell environments. Manual override is the correct fallback.
+- **Approved by**: human
+
+---
+
+### D-BUG-ONBOARDING-MIC — 2026-04-30 — Wizard skipped microphone permission check
+- **Date**: 2026-04-30 · **Task**: BUG-ONBOARDING-MIC · **Type**: drift
+- **What was planned**: Screen 4 was static "all done" with a checklist.
+- **What was done**: Screen 4 now runs `runScreen4()` on entry: calls `getUserMedia({ audio: true })`, updates mic row (spinner → green ✓ or red ✗), gates Launch button on mic grant, shows denied instructions with deep-link to System Settings > Privacy > Microphone, provides "Check again ↺" retry.
+- **Why**: Without the check, users who had not granted mic access would complete the wizard, launch the app, click record, and get a silent failure. macOS only shows the permission dialog when `getUserMedia` is called from the browser context — the wizard is the right place to trigger it while the user is in setup mode.
+- **Approved by**: human
+
+---
+
+### D-BUG-NATIVE-ZOOM — 2026-04-30 — Native macOS zoom button cannot be used as expand trigger
+- **Date**: 2026-04-30 · **Task**: BUG-EXPAND-BUTTON · **Type**: blocker-resolution
+- **What was attempted**: Wire native traffic-light green zoom button to trigger expand. Set `maximizable: true`, intercept `win.on('maximize')`, call `win.unmaximize()` + send `toggle-expand` IPC.
+- **What happened**: Zoom button remained greyed out and unclickable.
+- **Root cause**: macOS determines zoom button active state from window resizability (`resizable` flag), not the `maximizable` flag. With `resizable: false`, the OS greys out the button unconditionally. No Electron API can override this behaviour.
+- **Alternatives considered**: Set `resizable: true` with matching min/max size constraints — macOS may still grey the button when min=max, and it opens drag-resize edge cases. Custom titlebar replacing traffic lights — major architectural change, breaks native look.
+- **Decision**: Keep `maximizable: true` (harmless, no effect), keep custom expand button in `IdleState.jsx`. `onToggleExpand` IPC channel left in place in case this is revisited.
+- **Approved by**: human
+
+---
+
 ### D-BUG-EMAIL-JSON-FENCE — 2026-04-30 — Email response fails to parse: Claude wraps JSON in markdown fences
 - **Date**: 2026-04-30 · **Task**: post-email-mode · **Type**: discovery
 - **What was planned**: `JSON.parse(genResult.prompt)` in App.jsx handleGenerateResult email branch parses Claude's raw output into `{ subject, body, toneAnalysis }`.

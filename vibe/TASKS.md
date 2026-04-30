@@ -562,6 +562,48 @@ Email mode feature complete and stable. Merge feat/email-mode → main, or conti
 
 ---
 
+## Session — 2026-04-30 — Bug fixes and UX improvements
+
+✅ **BUG-PASTE-INPUTS — Settings and onboarding path inputs block paste** (FIXED 2026-04-30)
+   Root cause: Parent containers have `-webkit-app-region: drag`. Electron intercepts all mouse events in draggable regions, which blocks focus, text selection, and Cmd+V paste in child `<input>` elements unless they explicitly declare `-webkit-app-region: no-drag`.
+   Fix: Added `WebkitAppRegion: 'no-drag'` (React inline style) to both inputs in `SettingsPanel.jsx`. Added `-webkit-app-region: no-drag` to `claudePathInput` and `whisperPathInput` in `splash.html` pathPanel.
+   Pattern: Every `<input>` inside a draggable window region must declare `no-drag` — this applies to all future input fields in Electron windows.
+
+✅ **BUG-ONBOARDING-MANUAL-PATH — No fallback when CLI not found via nvm or custom path** (FIXED 2026-04-30)
+   Root cause: Screen 1 (Claude CLI) and Screen 2 (Whisper) only showed install commands when checks failed. Users who already had tools installed in non-standard locations (nvm-managed node, pyenv-managed python) had no way to provide the actual binary path without leaving the wizard entirely.
+   Fix: Added "Already installed?" section to `s1-notfound` and `s2-whisper-notfound` states in `splash.html`:
+   - `which claude` / `which whisper` copyable command with hint text
+   - Pasteable `<input>` with `-webkit-app-region: no-drag`
+   - "Use path →" button: saves path to config.json (preserving other stored path) and re-runs the check
+   JS: `s1UseManualPath()` and `s2UseManualPath()` — both call `getStoredPaths()` first to preserve the other path before calling `savePaths()`.
+
+✅ **BUG-ONBOARDING-MIC — Onboarding wizard never checked microphone access** (FIXED 2026-04-30)
+   Root cause: Screen 4 (all done) was fully static — it showed a checklist of tools but never verified microphone permission. Users could complete the wizard and launch the app without granting mic access, then be confused when recording failed silently.
+   Fix: Screen 4 now runs `runScreen4()` on load:
+   - Mic row added to checklist (spinner → ✓ green or ✗ red)
+   - Uses `navigator.mediaDevices.getUserMedia({ audio: true })` — triggers the macOS permission dialog on first run
+   - Launch button disabled (opacity 0.35, pointerEvents none) until mic is granted
+   - Denied state shows fix instructions + deep link button to System Settings › Privacy › Microphone
+   - "Check again ↺" button retries after user grants in System Settings
+   - Heading changed from "You're all set" → "Almost there" until mic passes
+
+✅ **BUG-ABORT-POSITION — Reset button moved from drag spacer to transport row** (FIXED 2026-04-30)
+   Fix: Removed abort button from the traffic-light drag spacer row in `ExpandedTransportBar.jsx`. Added matching 36px circle button immediately after the type (keyboard) button in the inline transport row — same position family as type and pause. Drag spacer is now a clean `justifyContent: flex-end` row with only the collapse button.
+
+✅ **BUG-EXPAND-ICON — Expand button icon updated to match collapse button style** (FIXED 2026-04-30)
+   Fix: `IdleState.jsx` expand button SVG changed from four-corner expand arrows to two-bar icon — matching the collapse button in `ExpandedTransportBar.jsx` for visual consistency.
+
+✅ **ATTEMPT: Native zoom button as expand trigger — macOS constraint discovered** (2026-04-30)
+   Attempted: Wire the native macOS green zoom/maximize button (traffic light) to trigger expand instead of OS-level maximize. Approach: `maximizable: true` in BrowserWindow options, `win.on('maximize')` intercepts and calls `win.unmaximize()` + sends `toggle-expand` IPC to renderer; `preload.js` exposes `onToggleExpand`; `useKeyboardShortcuts.js` listens and calls `handleExpand()`.
+   Outcome: Button remained greyed out. Root cause: macOS greys out the zoom button when `resizable: false`, regardless of the `maximizable` flag. No Electron API can override this — macOS determines zoom button state from window resizability at the OS level.
+   Reverted: `maximizable` left as `true` (harmless), expand button restored in `IdleState.jsx`, `onToggleExpand` left in `preload.js` and `useKeyboardShortcuts.js` (also harmless, fires nothing with resizable:false).
+   Lesson: Cannot use native traffic-light zoom button as custom action trigger when `resizable: false`. The custom expand button in the top-right corner is the correct approach for this window style.
+
+## What just happened
+✅ Session 2026-04-30 — 5 bugs fixed: paste blocked in settings/onboarding inputs, onboarding missing manual path entry for nvm users, onboarding missing mic check, reset button repositioned to transport row, expand icon updated to match collapse icon. Native zoom button approach attempted and reverted — macOS blocks it when resizable:false.
+
+---
+
 ## FEATURE-IMAGE-BUILDER — Nano Banana Image Prompt Builder (10/10 ✅)
 > Spec: vibe/features/2026-04-27-image-builder/ | Added: 2026-04-27 | Completed: 2026-04-27
    [x] IMG-001 · useMode.js image mode + purple accent — 'image' added to MODE_LABELS
