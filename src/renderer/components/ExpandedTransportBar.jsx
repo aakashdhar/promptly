@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react'
 import WaveformCanvas from './WaveformCanvas.jsx'
 import MorphCanvas from './MorphCanvas.jsx'
+import { getModeAccent } from '../utils/thinkingLabels.js'
 
 export default function ExpandedTransportBar({
   currentState,
@@ -16,6 +17,9 @@ export default function ExpandedTransportBar({
   onTypePrompt,
   onAbort,
   generationErrorType,
+  thinkingElapsed,
+  thinkingCurrentLabel,
+  thinkingLabelOpacity,
 }) {
   const isRecording = currentState === 'RECORDING'
   const isThinking = currentState === 'THINKING'
@@ -57,7 +61,7 @@ export default function ExpandedTransportBar({
   if (isRecording) {
     textLine1 = 'Listening...'; textLine2 = 'Tap stop when done'; textDot = 'recording'
   } else if (isThinking) {
-    textLine1 = 'Generating prompt...'; textLine2 = ''; textDot = 'thinking'
+    textLine1 = ''; textLine2 = ''; textDot = null
   } else if (isIterating) {
     textLine1 = 'Iterating...'; textLine2 = 'Tap stop when done'; textDot = 'iterating'
   } else if (isPaused) {
@@ -83,7 +87,6 @@ export default function ExpandedTransportBar({
   }
 
   const dotColor = textDot === 'recording' ? 'rgba(200,50,35,0.85)'
-    : textDot === 'thinking' ? 'rgba(10,132,255,0.85)'
     : textDot === 'iterating' ? 'rgba(10,132,255,0.85)'
     : textDot === 'email-ready' ? 'rgba(20,184,166,0.85)'
     : textDot === 'error' ? 'rgba(255,59,48,0.85)'
@@ -328,29 +331,59 @@ export default function ExpandedTransportBar({
           {/* Divider */}
           <div style={{ width: '0.5px', height: '28px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
-          {/* State text block */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '140px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {textDot && (
+          {/* State text block — fixed width so label changes never shift buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '220px', flexShrink: 0, overflow: 'hidden' }}>
+            {isThinking ? (
+              <>
                 <div style={{
-                  width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0,
-                  background: dotColor,
-                  animation: textDot === 'recording' ? 'cursor-blink 1.1s ease-in-out infinite'
-                    : textDot === 'thinking' ? 'spin 1s linear infinite'
-                    : 'pulse-ring 2s ease-out infinite',
-                }} />
-              )}
-              <span style={{
-                fontSize: '12px', fontWeight: 500, color: 'rgba(255,255,255,0.75)',
-                letterSpacing: '-0.01em',
-              }}>
-                {textLine1}
-              </span>
-            </div>
-            {textLine2 && (
-              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', paddingLeft: textDot ? '11px' : '0' }}>
-                {textLine2}
-              </span>
+                  display: 'flex', alignItems: 'center', gap: '7px',
+                  fontSize: '13px', fontWeight: 500,
+                  color: 'rgba(255,255,255,0.6)',
+                  opacity: thinkingLabelOpacity,
+                  transition: 'opacity 150ms ease',
+                }}>
+                  <div style={{ animation: 'spin 1.1s linear infinite', flexShrink: 0, display: 'flex' }}>
+                    <svg width="12" height="12" viewBox="0 0 32 32" fill="none">
+                      <circle cx="16" cy="16" r="12"
+                        stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+                      <path d="M16 4A12 12 0 0 1 28 16"
+                        stroke={getModeAccent(mode)} strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  {thinkingCurrentLabel}
+                </div>
+                <div style={{
+                  fontFamily: 'monospace', fontSize: '11px',
+                  color: 'rgba(255,255,255,0.2)',
+                  paddingLeft: '19px',
+                }}>
+                  {`${Math.floor(thinkingElapsed / 60)}:${(thinkingElapsed % 60).toString().padStart(2, '0')}`}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {textDot && (
+                    <div style={{
+                      width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0,
+                      background: dotColor,
+                      animation: textDot === 'recording' ? 'cursor-blink 1.1s ease-in-out infinite'
+                        : 'pulse-ring 2s ease-out infinite',
+                    }} />
+                  )}
+                  <span style={{
+                    fontSize: '12px', fontWeight: 500, color: 'rgba(255,255,255,0.75)',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    {textLine1}
+                  </span>
+                </div>
+                {textLine2 && (
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', paddingLeft: textDot ? '11px' : '0' }}>
+                    {textLine2}
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>

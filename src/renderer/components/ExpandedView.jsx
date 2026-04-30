@@ -40,6 +40,9 @@ export default function ExpandedView({
   onEmailIterate,
   onToneAdjust,
   onAbort,
+  thinkingElapsed,
+  thinkingCurrentLabel,
+  thinkingLabelOpacity,
   transcriptionErrorProps,
   transcriptionSlow,
   generationErrorProps,
@@ -79,6 +82,9 @@ export default function ExpandedView({
         onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
         onAbort={onAbort}
         generationErrorType={generationErrorProps?.errorType}
+        thinkingElapsed={thinkingElapsed}
+        thinkingCurrentLabel={thinkingCurrentLabel}
+        thinkingLabelOpacity={thinkingLabelOpacity}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
