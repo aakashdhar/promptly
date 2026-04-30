@@ -27,6 +27,7 @@ import VideoBuilderState from './components/VideoBuilderState.jsx'
 import VideoBuilderDoneState from './components/VideoBuilderDoneState.jsx'
 import WorkflowBuilderState from './components/WorkflowBuilderState.jsx'
 import WorkflowBuilderDoneState from './components/WorkflowBuilderDoneState.jsx'
+import EmailReadyState from './components/EmailReadyState.jsx'
 import { saveToHistory } from './utils/history.js'
 
 const STATES = {
@@ -47,6 +48,7 @@ const STATES = {
   VIDEO_BUILDER_DONE: 'VIDEO_BUILDER_DONE',
   WORKFLOW_BUILDER: 'WORKFLOW_BUILDER',
   WORKFLOW_BUILDER_DONE: 'WORKFLOW_BUILDER_DONE',
+  EMAIL_READY: 'EMAIL_READY',
   TRANSCRIPTION_ERROR: 'TRANSCRIPTION_ERROR',
   GENERATION_ERROR: 'GENERATION_ERROR',
 }
@@ -70,6 +72,7 @@ const STATE_HEIGHTS = {
   VIDEO_BUILDER_DONE: 860,
   WORKFLOW_BUILDER: 860,
   WORKFLOW_BUILDER_DONE: 860,
+  EMAIL_READY: 860,
   TRANSCRIPTION_ERROR: 860,
   GENERATION_ERROR: 860,
 }
@@ -89,6 +92,8 @@ export default function App() {
   const [transcriptionSlow, setTranscriptionSlow] = useState(false)
   const [generationError, setGenerationError] = useState(null)
   const [generationSlow, setGenerationSlow] = useState(false)
+  const [emailOutput, setEmailOutput] = useState(null)
+  const [emailSaved, setEmailSaved] = useState(false)
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -119,7 +124,7 @@ export default function App() {
   useEffect(() => {
     // Skip IDLE resize when mode auto-expands on mount — handleExpand fires directly
     // (no RAF), so the RAF-wrapped resizeWindow would race and win, collapsing the window.
-    if (mode !== 'image' && mode !== 'video' && mode !== 'workflow') {
+    if (mode !== 'image' && mode !== 'video' && mode !== 'workflow' && mode !== 'email') {
       resizeWindow(STATE_HEIGHTS.IDLE)
     }
     return () => {
@@ -132,7 +137,7 @@ export default function App() {
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
   useEffect(() => {
-    if ((mode === 'image' || mode === 'video' || mode === 'workflow') && !isExpandedRef.current) handleExpand()
+    if ((mode === 'image' || mode === 'video' || mode === 'workflow' || mode === 'email') && !isExpandedRef.current) handleExpand()
   }, [mode])
 
   function transition(newState, payload = {}) {
@@ -305,6 +310,22 @@ export default function App() {
       runWorkflowAnalysis(originalTranscript.current, isReiterate)
       return
     }
+    if (mode === 'email') {
+      if (!isExpandedRef.current) handleExpand()
+      setThinkingAccentColor('rgba(20,184,166,0.85)')
+      setThinkingLabel('Drafting your email...')
+      try {
+        const parsed = JSON.parse(genResult.prompt)
+        setEmailOutput(parsed)
+        setEmailSaved(false)
+        saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email' })
+        transitionRef.current(STATES.EMAIL_READY)
+      } catch {
+        setGenerationError({ errorType: 'unknown', error: 'Failed to parse email response', canRetry: true })
+        transitionRef.current(STATES.GENERATION_ERROR)
+      }
+      return
+    }
     setThinkingLabel('')
     if (mode === 'polish') {
       const parsed = parsePolishOutput(genResult.prompt)
@@ -337,6 +358,15 @@ export default function App() {
     stopTimer,
   })
 
+  function handleEmailSave() {
+    setEmailSaved(true)
+  }
+
+  function handleEmailIterate() {
+    setEmailOutput(null)
+    startRecordingRef.current()
+  }
+
   function handleAbort() {
     const s = stateRef.current
     if (s === STATES.IDLE || s === STATES.HISTORY || s === STATES.SETTINGS ||
@@ -347,6 +377,7 @@ export default function App() {
     if (s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE) { handleImageStartOver(); return }
     if (s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) { handleVideoStartOver(); return }
     if (s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE) { handleWorkflowStartOver(); return }
+    if (s === STATES.EMAIL_READY) { setEmailOutput(null); transition(STATES.IDLE); return }
     transition(STATES.IDLE)
   }
 
@@ -512,7 +543,7 @@ export default function App() {
             duration={duration}
             generatedPrompt={generatedPrompt}
             thinkTranscript={thinkTranscript}
-            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE || s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE) startRecording() }}
+            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE || s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE || s === STATES.EMAIL_READY) startRecording() }}
             onCollapse={handleCollapse}
             onPause={pauseRecording}
             onStop={stopRecording}
@@ -545,6 +576,10 @@ export default function App() {
             imageBuilderProps={imageBuilderProps}
             videoBuilderProps={videoBuilderProps}
             workflowBuilderProps={workflowBuilderProps}
+            emailOutput={emailOutput}
+            emailSaved={emailSaved}
+            onEmailSave={handleEmailSave}
+            onEmailIterate={handleEmailIterate}
             onAbort={handleAbort}
             transcriptionErrorProps={{ ...transcriptionError, onRetry: handleRetryTranscription, onOpenSettings: openSettings }}
             transcriptionSlow={transcriptionSlow}

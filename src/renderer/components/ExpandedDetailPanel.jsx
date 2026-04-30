@@ -10,6 +10,7 @@ import VideoBuilderDoneState from './VideoBuilderDoneState.jsx'
 import WorkflowBuilderState from './WorkflowBuilderState.jsx'
 import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 import OperationErrorPanel from './OperationErrorPanel.jsx'
+import EmailReadyState from './EmailReadyState.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -48,6 +49,10 @@ export default function ExpandedDetailPanel({
   imageBuilderProps,
   videoBuilderProps,
   workflowBuilderProps,
+  emailOutput,
+  emailSaved,
+  onEmailSave,
+  onEmailIterate,
   transcriptionErrorProps,
   transcriptionSlow,
   generationErrorProps,
@@ -63,8 +68,10 @@ export default function ExpandedDetailPanel({
     || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
     || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
     || currentState === 'WORKFLOW_BUILDER' || currentState === 'WORKFLOW_BUILDER_DONE'
+    || currentState === 'EMAIL_READY'
     || currentState === 'TRANSCRIPTION_ERROR'
     || currentState === 'GENERATION_ERROR'
+    || (currentState === 'RECORDING' && mode === 'email')
 
   const showEntryDetail = !isContentState && selected !== null
   const showEmpty = !isContentState && !selected
@@ -488,6 +495,35 @@ export default function ExpandedDetailPanel({
           onCopy={workflowBuilderProps.onCopy}
           isCopied={workflowBuilderProps.isCopied}
           isExpanded
+        />
+      )}
+
+      {currentState === 'RECORDING' && mode === 'email' && (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: '14px',
+          minHeight: '200px',
+        }}>
+          <span style={{ fontSize: '40px', lineHeight: 1 }}>✉</span>
+          <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em', textAlign: 'center' }}>
+            Describe your email situation naturally
+          </span>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
+            Claude will draft a ready-to-send email
+          </span>
+        </div>
+      )}
+
+      {currentState === 'EMAIL_READY' && (
+        <EmailReadyState
+          emailOutput={emailOutput}
+          transcript={thinkTranscript}
+          onCopy={() => {}}
+          onIterate={onEmailIterate}
+          onReset={onReset}
+          onSave={onEmailSave}
+          isSaved={emailSaved}
+          isExpanded={true}
         />
       )}
     </div>

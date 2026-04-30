@@ -142,6 +142,35 @@ The user said:
   image:     { name: 'Image',            passthrough: true, instruction: '' },
   video:     { name: 'Video',            passthrough: true, instruction: '' },
   workflow:  { name: 'Workflow',         passthrough: true, instruction: '' },
+  email:     { name: 'Email',            standalone: true, instruction: `You are an expert email writer. The user has described an email situation in natural language. Your job is to draft a professional, ready-to-send email based on their description.
+
+Analyse the situation and draft the email. Return your response as a JSON object with this exact structure:
+{
+  "subject": "the email subject line",
+  "body": "the full email body with proper formatting and line breaks",
+  "toneAnalysis": {
+    "recipient": "who this email is going to (inferred)",
+    "tone": "one of: Professional, Friendly, Assertive, Apologetic, Persuasive, Formal, Casual",
+    "coreMessage": "the single core message of this email in one sentence",
+    "approach": "brief description of the writing approach taken",
+    "whyThisTone": "1-2 sentence explanation of why this tone fits the situation"
+  }
+}
+
+Rules:
+1. Return ONLY the JSON object — no preamble, no explanation, no markdown fences
+2. The body should be complete and ready to send — no placeholders like [Name]
+3. Infer the recipient type from context (colleague, manager, client, friend, etc.)
+4. Match formality to the situation described
+5. Keep the subject line concise and descriptive
+6. Use appropriate greeting and sign-off
+7. If the user mentions their name, use it in the sign-off
+8. Preserve any specific details, dates, or numbers mentioned
+9. The body field must use actual newline characters (\\n) for line breaks, not literal backslash-n
+10. Ensure the JSON is valid and parseable
+
+User's description:
+{TRANSCRIPT}` },
   polish:    { name: 'Polish',           standalone: true, instruction: `You are an expert editor and writing coach. The user has spoken something rough — with filler words, repetition, grammatical errors, or unclear phrasing. Your job is to return two things and nothing else:
 
 1. The polished version of what they said — clean, grammatically correct, well-phrased prose that preserves their exact meaning and intent.
@@ -991,6 +1020,7 @@ app.whenReady().then(async () => {
       { key: 'image', label: 'Image' },
       { key: 'video', label: 'Video' },
       { key: 'workflow', label: 'Workflow' },
+      { key: 'email', label: 'Email' },
     ];
     const menu = Menu.buildFromTemplate([
       ...modes.map(({ key, label }) => ({

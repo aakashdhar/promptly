@@ -88,6 +88,12 @@ describe('getModeTagStyle', () => {
     const style = getModeTagStyle('unknown')
     expect(style.background).toContain('10,132,255')
   })
+
+  it('returns teal style for email mode', () => {
+    const style = getModeTagStyle('email')
+    expect(style.background).toBe('rgba(20,184,166,0.1)')
+    expect(style.color).toBe('rgba(45,212,191,0.65)')
+  })
 })
 
 describe('formatTime', () => {
