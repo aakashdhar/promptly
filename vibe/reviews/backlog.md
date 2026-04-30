@@ -422,7 +422,7 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-FINAL-001 | src/renderer/App.jsx | 1–721 | 721 lines — 221 over P1 SRP threshold (500). ONBD-014/015 + ABORT-RESET added ~62 lines on top of accepted 659 (BL-WFL-008). Extract `useOperationHandlers` hook: handleRetryTranscription, handleRetryGeneration, abortRef, handleAbort, transcriptionError/generationError state + slow warning IPC listeners. Expected reduction: ~655 lines. | Open — tracked as RFX-FINAL-001 |
+| BL-FINAL-001 | src/renderer/App.jsx | 1–724 | 724 lines — 224 over threshold. useOperationHandlers extracted (756→724). Residual: handleTypingSubmit+handleRegenerate (~useTextInput), handleExpand/Collapse (~useWindowLayout). | Open — tracked as BL-EMAIL-003 |
 
 ### P2 — Fix before next distribution
 
@@ -445,22 +445,24 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-EMAIL-001 | src/renderer/App.jsx + hooks/useRecording.js | App.jsx:313–327 | THINKING state shows blue throughout email generation — setThinkingAccentColor/setThinkingLabel called in handleGenerateResult (after result arrives) then immediately cleared by EMAIL_READY transition. Fix: set both BEFORE transition(THINKING) in useRecording when mode === 'email'. | Open — tracked as RFX-EMAIL-001 |
-| BL-EMAIL-002 | src/renderer/components/ExpandedDetailPanel.jsx | 1–531 | 531 lines — 31 over P1 threshold. Email routing (~36 lines) pushed it over. Extract error+email routing block into ExpandedErrorEmailContent.jsx. | Open — tracked as RFX-EMAIL-002 |
-| BL-EMAIL-003 | src/renderer/App.jsx | 1–756 | 756 lines — escalation of BL-FINAL-001; email added ~35 more lines. Extract useOperationHandlers as previously spec'd. | Open — tracked as RFX-EMAIL-003 |
+| ~~BL-EMAIL-001~~ | src/renderer/hooks/useRecording.js | 69–72 | THINKING teal accent never shown — set after result, cleared by transition | ✅ resolved — useRecording.js:69–72 sets accent BEFORE transition(THINKING) |
+| ~~BL-EMAIL-002~~ | src/renderer/components/ExpandedDetailPanel.jsx | 1–531 | 531 lines — over P1 threshold | ✅ resolved — 484 lines; ExpandedErrorContent.jsx extracted |
+| BL-EMAIL-003 | src/renderer/App.jsx | 1–724 | 724 lines — partial extraction applied (−32 lines from useOperationHandlers). Still P1. Further opportunities: handleTypingSubmit + handleRegenerate (~25 lines) → useTextInput; handleExpand/handleCollapse + mode-effect (~15 lines) → useWindowLayout | Open — carryover of BL-FINAL-001 |
 
 ### P2 — Fix before next distribution
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-EMAIL-004 | src/renderer/hooks/useKeyboardShortcuts.js | 25–29 | Auto-expand on ⌥ Space shortcut missing for email mode — onShortcutTriggered doesn't check modeRef.current === 'email' before startRecordingRef.current(). Pass handleExpand + isExpandedRef to hook; add guard. | Open |
-| BL-EMAIL-005 | src/renderer/components/IdleState.jsx | 13–15, 68–69, 119, 193–195 | Email mode has no teal arm in ringColor, micStroke, micStrokeFaded, boxShadow, subtitle, or mode pill ternaries — falls through to blue defaults. Add isEmail flag + teal arms to all 6 locations. | Open |
-| BL-EMAIL-006 | src/renderer/App.jsx | 361–363 | handleEmailSave calls setEmailSaved(true) only — never calls bookmarkHistoryItem(). saveToHistory returns undefined so no ID is captured. Fix: capture history entry ID at save time, then call bookmarkHistoryItem in handleEmailSave. | Open |
-| BL-EMAIL-007 | src/renderer/components/EmailReadyState.jsx | 40–63 | Escape key not handled in edit mode — no onKeyDown handler on contentEditable div. Spec says "Escape key: cancels edit, restores previous body text." Add preEditBody state + Escape handler. | Open |
+| ~~BL-EMAIL-004~~ | src/renderer/hooks/useKeyboardShortcuts.js | 25–29 | Auto-expand on ⌥ Space shortcut missing for email mode | ✅ resolved — email guard added at line 28–31 |
+| ~~BL-EMAIL-005~~ | src/renderer/components/IdleState.jsx | 13–15, 68–69, 119, 193–195 | Email mode missing teal visual identity | ✅ resolved — isEmail flag + all 6 teal arms |
+| ~~BL-EMAIL-006~~ | src/renderer/App.jsx | 361–363 | handleEmailSave never calls bookmarkHistoryItem | ✅ resolved — saveToHistory returns entry.id; bookmarkHistoryItem called |
+| ~~BL-EMAIL-007~~ | src/renderer/components/EmailReadyState.jsx | 40–63 | Escape key not handled in edit mode | ✅ resolved — preEditBody state + onKeyDown handler |
 
 ### P3 — Monitor
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-EMAIL-008 | src/renderer/components/EmailReadyState.jsx | 3 | Dead TEAL constant: `const TEAL = 'rgba(20,184,166)'` — malformed rgba (missing alpha), never used. Delete line. | Open |
-| BL-EMAIL-009 | src/renderer/components/ExpandedDetailPanel.jsx | 521 | Dead `onCopy={() => {}}` prop passed to EmailReadyState — component handles copies internally. Remove. | Open |
+| ~~BL-EMAIL-008~~ | src/renderer/components/EmailReadyState.jsx | 3 | Dead TEAL constant | ✅ resolved — removed |
+| ~~BL-EMAIL-009~~ | src/renderer/components/ExpandedDetailPanel.jsx | 521 | Dead onCopy prop | ✅ resolved — removed |
+| BL-EMAIL-010 | src/renderer/components/EmailReadyState.jsx | 3 | `const TEAL_FULL = 'rgba(20,184,166,1)'` declared but never used — all 4 usages are TEAL_85/TEAL_60/TEAL_12/TEAL_06; TEAL_FULL has no call site. | Open |
+| BL-EMAIL-011 | src/renderer/App.jsx | 96–97 | `transcriptionError` and `generationError` useState declared after transitionTimerRef useRef — out of order with other useState at lines 80–88. Cosmetic only. | Open |

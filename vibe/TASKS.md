@@ -520,35 +520,19 @@ Ready for review gate (review: onboarding-wizard).
 
 ---
 
-## 🔴 Review fixes required — FEATURE-EMAIL-MODE gate 2026-04-30 (0/3)
-Must complete before this feature is shippable.
+## ✅ Review fixes — FEATURE-EMAIL-MODE gate 2026-04-30 (3/3 COMPLETE)
 
-[ ] RFX-EMAIL-001 · Fix THINKING state teal accent + label for email mode
-                    File: `src/renderer/App.jsx` + `src/renderer/hooks/useRecording.js`
-                    Issue: setThinkingAccentColor/setThinkingLabel called after result arrives → immediately cleared by EMAIL_READY transition → user sees blue thinking throughout
-                    Fix: pass setThinkingAccentColor + setThinkingLabel to useRecording; set them BEFORE transition(THINKING) when mode === 'email'
-                    Remove redundant lines 315–316 from handleGenerateResult email branch
-                    → Report: vibe/reviews/feature-email-mode-review.md P1-003
-
-[ ] RFX-EMAIL-002 · Extract ExpandedDetailPanel routing into sub-component (531 lines → ~440)
-                    File: `src/renderer/components/ExpandedDetailPanel.jsx`
-                    Issue: 531 lines — 31 over P1 threshold (500). Email routing pushed it over.
-                    Fix: extract lines ~432–530 (TRANSCRIPTION_ERROR, GENERATION_ERROR, EMAIL_READY, email RECORDING standby) into `ExpandedErrorEmailContent.jsx`
-                    → Report: vibe/reviews/feature-email-mode-review.md P1-002
-
-[ ] RFX-EMAIL-003 · Extract useOperationHandlers (App.jsx 756 lines — escalation of RFX-FINAL-001)
-                    File: `src/renderer/App.jsx`
-                    Issue: now 756 lines (was 721 at RFX-FINAL-001); email added ~35 more
-                    Fix: same as RFX-FINAL-001 — extract handleRetryTranscription, handleRetryGeneration, abortRef, handleAbort, 4 error state vars + slow-warning IPC listeners → useOperationHandlers.js
-                    → Report: vibe/reviews/feature-email-mode-review.md P1-001
-
-→ Full report: vibe/reviews/feature-email-mode-review.md
+[x] RFX-EMAIL-001 · Fix THINKING state teal accent — useRecording.js:69–72 sets accent BEFORE transition(THINKING); duplicate lines removed from handleGenerateResult
+[x] RFX-EMAIL-002 · ExpandedDetailPanel → 484 lines (−47); ExpandedErrorContent.jsx extracted (67 lines)
+[x] RFX-EMAIL-003 · useOperationHandlers.js extracted (81 lines); App.jsx 756→724 lines
+→ P2 fixes: IdleState teal identity, useKeyboardShortcuts email guard, Save button bookmarks, Escape key edit cancel
+→ Full report: vibe/reviews/feature-email-mode-review-v2.md
 
 ## Email mode gate — 2026-04-30
-🔴 BLOCKED — 3 P1 issues — complete RFX-EMAIL-001/002/003 above, then re-run `review: email-mode`
+✅ PASS — reviewed 2026-04-30 (v2) — 0 P0, 1 P1 (App.jsx 724 lines — logged to backlog) — Score 9.0/10 (A)
 
 ## What's next
-Fix RFX-EMAIL-001 first (highest user impact — teal thinking state broken). Then RFX-EMAIL-002, then RFX-EMAIL-003.
+Email mode feature complete. Merge feat/email-mode → main, or continue with next queued feature.
 
 ---
 
