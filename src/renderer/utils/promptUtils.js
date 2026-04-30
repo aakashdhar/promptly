@@ -31,8 +31,16 @@ export function parseSections(text) {
 }
 
 export function parseEmailOutput(raw) {
+  // Stage 1: strip leading/trailing fences and try direct parse
   const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-  return JSON.parse(stripped)
+  try {
+    return JSON.parse(stripped)
+  } catch {
+    // Stage 2: Claude added preamble/postamble — find the outermost {...} and parse that
+    const match = stripped.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('No parseable JSON object in email response')
+  }
 }
 
 export function getModeTagStyle(mode) {

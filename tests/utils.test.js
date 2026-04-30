@@ -141,6 +141,18 @@ describe('parseEmailOutput', () => {
     expect(result.subject).toBe('Hello')
   })
 
+  it('handles preamble text before ```json fence', () => {
+    const raw = 'Here is the email:\n\n```json\n' + JSON.stringify(payload) + '\n```'
+    const result = parseEmailOutput(raw)
+    expect(result.subject).toBe('Hello')
+  })
+
+  it('handles preamble text before plain JSON (no fences)', () => {
+    const raw = 'Sure, here you go:\n\n' + JSON.stringify(payload)
+    const result = parseEmailOutput(raw)
+    expect(result.subject).toBe('Hello')
+  })
+
   it('throws on genuinely invalid JSON', () => {
     expect(() => parseEmailOutput('not json')).toThrow()
   })
