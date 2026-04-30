@@ -1,0 +1,13 @@
+# FEATURE-IMAGE-BUILDER-V2 Tasks
+
+> **Estimated effort:** 9 tasks — S: 4 (<2hrs each), M: 5 (2–4hrs each) — approx. 18–22 hours total
+
+- [ ] IMG2-001 — Updated phase 1 system prompt (main.js)
+- [ ] IMG2-002 — useImageBuilder.js full rewrite (new schema + variations)
+- [ ] IMG2-003 — ImageBuilderState.jsx: category tabs + param rows + Zone layout
+- [ ] IMG2-004 — ImageBuilderState.jsx: Technical tab + presets strip (48)
+- [ ] IMG2-005 — VariationsPanel.jsx new component
+- [ ] IMG2-006 — promptUtils.js parse utilities + tests
+- [ ] IMG2-007 — App.jsx: wire updated imageBuilderProps bundle
+- [ ] IMG2-008 — ImageBuilderDoneState.jsx: flags display + copy
+- [ ] IMG2-009 — Docs update (CODEBASE.md, DECISIONS.md, TASKS.md)
