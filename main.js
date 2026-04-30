@@ -685,11 +685,9 @@ function createWindow() {
   });
   win.on('maximize', () => {
     win.setAlwaysOnTop(false);
-    win.setResizable(false);
   });
   win.on('unmaximize', () => {
     win.setAlwaysOnTop(false);
-    win.setResizable(false);
     const [currentWidth] = win.getSize();
     win.setMaximumSize(currentWidth, 2000);
   });
@@ -1026,11 +1024,19 @@ app.whenReady().then(async () => {
       // resets the zoom button state, so these must come after to take effect
       win.setResizable(false);
       if (width >= 1000) {
-        win.setMaximizable(true);
-        win.setFullScreenable(true);
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.setMaximizable(true);
+            win.setFullScreenable(true);
+          }
+        }, 0);
       } else if (width <= 520) {
-        win.setMaximizable(false);
-        win.setFullScreenable(false);
+        setTimeout(() => {
+          if (win && !win.isDestroyed()) {
+            win.setMaximizable(false);
+            win.setFullScreenable(false);
+          }
+        }, 0);
       }
     }
     return { ok: true };
