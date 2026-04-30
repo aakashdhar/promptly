@@ -693,6 +693,16 @@ function createWindow() {
     const [currentWidth] = win.getSize();
     win.setMaximumSize(currentWidth, 2000);
   });
+  win.on('enter-full-screen', () => {
+    win.setAlwaysOnTop(false);
+    win.setResizable(false);
+  });
+  win.on('leave-full-screen', () => {
+    win.setAlwaysOnTop(false);
+    win.setResizable(false);
+    const [currentWidth] = win.getSize();
+    win.setMaximumSize(currentWidth, 2000);
+  });
   nativeTheme.on('updated', () => {
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
     updateMenuBarIcon(currentIconState);
@@ -1002,6 +1012,7 @@ app.whenReady().then(async () => {
         const fullDisplay = screen.getDisplayNearestPoint(win.getBounds());
         win.setMaximumSize(fullDisplay.workArea.width, 2000);
         win.setMaximizable(true);
+        win.setFullScreenable(true);
         win.setAlwaysOnTop(false);
         win.setResizable(false);
       } else if (width <= 520 && preExpandBounds) {
@@ -1011,6 +1022,7 @@ app.whenReady().then(async () => {
         preExpandBounds = null;
         win.setMaximumSize(520, 2000);
         win.setMaximizable(false);
+        win.setFullScreenable(false);
         win.setAlwaysOnTop(true);
         win.setResizable(false);
       } else {
