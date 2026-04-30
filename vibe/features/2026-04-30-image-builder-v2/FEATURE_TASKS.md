@@ -5,7 +5,7 @@
 - [x] IMG2-001 — Updated phase 1 system prompt (main.js) — no main.js changes needed; image mode stays passthrough: true; phase 1 prompt lives in useImageBuilder.js via generateRaw (see D-IMG2-001)
 - [x] IMG2-002 — useImageBuilder.js full rewrite (new schema + variations)
 - [x] IMG2-003 — ImageBuilderState.jsx: category tabs + param rows + Zone layout
-- [ ] IMG2-004 — ImageBuilderState.jsx: Technical tab + presets strip (48)
+- [x] IMG2-004 — ImageBuilderState.jsx: Technical tab + presets strip (48)
 - [ ] IMG2-005 — VariationsPanel.jsx new component
 - [ ] IMG2-006 — promptUtils.js parse utilities + tests
 - [ ] IMG2-007 — App.jsx: wire updated imageBuilderProps bundle
