@@ -43,6 +43,38 @@ export function parseEmailOutput(raw) {
   }
 }
 
+export function parseImageAnalysisOutput(raw) {
+  if (!raw) return null
+  try {
+    const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+    try {
+      return JSON.parse(stripped)
+    } catch {
+      const match = stripped.match(/\{[\s\S]*\}/)
+      if (match) return JSON.parse(match[0])
+      return null
+    }
+  } catch {
+    return null
+  }
+}
+
+export function parseImageAssemblyOutput(raw) {
+  if (!raw) return null
+  try {
+    const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+    try {
+      return JSON.parse(stripped)
+    } catch {
+      const match = stripped.match(/\{[\s\S]*\}/)
+      if (match) return JSON.parse(match[0])
+      return null
+    }
+  } catch {
+    return null
+  }
+}
+
 export function getModeTagStyle(mode) {
   if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'rgba(100,220,130,0.6)' }
   if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'rgba(167,139,250,0.65)' }

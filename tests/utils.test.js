@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSections, getModeTagStyle, parseEmailOutput } from '../src/renderer/utils/promptUtils.js'
+import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput } from '../src/renderer/utils/promptUtils.js'
 import { formatTime } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 
@@ -155,6 +155,58 @@ describe('parseEmailOutput', () => {
 
   it('throws on genuinely invalid JSON', () => {
     expect(() => parseEmailOutput('not json')).toThrow()
+  })
+})
+
+describe('parseImageAnalysisOutput', () => {
+  const payload = {
+    subject: { subject: 'Young woman', setting: 'Ocean/beach', emotion: 'Serene', framing: 'Close-up', negativePrompts: [] },
+    lighting: { timeOfDay: 'Golden hour', lightType: 'Directional sun', quality: 'Warm amber', lensFlare: 'None' },
+    camera: { lens: '85mm portrait', aperture: 'f/1.4 shallow', aspectRatio: '4:5 portrait', angle: 'Eye level', filmSim: 'Kodak Portra 400' },
+    style: { visualStyle: 'Cinematic film still', colorGrade: 'Warm teal-orange', filmGrain: '35mm grain', reference: 'Emmanuel Lubezki' },
+    technical: { resolution: 'Ultra HD 4K', renderQuality: 'Photorealistic', stylise: 750, chaos: 20, weird: 0, seed: null },
+  }
+
+  it('parses raw JSON without fences', () => {
+    const result = parseImageAnalysisOutput(JSON.stringify(payload))
+    expect(result.subject.subject).toBe('Young woman')
+    expect(result.technical.stylise).toBe(750)
+  })
+
+  it('strips ```json fences before parsing', () => {
+    const raw = '```json\n' + JSON.stringify(payload) + '\n```'
+    const result = parseImageAnalysisOutput(raw)
+    expect(result.subject.setting).toBe('Ocean/beach')
+    expect(result.camera.lens).toBe('85mm portrait')
+  })
+
+  it('returns null on malformed JSON', () => {
+    expect(parseImageAnalysisOutput('not json at all')).toBeNull()
+    expect(parseImageAnalysisOutput('')).toBeNull()
+    expect(parseImageAnalysisOutput(null)).toBeNull()
+  })
+})
+
+describe('parseImageAssemblyOutput', () => {
+  const payload = { prompt: 'A young woman at golden hour', flags: '--ar 4:5 --stylize 750 --chaos 20' }
+
+  it('parses raw JSON without fences', () => {
+    const result = parseImageAssemblyOutput(JSON.stringify(payload))
+    expect(result.prompt).toBe('A young woman at golden hour')
+    expect(result.flags).toBe('--ar 4:5 --stylize 750 --chaos 20')
+  })
+
+  it('strips ```json fences before parsing', () => {
+    const raw = '```json\n' + JSON.stringify(payload) + '\n```'
+    const result = parseImageAssemblyOutput(raw)
+    expect(result.prompt).toBe('A young woman at golden hour')
+    expect(result.flags).toBe('--ar 4:5 --stylize 750 --chaos 20')
+  })
+
+  it('returns null on malformed JSON', () => {
+    expect(parseImageAssemblyOutput('not json')).toBeNull()
+    expect(parseImageAssemblyOutput('')).toBeNull()
+    expect(parseImageAssemblyOutput(null)).toBeNull()
   })
 })
 
