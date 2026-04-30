@@ -361,6 +361,7 @@ export default function ExpandedDetailPanel({
           prompt={imageBuilderProps.imageBuiltPrompt}
           answers={imageBuilderProps.imageAnswers}
           transcript={imageBuilderProps.transcript}
+          onEditAnswers={imageBuilderProps.onEditAnswers}
           onStartOver={imageBuilderProps.onStartOver}
           isExpanded={true}
         />

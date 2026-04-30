@@ -418,6 +418,7 @@ export default function useImageBuilder({
     onSetNegative: handleSetNegative,
     onRemoveNegative: handleRemoveNegative,
     onConfirm: handleConfirm,
+    onEditAnswers: () => transitionRef.current(STATES.IMAGE_BUILDER),
     onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },
     onStartOver: () => { handleImageStartOver(); transitionRef.current(STATES.IMAGE_BUILDER) },
   }
