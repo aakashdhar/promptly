@@ -8,6 +8,6 @@
 - [x] IMG2-004 — ImageBuilderState.jsx: Technical tab + presets strip (48)
 - [x] IMG2-005 — VariationsPanel.jsx new component
 - [x] IMG2-006 — promptUtils.js parse utilities + tests
-- [ ] IMG2-007 — App.jsx: wire updated imageBuilderProps bundle
+- [x] IMG2-007 — App.jsx: wire updated imageBuilderProps bundle
 - [ ] IMG2-008 — ImageBuilderDoneState.jsx: flags display + copy
 - [ ] IMG2-009 — Docs update (CODEBASE.md, DECISIONS.md, TASKS.md)
