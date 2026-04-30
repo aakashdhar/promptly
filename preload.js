@@ -156,6 +156,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('open-settings', cb)
   },
 
+  onToggleExpand: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('toggle-expand', cb)
+    return () => ipcRenderer.removeListener('toggle-expand', cb)
+  },
+
   updateMenuBarState: (state) =>
     ipcRenderer.invoke('update-menubar-state', state),
 

@@ -59,6 +59,10 @@ export default function useKeyboardShortcuts({
       window.electronAPI.onOpenSettings(() => {
         openSettings()
       }),
+
+      window.electronAPI.onToggleExpand?.(() => {
+        if (!isExpandedRef.current) handleExpand?.()
+      }),
     ]
 
     return () => unsubs.forEach(fn => fn?.())

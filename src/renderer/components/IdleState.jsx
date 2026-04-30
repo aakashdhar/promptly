@@ -17,12 +17,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
 
   return (
     <div id="panel-idle" className="relative z-[1]" style={{height:'134px'}}>
-      <div
-        style={{
-          height: '28px', display: 'flex', justifyContent: 'flex-end',
-          alignItems: 'center', WebkitAppRegion: 'drag',
-        }}
-      >
+      <div style={{ height: '28px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', WebkitAppRegion: 'drag' }}>
         <button
           onClick={(e) => { e.stopPropagation(); onExpand() }}
           title="Expand"
@@ -39,10 +34,10 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
         >
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-            <path d="M1 4.5V1.5A0.5 0.5 0 0 1 1.5 1H4.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M7.5 1H10.5A0.5 0.5 0 0 1 11 1.5V4.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 7.5V10.5A0.5 0.5 0 0 1 10.5 11H7.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M4.5 11H1.5A0.5 0.5 0 0 1 1 10.5V7.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 4V1h3" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 1l4 4" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M11 8v3H8" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 11L7 7" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
         </button>
       </div>

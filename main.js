@@ -649,7 +649,7 @@ function createWindow() {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     resizable: false,
-    maximizable: false,
+    maximizable: true,
     fullscreenable: false,
     alwaysOnTop: true,
     webPreferences: {
@@ -684,7 +684,8 @@ function createWindow() {
       menuBarTray.setImage(createMicIcon('idle'));
   });
   win.on('maximize', () => {
-    win.setAlwaysOnTop(false);
+    win.unmaximize();
+    winSend('toggle-expand');
   });
   win.on('unmaximize', () => {
     win.setAlwaysOnTop(false);

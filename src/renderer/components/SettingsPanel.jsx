@@ -74,7 +74,7 @@ export default function SettingsPanel({ onClose }) {
     : status.ok ? 'rgba(48,209,88,0.6)' : 'rgba(255,59,48,0.5)'
 
   const sectionLabel = { fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 5, fontFamily: 'inherit' }
-  const inputStyle = (status) => ({ width: '100%', height: 32, background: 'rgba(255,255,255,0.05)', border: `0.5px solid ${inputBorder(status)}`, borderRadius: 8, padding: '0 10px', fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' })
+  const inputStyle = (status) => ({ width: '100%', height: 32, background: 'rgba(255,255,255,0.05)', border: `0.5px solid ${inputBorder(status)}`, borderRadius: 8, padding: '0 10px', fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', WebkitAppRegion: 'no-drag' })
   const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
 
   return (

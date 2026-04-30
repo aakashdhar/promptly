@@ -527,9 +527,9 @@ html, body {
 <body>
 <div class="splash">
   <button id="settingsBtn" style="position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;outline:none;-webkit-app-region:no-drag">
-    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-      <circle cx="7" cy="7" r="2" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
-      <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.6 2.6l1.1 1.1M10.3 10.3l1.1 1.1M2.6 11.4l1.1-1.1M10.3 3.7l1.1-1.1" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round"/>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
     </svg>
   </button>
   <div style="position:absolute;top:-60px;right:-40px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle, rgba(10,132,255,0.08) 0%, transparent 70%);pointer-events:none;z-index:0;"></div>
@@ -666,6 +666,18 @@ html, body {
           <button class="wz-copy-btn" onclick="wzCopy(this,'claude login')">Copy</button>
         </div>
         <div class="wz-note">claude login opens a browser to authenticate</div>
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:10px 0 8px"></div>
+        <div class="wz-code-label" style="color:rgba(255,189,46,0.5)">Already installed (e.g. via nvm)? Find the path:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">which claude</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'which claude')">Copy</button>
+        </div>
+        <div class="wz-code-label" style="margin-top:6px">Paste the path here:</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <input id="s1-manual-path" type="text" placeholder="/Users/you/.nvm/versions/node/.../bin/claude"
+            style="flex:1;height:28px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.65);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+          <button onclick="s1UseManualPath()" style="height:28px;padding:0 10px;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);border-radius:7px;font-size:10px;color:rgba(10,132,255,0.9);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
+        </div>
       </div>
 
       <!-- State: NOT LOGGED IN -->
@@ -761,6 +773,18 @@ html, body {
         <div class="wz-code-row">
           <div class="wz-code">pip3 install openai-whisper</div>
           <button class="wz-copy-btn" onclick="wzCopy(this,'pip3 install openai-whisper')">Copy</button>
+        </div>
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:10px 0 8px"></div>
+        <div class="wz-code-label" style="color:rgba(255,189,46,0.5)">Already installed? Find the path:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">which whisper</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
+        </div>
+        <div class="wz-code-label" style="margin-top:6px">Paste the path here:</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <input id="s2-manual-path" type="text" placeholder="/usr/local/bin/whisper"
+            style="flex:1;height:28px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.65);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+          <button onclick="s2UseManualPath()" style="height:28px;padding:0 10px;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);border-radius:7px;font-size:10px;color:rgba(10,132,255,0.9);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
         </div>
       </div>
       <!-- FFMPEG NOT FOUND (whisper ok) -->
@@ -890,7 +914,7 @@ html, body {
     <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
   </div>
 
-  <!-- Screen 4: All done -->
+  <!-- Screen 4: All done + mic check -->
   <div id="screen-4" class="wz-screen">
     <div class="wz-stepper">
       <div class="wz-step-circle done">✓</div>
@@ -905,8 +929,8 @@ html, body {
           <path d="M2 9L9 16L22 2" stroke="rgba(48,209,88,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:-0.01em">You're all set</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.35);text-align:center;line-height:1.5;max-width:320px">Everything is installed and verified. Press ⌥Space any time to start speaking.</div>
+      <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:-0.01em">Almost there</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.35);text-align:center;line-height:1.5;max-width:320px">Tools are installed. One last step — microphone access.</div>
       <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px">
         <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
           <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
@@ -920,10 +944,28 @@ html, body {
           <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
           <span style="font-size:12px;color:rgba(255,255,255,0.55)">ffmpeg</span>
         </div>
+        <!-- Mic row — dynamic -->
+        <div id="s4-mic-row" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.1);border-radius:9px;padding:9px 14px;transition:background 0.3s,border-color 0.3s">
+          <span id="s4-mic-icon" style="font-size:13px;width:16px;text-align:center">
+            <svg width="10" height="10" viewBox="0 0 8 8" style="display:block"><path d="M4 1.5A2.5 2.5 0 0 1 6.5 4" stroke="rgba(10,132,255,0.9)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <span id="s4-mic-label" style="font-size:12px;color:rgba(255,255,255,0.4)">Checking microphone…</span>
+        </div>
+      </div>
+      <!-- Denied state -->
+      <div id="s4-mic-denied" style="display:none;width:100%;margin-top:-4px">
+        <div class="wz-status-sub" style="color:rgba(255,59,48,0.6);margin-bottom:6px">Promptly needs microphone access to record your voice.</div>
+        <div class="wz-code-label">Open System Settings and allow microphone access for Promptly:</div>
+        <div class="wz-code-row" style="margin-bottom:6px">
+          <div class="wz-code">System Settings → Privacy &amp; Security → Microphone</div>
+          <button class="wz-copy-btn" onclick="window.electronAPI.splashOpenURL('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone')">Open</button>
+        </div>
+        <div class="wz-note">After granting access, click "Check again" below.</div>
       </div>
     </div>
-    <div class="wz-action-row">
-      <button class="wz-btn-primary" style="flex:1" onclick="launchApp()">Launch Promptly</button>
+    <div class="wz-action-row" id="s4-actions">
+      <button id="s4-recheck-btn" class="wz-btn-secondary" style="display:none" onclick="runScreen4()">Check again ↺</button>
+      <button id="s4-launch-btn" class="wz-btn-primary" style="flex:1;opacity:0.35;pointer-events:none" onclick="launchApp()">Launch Promptly</button>
     </div>
   </div>
 
@@ -939,7 +981,7 @@ html, body {
       <div style="display:flex;gap:8px;align-items:center">
         <div style="position:relative;flex:1">
           <input id="claudePathInput" type="text" placeholder="/usr/local/bin/claude"
-            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
+            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
           <div id="claudeStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
         </div>
         <button id="browseClaudeBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
@@ -952,7 +994,7 @@ html, body {
       <div style="display:flex;gap:8px;align-items:center">
         <div style="position:relative;flex:1">
           <input id="whisperPathInput" type="text" placeholder="/usr/local/bin/whisper"
-            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box"/>
+            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
           <div id="whisperStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
         </div>
         <button id="browseWhisperBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
@@ -1134,6 +1176,23 @@ async function runChecks() {
   window.electronAPI.splashDone();
 }
 
+// ── Manual path overrides ─────────────────────────────────────────
+async function s1UseManualPath() {
+  const val = document.getElementById('s1-manual-path').value.trim();
+  if (!val) return;
+  const stored = await window.electronAPI.getStoredPaths();
+  await window.electronAPI.savePaths({ claudePath: val, whisperPath: stored.whisperPath || '' });
+  runScreen1();
+}
+
+async function s2UseManualPath() {
+  const val = document.getElementById('s2-manual-path').value.trim();
+  if (!val) return;
+  const stored = await window.electronAPI.getStoredPaths();
+  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: val });
+  runScreen2();
+}
+
 // ── Shared helpers ────────────────────────────────────────────────
 function wzCopy(btn, text) {
   window.electronAPI.copyToClipboard(text);
@@ -1306,6 +1365,50 @@ async function startDownload() {
   }
 }
 
+// ── Screen 4: Microphone check ────────────────────────────────────
+async function runScreen4() {
+  const row = document.getElementById('s4-mic-row');
+  const icon = document.getElementById('s4-mic-icon');
+  const label = document.getElementById('s4-mic-label');
+  const denied = document.getElementById('s4-mic-denied');
+  const recheckBtn = document.getElementById('s4-recheck-btn');
+  const launchBtn = document.getElementById('s4-launch-btn');
+
+  // Reset to checking state
+  row.style.background = 'rgba(255,255,255,0.03)';
+  row.style.borderColor = 'rgba(255,255,255,0.1)';
+  icon.innerHTML = '<svg width="10" height="10" viewBox="0 0 8 8" style="display:block;animation:spin 1s linear infinite"><path d="M4 1.5A2.5 2.5 0 0 1 6.5 4" stroke="rgba(10,132,255,0.9)" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  label.style.color = 'rgba(255,255,255,0.4)';
+  label.textContent = 'Checking microphone…';
+  denied.style.display = 'none';
+  recheckBtn.style.display = 'none';
+  launchBtn.style.opacity = '0.35';
+  launchBtn.style.pointerEvents = 'none';
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+    // Granted
+    row.style.background = 'rgba(48,209,88,0.04)';
+    row.style.borderColor = 'rgba(48,209,88,0.1)';
+    icon.innerHTML = '<span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>';
+    label.style.color = 'rgba(255,255,255,0.55)';
+    label.textContent = 'Microphone — access granted';
+    launchBtn.style.opacity = '1';
+    launchBtn.style.pointerEvents = 'auto';
+    launchBtn.textContent = 'Launch Promptly 🎉';
+  } catch (err) {
+    // Denied or unavailable
+    row.style.background = 'rgba(255,59,48,0.04)';
+    row.style.borderColor = 'rgba(255,59,48,0.2)';
+    icon.innerHTML = '<span style="color:rgba(255,59,48,0.8);font-size:13px">✗</span>';
+    label.style.color = 'rgba(255,59,48,0.7)';
+    label.textContent = 'Microphone — access denied';
+    denied.style.display = 'block';
+    recheckBtn.style.display = 'flex';
+  }
+}
+
 // ── Screen navigation ─────────────────────────────────────────────
 function showScreen(n) {
   document.getElementById('screen-welcome').classList.remove('visible');
@@ -1316,7 +1419,7 @@ function showScreen(n) {
   if (n === 1) runScreen1();
   if (n === 2) runScreen2();
   if (n === 3) runScreen3();
-  // Screen 4 is static — no auto-run needed
+  if (n === 4) runScreen4();
 }
 
 async function launchApp() {

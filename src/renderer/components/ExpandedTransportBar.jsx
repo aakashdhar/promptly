@@ -97,34 +97,11 @@ export default function ExpandedTransportBar({
       flexShrink: 0,
       position: 'relative',
     }}>
-      {/* Traffic-light drag spacer — abort left, collapse right */}
+      {/* Traffic-light drag spacer — collapse right */}
       <div style={{
         height: '36px', WebkitAppRegion: 'drag',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
       }}>
-        <button
-          onClick={onAbort}
-          title="Reset to start"
-          style={{
-            width: '28px', height: '28px', borderRadius: '7px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '0.5px solid rgba(255,255,255,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: currentState === 'IDLE' ? 'default' : 'pointer',
-            marginLeft: '80px', WebkitAppRegion: 'no-drag', padding: 0,
-            transition: 'background 150ms', flexShrink: 0,
-            opacity: currentState === 'IDLE' ? 0.3 : 1,
-          }}
-          onMouseEnter={e => { if (currentState !== 'IDLE') e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
-        >
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
-              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M6.5 5.5L9 3L6.5 0.5"
-              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
         <button
           onClick={isFullViewMode ? undefined : onCollapse}
           title={isWorkflow ? 'Workflow mode uses full view' : isVideo ? 'Video mode requires expanded view' : isEmail ? 'Email mode uses expanded view' : 'Collapse'}
@@ -141,9 +118,11 @@ export default function ExpandedTransportBar({
           onMouseEnter={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
           onMouseLeave={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
         >
-          <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
-            <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />
-            <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)" />
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M10 2L6.5 5.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M8.5 5.5H6.5V3.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 10L5.5 6.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M3.5 6.5H5.5V8.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       </div>
@@ -319,6 +298,30 @@ export default function ExpandedTransportBar({
               <rect x="6.25" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
               <rect x="10" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
               <rect x="2.5" y="6.5" width="10" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
+            </svg>
+          </div>
+
+          {/* Reset / abort button — 36px */}
+          <div
+            onClick={currentState !== 'IDLE' ? onAbort : undefined}
+            title="Reset to start"
+            style={{
+              width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(255,255,255,0.06)',
+              border: '0.5px solid rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: currentState === 'IDLE' ? 'default' : 'pointer',
+              opacity: currentState === 'IDLE' ? 0.3 : 1,
+              transition: 'background 150ms, opacity 150ms',
+            }}
+            onMouseEnter={e => { if (currentState !== 'IDLE') e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
+                stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+              <path d="M6.5 5.5L9 3L6.5 0.5"
+                stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
 
