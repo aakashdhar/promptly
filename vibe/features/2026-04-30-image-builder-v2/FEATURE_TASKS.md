@@ -6,7 +6,7 @@
 - [x] IMG2-002 — useImageBuilder.js full rewrite (new schema + variations)
 - [x] IMG2-003 — ImageBuilderState.jsx: category tabs + param rows + Zone layout
 - [x] IMG2-004 — ImageBuilderState.jsx: Technical tab + presets strip (48)
-- [ ] IMG2-005 — VariationsPanel.jsx new component
+- [x] IMG2-005 — VariationsPanel.jsx new component
 - [ ] IMG2-006 — promptUtils.js parse utilities + tests
 - [ ] IMG2-007 — App.jsx: wire updated imageBuilderProps bundle
 - [ ] IMG2-008 — ImageBuilderDoneState.jsx: flags display + copy
