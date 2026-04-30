@@ -688,18 +688,12 @@ function createWindow() {
   });
   win.on('unmaximize', () => {
     win.setAlwaysOnTop(false);
-    const [currentWidth] = win.getSize();
-    win.setMaximumSize(currentWidth, 2000);
   });
   win.on('enter-full-screen', () => {
     win.setAlwaysOnTop(false);
-    win.setResizable(false);
   });
   win.on('leave-full-screen', () => {
     win.setAlwaysOnTop(false);
-    win.setResizable(false);
-    const [currentWidth] = win.getSize();
-    win.setMaximumSize(currentWidth, 2000);
   });
   nativeTheme.on('updated', () => {
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
@@ -994,49 +988,49 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('set-window-size', (_event, { width, height }) => {
     if (win) {
-      win.setResizable(true);
-      win.setMinimumSize(width, 50);
-      win.setMaximumSize(width, 2000);
       if (width >= 1000) {
-        // Expanding to full view — store pre-expand position, centre on current display
         preExpandBounds = win.getBounds();
-        const display = screen.getDisplayNearestPoint({ x: preExpandBounds.x, y: preExpandBounds.y });
-        const { x: dx, y: dy, width: dw, height: dh } = display.workArea;
-        const newX = Math.round(dx + (dw - width) / 2);
-        // Clamp Y: shift up only as much as needed to clear the bottom edge
-        const maxY = dy + dh - height;
-        const newY = Math.max(Math.min(preExpandBounds.y, maxY), dy);
-        win.setBounds({ x: newX, y: newY, width, height }, false);
-        const fullDisplay = screen.getDisplayNearestPoint(win.getBounds());
-        win.setMaximumSize(fullDisplay.workArea.width, 2000);
+        win.setResizable(true);
+        win.setMaximizable(true);
+        win.setFullScreenable(true);
         win.setAlwaysOnTop(false);
+        win.setMinimumSize(800, 600);
+        win.setMaximumSize(0, 0);
+        const savedBounds = readConfig().expandedWindowBounds;
+        if (savedBounds) {
+          const displays = screen.getAllDisplays();
+          const isOnScreen = displays.some(d => {
+            const wa = d.workArea;
+            return (
+              savedBounds.x >= wa.x &&
+              savedBounds.y >= wa.y &&
+              savedBounds.x + savedBounds.width <= wa.x + wa.width &&
+              savedBounds.y + savedBounds.height <= wa.y + wa.height
+            );
+          });
+          if (isOnScreen) {
+            win.setBounds(savedBounds, false);
+          } else {
+            win.maximize();
+          }
+        } else {
+          win.maximize();
+        }
       } else if (width <= 520 && preExpandBounds) {
-        // Collapsing from expanded view — restore original x/y
+        writeConfig({ ...readConfig(), expandedWindowBounds: win.getBounds() });
+        win.setResizable(false);
+        win.setMaximizable(false);
+        win.setFullScreenable(false);
+        win.setAlwaysOnTop(true);
+        win.setMinimumSize(520, 50);
+        win.setMaximumSize(520, 2000);
+        if (win.isMaximized()) win.unmaximize();
+        if (win.isFullScreen()) win.setFullScreen(false);
         const { x, y } = preExpandBounds;
         win.setBounds({ x, y, width, height }, false);
         preExpandBounds = null;
-        win.setMaximumSize(520, 2000);
-        win.setAlwaysOnTop(true);
       } else {
         win.setSize(width, height, true);
-      }
-      // setResizable first, then setMaximizable/setFullScreenable — on macOS, setResizable(false)
-      // resets the zoom button state, so these must come after to take effect
-      win.setResizable(false);
-      if (width >= 1000) {
-        setTimeout(() => {
-          if (win && !win.isDestroyed()) {
-            win.setMaximizable(true);
-            win.setFullScreenable(true);
-          }
-        }, 0);
-      } else if (width <= 520) {
-        setTimeout(() => {
-          if (win && !win.isDestroyed()) {
-            win.setMaximizable(false);
-            win.setFullScreenable(false);
-          }
-        }, 0);
       }
     }
     return { ok: true };
