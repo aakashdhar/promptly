@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 
-const TEAL = 'rgba(20,184,166)'
 const TEAL_FULL = 'rgba(20,184,166,1)'
 const TEAL_85 = 'rgba(20,184,166,0.85)'
 const TEAL_60 = 'rgba(20,184,166,0.6)'
@@ -20,6 +19,7 @@ export default function EmailReadyState({
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editedBody, setEditedBody] = useState(emailOutput?.body || '')
+  const [preEditBody, setPreEditBody] = useState('')
   const bodyRef = useRef(null)
 
   const subject = emailOutput?.subject || ''
@@ -45,6 +45,7 @@ export default function EmailReadyState({
       setEditedBody(newText)
       setIsEditing(false)
     } else {
+      setPreEditBody(editedBody)
       setIsEditing(true)
       // Focus after render
       setTimeout(() => {
@@ -254,6 +255,9 @@ export default function EmailReadyState({
             ref={bodyRef}
             contentEditable={isEditing}
             suppressContentEditableWarning
+            onKeyDown={e => {
+              if (e.key === 'Escape') { setEditedBody(preEditBody); setIsEditing(false) }
+            }}
             style={{
               fontSize: 13,
               color: 'rgba(255,255,255,0.75)',

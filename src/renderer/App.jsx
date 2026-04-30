@@ -8,6 +8,7 @@ import useIteration from './hooks/useIteration.js'
 import useImageBuilder from './hooks/useImageBuilder.js'
 import useVideoBuilder from './hooks/useVideoBuilder.js'
 import useWorkflowBuilder from './hooks/useWorkflowBuilder.js'
+import useOperationHandlers from './hooks/useOperationHandlers.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
 import HistoryPanel from './components/HistoryPanel.jsx'
@@ -23,12 +24,7 @@ import SettingsPanel from './components/SettingsPanel.jsx'
 import ExpandedView from './components/ExpandedView.jsx'
 import ImageBuilderState from './components/ImageBuilderState.jsx'
 import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
-import VideoBuilderState from './components/VideoBuilderState.jsx'
-import VideoBuilderDoneState from './components/VideoBuilderDoneState.jsx'
-import WorkflowBuilderState from './components/WorkflowBuilderState.jsx'
-import WorkflowBuilderDoneState from './components/WorkflowBuilderDoneState.jsx'
-import EmailReadyState from './components/EmailReadyState.jsx'
-import { saveToHistory } from './utils/history.js'
+import { saveToHistory, bookmarkHistoryItem } from './utils/history.js'
 
 const STATES = {
   IDLE: 'IDLE',
@@ -88,10 +84,6 @@ export default function App() {
   const [thinkTranscript, setThinkTranscript] = useState('')
   const [thinkingLabel, setThinkingLabel] = useState('')
   const [thinkingAccentColor, setThinkingAccentColor] = useState('')
-  const [transcriptionError, setTranscriptionError] = useState(null)
-  const [transcriptionSlow, setTranscriptionSlow] = useState(false)
-  const [generationError, setGenerationError] = useState(null)
-  const [generationSlow, setGenerationSlow] = useState(false)
   const [emailOutput, setEmailOutput] = useState(null)
   const [emailSaved, setEmailSaved] = useState(false)
 
@@ -101,8 +93,11 @@ export default function App() {
   const generatedPromptRef = useRef('')
   const isIterated = useRef(false)
   const transitionTimerRef = useRef(null)
+  const [transcriptionError, setTranscriptionError] = useState(null)
+  const [generationError, setGenerationError] = useState(null)
   const transitionRef = useRef(null)
   const abortRef = useRef(false)
+  const emailHistoryIdRef = useRef(null)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -201,6 +196,8 @@ export default function App() {
     modeRef,
     polishToneRef,
     setThinkTranscript,
+    setThinkingAccentColor,
+    setThinkingLabel,
     onGenerateResult: handleGenerateResultRef,
     isIterated,
     originalTranscript,
@@ -312,13 +309,11 @@ export default function App() {
     }
     if (mode === 'email') {
       if (!isExpandedRef.current) handleExpand()
-      setThinkingAccentColor('rgba(20,184,166,0.85)')
-      setThinkingLabel('Drafting your email...')
       try {
         const parsed = JSON.parse(genResult.prompt)
         setEmailOutput(parsed)
         setEmailSaved(false)
-        saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email' })
+        emailHistoryIdRef.current = saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email' })
         transitionRef.current(STATES.EMAIL_READY)
       } catch {
         setGenerationError({ errorType: 'unknown', error: 'Failed to parse email response', canRetry: true })
@@ -359,6 +354,7 @@ export default function App() {
   })
 
   function handleEmailSave() {
+    if (emailHistoryIdRef.current) bookmarkHistoryItem(emailHistoryIdRef.current)
     setEmailSaved(true)
   }
 
@@ -367,19 +363,29 @@ export default function App() {
     startRecordingRef.current()
   }
 
-  function handleAbort() {
-    const s = stateRef.current
-    if (s === STATES.IDLE || s === STATES.HISTORY || s === STATES.SETTINGS ||
-        s === STATES.SHORTCUTS || s === STATES.ERROR) return
-    if (s === STATES.RECORDING || s === STATES.PAUSED) { handleDismiss(); return }
-    if (s === STATES.THINKING) { abortRef.current = true; transition(STATES.IDLE); return }
-    if (s === STATES.ITERATING) { dismissIterating(); return }
-    if (s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE) { handleImageStartOver(); return }
-    if (s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) { handleVideoStartOver(); return }
-    if (s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE) { handleWorkflowStartOver(); return }
-    if (s === STATES.EMAIL_READY) { setEmailOutput(null); transition(STATES.IDLE); return }
-    transition(STATES.IDLE)
-  }
+  const {
+    transcriptionSlow,
+    generationSlow,
+    handleAbort,
+    handleRetryTranscription,
+    handleRetryGeneration,
+  } = useOperationHandlers({
+    STATES,
+    stateRef,
+    transitionRef,
+    modeRef,
+    polishToneRef,
+    handleGenerateResultRef,
+    originalTranscript,
+    setThinkTranscript,
+    abortRef,
+    handleDismiss,
+    dismissIterating,
+    handleImageStartOver,
+    handleVideoStartOver,
+    handleWorkflowStartOver,
+    setEmailOutput,
+  })
 
   function openHistory() {
     isExpandedRef.current = false
@@ -440,46 +446,6 @@ export default function App() {
     handleGenerateResult(genResult, originalTranscript.current)
   }, [mode, handleGenerateResult])
 
-  const handleRetryTranscription = useCallback(async () => {
-    if (!window.electronAPI) return
-    const result = await window.electronAPI.retryTranscription()
-    if (!result.success) {
-      transitionRef.current(STATES.IDLE)
-      return
-    }
-    const text = result.transcript?.trim()
-    if (!text) { transitionRef.current(STATES.IDLE); return }
-
-    originalTranscript.current = text
-    setThinkTranscript(text)
-    setTranscriptionSlow(false)
-    transitionRef.current(STATES.THINKING)
-
-    const genResult = await window.electronAPI.generatePrompt(
-      text, modeRef.current,
-      modeRef.current === 'polish' ? { tone: polishToneRef.current } : undefined
-    )
-    handleGenerateResultRef.current(genResult, text)
-  }, [])
-
-  const handleRetryGeneration = useCallback(async () => {
-    if (!window.electronAPI) return
-    const result = await window.electronAPI.retryGeneration()
-    handleGenerateResultRef.current(result, originalTranscript.current)
-  }, [])
-
-  useEffect(() => {
-    if (!window.electronAPI?.onTranscriptionSlowWarning) return
-    const unsub = window.electronAPI.onTranscriptionSlowWarning(() => setTranscriptionSlow(true))
-    return () => unsub?.()
-  }, [])
-
-  useEffect(() => {
-    if (!window.electronAPI?.onGenerationSlowWarning) return
-    const unsub = window.electronAPI.onGenerationSlowWarning(() => setGenerationSlow(true))
-    return () => unsub?.()
-  }, [])
-
   useEffect(() => {
     if (!window.electronAPI) return
     window.electronAPI.getTheme().then(({ dark }) => {
@@ -508,6 +474,8 @@ export default function App() {
     closeHistory,
     openSettings,
     closeSettings,
+    handleExpand,
+    isExpandedRef,
   })
 
   const recM = Math.floor(recSecs / 60)

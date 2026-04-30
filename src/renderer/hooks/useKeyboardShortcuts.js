@@ -17,12 +17,18 @@ export default function useKeyboardShortcuts({
   closeHistory,
   openSettings,
   closeSettings,
+  handleExpand,
+  isExpandedRef,
 }) {
   useEffect(() => {
     if (!window.electronAPI) return
 
     const unsubs = [
       window.electronAPI.onShortcutTriggered(() => {
+        if (modeRef.current === 'email' && isExpandedRef && !isExpandedRef.current) {
+          handleExpand?.()
+          return
+        }
         if (stateRef.current === STATES.IDLE) startRecordingRef.current()
         else if (stateRef.current === STATES.RECORDING) stopRecordingRef.current()
         else if (stateRef.current === STATES.SHORTCUTS) startRecordingRef.current()

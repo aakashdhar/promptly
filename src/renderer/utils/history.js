@@ -12,6 +12,7 @@ export function saveToHistory({ transcript, prompt, mode, isIteration = false, b
   history.unshift(entry)
   if (history.length > MAX_ENTRIES) history.splice(MAX_ENTRIES)
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  return entry.id
 }
 
 export function getHistory() {
