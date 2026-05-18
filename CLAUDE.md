@@ -518,25 +518,23 @@ Never: touch ImageBuilderDoneState, VideoBuilderDoneState, PromptReadyState, Pol
 ---
 
 ---
-### Active Bug Fix: Splash path override inputs + Settings gear button (P0)
-> Folder: vibe/bugs/2026-05-18-paths-and-settings/ | Added: 2026-05-18
+### Active Bug Fix: s1-notresponding missing path override (P0)
+> Folder: vibe/bugs/2026-05-18-s1-notresponding-path-input/ | Added: 2026-05-18
 
-**Files in scope**: `main.js`, `src/renderer/components/ExpandedTransportBar.jsx`, `src/renderer/components/SettingsPanel.jsx`, `splash.html`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
-**Files out of scope**: All other components, all hooks, App.jsx, ExpandedView.jsx, preload.js, index.css
+**Files in scope**: `splash.html`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: All other files — main.js, preload.js, all React components, all hooks
 
 **Boundaries:**
 Always: run lint after every change · smallest change only · follow ARCHITECTURE.md patterns ·
-        update CODEBASE.md if fix changes IPC/props · update TASKS.md after every task
+        update CODEBASE.md if fix changes splash.html functions · update TASKS.md after every task
 Ask first: touching any file not in the list above
-Never: fix other bugs noticed · introduce new patterns · add runtime npm packages · use innerHTML with user content
+Never: modify `s1UseManualPath()` · fix other bugs noticed · add runtime npm packages · use innerHTML
 
 **Done condition:**
-- [ ] `let ffmpegPath = null` declared in main.js; `resolveFfmpegPath()` checks config first
-- [ ] `save-paths` stores ffmpegPath; `get-stored-paths` returns it; `recheck-paths` returns ffmpeg status
-- [ ] Gear icon button in ExpandedTransportBar header → opens settings
-- [ ] SettingsPanel shows Claude + Whisper + ffmpeg path fields
-- [ ] `s2-both-notfound` wizard state has whisper path input
-- [ ] splash pathPanel has ffmpeg path field
+- [ ] `#s1-notresponding-path` input exists inside `s1-notresponding` div with `-webkit-app-region:no-drag`
+- [ ] `s1NotrespondingUseManualPath()` added — reads `#s1-notresponding-path`, preserves other stored paths
+- [ ] `runScreen1()` sets `s1-notresponding-path` value from `result.path` before showing state
+- [ ] `s1-notfound` "Already installed?" card unchanged
 - [ ] Lint clean · CODEBASE.md updated
 
 **Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md

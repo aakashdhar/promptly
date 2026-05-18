@@ -824,6 +824,13 @@ Feature complete — ready for smoke test and merge to main.
 
 ✅ Splash path override inputs + Settings gear button — fixed 2026-05-18 (4/4 ✅)
 
+✅ s1-notresponding missing path override — nvm users stuck on splash (4/4 ✅)
+   [x] BUG-NVM-001 · Regression baseline — confirmed: 0 results for s1-notresponding-path
+   [x] BUG-NVM-002 · Implement fix — path input card + s1NotrespondingUseManualPath() + pre-populate in runScreen1()
+   [x] BUG-NVM-003 · Verify fix and run lint — grep confirmed, lint 0 errors
+   [x] BUG-NVM-004 · Update docs — CODEBASE.md splash.html row + DECISIONS.md entry
+   → Full specs: vibe/bugs/2026-05-18-s1-notresponding-path-input/BUG_TASKS.md (agent use)
+
 ## FEATURE-EVAL-SCORECARD — Prompt eval scorecard (0/7)
 > Spec: vibe/features/2026-05-18-prompt-eval-scorecard/ | Added: 2026-05-18
 > Estimated: approx. 6–8 hours (S: 6, M: 1)
@@ -842,7 +849,7 @@ Feature complete — ready for smoke test and merge to main.
 ✅ SettingsPanel broken in expanded mode + settings save gate — fixed 2026-05-18 (3 files)
 
 ## What just happened
-✅ fix(settings-expanded) complete 2026-05-18 — (1) SettingsPanel now renders as overlay in expanded mode; gear button no longer silently traps the app in SETTINGS state blocking recording. (2) Settings save success no longer requires ffmpeg — amber warning shown instead of red error when ffmpeg is absent. (1) ffmpegPath configurable end-to-end: resolveFfmpegPath reads config first, save-paths/get-stored-paths/recheck-paths all handle ffmpegPath. (2) Gear icon button added to ExpandedTransportBar header → opens SettingsPanel which now shows Claude + Whisper + ffmpeg path fields. Splash: whisper path input added to s2-both-notfound; ffmpeg row added to pathPanel; "Already installed?" affordance added to runChecks() failure states. STATE_HEIGHTS.SETTINGS bumped 322→400. Lint clean.
+✅ BUG-NVM-PATH fixed 2026-05-18 — `s1-notresponding` now has a "Not the right path?" card with a pre-populated path input + "Use this path →" button. Users stuck on "Claude CLI not responding" can override with a different path. splash.html only — 19 lines added.
 
 ## What's next
 Interrupted feature: FEATURE-EVAL-SCORECARD — EVAL-001 (evaluate-prompt IPC handler).

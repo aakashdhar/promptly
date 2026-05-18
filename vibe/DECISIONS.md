@@ -1734,3 +1734,15 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Files changed**: `src/renderer/components/ExpandedView.jsx`, `src/renderer/App.jsx`, `src/renderer/components/SettingsPanel.jsx`
 - **Fix**: ExpandedView renders SettingsPanel as absolute z-20 overlay when `currentState === 'SETTINGS'`, with `onCloseSettings` passed from App.jsx. Success now requires only claude+whisper; missing ffmpeg shows amber warning.
 - **Approved by**: human
+
+---
+### D-BUG-NVM-PATH — Bug fix: s1-notresponding missing path override
+- **Date**: 2026-05-18 · **Type**: drift (UX gap — missing escape hatch)
+- **Folder**: vibe/bugs/2026-05-18-s1-notresponding-path-input/
+- **Root cause**: `s1-notresponding` (Claude found but failing to execute) had no manual path input. All other Screen 1/2 failure states got a "paste path" escape hatch in BUG-ONBOARDING-MANUAL-PATH (2026-04-30) and follow-up fixes, but `s1-notresponding` was missed. nvm users whose claude is found but has a stale/wrong nvm path are stuck with no override.
+- **Files in scope**: `splash.html` only
+- **Fix approach**: added `#s1-notresponding-path` input + `s1NotrespondingUseManualPath()` function; `runScreen1()` pre-populates input with `result.path`
+- **CODEBASE.md update**: Yes — splash.html row updated
+- **ARCHITECTURE.md update**: No
+- **Deviations from BUG_PLAN.md**: none
+---
