@@ -1724,4 +1724,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Fix approach**: Add `ffmpegPath` module variable + config check in `resolveFfmpegPath()` + extend IPC handlers for all three paths. Add gear icon button in ExpandedTransportBar header. Add ffmpeg field to SettingsPanel. Add whisper path input to `s2-both-notfound` wizard state + ffmpeg row to splash pathPanel.
 - **CODEBASE.md update**: Yes — IPC channel docs for save-paths, get-stored-paths, recheck-paths; ExpandedTransportBar gear button
 - **ARCHITECTURE.md update**: No
-- **Deviations from BUG_PLAN.md**: none yet
+- **Deviations**: none
+
+---
+
+### D-SETTINGS-EXPANDED-001 — Bug fix: SettingsPanel not rendered in expanded mode
+- **Date**: 2026-05-18 · **Type**: drift
+- **Root cause**: (1) BUG-002 gear icon calls `openSettings()` in expanded mode, but `SettingsPanel` is only rendered in the non-expanded path in App.jsx. State gets stuck at `SETTINGS` → mic button guard fails → recording silently broken. (2) SettingsPanel success required `ffmpeg.ok`, blocking success message for users without ffmpeg.
+- **Files changed**: `src/renderer/components/ExpandedView.jsx`, `src/renderer/App.jsx`, `src/renderer/components/SettingsPanel.jsx`
+- **Fix**: ExpandedView renders SettingsPanel as absolute z-20 overlay when `currentState === 'SETTINGS'`, with `onCloseSettings` passed from App.jsx. Success now requires only claude+whisper; missing ffmpeg shows amber warning.
+- **Approved by**: human

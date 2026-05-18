@@ -839,8 +839,10 @@ Feature complete — ready for smoke test and merge to main.
    [ ] EVAL-007 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md + CLAUDE.md
    → Full specs: vibe/features/2026-05-18-prompt-eval-scorecard/FEATURE_TASKS.md (agent use)
 
+✅ SettingsPanel broken in expanded mode + settings save gate — fixed 2026-05-18 (3 files)
+
 ## What just happened
-✅ fix(paths-and-settings) complete 2026-05-18 — Both P0 bugs fixed. (1) ffmpegPath configurable end-to-end: resolveFfmpegPath reads config first, save-paths/get-stored-paths/recheck-paths all handle ffmpegPath. (2) Gear icon button added to ExpandedTransportBar header → opens SettingsPanel which now shows Claude + Whisper + ffmpeg path fields. Splash: whisper path input added to s2-both-notfound; ffmpeg row added to pathPanel; "Already installed?" affordance added to runChecks() failure states. STATE_HEIGHTS.SETTINGS bumped 322→400. Lint clean.
+✅ fix(settings-expanded) complete 2026-05-18 — (1) SettingsPanel now renders as overlay in expanded mode; gear button no longer silently traps the app in SETTINGS state blocking recording. (2) Settings save success no longer requires ffmpeg — amber warning shown instead of red error when ffmpeg is absent. (1) ffmpegPath configurable end-to-end: resolveFfmpegPath reads config first, save-paths/get-stored-paths/recheck-paths all handle ffmpegPath. (2) Gear icon button added to ExpandedTransportBar header → opens SettingsPanel which now shows Claude + Whisper + ffmpeg path fields. Splash: whisper path input added to s2-both-notfound; ffmpeg row added to pathPanel; "Already installed?" affordance added to runChecks() failure states. STATE_HEIGHTS.SETTINGS bumped 322→400. Lint clean.
 
 ## What's next
 Interrupted feature: FEATURE-EVAL-SCORECARD — EVAL-001 (evaluate-prompt IPC handler).
