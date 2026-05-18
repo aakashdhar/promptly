@@ -652,7 +652,24 @@ html, body {
           <div class="wz-dot fail"></div>
           <div class="wz-status-title">Claude CLI not found</div>
         </div>
-        <div class="wz-status-sub">The AI engine that writes your prompts</div>
+        <div class="wz-status-sub">Promptly couldn't locate the <code style="color:rgba(255,255,255,0.5);font-size:10px">claude</code> binary automatically.</div>
+        <!-- Already installed section — shown FIRST so it's immediately visible -->
+        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have Claude CLI installed?</div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which claude</code> in Terminal to find the path, then paste it below and click <strong style="color:rgba(10,132,255,0.8)">Use path →</strong></div>
+          <div class="wz-code-row" style="margin-bottom:6px">
+            <div class="wz-code">which claude</div>
+            <button class="wz-copy-btn" onclick="wzCopy(this,'which claude')">Copy</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input id="s1-manual-path" type="text" placeholder="/Users/you/.nvm/versions/node/.../bin/claude"
+              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+            <button onclick="s1UseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
+          </div>
+        </div>
+        <!-- Install instructions below for users who need to install fresh -->
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have it yet? install fresh —</div>
         <div class="wz-code-label">Don't have Node.js? Install it first:</div>
         <div class="wz-code-row">
           <div class="wz-code">brew install node</div>
@@ -669,18 +686,6 @@ html, body {
           <button class="wz-copy-btn" onclick="wzCopy(this,'claude login')">Copy</button>
         </div>
         <div class="wz-note">claude login opens a browser to authenticate</div>
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:10px 0 8px"></div>
-        <div class="wz-code-label" style="color:rgba(255,189,46,0.5)">Already installed (e.g. via nvm)? Find the path:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">which claude</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'which claude')">Copy</button>
-        </div>
-        <div class="wz-code-label" style="margin-top:6px">Paste the path here:</div>
-        <div style="display:flex;gap:6px;margin-top:4px">
-          <input id="s1-manual-path" type="text" placeholder="/Users/you/.nvm/versions/node/.../bin/claude"
-            style="flex:1;height:28px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.65);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          <button onclick="s1UseManualPath()" style="height:28px;padding:0 10px;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);border-radius:7px;font-size:10px;color:rgba(10,132,255,0.9);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
-        </div>
       </div>
 
       <!-- State: NOT LOGGED IN -->
@@ -767,6 +772,22 @@ html, body {
           <div class="wz-dot fail"></div>
           <div class="wz-status-title">Whisper not found</div>
         </div>
+        <!-- Already installed section first -->
+        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have Whisper installed?</div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which whisper</code> in Terminal to find the path, then paste it below:</div>
+          <div class="wz-code-row" style="margin-bottom:6px">
+            <div class="wz-code">which whisper</div>
+            <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input id="s2-manual-path" type="text" placeholder="/usr/local/bin/whisper"
+              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+            <button onclick="s2UseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
+          </div>
+        </div>
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have it yet? install fresh —</div>
         <div class="wz-code-label">Don't have Python? Install it first:</div>
         <div class="wz-code-row">
           <div class="wz-code">brew install python</div>
@@ -776,18 +797,6 @@ html, body {
         <div class="wz-code-row">
           <div class="wz-code">pip3 install openai-whisper</div>
           <button class="wz-copy-btn" onclick="wzCopy(this,'pip3 install openai-whisper')">Copy</button>
-        </div>
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:10px 0 8px"></div>
-        <div class="wz-code-label" style="color:rgba(255,189,46,0.5)">Already installed? Find the path:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">which whisper</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
-        </div>
-        <div class="wz-code-label" style="margin-top:6px">Paste the path here:</div>
-        <div style="display:flex;gap:6px;margin-top:4px">
-          <input id="s2-manual-path" type="text" placeholder="/usr/local/bin/whisper"
-            style="flex:1;height:28px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.65);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          <button onclick="s2UseManualPath()" style="height:28px;padding:0 10px;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);border-radius:7px;font-size:10px;color:rgba(10,132,255,0.9);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
         </div>
       </div>
       <!-- FFMPEG NOT FOUND (whisper ok) -->
@@ -813,23 +822,26 @@ html, body {
           <div class="wz-dot fail"></div>
           <div class="wz-status-title">Whisper and ffmpeg not found</div>
         </div>
-        <div class="wz-dot fail" style="display:none"></div>
+        <!-- Already installed section first -->
+        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have Whisper installed?</div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which whisper</code> in Terminal to find the path, then paste it below:</div>
+          <div class="wz-code-row" style="margin-bottom:6px">
+            <div class="wz-code">which whisper</div>
+            <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input id="s2-manual-path-both" type="text" placeholder="/usr/local/bin/whisper"
+              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+            <button onclick="s2BothUseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
+          </div>
+        </div>
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have them yet? install fresh —</div>
         <div class="wz-code-label">Install everything at once:</div>
         <div class="wz-code-row">
           <div class="wz-code" style="white-space:pre">brew install python ffmpeg&#10;pip3 install openai-whisper</div>
           <button class="wz-copy-btn" onclick="wzCopy(this,'brew install python ffmpeg\npip3 install openai-whisper')">Copy</button>
-        </div>
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:10px 0 8px"></div>
-        <div class="wz-code-label" style="color:rgba(255,189,46,0.5)">Already installed? Find the Whisper path:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">which whisper</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
-        </div>
-        <div class="wz-code-label" style="margin-top:6px">Paste the Whisper path here:</div>
-        <div style="display:flex;gap:6px;margin-top:4px">
-          <input id="s2-manual-path-both" type="text" placeholder="/usr/local/bin/whisper"
-            style="flex:1;height:28px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.65);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          <button onclick="s2BothUseManualPath()" style="height:28px;padding:0 10px;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);border-radius:7px;font-size:10px;color:rgba(10,132,255,0.9);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
         </div>
       </div>
     </div>
@@ -1175,10 +1187,10 @@ async function runChecks() {
 
   if (!cliResult.ok) {
     setCheck('cli', 'fail');
-    const cliLabel = document.getElementById('label-cli');
-    if (cliLabel) cliLabel.innerHTML = 'Claude CLI <span style="font-size:10px;opacity:0.5;margin-left:4px">tap ⚙ to set path</span>';
     document.getElementById('install-btn').style.display = 'block';
-    showReady('Claude CLI not found — install it to continue', true);
+    document.getElementById('install-btn').textContent = 'Set path manually →';
+    document.getElementById('install-btn').onclick = openPathPanel;
+    showReady('Claude CLI not found — set path or install', true);
     return;
   }
   setCheck('cli', 'done');
@@ -1190,10 +1202,10 @@ async function runChecks() {
 
   if (!whisperResult.ok) {
     setCheck('whisper', 'fail');
-    const whisperLabel = document.getElementById('label-whisper');
-    if (whisperLabel) whisperLabel.innerHTML = 'Whisper <span style="font-size:10px;opacity:0.5;margin-left:4px">tap ⚙ to set path</span>';
     document.getElementById('whisper-btn').style.display = 'block';
-    showReady('Whisper not found — pip install openai-whisper', true);
+    document.getElementById('whisper-btn').textContent = 'Set path manually →';
+    document.getElementById('whisper-btn').onclick = openPathPanel;
+    showReady('Whisper not found — set path or install', true);
     return;
   }
   setCheck('whisper', 'done');
