@@ -716,6 +716,16 @@ html, body {
           <button class="wz-copy-btn" onclick="wzCopy(this,'claude -p &quot;hello&quot;')">Copy</button>
         </div>
         <div class="wz-note">If that works, click Check again. If not, try: claude logout &amp;&amp; claude login</div>
+        <!-- Path override — for users where the found path is stale or wrong -->
+        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-top:10px">
+          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Not the right path?</div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">If claude is installed at a different location, paste the full path below and click <strong style="color:rgba(10,132,255,0.8)">Use this path →</strong></div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input id="s1-notresponding-path" type="text" placeholder="/Users/you/.nvm/versions/node/.../bin/claude"
+              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+            <button onclick="s1NotrespondingUseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use this path →</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1257,6 +1267,14 @@ async function s1UseManualPath() {
   runScreen1();
 }
 
+async function s1NotrespondingUseManualPath() {
+  const val = document.getElementById('s1-notresponding-path').value.trim();
+  if (!val) return;
+  const stored = await window.electronAPI.getStoredPaths();
+  await window.electronAPI.savePaths({ claudePath: val, whisperPath: stored.whisperPath || '', ffmpegPath: stored.ffmpegPath || '' });
+  runScreen1();
+}
+
 async function s2UseManualPath() {
   const val = document.getElementById('s2-manual-path').value.trim();
   if (!val) return;
@@ -1340,6 +1358,7 @@ async function runScreen1() {
   if (result.authError) { s1ShowError('s1-notloggedin', false); return; }
   if (!result.working) {
     document.getElementById('s1-error-output').textContent = result.error || 'Unknown error';
+    document.getElementById('s1-notresponding-path').value = result.path || '';
     s1ShowError('s1-notresponding', false);
     return;
   }
