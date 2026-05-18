@@ -468,3 +468,77 @@ Never: touch files not in scope · change behaviour of other modes · use innerH
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
 ---
+
+---
+### Active Feature: FEATURE-EVAL-SCORECARD
+> Folder: vibe/features/2026-05-18-prompt-eval-scorecard/ | Added: 2026-05-18
+
+**Feature summary**: Adds an "↗ Eval" button to every text/email/workflow done screen — fires a parallel Claude CLI call to score raw transcript vs. Promptly output (0–100), showing a side-by-side scorecard that makes Promptly's value visible.
+**Files in scope**: `src/renderer/components/EvalPanel.jsx` (new), `main.js`, `preload.js`, `src/renderer/components/ExpandedPromptReadyContent.jsx`, `src/renderer/components/EmailReadyState.jsx`, `src/renderer/components/WorkflowBuilderDoneState.jsx`, `src/renderer/components/ExpandedDetailPanel.jsx`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: App.jsx, all hooks, ImageBuilderDoneState.jsx, VideoBuilderDoneState.jsx, PromptReadyState.jsx, PolishReadyState.jsx, index.css
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file. Functional React components only.
+- EvalPanel is fully self-contained: fires IPC on mount, owns all state, returns null on failure.
+- No dangerouslySetInnerHTML — all scores/reasons use JSX text nodes.
+- IPC via window.electronAPI.evaluatePrompt() only.
+- spawn(claudePath, ['-p', evalSystemPrompt]) — never bare exec.
+- Fence-strip before JSON.parse (same pattern as parseEmailOutput).
+- WebkitAppRegion: 'no-drag' on all buttons.
+- Inline styles for all dynamic/stateful values.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md for new files/IPC ·
+        update TASKS.md after every task
+
+Ask first: changing eval system prompt content · touching App.jsx · modifying existing action rows beyond adding EvalPanel
+Never: touch ImageBuilderDoneState, VideoBuilderDoneState, PromptReadyState, PolishReadyState · add state to App.jsx · add runtime npm packages · use innerHTML
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add main.js preload.js src/renderer/components/EvalPanel.jsx src/renderer/components/ExpandedPromptReadyContent.jsx src/renderer/components/EmailReadyState.jsx src/renderer/components/WorkflowBuilderDoneState.jsx src/renderer/components/ExpandedDetailPanel.jsx
+   git commit -m "feat(eval-scorecard): EVAL-XXX — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-05-18-prompt-eval-scorecard/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark EVAL-XXX done — eval-scorecard"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---
+
+---
+### Active Bug Fix: Splash path override inputs + Settings gear button (P0)
+> Folder: vibe/bugs/2026-05-18-paths-and-settings/ | Added: 2026-05-18
+
+**Files in scope**: `main.js`, `src/renderer/components/ExpandedTransportBar.jsx`, `src/renderer/components/SettingsPanel.jsx`, `splash.html`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: All other components, all hooks, App.jsx, ExpandedView.jsx, preload.js, index.css
+
+**Boundaries:**
+Always: run lint after every change · smallest change only · follow ARCHITECTURE.md patterns ·
+        update CODEBASE.md if fix changes IPC/props · update TASKS.md after every task
+Ask first: touching any file not in the list above
+Never: fix other bugs noticed · introduce new patterns · add runtime npm packages · use innerHTML with user content
+
+**Done condition:**
+- [ ] `let ffmpegPath = null` declared in main.js; `resolveFfmpegPath()` checks config first
+- [ ] `save-paths` stores ffmpegPath; `get-stored-paths` returns it; `recheck-paths` returns ffmpeg status
+- [ ] Gear icon button in ExpandedTransportBar header → opens settings
+- [ ] SettingsPanel shows Claude + Whisper + ffmpeg path fields
+- [ ] `s2-both-notfound` wizard state has whisper path input
+- [ ] splash pathPanel has ffmpeg path field
+- [ ] Lint clean · CODEBASE.md updated
+
+**Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
+**Between tasks:** "next" → lint → code commit → doc commit → state next task → confirm.
+---

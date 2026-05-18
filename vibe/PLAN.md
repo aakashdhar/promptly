@@ -205,6 +205,13 @@ Build order from Feature Map above:
 > Shared data: reads `mode` (useMode hook); writes history entries with mode:'email'; no new localStorage keys
 > Spec: vibe/features/2026-04-30-email-mode/
 
+#### FEATURE-EVAL-SCORECARD — Prompt eval scorecard ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-05-18
+> Added: 2026-05-18 · See DECISIONS.md D-EVAL-001 for context
+> Build order: post-email-mode — extends existing done state components
+> Depends on: ExpandedPromptReadyContent, EmailReadyState, WorkflowBuilderDoneState (all complete), generate-raw IPC pattern, claudePath
+> Shared data: reads thinkTranscript (via ExpandedDetailPanel prop); no new localStorage keys; no history writes
+> Spec: vibe/features/2026-05-18-prompt-eval-scorecard/
+
 #### FEATURE-ONBOARDING-WIZARD — Setup wizard + error handling ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-04-29
 > Added: 2026-04-29 · See DECISIONS.md D-ONBD-001 for context
 > Build order: independent — modifies splash.html + main.js + App.jsx error paths; no mode dependencies

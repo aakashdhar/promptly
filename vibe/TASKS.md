@@ -819,3 +819,29 @@ Feature complete — ready for smoke test and merge to main.
 
 ## What's next
 ✅ FEATURE-IMAGE-BUILDER-V2 P1+P2 fixes complete. Ready to merge to main.
+
+---
+
+✅ Splash path override inputs + Settings gear button — fixed 2026-05-18 (4/4 ✅)
+
+## FEATURE-EVAL-SCORECARD — Prompt eval scorecard (0/7)
+> Spec: vibe/features/2026-05-18-prompt-eval-scorecard/ | Added: 2026-05-18
+> Estimated: approx. 6–8 hours (S: 6, M: 1)
+
+🔄 Eval Scorecard — "↗ Eval" button on done screens shows raw vs. Promptly score (0/7)
+   Estimated: approx. 6–8 hours (S: 6, M: 1)
+   [ ] EVAL-001 · main.js: evaluate-prompt IPC handler — spawn Claude, 30s timeout, return JSON scores
+   [ ] EVAL-002 · preload.js: expose evaluatePrompt via contextBridge
+   [ ] EVAL-003 · EvalPanel.jsx: new self-contained component — loading + scorecard states
+   [ ] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
+   [ ] EVAL-005 · EmailReadyState: mount EvalPanel
+   [ ] EVAL-006 · WorkflowBuilderDoneState: transcript prop + mount EvalPanel
+   [ ] EVAL-007 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md + CLAUDE.md
+   → Full specs: vibe/features/2026-05-18-prompt-eval-scorecard/FEATURE_TASKS.md (agent use)
+
+## What just happened
+✅ fix(paths-and-settings) complete 2026-05-18 — Both P0 bugs fixed. (1) ffmpegPath configurable end-to-end: resolveFfmpegPath reads config first, save-paths/get-stored-paths/recheck-paths all handle ffmpegPath. (2) Gear icon button added to ExpandedTransportBar header → opens SettingsPanel which now shows Claude + Whisper + ffmpeg path fields. Splash: whisper path input added to s2-both-notfound; ffmpeg row added to pathPanel; "Already installed?" affordance added to runChecks() failure states. STATE_HEIGHTS.SETTINGS bumped 322→400. Lint clean.
+
+## What's next
+Interrupted feature: FEATURE-EVAL-SCORECARD — EVAL-001 (evaluate-prompt IPC handler).
+Say "next" to continue.

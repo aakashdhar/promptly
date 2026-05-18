@@ -1683,3 +1683,45 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Second decision**: `useImageBuilder.js` uses its own `fenceParse` helper (not importing from promptUtils.js). `parseImageAnalysisOutput` and `parseImageAssemblyOutput` exported from promptUtils.js are used in `tests/utils.test.js` for test coverage. Both helpers implement identical fence-stripping logic — consolidated into promptUtils for testing purposes; hook keeps inline copy to avoid a cross-module import cycle.
 - **Impact on other tasks**: IMG2-009 (docs). No further tasks.
 - **Approved by**: agent-autonomous
+
+---
+
+## — Feature Start: Prompt Eval Scorecard — 2026-05-18
+> Folder: vibe/features/2026-05-18-prompt-eval-scorecard/
+> Adds "↗ Eval" button to done screens — parallel Claude CLI call scores raw transcript vs. Promptly output side-by-side.
+> Tasks: EVAL-001 through EVAL-007 | Estimated: 6–8 hours
+
+### D-EVAL-001 — EvalPanel is self-contained; no App.jsx state required
+- **Date**: 2026-05-18 · **Task**: EVAL-003 · **Type**: tech-choice
+- **What was planned**: Feature spec explored whether evalResult state should live in App.jsx (centralized) or in EvalPanel itself (self-contained).
+- **What was done**: EvalPanel owns all state (evalData, evalFailed, isOpen). Fires IPC via useEffect on mount. Returns null on failure. No new state in App.jsx.
+- **Why**: The eval is orthogonal to the state machine — it has no transitions, no side effects on other states, no shared data. Making it self-contained keeps App.jsx clean and makes EvalPanel trivially removable. The component lifecycle (mount = start eval) is the right trigger — no extra IPC wiring in App.jsx needed.
+- **Alternatives considered**: evalResult in App.jsx — rejected (adds 3+ new state vars + prop chain through ExpandedView → ExpandedDetailPanel → done components, all for a display-only widget).
+- **Impact on other tasks**: EVAL-004/005/006 — each done component just drops `<EvalPanel transcript={...} prompt={...} />` with no App.jsx changes.
+- **Approved by**: agent-autonomous
+
+### D-EVAL-002 — transcript sourced from thinkTranscript in ExpandedDetailPanel; no new prop chain
+- **Date**: 2026-05-18 · **Task**: EVAL-004/006 · **Type**: tech-choice
+- **What was planned**: EvalPanel needs the original spoken transcript. Options: (a) add originalTranscript ref to App→ExpandedView→ExpandedDetailPanel chain, or (b) use thinkTranscript already in ExpandedDetailPanel.
+- **What was done**: `thinkTranscript` (already a prop of ExpandedDetailPanel) passed as `transcript` to ExpandedPromptReadyContent and WorkflowBuilderDoneState. EmailReadyState already has `transcript` prop.
+- **Why**: thinkTranscript holds the same value as originalTranscript.current at done-state time — it's the "YOU SAID" text set in stopRecording. Using it avoids threading originalTranscript through three more component layers.
+- **Impact on other tasks**: EVAL-004 and EVAL-006 each add one prop to two components. ExpandedDetailPanel needs no new props.
+- **Approved by**: agent-autonomous
+
+### D-EVAL-003 — Eval excluded from Image and Video modes by design
+- **Date**: 2026-05-18 · **Task**: EVAL-spec · **Type**: scope-change
+- **Why excluded**: Image/Video done screens produce visual prompts and n8n JSON respectively — artifacts consumed by external tools, not prompts fed to Claude. The "how well would Claude understand this" framing doesn't apply. The workflow eval (scoring workflow JSON) is borderline but included per user spec.
+- **Impact**: ImageBuilderDoneState.jsx and VideoBuilderDoneState.jsx remain unchanged.
+- **Approved by**: human (per feature request)
+
+---
+
+### D-PATHS-001 — Bug fix: paths-and-settings P0
+- **Date**: 2026-05-18 · **Type**: drift
+- **Folder**: vibe/bugs/2026-05-18-paths-and-settings/
+- **Root cause**: (1) `resolveFfmpegPath()` never reads `config.ffmpegPath`; `save-paths`/`get-stored-paths`/`recheck-paths` IPC handlers only handle claudePath+whisperPath — ffmpeg path is completely unconfigurable. (2) `ExpandedTransportBar` receives `onOpenSettings` prop but renders no button — settings panel unreachable from main app UI.
+- **Files in scope**: `main.js`, `src/renderer/components/ExpandedTransportBar.jsx`, `src/renderer/components/SettingsPanel.jsx`, `splash.html`
+- **Fix approach**: Add `ffmpegPath` module variable + config check in `resolveFfmpegPath()` + extend IPC handlers for all three paths. Add gear icon button in ExpandedTransportBar header. Add ffmpeg field to SettingsPanel. Add whisper path input to `s2-both-notfound` wizard state + ffmpeg row to splash pathPanel.
+- **CODEBASE.md update**: Yes — IPC channel docs for save-paths, get-stored-paths, recheck-paths; ExpandedTransportBar gear button
+- **ARCHITECTURE.md update**: No
+- **Deviations from BUG_PLAN.md**: none yet
