@@ -554,6 +554,7 @@ Return ONLY valid JSON:
             polishTone={polishTone}
             onPolishToneChange={handlePolishToneChange}
             onOpenSettings={openSettings}
+            onCloseSettings={closeSettings}
             onTypingSubmit={handleTypingSubmit}
             onSwitchToVoice={() => transition(STATES.IDLE)}
             onTypePrompt={() => transition(STATES.TYPING)}

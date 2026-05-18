@@ -55,11 +55,16 @@ export default function SettingsPanel({ onClose }) {
     setClaudeStatus(result.claude)
     setWhisperStatus(result.whisper)
     setFfmpegStatus(result.ffmpeg)
-    if (result.claude.ok && result.whisper.ok && result.ffmpeg.ok) {
-      setSaveMsgColor('rgba(48,209,88,0.75)')
-      setSaveMsg('✓ Paths saved and verified')
+    if (result.claude.ok && result.whisper.ok) {
+      if (!result.ffmpeg.ok) {
+        setSaveMsgColor('rgba(255,189,46,0.75)')
+        setSaveMsg('✓ Saved — ffmpeg not found (optional)')
+      } else {
+        setSaveMsgColor('rgba(48,209,88,0.75)')
+        setSaveMsg('✓ Paths saved and verified')
+      }
     } else {
-      const name = !result.claude.ok ? 'Claude CLI' : !result.whisper.ok ? 'Whisper' : 'ffmpeg'
+      const name = !result.claude.ok ? 'Claude CLI' : 'Whisper'
       setSaveMsgColor('rgba(255,59,48,0.7)')
       setSaveMsg(name + ' path not found — verify and try again')
     }

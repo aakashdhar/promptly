@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ExpandedTransportBar from './ExpandedTransportBar.jsx'
 import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
+import SettingsPanel from './SettingsPanel.jsx'
 
 export default function ExpandedView({
   currentState,
@@ -26,6 +27,7 @@ export default function ExpandedView({
   onPolishToneChange,
   onReuse,
   onOpenSettings,
+  onCloseSettings,
   onTypingSubmit,
   onSwitchToVoice,
   onTypePrompt,
@@ -68,6 +70,16 @@ export default function ExpandedView({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%)', position: 'relative' }}>
+      {currentState === 'SETTINGS' && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20,
+          background: 'linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
+          <SettingsPanel onClose={onCloseSettings} />
+        </div>
+      )}
       <ExpandedTransportBar
         currentState={currentState}
         duration={duration}
