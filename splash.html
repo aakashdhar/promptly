@@ -805,10 +805,26 @@ html, body {
           <div class="wz-dot ok"></div>
           <div class="wz-status-title" id="s2-whisper-partial-label">Whisper — found ✓</div>
         </div>
-        <div class="wz-status-row">
+        <div class="wz-status-row" style="margin-bottom:8px">
           <div class="wz-dot fail"></div>
           <div class="wz-status-title">ffmpeg not found — required for audio processing</div>
         </div>
+        <!-- Already installed section first -->
+        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have ffmpeg installed?</div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which ffmpeg</code> in Terminal to find the path, then paste it below:</div>
+          <div class="wz-code-row" style="margin-bottom:6px">
+            <div class="wz-code">which ffmpeg</div>
+            <button class="wz-copy-btn" onclick="wzCopy(this,'which ffmpeg')">Copy</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input id="s2-ffmpeg-manual-path" type="text" placeholder="/opt/homebrew/bin/ffmpeg"
+              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+            <button onclick="s2FfmpegUseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
+          </div>
+        </div>
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have it yet? install fresh —</div>
         <div class="wz-code-label">Install ffmpeg:</div>
         <div class="wz-code-row">
           <div class="wz-code">brew install ffmpeg</div>
@@ -824,17 +840,19 @@ html, body {
         </div>
         <!-- Already installed section first -->
         <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have Whisper installed?</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which whisper</code> in Terminal to find the path, then paste it below:</div>
-          <div class="wz-code-row" style="margin-bottom:6px">
-            <div class="wz-code">which whisper</div>
-            <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:4px">
+          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have them installed?</div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which whisper</code> and <code style="color:rgba(255,255,255,0.6)">which ffmpeg</code> in Terminal, then paste the paths below:</div>
+          <div class="wz-code-label" style="margin-bottom:3px">Whisper path:</div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
             <input id="s2-manual-path-both" type="text" placeholder="/usr/local/bin/whisper"
               style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-            <button onclick="s2BothUseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
           </div>
+          <div class="wz-code-label" style="margin-bottom:3px">ffmpeg path:</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="s2-ffmpeg-manual-path-both" type="text" placeholder="/opt/homebrew/bin/ffmpeg"
+              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+          </div>
+          <button onclick="s2BothUseManualPath()" style="width:100%;height:30px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;outline:none">Use these paths →</button>
         </div>
         <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
         <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have them yet? install fresh —</div>
@@ -1247,11 +1265,24 @@ async function s2UseManualPath() {
   runScreen2();
 }
 
-async function s2BothUseManualPath() {
-  const val = document.getElementById('s2-manual-path-both').value.trim();
+async function s2FfmpegUseManualPath() {
+  const val = document.getElementById('s2-ffmpeg-manual-path').value.trim();
   if (!val) return;
   const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: val, ffmpegPath: stored.ffmpegPath || '' });
+  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: stored.whisperPath || '', ffmpegPath: val });
+  runScreen2();
+}
+
+async function s2BothUseManualPath() {
+  const whisperVal = document.getElementById('s2-manual-path-both').value.trim();
+  const ffmpegVal = document.getElementById('s2-ffmpeg-manual-path-both').value.trim();
+  if (!whisperVal && !ffmpegVal) return;
+  const stored = await window.electronAPI.getStoredPaths();
+  await window.electronAPI.savePaths({
+    claudePath: stored.claudePath || '',
+    whisperPath: whisperVal || stored.whisperPath || '',
+    ffmpegPath: ffmpegVal || stored.ffmpegPath || ''
+  });
   runScreen2();
 }
 
