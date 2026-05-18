@@ -3,18 +3,22 @@ import { useState, useEffect } from 'react'
 export default function SettingsPanel({ onClose }) {
   const [claudeVal, setClaudeVal] = useState('')
   const [whisperVal, setWhisperVal] = useState('')
+  const [ffmpegVal, setFfmpegVal] = useState('')
   const [claudeStatus, setClaudeStatus] = useState(null) // null | { ok, path }
   const [whisperStatus, setWhisperStatus] = useState(null)
+  const [ffmpegStatus, setFfmpegStatus] = useState(null)
   const [saveMsg, setSaveMsg] = useState('')
   const [saveMsgColor, setSaveMsgColor] = useState('rgba(255,255,255,0.35)')
 
   useEffect(() => {
     if (!window.electronAPI) return
-    window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath }) => {
+    window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath }) => {
       setClaudeVal(claudePath || '')
       setWhisperVal(whisperPath || '')
+      setFfmpegVal(ffmpegPath || '')
       setClaudeStatus(claudePath ? { ok: true, path: claudePath } : { ok: false, path: '' })
       setWhisperStatus(whisperPath ? { ok: true, path: whisperPath } : { ok: false, path: '' })
+      setFfmpegStatus(ffmpegPath ? { ok: true, path: ffmpegPath } : { ok: false, path: '' })
     })
   }, [])
 
@@ -34,19 +38,28 @@ export default function SettingsPanel({ onClose }) {
     }
   }
 
+  async function handleBrowseFfmpeg() {
+    const result = await window.electronAPI.browseForBinary()
+    if (result.path) {
+      setFfmpegVal(result.path)
+      setFfmpegStatus({ ok: true, path: result.path })
+    }
+  }
+
   async function handleSaveRecheck() {
     setSaveMsgColor('rgba(255,255,255,0.35)')
     setSaveMsg('Saving...')
-    await window.electronAPI.savePaths({ claudePath: claudeVal.trim(), whisperPath: whisperVal.trim() })
+    await window.electronAPI.savePaths({ claudePath: claudeVal.trim(), whisperPath: whisperVal.trim(), ffmpegPath: ffmpegVal.trim() })
     setSaveMsg('Rechecking...')
     const result = await window.electronAPI.recheckPaths()
     setClaudeStatus(result.claude)
     setWhisperStatus(result.whisper)
-    if (result.claude.ok && result.whisper.ok) {
+    setFfmpegStatus(result.ffmpeg)
+    if (result.claude.ok && result.whisper.ok && result.ffmpeg.ok) {
       setSaveMsgColor('rgba(48,209,88,0.75)')
       setSaveMsg('✓ Paths saved and verified')
     } else {
-      const name = !result.claude.ok ? 'Claude CLI' : 'Whisper'
+      const name = !result.claude.ok ? 'Claude CLI' : !result.whisper.ok ? 'Whisper' : 'ffmpeg'
       setSaveMsgColor('rgba(255,59,48,0.7)')
       setSaveMsg(name + ' path not found — verify and try again')
     }
@@ -99,7 +112,7 @@ export default function SettingsPanel({ onClose }) {
       </div>
 
       {/* Whisper */}
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 12 }}>
         <div style={sectionLabel}>Whisper path</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
@@ -109,6 +122,19 @@ export default function SettingsPanel({ onClose }) {
           <button onClick={handleBrowseWhisper} style={browseBtn}>Browse</button>
         </div>
         <div style={{ fontSize: 10, color: hintColor(whisperStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
+      </div>
+
+      {/* ffmpeg */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={sectionLabel}>ffmpeg path</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <input value={ffmpegVal} onChange={e => setFfmpegVal(e.target.value)} placeholder="/opt/homebrew/bin/ffmpeg" style={inputStyle(ffmpegStatus)} />
+            <div style={{ ...dotStyle(ffmpegStatus), position: 'absolute', right: 10 }} />
+          </div>
+          <button onClick={handleBrowseFfmpeg} style={browseBtn}>Browse</button>
+        </div>
+        <div style={{ fontSize: 10, color: hintColor(ffmpegStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(ffmpegStatus, ffmpegVal)}</div>
       </div>
 
       {/* divider */}

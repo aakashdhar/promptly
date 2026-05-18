@@ -561,6 +561,9 @@ html, body {
       </div>
     </div>
     <div class="ready-text" id="ready-text"></div>
+    <div id="manual-path-hint" style="display:none;margin-top:6px;text-align:center">
+      <a onclick="openPathPanel()" style="font-size:10px;color:rgba(10,132,255,0.7);cursor:pointer;text-decoration:none;-webkit-app-region:no-drag">↳ Already installed at a custom path? Set it here →</a>
+    </div>
     <button class="install-btn" id="install-btn">Install Claude CLI</button>
     <button class="install-btn" id="whisper-btn" style="display:none">Copy install command</button>
   </div>
@@ -816,6 +819,18 @@ html, body {
           <div class="wz-code" style="white-space:pre">brew install python ffmpeg&#10;pip3 install openai-whisper</div>
           <button class="wz-copy-btn" onclick="wzCopy(this,'brew install python ffmpeg\npip3 install openai-whisper')">Copy</button>
         </div>
+        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:10px 0 8px"></div>
+        <div class="wz-code-label" style="color:rgba(255,189,46,0.5)">Already installed? Find the Whisper path:</div>
+        <div class="wz-code-row">
+          <div class="wz-code">which whisper</div>
+          <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
+        </div>
+        <div class="wz-code-label" style="margin-top:6px">Paste the Whisper path here:</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <input id="s2-manual-path-both" type="text" placeholder="/usr/local/bin/whisper"
+            style="flex:1;height:28px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.65);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+          <button onclick="s2BothUseManualPath()" style="height:28px;padding:0 10px;background:rgba(10,132,255,0.15);border:0.5px solid rgba(10,132,255,0.3);border-radius:7px;font-size:10px;color:rgba(10,132,255,0.9);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
+        </div>
       </div>
     </div>
     <div class="wz-action-row" id="s2-actions" style="display:none">
@@ -989,7 +1004,7 @@ html, body {
       <div id="claudePathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:13px"></div>
     </div>
 
-    <div style="margin-bottom:14px">
+    <div style="margin-bottom:12px">
       <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">Whisper path</div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="position:relative;flex:1">
@@ -1000,6 +1015,19 @@ html, body {
         <button id="browseWhisperBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
       </div>
       <div id="whisperPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:13px">Paste full path or use Browse to locate the binary</div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">ffmpeg path</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="position:relative;flex:1">
+          <input id="ffmpegPathInput" type="text" placeholder="/opt/homebrew/bin/ffmpeg"
+            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
+          <div id="ffmpegStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
+        </div>
+        <button id="browseFfmpegBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
+      </div>
+      <div id="ffmpegPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:13px">Paste full path or use Browse to locate ffmpeg</div>
     </div>
 
     <div style="height:0.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin-bottom:12px"></div>
@@ -1035,6 +1063,8 @@ function showReady(msg, isError) {
   el.textContent = msg;
   el.style.color = isError ? 'rgba(255,59,48,0.6)' : 'rgba(48,209,88,0.5)';
   el.style.opacity = '1';
+  const hint = document.getElementById('manual-path-hint');
+  if (hint) hint.style.display = isError ? 'block' : 'none';
 }
 
 function openInstall() {
@@ -1072,8 +1102,10 @@ async function openPathPanel() {
   const stored = await window.electronAPI.getStoredPaths();
   document.getElementById('claudePathInput').value = stored.claudePath || '';
   document.getElementById('whisperPathInput').value = stored.whisperPath || '';
+  document.getElementById('ffmpegPathInput').value = stored.ffmpegPath || '';
   setPathStatus('claude', !!stored.claudePath, stored.claudePath);
   setPathStatus('whisper', !!stored.whisperPath, stored.whisperPath);
+  setPathStatus('ffmpeg', !!stored.ffmpegPath, stored.ffmpegPath);
 }
 
 document.getElementById('settingsBtn').addEventListener('click', openPathPanel);
@@ -1098,18 +1130,28 @@ document.getElementById('browseWhisperBtn').addEventListener('click', async () =
   }
 });
 
+document.getElementById('browseFfmpegBtn').addEventListener('click', async () => {
+  const result = await window.electronAPI.browseForBinary();
+  if (result.path) {
+    document.getElementById('ffmpegPathInput').value = result.path;
+    setPathStatus('ffmpeg', true, result.path);
+  }
+});
+
 document.getElementById('saveRecheckBtn').addEventListener('click', async () => {
   const status = document.getElementById('saveStatus');
   const cp = document.getElementById('claudePathInput').value.trim();
   const wp = document.getElementById('whisperPathInput').value.trim();
+  const fp = document.getElementById('ffmpegPathInput').value.trim();
   status.style.color = 'rgba(255,255,255,0.35)';
   status.textContent = 'Saving...';
-  await window.electronAPI.savePaths({ claudePath: cp, whisperPath: wp });
+  await window.electronAPI.savePaths({ claudePath: cp, whisperPath: wp, ffmpegPath: fp });
   status.textContent = 'Rechecking...';
   const result = await window.electronAPI.recheckPaths();
   setPathStatus('claude', result.claude.ok, result.claude.path);
   setPathStatus('whisper', result.whisper.ok, result.whisper.path);
-  if (result.claude.ok && result.whisper.ok) {
+  setPathStatus('ffmpeg', result.ffmpeg.ok, result.ffmpeg.path);
+  if (result.claude.ok && result.whisper.ok && result.ffmpeg.ok) {
     status.style.color = 'rgba(48,209,88,0.7)';
     status.textContent = '✓ All checks passed — launching';
     await new Promise(r => setTimeout(r, 1000));
@@ -1118,7 +1160,7 @@ document.getElementById('saveRecheckBtn').addEventListener('click', async () => 
     await new Promise(r => setTimeout(r, 800));
     window.electronAPI.splashDone();
   } else {
-    const failedName = !result.claude.ok ? 'Claude CLI' : 'Whisper';
+    const failedName = !result.claude.ok ? 'Claude CLI' : !result.whisper.ok ? 'Whisper' : 'ffmpeg';
     status.style.color = 'rgba(255,59,48,0.7)';
     status.textContent = failedName + ' path not found — verify and try again';
   }
@@ -1181,7 +1223,7 @@ async function s1UseManualPath() {
   const val = document.getElementById('s1-manual-path').value.trim();
   if (!val) return;
   const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: val, whisperPath: stored.whisperPath || '' });
+  await window.electronAPI.savePaths({ claudePath: val, whisperPath: stored.whisperPath || '', ffmpegPath: stored.ffmpegPath || '' });
   runScreen1();
 }
 
@@ -1189,7 +1231,15 @@ async function s2UseManualPath() {
   const val = document.getElementById('s2-manual-path').value.trim();
   if (!val) return;
   const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: val });
+  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: val, ffmpegPath: stored.ffmpegPath || '' });
+  runScreen2();
+}
+
+async function s2BothUseManualPath() {
+  const val = document.getElementById('s2-manual-path-both').value.trim();
+  if (!val) return;
+  const stored = await window.electronAPI.getStoredPaths();
+  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: val, ffmpegPath: stored.ffmpegPath || '' });
   runScreen2();
 }
 

@@ -207,6 +207,7 @@ The user said:
 
 let claudePath = null;
 let whisperPath = null;
+let ffmpegPath = null;
 let win = null;
 let splashWin = null;
 let tray = null;
@@ -579,6 +580,10 @@ async function resolveWhisperPath() {
 }
 
 async function resolveFfmpegPath() {
+  const stored = readConfig().ffmpegPath;
+  if (stored && stored.trim()) {
+    try { if (fs.existsSync(stored.trim())) return stored.trim(); } catch { /* ignore */ }
+  }
   const home = os.homedir();
   const commonPaths = [
     '/usr/local/bin/ffmpeg',
@@ -736,6 +741,7 @@ app.whenReady().then(async () => {
 
   claudePath = await resolveClaudePath();
   whisperPath = await resolveWhisperPath();
+  ffmpegPath = await resolveFfmpegPath();
 
   splashWin = new BrowserWindow({
     width: 560,
@@ -1495,13 +1501,15 @@ app.whenReady().then(async () => {
     return {
       claudePath: claudePath || config.claudePath || '',
       whisperPath: whisperPath || config.whisperPath || '',
+      ffmpegPath: ffmpegPath || config.ffmpegPath || '',
     };
   });
 
-  ipcMain.handle('save-paths', async (_event, { claudePath: cp, whisperPath: wp }) => {
+  ipcMain.handle('save-paths', async (_event, { claudePath: cp, whisperPath: wp, ffmpegPath: fp }) => {
     const config = readConfig();
     if (cp && cp.trim()) { config.claudePath = cp.trim(); claudePath = cp.trim(); }
     if (wp && wp.trim()) { config.whisperPath = wp.trim(); whisperPath = wp.trim(); }
+    if (fp && fp.trim()) { config.ffmpegPath = fp.trim(); ffmpegPath = fp.trim(); }
     writeConfig(config);
     return { ok: true };
   });
@@ -1519,9 +1527,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('recheck-paths', async () => {
     claudePath = await resolveClaudePath();
     whisperPath = await resolveWhisperPath();
+    ffmpegPath = await resolveFfmpegPath();
     return {
       claude: { ok: !!claudePath, path: claudePath },
       whisper: { ok: !!whisperPath, path: whisperPath },
+      ffmpeg: { ok: !!ffmpegPath, path: ffmpegPath },
     };
   });
 
