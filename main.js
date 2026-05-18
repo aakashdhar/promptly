@@ -1454,7 +1454,23 @@ app.whenReady().then(async () => {
         ? ['python3', ['-m', 'whisper', '/dev/null', '--model', 'base']]
         : [whisperPath, ['/dev/null', '--model', 'base']];
 
-      const child = spawn(cmd, spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+      const downloadEnv = {
+        ...process.env,
+        PATH: [
+          '/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin',
+          '/opt/local/bin', path.join(os.homedir(), '.local/bin'),
+          path.join(os.homedir(), '.pyenv/bin'), path.join(os.homedir(), '.pyenv/shims'),
+          path.join(os.homedir(), 'anaconda3/bin'), path.join(os.homedir(), 'miniconda3/bin'),
+          path.join(os.homedir(), 'miniforge3/bin'), process.env.PATH,
+        ].filter(Boolean).join(':'),
+        PYTHONUNBUFFERED: '1',
+        // macOS Python.org installer doesn't use system keychain — point to system CA bundle
+        // so Whisper can download models from huggingface over HTTPS without SSL errors.
+        SSL_CERT_FILE: '/etc/ssl/cert.pem',
+        REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
+      };
+
+      const child = spawn(cmd, spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'], env: downloadEnv });
       let stderrBuf = '';
       let resolved = false;
 
