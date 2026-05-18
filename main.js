@@ -458,12 +458,16 @@ function updateTrayMenu() {
 // with the directory that contains the claude binary ensures 'node' is findable
 // when the shebang is resolved by macOS.
 function makeClaudeEnv(binPath) {
-  // Resolve symlinks so we get the real bin dir (e.g. nvm's versioned dir, not /usr/local/bin)
-  let realBin = binPath;
-  try { realBin = fs.realpathSync(binPath); } catch { /* use as-is if resolution fails */ }
-  const binDir = path.dirname(realBin);
+  // Always inject the original symlink's directory first. For npm globals in nvm the bin/
+  // directory (which contains node) is path.dirname(binPath). realpathSync follows the
+  // symlink to node_modules/package/cli.js — a different dir that does NOT contain node.
+  // We inject both so /usr/local/bin symlink users are also covered.
+  const originalDir = path.dirname(binPath);
+  let resolvedDir = originalDir;
+  try { resolvedDir = path.dirname(fs.realpathSync(binPath)); } catch { /* use original */ }
   const base = process.env.PATH || '/usr/local/bin:/usr/bin:/bin';
-  return { ...process.env, PATH: base.includes(binDir) ? base : binDir + ':' + base };
+  const dirs = [originalDir, resolvedDir].filter((d, i, a) => a.indexOf(d) === i && !base.includes(d));
+  return { ...process.env, PATH: dirs.length ? dirs.join(':') + ':' + base : base };
 }
 
 function parseGenerationError(stderr, stdout) {
