@@ -584,3 +584,44 @@ Never: extract sub-components to new files · change existing IPC handler logic 
    ```
 4. Re-read TASKS.md silently → state next task in plain English → confirm.
 ---
+
+---
+### Active Feature: FEATURE-PREFLIGHT-HEALTH-CHECKS
+> Folder: vibe/features/2026-05-19-preflight-health-checks/ | Added: 2026-05-19
+
+**Feature summary**: Pre-release safety net — `scripts/preflight.sh` (10 env + codebase checks) and `scripts/assert-splash.js` (4 splash escape-hatch assertions) gate every release build.
+**Files in scope**: `scripts/preflight.sh` (new), `scripts/assert-splash.js` (new), `scripts/release.sh` (preamble only), `package.json` (3 scripts), `.github/workflows/preflight.yml` (new)
+**Files out of scope**: All component files, all hooks, main.js app logic, splash.html (read-only for assertions), preload.js
+
+**Conventions**:
+- Shell scripts: `#!/bin/bash`, `ok()`/`fail()` helpers, `env -i HOME=$HOME` for non-login shell simulation
+- Node script: CommonJS only, `fs` + `path` stdlib only — zero runtime npm deps
+- CHECK 7: embedded python3 heredoc (python3 always available on macOS)
+- CI workflow: runs splash assertions + CHECK 7 only (CHECK 3 requires logged-in claude CLI)
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: run scripts after every change · keep changes additive · update CODEBASE.md in PFLT-006
+Ask first: modifying release.sh beyond the preamble
+Never: touch main.js app logic · modify splash.html · add npm runtime deps · touch component files
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run: `bash scripts/preflight.sh 2>&1 | tail -15` and `node scripts/assert-splash.js`
+2. Stage and commit code changes:
+   ```
+   git add scripts/preflight.sh scripts/assert-splash.js scripts/release.sh package.json .github/workflows/preflight.yml
+   git commit -m "feat(preflight): PFLT-XXX — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-05-19-preflight-health-checks/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark PFLT-XXX done — preflight-health-checks"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---

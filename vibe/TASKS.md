@@ -876,8 +876,29 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 → All 4 BL-EVAL carryover items resolved. No regressions. 45 tests pass.
 → Full report: vibe/reviews/feature-eval-metrics-review.md
 
+## What just happened
+✅ FEATURE-PREFLIGHT-HEALTH-CHECKS planned 2026-05-19 — Feature kit created: FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md. Spec review run — 0 P0, 2 P1 + 2 P2 found and fixed inline (CHECK 7 scope clarified, CI criteria corrected, release.sh insertion point fixed, ASSERT 4 messages resolved). CLAUDE.md, TASKS.md, DECISIONS.md updated.
+
 ## What's next
-Manual smoke test: run `npm run start:react`, trigger an eval, expand panel — verify dimension bars, amber gap block, drift badge (green/amber/red pill), efficiency badge, critique, delta row all render. Then say "push it".
+⬜ PFLT-001 · Create `scripts/preflight.sh` with CHECKs 1-6 (env reachability: node, claude, ffmpeg, whisper in non-login shell + claude test execution)
+   When done: `bash scripts/preflight.sh` exits 0 with 6 ✓ lines on the dev machine.
+Say "next" to begin.
+
+---
+
+## FEATURE-PREFLIGHT-HEALTH-CHECKS — Pre-release health checks and build assertions (0/6)
+> Spec: vibe/features/2026-05-19-preflight-health-checks/ | Added: 2026-05-19 | UNPLANNED ADDITION
+> Estimated: approx. 3–4 hours (M: 1, S: 5)
+
+🔄 Preflight health checks — 10-check env script + 4-check splash assertion + CI wiring (0/6)
+   Estimated: approx. 3–4 hours (M: 1, S: 5)
+   [ ] PFLT-001 · scripts/preflight.sh — CHECKs 1-6 (env reachability: node/claude/ffmpeg/whisper in non-login shell)
+   [ ] PFLT-002 · scripts/preflight.sh — CHECKs 7-10 (makeClaudeEnv coverage, settings gear, path fields, IPC handlers)
+   [ ] PFLT-003 · scripts/assert-splash.js — 4 splash escape-hatch assertions
+   [ ] PFLT-004 · Wire into release.sh preamble + package.json scripts (preflight, assert, prerelease)
+   [ ] PFLT-005 · .github/workflows/preflight.yml — CI gate (splash assertions + CHECK 7)
+   [ ] PFLT-006 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
+   → Full specs: vibe/features/2026-05-19-preflight-health-checks/FEATURE_TASKS.md (agent use)
 
 ---
 

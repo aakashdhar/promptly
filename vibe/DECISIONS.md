@@ -1777,3 +1777,26 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Prop chain**: `onModeSelect`, `onShowShortcuts`, `onShowHistory` added to `IdleState`, `ExpandedView`, `ExpandedTransportBar`. Callbacks defined in `App.jsx` and passed down (`setMode`, `transition(STATES.SHORTCUTS)`, `openHistory`).
 - **Design spec**: 340px width, GENERAL/SPECIALIST section labels (DM Mono 8.5px), 7px colored dot per mode, two-line items (name + 10.5px/weight-300 description), checkmark on active, footer shortcuts + history items.
 ---
+
+---
+## — Feature Start: FEATURE-PREFLIGHT-HEALTH-CHECKS — 2026-05-19
+> Folder: vibe/features/2026-05-19-preflight-health-checks/ | UNPLANNED ADDITION
+> Motivated by: friend's Mac install session where missing binaries, nvm PATH gaps, and missing splash escape hatches went undetected until the user hit them in the wild.
+> Tasks: PFLT-001 through PFLT-006 | Estimated: 3–4 hours
+
+### D-PFLT-001 — Pre-release health check scripts — 2026-05-19
+- **Date**: 2026-05-19 · **Type**: tech-choice (new-infrastructure)
+- **What was planned**: Not in PLAN.md — unplanned addition motivated by install session failure analysis.
+- **What was done**: Created FEATURE_SPEC + FEATURE_PLAN + FEATURE_TASKS for two pre-release scripts: `scripts/preflight.sh` (10 checks) and `scripts/assert-splash.js` (4 assertions).
+- **Why preflight.sh vs pure CI**: CI can't run CHECK 3 (live claude CLI) — developer machine is the only place with a logged-in claude. CI runs only codebase-analysis checks (7-10) and splash assertions.
+- **CHECK 7 implementation choice**: Embedded python3 heredoc in bash script. python3 is always available on macOS 11+. A separate Node script would require requiring the file to be read twice. python3 line-by-line scan with a 5-line window reliably catches multi-line spawn() calls.
+- **env -i HOME=$HOME**: Simulates Electron's non-login shell exactly. `env -i` strips PATH, MANPATH, etc. Passing HOME ensures ~/.nvm paths work in the 'which' calls.
+- **Alternatives considered**: (1) Jest/vitest test suite — overkill for env checks; (2) Electron smoke test — tests the app, not the installer environment; (3) Pure bash grep — less readable than python3 heredoc for multi-line span checks.
+---
+
+---
+## 2026-05-19 — Spec review: add-feature (preflight-health-checks)
+> P0: 0 · P1: 2 · P2: 2
+> Action: all findings fixed inline
+> Report: vibe/spec-reviews/2026-05-19-add-feature-preflight.md
+---
