@@ -192,19 +192,23 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
                     const dim = evalData.dimensions[key]
                     if (!dim) return null
                     return (
-                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i === arr.length - 1 ? 0 : 5 }}>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', width: 90, flexShrink: 0 }}>{DIMENSION_LABELS[key]}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
-                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                            <div style={{ width: barsMounted ? `${Math.min(100, Math.max(0, dim.raw))}%` : '0%', height: 3, background: 'rgba(255,255,255,0.22)', borderRadius: 2, transition: 'width 500ms ease-out' }} />
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 1fr', alignItems: 'center', marginBottom: i === arr.length - 1 ? 0 : 5 }}>
+                        {/* left: label + raw bar — bounded to left 1fr, won't cross delta column */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingRight: 14, minWidth: 0 }}>
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', width: 80, flexShrink: 0 }}>{DIMENSION_LABELS[key]}</span>
+                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', minWidth: 0 }}>
+                            <div style={{ width: barsMounted ? `${Math.min(100, Math.max(0, dim.raw))}%` : '0%', height: 3, background: evalScoreColor(dim.raw, false), borderRadius: 2, transition: 'width 500ms ease-out' }} />
                           </div>
-                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', minWidth: 18, textAlign: 'right' }}>{dim.raw}</span>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', minWidth: 16, textAlign: 'right', flexShrink: 0 }}>{dim.raw}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
-                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                        {/* center: aligns with delta pill — empty */}
+                        <div />
+                        {/* right: promptly bar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 14, minWidth: 0 }}>
+                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', minWidth: 0 }}>
                             <div style={{ width: barsMounted ? `${Math.min(100, Math.max(0, dim.structured))}%` : '0%', height: 3, background: evalScoreColor(dim.structured, true), borderRadius: 2, transition: 'width 500ms ease-out', transitionDelay: barsMounted ? '0.15s' : '0s' }} />
                           </div>
-                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', minWidth: 18, textAlign: 'right' }}>{dim.structured}</span>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', minWidth: 16, textAlign: 'right', flexShrink: 0 }}>{dim.structured}</span>
                         </div>
                       </div>
                     )
