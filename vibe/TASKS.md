@@ -835,7 +835,7 @@ Feature complete — ready for smoke test and merge to main.
 > Spec: vibe/features/2026-05-18-prompt-eval-scorecard/ | Added: 2026-05-18
 > Estimated: approx. 6–8 hours (S: 6, M: 1)
 
-🔄 Eval Scorecard — "↗ Eval" button on done screens shows raw vs. Promptly score (0/7)
+✅ Eval Scorecard — "↗ Eval" button on done screens shows raw vs. Promptly score (7/7 ✅)
    Estimated: approx. 6–8 hours (S: 6, M: 1)
    [x] EVAL-001 · main.js: evaluate-prompt IPC handler — spawn Claude, 30s timeout, return JSON scores
    [x] EVAL-002 · preload.js: expose evaluatePrompt via contextBridge
@@ -843,14 +843,13 @@ Feature complete — ready for smoke test and merge to main.
    [x] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
    [x] EVAL-005 · EmailReadyState: mount EvalPanel
    [x] EVAL-006 · WorkflowBuilderDoneState: transcript prop + mount EvalPanel
-   [ ] EVAL-007 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md + CLAUDE.md
+   [x] EVAL-007 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md + CLAUDE.md
    → Full specs: vibe/features/2026-05-18-prompt-eval-scorecard/FEATURE_TASKS.md (agent use)
 
 ✅ SettingsPanel broken in expanded mode + settings save gate — fixed 2026-05-18 (3 files)
 
 ## What just happened
-✅ BUG-NVM-PATH fixed 2026-05-18 — `s1-notresponding` now has a "Not the right path?" card with a pre-populated path input + "Use this path →" button. Users stuck on "Claude CLI not responding" can override with a different path. splash.html only — 19 lines added.
+✅ FEATURE-EVAL-SCORECARD complete 2026-05-19 — All 7 tasks implemented. New "↗ Eval" button on Balanced/Detailed/Concise/Chain/Code/Design/Refine/Polish result screens, Email done screen, and Workflow done screen. EvalPanel fires parallel Claude CLI call on mount, shows loading state, then two-column scorecard (Without Promptly / With Promptly) with score bars, reasons, delta, and verdict badge. Silent failure — button disappears if IPC fails. Build clean, lint 0 errors.
 
 ## What's next
-Interrupted feature: FEATURE-EVAL-SCORECARD — EVAL-001 (evaluate-prompt IPC handler).
-Say "next" to continue.
+Smoke test FEATURE-EVAL-SCORECARD across all applicable modes. Then ready for review gate.

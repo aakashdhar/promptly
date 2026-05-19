@@ -1746,3 +1746,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **ARCHITECTURE.md update**: No
 - **Deviations from BUG_PLAN.md**: none
 ---
+
+### D-EVAL-001 — Prompt Eval Scorecard — 2026-05-19
+- **Date**: 2026-05-19 · **Type**: feature
+- **Folder**: vibe/features/2026-05-18-prompt-eval-scorecard/
+- **Decision**: EvalPanel fires a parallel Claude CLI call on done-state mount to score raw transcript vs. Promptly output. Self-contained component (no App.jsx state): fires IPC, owns loading/failed state, renders button+panel.
+- **Transcript source**: `thinkTranscript` already in ExpandedDetailPanel — no new prop chain through App.jsx.
+- **Excluded modes**: Image and Video — output is not a prompt; different output contract.
+- **Fence-strip**: `evaluate-prompt` handler strips markdown fences before JSON.parse (same pattern as `parseEmailOutput`).
+- **Silent failure**: `evalFailed` → `return null` — button disappears with no error shown to user.
+---
