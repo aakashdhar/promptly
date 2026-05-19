@@ -497,12 +497,23 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-EVAL-001 | `main.js` | ~1022 | `child.stdin.end()` missing in evaluate-prompt IPC handler — all other spawn handlers call this; stdin pipe remains open after spawn. Add after `child.stdout.on(...)` setup. | Open |
-| BL-EVAL-002 | `src/renderer/components/EvalPanel.jsx` | 115 | `ScoreColumn` is a second non-exported component defined in EvalPanel.jsx — violates ARCHITECTURE.md "one component per file" rule. Inline JSX or extract to `EvalScoreColumn.jsx`. | Open |
+| ~~BL-EVAL-001~~ | `main.js` | ~1022 | `child.stdin.end()` missing in evaluate-prompt IPC handler. | ✅ RESOLVED — present at main.js:1051 |
+| ~~BL-EVAL-002~~ | `src/renderer/components/EvalPanel.jsx` | 115 | `ScoreColumn` second non-exported component — ARCHITECTURE one-per-file violation. | ✅ RESOLVED — EvalPanel rewritten, no ScoreColumn |
 
 ### P3 — Monitor
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-EVAL-003 | `src/renderer/components/EvalPanel.jsx` | 3–17 | `scoreColor` (5 branches) and `verdict` (5 branches) pure helper functions have no unit tests. Export and add to `tests/utils.test.js` if test coverage is desired. | Open |
-| BL-EVAL-004 | `src/renderer/components/EvalPanel.jsx` | 138 | `key={i}` array-index key in reasons list. Static list with no reorder risk — no correctness issue, minor React best-practice gap. | Open |
+| ~~BL-EVAL-003~~ | `src/renderer/components/EvalPanel.jsx` | 3–17 | `scoreColor`/`verdict` helpers untested. | ✅ RESOLVED — replaced by imported `evalScoreColor`/`evalVerdict` (already tested in utils.test.js) |
+| ~~BL-EVAL-004~~ | `src/renderer/components/EvalPanel.jsx` | 138 | `key={i}` array-index key in reasons list. | ✅ RESOLVED — uses `key={r}` (reason string) |
+
+---
+
+## From FEATURE-EVAL-METRICS Review (2026-05-19) — Score 9.8/10 — Grade A
+
+### P3 — Monitor
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-EVAL-M-001 | `src/renderer/components/EvalPanel.jsx` | 101 | `labels` object literal `{ clarity: 'Clarity', ... }` recreated inside `.map()` on every iteration and render. Hoist to `const DIMENSION_LABELS` outside component. No functional impact. | Open |
+| BL-EVAL-M-002 | `src/renderer/components/EvalPanel.jsx` | 152–191 | IIFE pattern `(() => { const driftColor = ...; return (...) })()` inside JSX to scope local consts. Valid and works. `driftColor`/`driftBg`/`driftBorder` could move to component scope after line 30. | Open |

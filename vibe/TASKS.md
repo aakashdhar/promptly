@@ -871,5 +871,10 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 ## What just happened
 ✅ EVAL-M-003 · Gap block, intent drift badge, token efficiency badge complete — amber gap coaching block (hidden when absent), intent drift pill (green none / amber minor / red significant with intentDriftLabel text), token efficiency badge (word count ratio + delta pts, hidden when rawWords=0). All 3 tasks done — FEATURE-EVAL-METRICS complete (3/3).
 
+## FEATURE-EVAL-METRICS gate — 2026-05-19
+✅ PASS — reviewed 2026-05-19 — Score 9.8/10 (A) — 0 P0, 0 P1 — 2 P3 logged to backlog
+→ All 4 BL-EVAL carryover items resolved. No regressions. 45 tests pass.
+→ Full report: vibe/reviews/feature-eval-metrics-review.md
+
 ## What's next
-Feature complete — manual smoke test: run eval, expand panel, verify gap block (amber border), drift badge (green/amber/red), efficiency badge, dimension bars, critique. Then say "push it".
+Manual smoke test: run `npm run start:react`, trigger an eval, expand panel — verify dimension bars, amber gap block, drift badge (green/amber/red pill), efficiency badge, critique, delta row all render. Then say "push it".
