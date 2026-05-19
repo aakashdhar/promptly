@@ -6,7 +6,7 @@
 ---
 
 ### EVAL-M-001 · Update eval system prompt with new JSON fields
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#6-new-data-model
 - **Dependencies**: None

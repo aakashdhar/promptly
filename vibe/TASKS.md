@@ -863,12 +863,15 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 ## FEATURE-EVAL-METRICS — Eval rich metrics: dimension breakdown, gap, intent drift, token efficiency (0/3)
 > Spec: vibe/features/2026-05-19-eval-rich-metrics/ | Added: 2026-05-19
 > Estimated: approx. 5–7 hours (S: 1, M: 2)
-   [ ] EVAL-M-001 · Update eval system prompt with new JSON fields — add dimensions/gap/intentDrift/intentDriftLabel to evalSystemPrompt in main.js
+   [x] EVAL-M-001 · Update eval system prompt with new JSON fields — add dimensions/gap/intentDrift/intentDriftLabel to evalSystemPrompt in main.js
    [ ] EVAL-M-002 · Render dimension breakdown in EvalPanel — 4 rows (clarity/specificity/context/actionability), 2 mini bars each (INPUT A grey, INPUT B green)
    [ ] EVAL-M-003 · Render gap + intent drift badge + token efficiency badge — amber gap block, coloured pill badge, word count ratio + delta pts
    → Full specs: vibe/features/2026-05-19-eval-rich-metrics/FEATURE_TASKS.md (agent use)
 
+## What just happened
+✅ EVAL-M-001 · evalSystemPrompt extended — dimensions (4 sub-scores per version), gap (what both miss), intentDrift (none/minor/significant), intentDriftLabel (short phrase). All fields in example JSON. Dimension scoring rules, gap specificity rule, and intentDrift enum documented explicitly in prompt.
+
 ## What's next
-⬜ EVAL-M-001 · Update eval system prompt with new JSON fields
-   When done: Claude returns all 9 fields (rawScore, promptlyScore, rawReasons, promptlyReasons, critique, dimensions, gap, intentDrift, intentDriftLabel) in a single eval call.
+⬜ EVAL-M-002 · Render dimension breakdown in EvalPanel
+   When done: eval panel shows 4 labelled rows (Clarity / Specificity / Context / Actionability), each with two mini progress bars side by side.
 Say "next" to begin.
