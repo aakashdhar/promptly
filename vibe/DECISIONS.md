@@ -1765,3 +1765,15 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Fence-strip**: `evaluate-prompt` handler strips markdown fences before JSON.parse (same pattern as `parseEmailOutput`).
 - **Silent failure**: `evalFailed` → `return null` — button disappears with no error shown to user.
 ---
+
+---
+
+### D-DESIGN-MODE-DROPDOWN — Mode selector: custom React dropdown replaces native menu
+- **Date**: 2026-05-19 · **Type**: design (visual/UX)
+- **Decision**: Replaced native Electron `Menu.popup()` mode selector with `ModeDropdown.jsx` — a custom React dropdown using `createPortal` into `document.body`.
+- **Why portal**: App root has `overflow:hidden` which clips `position:absolute` children. `createPortal` + `position:fixed` bypasses this without touching the container.
+- **IDLE window resize**: IDLE state is only 134px tall — not enough to render a ~380px dropdown. On pill click, window resizes to 480px; on close, back to 134px. Resize and render trigger simultaneously (no async wait).
+- **Native menu retained**: Right-click `handleContextMenu` on the main bar still calls `window.electronAPI.showModeMenu` (native). Only pill click uses the custom dropdown.
+- **Prop chain**: `onModeSelect`, `onShowShortcuts`, `onShowHistory` added to `IdleState`, `ExpandedView`, `ExpandedTransportBar`. Callbacks defined in `App.jsx` and passed down (`setMode`, `transition(STATES.SHORTCUTS)`, `openHistory`).
+- **Design spec**: 340px width, GENERAL/SPECIALIST section labels (DM Mono 8.5px), 7px colored dot per mode, two-line items (name + 10.5px/weight-300 description), checkmark on active, footer shortcuts + history items.
+---

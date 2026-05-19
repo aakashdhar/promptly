@@ -878,3 +878,22 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 
 ## What's next
 Manual smoke test: run `npm run start:react`, trigger an eval, expand panel — verify dimension bars, amber gap block, drift badge (green/amber/red pill), efficiency badge, critique, delta row all render. Then say "push it".
+
+---
+
+## design: Mode selector dropdown — styled custom React dropdown (complete)
+> 2026-05-19 — No feature spec folder (design-only change, no new product scope)
+
+**What changed:**
+- New `src/renderer/components/ModeDropdown.jsx` — custom dropdown replacing native Electron `Menu.popup()` for mode pill clicks
+- Two-line items: mode name + description text (10.5px, weight 300, rgba(255,255,255,0.28))
+- GENERAL / SPECIALIST section labels (DM Mono 8.5px, letter-spacing 0.12em)
+- 7px colored dot per mode (12 distinct colors)
+- 340px width · checkmark on active mode · footer: Keyboard shortcuts ⌘? + History ⌘H
+- Portal rendering via `createPortal` → `document.body` to escape `overflow:hidden`
+- `IdleState`: pill click resizes window 134→480px on open, back on close
+- `ExpandedTransportBar`: pill click opens dropdown in-place (860px window has room)
+- `onModeSelect` / `onShowShortcuts` / `onShowHistory` props wired through App.jsx → IdleState + ExpandedView → ExpandedTransportBar
+
+## What just happened
+✅ Mode selector dropdown redesigned — ModeDropdown.jsx built and wired into IdleState + ExpandedTransportBar. Native Electron menu replaced for pill clicks. CODEBASE.md, DECISIONS.md, TASKS.md updated.
