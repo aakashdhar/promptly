@@ -299,7 +299,7 @@ export default function ExpandedDetailPanel({
           {/* Eval scorecard for history entry */}
           {selected.transcript && (
             <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
-              <EvalPanel transcript={selected.transcript} prompt={selected.prompt} />
+              <EvalPanel key={selected.id} transcript={selected.transcript} prompt={selected.prompt} />
             </div>
           )}
 
