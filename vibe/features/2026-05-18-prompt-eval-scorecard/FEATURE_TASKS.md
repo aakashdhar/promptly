@@ -53,7 +53,7 @@ Do NOT add `console.log` or `console.error` — silent failure is required.
 ---
 
 ### EVAL-002 · preload.js: expose evaluatePrompt via contextBridge
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#5-integration-points
 - **Dependencies**: EVAL-001
