@@ -1800,3 +1800,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Action: all findings fixed inline
 > Report: vibe/spec-reviews/2026-05-19-add-feature-preflight.md
 ---
+
+---
+## D-PFLT-001 — Pre-release health check scripts — 2026-05-19
+> Feature: FEATURE-PREFLIGHT-HEALTH-CHECKS
+> Motivated by: friend's Mac install session — missing binaries and nvm PATH issues went undetected until the user hit them
+> Decision: preflight.sh + assert-splash.js run as a required gate in release.sh before any build step
+> CHECK 7 implementation: embedded python3 heredoc (no node script needed; python3 always available on macOS; avoids adding a new Node script dependency on python)
+> CHECK 10: uses grep -A 15 with simple string match instead of awk range (awk range fails when start and end patterns match the same line)
+> CI: only runs splash assertions + CHECK 7 in CI (CHECK 3 requires logged-in claude CLI — cannot run in CI runners)
+---

@@ -877,12 +877,10 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 → Full report: vibe/reviews/feature-eval-metrics-review.md
 
 ## What just happened
-✅ FEATURE-PREFLIGHT-HEALTH-CHECKS planned 2026-05-19 — Feature kit created: FEATURE_SPEC.md, FEATURE_PLAN.md, FEATURE_TASKS.md. Spec review run — 0 P0, 2 P1 + 2 P2 found and fixed inline (CHECK 7 scope clarified, CI criteria corrected, release.sh insertion point fixed, ASSERT 4 messages resolved). CLAUDE.md, TASKS.md, DECISIONS.md updated.
+✅ FEATURE-PREFLIGHT-HEALTH-CHECKS complete 2026-05-19 — All 6 PFLT tasks implemented. scripts/preflight.sh (10 checks: non-login shell reachability for node/claude/ffmpeg/whisper + codebase assertions for makeClaudeEnv coverage, settings button, path fields, IPC handler wiring). scripts/assert-splash.js (4 structural assertions on splash.html escape hatches — all pass). release.sh preamble wired. package.json: preflight, assert, prerelease scripts added. GitHub Actions CI workflow (splash assertions + CHECK 7 on push/PR to main). Docs updated.
 
 ## What's next
-⬜ PFLT-001 · Create `scripts/preflight.sh` with CHECKs 1-6 (env reachability: node, claude, ffmpeg, whisper in non-login shell + claude test execution)
-   When done: `bash scripts/preflight.sh` exits 0 with 6 ✓ lines on the dev machine.
-Say "next" to begin.
+FEATURE-PREFLIGHT-HEALTH-CHECKS is the last planned feature. Project is ready for final review gate.
 
 ---
 
@@ -890,14 +888,14 @@ Say "next" to begin.
 > Spec: vibe/features/2026-05-19-preflight-health-checks/ | Added: 2026-05-19 | UNPLANNED ADDITION
 > Estimated: approx. 3–4 hours (M: 1, S: 5)
 
-🔄 Preflight health checks — 10-check env script + 4-check splash assertion + CI wiring (0/6)
+✅ Preflight health checks — 10-check env script + 4-check splash assertion + CI wiring (6/6)
    Estimated: approx. 3–4 hours (M: 1, S: 5)
-   [ ] PFLT-001 · scripts/preflight.sh — CHECKs 1-6 (env reachability: node/claude/ffmpeg/whisper in non-login shell)
-   [ ] PFLT-002 · scripts/preflight.sh — CHECKs 7-10 (makeClaudeEnv coverage, settings gear, path fields, IPC handlers)
-   [ ] PFLT-003 · scripts/assert-splash.js — 4 splash escape-hatch assertions
-   [ ] PFLT-004 · Wire into release.sh preamble + package.json scripts (preflight, assert, prerelease)
-   [ ] PFLT-005 · .github/workflows/preflight.yml — CI gate (splash assertions + CHECK 7)
-   [ ] PFLT-006 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
+   [x] PFLT-001 · scripts/preflight.sh — CHECKs 1-6 (env reachability: node/claude/ffmpeg/whisper in non-login shell)
+   [x] PFLT-002 · scripts/preflight.sh — CHECKs 7-10 (makeClaudeEnv coverage, settings gear, path fields, IPC handlers)
+   [x] PFLT-003 · scripts/assert-splash.js — 4 splash escape-hatch assertions
+   [x] PFLT-004 · Wire into release.sh preamble + package.json scripts (preflight, assert, prerelease)
+   [x] PFLT-005 · .github/workflows/preflight.yml — CI gate (splash assertions + CHECK 7)
+   [x] PFLT-006 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
    → Full specs: vibe/features/2026-05-19-preflight-health-checks/FEATURE_TASKS.md (agent use)
 
 ---

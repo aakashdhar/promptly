@@ -1,7 +1,7 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-05-19 (design: mode selector dropdown — ModeDropdown.jsx, styled items, portal positioning)
+> Last updated: 2026-05-19 (feat: FEATURE-PREFLIGHT-HEALTH-CHECKS — scripts/preflight.sh, scripts/assert-splash.js, .github/workflows/preflight.yml)
 
 ---
 
@@ -16,7 +16,10 @@
 
 | File | Purpose | Key exports / functions |
 |------|---------|------------------------|
-| `package.json` | Electron + electron-builder config, npm scripts (start, dev, build:renderer, start:react, dist, lint), devDeps only | — |
+| `package.json` | Electron + electron-builder config, npm scripts (start, dev, build:renderer, start:react, dist, lint, preflight, assert, prerelease), devDeps only | — |
+| `scripts/preflight.sh` | Pre-release environment checks (CHECKs 1-10): non-login shell reachability for node/claude/ffmpeg/whisper, makeClaudeEnv coverage scan, SettingsPanel path field presence, IPC handler ffmpegPath wiring | — |
+| `scripts/assert-splash.js` | Structural assertions on splash.html escape hatches: s1-notfound path input, s1-notresponding path input, submit buttons, check-again triggers | — |
+| `.github/workflows/preflight.yml` | CI: runs splash assertions + makeClaudeEnv CHECK 7 on push/PR to main | — |
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
 | `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
 | `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |

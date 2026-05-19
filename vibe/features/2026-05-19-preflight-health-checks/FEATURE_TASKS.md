@@ -7,7 +7,7 @@
 ---
 
 ### PFLT-001 · scripts/preflight.sh — environment reachability checks (CHECKs 1-6)
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria
 - **Dependencies**: None
@@ -68,7 +68,7 @@ FAIL: whisper found but failed to execute. Check Python PATH and SSL certificate
 ---
 
 ### PFLT-002 · scripts/preflight.sh — codebase assertion checks (CHECKs 7-10)
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria
 - **Dependencies**: PFLT-001 (adds to the same file)
@@ -141,7 +141,7 @@ ok "CHECK 10: ffmpegPath wired in all 3 path IPC handlers"
 ---
 
 ### PFLT-003 · scripts/assert-splash.js — splash screen escape-hatch assertions
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (assert-splash.js section)
 - **Dependencies**: None
@@ -216,7 +216,7 @@ console.log('');
 ---
 
 ### PFLT-004 · Wire into release.sh and package.json
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (release.sh and package.json)
 - **Dependencies**: PFLT-001, PFLT-002, PFLT-003 (scripts must exist)
@@ -264,7 +264,7 @@ Read `scripts/release.sh` first to find the exact insertion point — it should 
 ---
 
 ### PFLT-005 · .github/workflows/preflight.yml — CI gate
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (CI section)
 - **Dependencies**: PFLT-001, PFLT-003 (scripts must exist)
@@ -359,7 +359,7 @@ jobs:
 ---
 
 ### PFLT-006 · Docs — CODEBASE.md + DECISIONS.md + TASKS.md
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md (conformance checklist)
 - **Dependencies**: PFLT-001 through PFLT-005
