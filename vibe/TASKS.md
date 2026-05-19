@@ -837,7 +837,7 @@ Feature complete — ready for smoke test and merge to main.
 
 🔄 Eval Scorecard — "↗ Eval" button on done screens shows raw vs. Promptly score (0/7)
    Estimated: approx. 6–8 hours (S: 6, M: 1)
-   [ ] EVAL-001 · main.js: evaluate-prompt IPC handler — spawn Claude, 30s timeout, return JSON scores
+   [x] EVAL-001 · main.js: evaluate-prompt IPC handler — spawn Claude, 30s timeout, return JSON scores
    [ ] EVAL-002 · preload.js: expose evaluatePrompt via contextBridge
    [ ] EVAL-003 · EvalPanel.jsx: new self-contained component — loading + scorecard states
    [ ] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
