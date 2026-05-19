@@ -20,6 +20,9 @@
     "dist:signed": "bash scripts/build-signed.sh",
     "uninstall": "bash scripts/uninstall.sh",
     "release": "bash scripts/release.sh",
+    "preflight": "bash scripts/preflight.sh",
+    "assert": "node scripts/assert-splash.js",
+    "prerelease": "npm run preflight && npm run assert",
     "test": "vitest run"
   },
   "devDependencies": {

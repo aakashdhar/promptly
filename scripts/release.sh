@@ -21,6 +21,13 @@ export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 command -v node >/dev/null 2>&1 || fail "node not found — install Node.js or ensure nvm is configured"
 command -v npx  >/dev/null 2>&1 || fail "npx not found — ensure npm is installed alongside node"
 
+# ── health checks ─────────────────────────────────────────────────────────────
+echo "Running preflight checks..."
+bash scripts/preflight.sh || exit 1
+echo "Running splash assertions..."
+node scripts/assert-splash.js || exit 1
+echo "All checks passed. Proceeding with build."
+
 # ── arg check ──────────────────────────────────────────────────────────────────
 VERSION="$1"
 if [ -z "$VERSION" ]; then
