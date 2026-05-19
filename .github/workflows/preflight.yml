@@ -1,0 +1,34 @@
+name: Preflight
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  preflight:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Run splash screen assertions
+        run: node scripts/assert-splash.js
+      - name: Check makeClaudeEnv coverage (CHECK 7)
+        run: |
+          python3 - <<'EOF'
+          import sys
+          with open('main.js') as f:
+              lines = f.readlines()
+          for i, line in enumerate(lines):
+              if 'spawn(claudePath' in line and not line.strip().startswith('//'):
+                  window = ''.join(lines[max(0,i-2):min(len(lines),i+4)])
+                  if 'makeClaudeEnv' not in window:
+                      print(f"FAIL: spawn call at line {i+1} does not use makeClaudeEnv()")
+                      sys.exit(1)
+          print("OK: all spawn(claudePath calls use makeClaudeEnv")
+          EOF
