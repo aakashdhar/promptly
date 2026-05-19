@@ -251,6 +251,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           onShowShortcuts={onShowShortcuts}
           onShowHistory={onShowHistory}
           onClose={handleDropdownClose}
+          anchorRef={pillRef}
         />
       )}
     </div>

@@ -36,16 +36,20 @@ const DIVIDER_STYLE = {
   margin: '4px 0',
 }
 
-export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose }) {
+export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef }) {
   const ref = useRef(null)
 
   useEffect(() => {
     function handlePointerDown(e) {
-      if (ref.current && !ref.current.contains(e.target)) onClose()
+      if (ref.current && !ref.current.contains(e.target)) {
+        // Let the anchor (pill) handle its own toggle — don't race with its onClick
+        if (anchorRef?.current?.contains(e.target)) return
+        onClose()
+      }
     }
     document.addEventListener('pointerdown', handlePointerDown, true)
     return () => document.removeEventListener('pointerdown', handlePointerDown, true)
-  }, [onClose])
+  }, [onClose, anchorRef])
 
   function handleSelect(key) {
     onSelect(key)

@@ -463,6 +463,7 @@ export default function ExpandedTransportBar({
         onShowShortcuts={onShowShortcuts}
         onShowHistory={onShowHistory}
         onClose={() => setShowModeDropdown(false)}
+        anchorRef={pillRef}
       />
     )}
     </>
