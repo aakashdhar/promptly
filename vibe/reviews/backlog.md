@@ -517,3 +517,31 @@
 |----|------|------|---------|--------|
 | BL-EVAL-M-001 | `src/renderer/components/EvalPanel.jsx` | 101 | `labels` object literal `{ clarity: 'Clarity', ... }` recreated inside `.map()` on every iteration and render. Hoist to `const DIMENSION_LABELS` outside component. No functional impact. | Open |
 | BL-EVAL-M-002 | `src/renderer/components/EvalPanel.jsx` | 152–191 | IIFE pattern `(() => { const driftColor = ...; return (...) })()` inside JSX to scope local consts. Valid and works. `driftColor`/`driftBg`/`driftBorder` could move to component scope after line 30. | Open |
+
+---
+
+## From Final Review (2026-05-19) — Score 7.4/10 — Grade B
+
+### P1 — Fix before deploy
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-FINAL2-001 | `package.json` (devDep) | — | 2 moderate vulnerabilities: `ip-address <=10.1.0` (XSS in HTML-emitting methods) + `brace-expansion` (dep chain). Both in electron-builder devDep chain only — NOT in packaged .dmg. `npm audit fix` resolves without breaking changes. | Open — run `npm audit fix` before release tag |
+| BL-EMAIL-003 | `src/renderer/App.jsx` | 1–719 | 719 lines — 219 over threshold. All extractable hooks applied (useOperationHandlers, useTextInput, useWindowLayout, useRecording, useKeyboardShortcuts, usePolishMode, useIteration, useImageBuilder, useVideoBuilder, useWorkflowBuilder). Residual is irreducible orchestrator. Recommend DECISIONS.md acceptance entry + downgrade to P3. | Open — pending RFX-FINAL-2-002 acceptance decision |
+
+### P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-FINAL2-002 | `vibe/ARCHITECTURE.md` | IPC table (148–186) | 16 IPC channels registered in main.js absent from ARCHITECTURE.md table: `evaluate-prompt`, `check-claude`, `check-ffmpeg`, `check-whisper`, `check-whisper-model`, `download-whisper-model`, `check-setup-complete`, `set-setup-complete`, `reset-setup-complete`, `reopen-wizard`, `retry-transcription`, `retry-generation`, `set-last-prompt`, `whisper-download-progress`, `transcription-slow-warning`, `generation-slow-warning`. Added by ONBD + EVAL + QuickCopy features. | Open |
+| BL-FINAL2-003 | `vibe/ARCHITECTURE.md` | 81, ~88–94, ~314–328 | State count "17 total" → should be 18 (EMAIL_READY added by FEATURE-EMAIL-MODE). State diagram missing email-mode transition. Prompt modes table missing email row (teal accent, always-expanded). | Open |
+
+### P3 — Monitor
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-FINAL2-004 | `vibe/CODEBASE.md` | OperationErrorPanel row | Stale: "105 lines" → actual 128 lines. | Open (carryover BL-FINAL-003) |
+| P3-EXP-002 | `src/renderer/components/ExpandedDetailPanel.jsx` | 1–490 | 490 lines — 10 under P1 threshold. Monitor. | Open (carryover) |
+| P3-WFL-DEL-001 | `src/renderer/components/WorkflowBuilderState.jsx` | × delete btn | No hover state on × delete. | Open (carryover) |
+| P3-IIFE-001 | `src/renderer/components/EvalPanel.jsx` | IIFE JSX | `driftColor`/`driftBg`/`driftBorder` inside IIFE in JSX — valid but could move to component scope. | Open (carryover BL-EVAL-M-002) |
+| P3-IMG2-002 | `src/renderer/hooks/useImageBuilder.js` | generateVariations | Silent failure — no retry affordance when 0 variations returned. | Open (carryover) |

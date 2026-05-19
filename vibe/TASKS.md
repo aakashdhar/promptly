@@ -880,7 +880,22 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 ✅ FEATURE-PREFLIGHT-HEALTH-CHECKS complete 2026-05-19 — All 6 PFLT tasks implemented. scripts/preflight.sh (10 checks: non-login shell reachability for node/claude/ffmpeg/whisper + codebase assertions for makeClaudeEnv coverage, settings button, path fields, IPC handler wiring). scripts/assert-splash.js (4 structural assertions on splash.html escape hatches — all pass). release.sh preamble wired. package.json: preflight, assert, prerelease scripts added. GitHub Actions CI workflow (splash assertions + CHECK 7 on push/PR to main). Docs updated.
 
 ## What's next
-FEATURE-PREFLIGHT-HEALTH-CHECKS is the last planned feature. Project is ready for final review gate.
+Final review gate run 2026-05-19. See blocking tasks below.
+
+---
+
+## 🔴 Review fixes required — Final gate 2026-05-19 (0/2)
+Must complete before deploy clearance.
+[ ] RFX-FINAL-2-001 · Run `npm audit fix` — resolves 2 moderate devDep vulns (ip-address + brace-expansion)
+                      Command: `npm audit fix && npm test` — confirm 45 tests still pass
+[ ] RFX-FINAL-2-002 · Document App.jsx orchestrator acceptance in DECISIONS.md — add entry
+                      explaining that all hooks extracted, 719 lines is the irreducible orchestrator,
+                      accepting as architectural reality; downgrade BL-EMAIL-003 to P3 monitor in backlog
+→ Full report: vibe/reviews/final-review-2026-05-19.md
+
+## Final gate — 2026-05-19
+🔴 BLOCKED — 2 P1 issues — Score 7.4/10 (B) — 0 P0, 2 P1, 2 P2, 7 P3
+→ Full report: vibe/reviews/final-review-2026-05-19.md
 
 ---
 
