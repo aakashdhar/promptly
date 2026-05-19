@@ -85,6 +85,36 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
                   </div>
                 ))}
               </div>
+              {evalData.dimensions && (
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'rgba(255,255,255,0.25)', marginBottom: 8 }}>
+                    Dimensions
+                  </div>
+                  {['clarity', 'specificity', 'context', 'actionability'].map((key, i, arr) => {
+                    const dim = evalData.dimensions[key]
+                    const labels = { clarity: 'Clarity', specificity: 'Specificity', context: 'Context', actionability: 'Actionability' }
+                    if (!dim) return null
+                    return (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i === arr.length - 1 ? 0 : 5 }}>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', width: 90, flexShrink: 0 }}>{labels[key]}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                            <div style={{ width: `${Math.min(100, Math.max(0, dim.raw))}%`, height: 3, background: 'rgba(255,255,255,0.22)', borderRadius: 2 }} />
+                          </div>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', minWidth: 18, textAlign: 'right' }}>{dim.raw}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                            <div style={{ width: `${Math.min(100, Math.max(0, dim.structured))}%`, height: 3, background: evalScoreColor(dim.structured, true), borderRadius: 2 }} />
+                          </div>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', minWidth: 18, textAlign: 'right' }}>{dim.structured}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
               {evalData.critique && (
                 <div style={{
                   marginTop: 12, paddingTop: 10,
