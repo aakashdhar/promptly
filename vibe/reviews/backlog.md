@@ -520,7 +520,7 @@
 
 ---
 
-## From Final Review (2026-05-19) — Score 7.4/10 — Grade B
+## From Final Review (2026-05-19) — Score 7.4/10 → 9.3/10 — Grade B → A (pass 2 gate cleared)
 
 ### P1 — Fix before deploy
 
@@ -545,3 +545,8 @@
 | P3-WFL-DEL-001 | `src/renderer/components/WorkflowBuilderState.jsx` | × delete btn | No hover state on × delete. | Open (carryover) |
 | P3-IIFE-001 | `src/renderer/components/EvalPanel.jsx` | IIFE JSX | `driftColor`/`driftBg`/`driftBorder` inside IIFE in JSX — valid but could move to component scope. | Open (carryover BL-EVAL-M-002) |
 | P3-IMG2-002 | `src/renderer/hooks/useImageBuilder.js` | generateVariations | Silent failure — no retry affordance when 0 variations returned. | Open (carryover) |
+| BL-EMAIL-011 | `src/renderer/App.jsx` | 96–97 | `transcriptionError`/`generationError` useState ordering cosmetic. | Open (carryover) |
+| P3-EXP-003 | `src/renderer/components/ExpandedDetailPanel.jsx` | props | 27+ props — boundary layer, all consumed. | Open (carryover) |
+
+**Gate: ✅ PASS (pass 2) — 2026-05-19 — Score 9.3/10 — Grade A — 0 P0, 0 P1, 0 P2**
+→ Full report: vibe/reviews/final-review-2026-05-19-pass2.md
