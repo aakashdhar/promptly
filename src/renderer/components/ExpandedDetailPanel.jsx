@@ -337,6 +337,7 @@ export default function ExpandedDetailPanel({
 
       {currentState === 'PROMPT_READY' && (
         <ExpandedPromptReadyContent
+          transcript={thinkTranscript}
           generatedPrompt={generatedPrompt}
           setGeneratedPrompt={setGeneratedPrompt}
           isPolishMode={isPolishMode}

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { parseSections } from '../utils/promptUtils.js'
+import EvalPanel from './EvalPanel.jsx'
 
 export default function ExpandedPromptReadyContent({
+  transcript,
   generatedPrompt,
   setGeneratedPrompt,
   isPolishMode,
@@ -65,6 +67,8 @@ export default function ExpandedPromptReadyContent({
       setIsEditing(false)
     }
   }
+
+  const evalPrompt = isPolishMode ? (polishResult?.polished || generatedPrompt) : generatedPrompt
 
   const sections = parseSections(generatedPrompt)
   const mid = Math.ceil(sections.length / 2)
@@ -172,6 +176,9 @@ export default function ExpandedPromptReadyContent({
           >
             {isCopied ? '✓ Copied' : 'Copy prompt'}
           </button>
+        </div>
+        <div style={{ padding: '0 24px 16px' }}>
+          <EvalPanel transcript={transcript} prompt={evalPrompt} />
         </div>
       </div>
     </div>
