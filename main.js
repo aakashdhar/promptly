@@ -1026,12 +1026,23 @@ INPUT B:
 "${prompt}"
 
 Respond ONLY with valid JSON, no markdown fences, no explanation:
-{"rawScore":72,"promptlyScore":85,"rawReasons":["Missing output format and length constraints","Intent clear but role context absent","No examples to anchor expected response style"],"promptlyReasons":["Role and output format clearly specified","Adds useful context that narrows the task","Still lacks concrete examples or success criteria"],"critique":"Adds useful structure but the role framing is generic and the core ask needed only one extra constraint to land."}
+{"rawScore":72,"promptlyScore":85,"rawReasons":["Missing output format and length constraints","Intent clear but role context absent","No examples to anchor expected response style"],"promptlyReasons":["Role and output format clearly specified","Adds useful context that narrows the task","Still lacks concrete examples or success criteria"],"critique":"Adds useful structure but the role framing is generic and the core ask needed only one extra constraint to land.","dimensions":{"clarity":{"raw":65,"structured":82},"specificity":{"raw":50,"structured":78},"context":{"raw":70,"structured":86},"actionability":{"raw":68,"structured":80}},"gap":"Neither version specifies the expected output format or length.","intentDrift":"none","intentDriftLabel":"Intent preserved"}
 
 Rules:
 - rawReasons: exactly 3 items, each 8–14 words, honest about both weaknesses AND strengths
 - promptlyReasons: exactly 3 items, same length, include real flaws if present
-- critique: one sentence, 10–25 words, honest net verdict on INPUT B — no flattery`;
+- critique: one sentence, 10–25 words, honest net verdict on INPUT B — no flattery
+- dimensions: score each of the 4 dimensions independently for INPUT A (raw) and INPUT B (structured) — do NOT derive these from rawScore/promptlyScore; assess each dimension on its own merits
+  - clarity: how unambiguous and readable is the request?
+  - specificity: how concrete and detailed are the requirements?
+  - context: how much relevant background is provided?
+  - actionability: how clearly does it define what a good response looks like?
+- gap: one sentence (max 20 words) naming what BOTH versions fail to address — be specific (not "add more context" — say WHAT context is missing)
+- intentDrift: exactly one of "none" | "minor" | "significant"
+  - "none" = INPUT B fully preserves the user's goal and scope
+  - "minor" = INPUT B introduces small reframing or slight scope shift
+  - "significant" = INPUT B meaningfully changes what was asked or adds unwanted framing
+- intentDriftLabel: 2–4 word phrase matching the drift level (e.g. "Intent preserved" / "Minor reframing" / "Goal shifted" / "Scope changed")`;
 
     return new Promise((resolve) => {
       let stdout = '';
