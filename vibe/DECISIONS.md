@@ -1810,3 +1810,19 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > CHECK 10: uses grep -A 15 with simple string match instead of awk range (awk range fails when start and end patterns match the same line)
 > CI: only runs splash assertions + CHECK 7 in CI (CHECK 3 requires logged-in claude CLI — cannot run in CI runners)
 ---
+
+---
+## D-APP-ORCHESTRATOR — App.jsx orchestrator accepted at ~720 lines — 2026-05-19
+> Decision: App.jsx is accepted at its current size (~719 lines) as the irreducible state-machine orchestrator.
+> Context: SRP threshold is 500 lines. App.jsx has been above threshold since FEATURE-015 (Polish Mode).
+> All meaningful concerns extracted as hooks: useRecording, useKeyboardShortcuts, usePolishMode,
+>   useIteration, useImageBuilder, useVideoBuilder, useWorkflowBuilder, useOperationHandlers,
+>   useTextInput, useWindowLayout (10 hooks total). No further extraction yields benefit without
+>   artificial indirection.
+> Remaining ~720 lines comprise: STATES/STATE_HEIGHTS constants, useState/useRef declarations,
+>   transition() (cannot extract — calls resizeWindow + animateToState + updateMenuBarState in sync),
+>   handleGenerateResult() (routes 11 modes — requires App.jsx scope), hook wiring, JSX state-machine
+>   render engine (~200 lines), remaining event handlers.
+> This is an architectural reality of the single-state-machine pattern, not an SRP violation.
+> BL-EMAIL-003 downgraded from P1 to P3 (monitor-only).
+---

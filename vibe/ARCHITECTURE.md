@@ -78,7 +78,7 @@ promptly/
 
 **Approach:** React `useState` + `useRef` state machine in `App.jsx`. Single `currentState` (useState) mirrors `stateRef` (useRef) for stale-closure-safe IPC callbacks.
 
-**States (17 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS, IMAGE_BUILDER, IMAGE_BUILDER_DONE, VIDEO_BUILDER, VIDEO_BUILDER_DONE, WORKFLOW_BUILDER, WORKFLOW_BUILDER_DONE, TRANSCRIPTION_ERROR, GENERATION_ERROR added via features):**
+**States (18 total — 6 original + SHORTCUTS, HISTORY, PAUSED, ITERATING, TYPING, SETTINGS, IMAGE_BUILDER, IMAGE_BUILDER_DONE, VIDEO_BUILDER, VIDEO_BUILDER_DONE, WORKFLOW_BUILDER, WORKFLOW_BUILDER_DONE, TRANSCRIPTION_ERROR, GENERATION_ERROR, EMAIL_READY added via features):**
 ```
 FIRST_RUN → IDLE → RECORDING → THINKING → PROMPT_READY → ERROR
                  ↕ PAUSED (FEATURE-011)
@@ -90,10 +90,12 @@ IDLE / PROMPT_READY → SETTINGS (FEATURE-013)
 RECORDING (image mode) → THINKING → IMAGE_BUILDER → THINKING → IMAGE_BUILDER_DONE (FEATURE-IMAGE-BUILDER)
 RECORDING (video mode) → THINKING → VIDEO_BUILDER → THINKING → VIDEO_BUILDER_DONE (FEATURE-VIDEO-BUILDER)
 RECORDING (workflow mode) → THINKING → WORKFLOW_BUILDER → THINKING → WORKFLOW_BUILDER_DONE (FEATURE-WORKFLOW-BUILDER)
+RECORDING (email mode) → THINKING → EMAIL_READY (FEATURE-EMAIL-MODE)
 THINKING (expanded, transcription fail) → TRANSCRIPTION_ERROR (FEATURE-ONBOARDING-WIZARD)
 THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WIZARD)
 ```
 > 📝 2026-04-29 · State count updated 15→17: TRANSCRIPTION_ERROR + GENERATION_ERROR added via FEATURE-ONBOARDING-WIZARD
+> 📝 2026-05-19 · State count updated 17→18: EMAIL_READY added via FEATURE-EMAIL-MODE
 
 **`isExpanded` — layout mode flag (POLISH-TOGGLE / BUG-TOGGLE-002):**
 - `isExpanded` (useState boolean, mirrored as `isExpandedRef`) is NOT a state machine state — it is a layout mode.
@@ -183,6 +185,24 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `save-paths` | Saves `{ claudePath, whisperPath }` to `config.json` and updates runtime vars — used by SettingsPanel |
 | renderer → main | `browse-for-binary` | Opens macOS file picker (openFile); returns `{ path }` or `{ path: null }` — used by SettingsPanel |
 | renderer → main | `recheck-paths` | Reruns `resolveClaudePath` + `resolveWhisperPath`; returns `{ claude: { ok, path }, whisper: { ok, path } }` |
+| renderer → main | `set-last-prompt` | Stores last generated prompt string for Quick Copy tray menu — added FEATURE-018 |
+| renderer → main | `evaluate-prompt` | Fires parallel Claude CLI call to score raw transcript vs. Promptly output; returns JSON `{ rawScore, promptlyScore, rawReason, promptlyReason, dimensions, gap, intentDrift, intentDriftLabel }` — added FEATURE-EVAL-SCORECARD |
+| renderer → main | `retry-transcription` | Retries Whisper transcription on `lastTempAudioPath`; returns `{ success, transcript, error }` — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `retry-generation` | Retries Claude generation on `lastTranscript` for current mode; returns `{ success, prompt, error }` — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `reopen-wizard` | Re-opens splash.html setup wizard (splashWin) from SettingsPanel — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `check-claude` | Runs `claude -p "respond with OK"` test; returns `{ ok, path, error }` — splash wizard step 1 — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `check-ffmpeg` | Checks `ffmpegPath` resolution; returns `{ ok, path }` — splash wizard step 2 — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `check-whisper` | Checks `whisperPath` resolution; returns `{ ok, path }` — splash wizard step 2 — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `check-whisper-model` | Checks for downloaded Whisper model file in `~/.cache/whisper`; returns `{ ok, model }` — splash wizard step 3 — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `download-whisper-model` | Downloads Whisper base.en model via Python; streams `whisper-download-progress` events; returns `{ ok }` — splash wizard step 3 — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `check-setup-complete` | Returns `{ complete: boolean }` from `config.json` — used by splash.html to decide welcome vs full wizard — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `set-setup-complete` | Sets `setupComplete: true` in `config.json` — called on splash done — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `reset-setup-complete` | Clears `setupComplete` in `config.json` — for wizard rerun — added FEATURE-ONBOARDING-WIZARD |
+| main → renderer | `whisper-download-progress` | Streams model download progress `{ percent }` to splash.html — added FEATURE-ONBOARDING-WIZARD |
+| main → renderer | `transcription-slow-warning` | Sent after 30s timeout during transcription; triggers amber slow-warning banner in ThinkingState — added FEATURE-ONBOARDING-WIZARD |
+| main → renderer | `generation-slow-warning` | Sent after 30s timeout during generation; triggers amber slow-warning banner in ThinkingState — added FEATURE-ONBOARDING-WIZARD |
+
+> 📝 2026-05-19 · 16 IPC channels added to table — backfill from FEATURE-ONBOARDING-WIZARD (12), FEATURE-EVAL-SCORECARD (1), FEATURE-018 Quick Copy (1), FEATURE-EMAIL-MODE push channels (2). Detected in final-review-2026-05-19.
 
 ---
 
@@ -325,6 +345,7 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 | Image | `image` | Three-phase flow (v2 — 2026-04-30): generate-prompt passthrough → Phase 1 generate-raw (Claude pre-fills nested 5-tab schema: subject/lighting/camera/style/technical → imageDefaults) → IMAGE_BUILDER review screen; Phase 1.5 generates 3 prompt variations in background (no await); Phase 2 generate-raw (selected variation + confirmed params → assembled natural-language prompt + Nano Banana `--ar --stylize --chaos` flags) → IMAGE_BUILDER_DONE; purple accent in UI |
 | Video | `video` | Two-phase flow: Phase 1 generate-raw (Claude pre-selects video params as JSON) → VIDEO_BUILDER review screen → Phase 2 generate-raw (Claude assembles Veo 3.1 natural-language prompt) → VIDEO_BUILDER_DONE; orange accent in UI |
 | Workflow | `workflow` | Two-phase flow: Phase 1 generate-raw (Claude maps spoken idea to n8n nodes as JSON → workflowAnalysis) → WORKFLOW_BUILDER review/fill screen → Phase 2 generate-raw (Claude outputs complete n8n workflow JSON) → WORKFLOW_BUILDER_DONE; green accent in UI |
+| Email | `email` | Standalone — speak email situation → Claude drafts ready-to-send email (subject + body + tone analysis) as JSON → EMAIL_READY two-column output; always auto-expands (mode-selected IPC triggers handleExpand); output IS the email, no prompt intermediary; teal accent `rgba(20,184,166)` in UI; added FEATURE-EMAIL-MODE |
 
 - Mode is selected via right-click context menu on the bar.
 - Active mode persisted in localStorage via `getMode()` / `setMode()`.
