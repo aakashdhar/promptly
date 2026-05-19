@@ -865,13 +865,11 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 > Estimated: approx. 5–7 hours (S: 1, M: 2)
    [x] EVAL-M-001 · Update eval system prompt with new JSON fields — add dimensions/gap/intentDrift/intentDriftLabel to evalSystemPrompt in main.js
    [x] EVAL-M-002 · Render dimension breakdown in EvalPanel — 4 rows (clarity/specificity/context/actionability), 2 mini bars each (INPUT A grey, INPUT B green)
-   [ ] EVAL-M-003 · Render gap + intent drift badge + token efficiency badge — amber gap block, coloured pill badge, word count ratio + delta pts
+   [x] EVAL-M-003 · Render gap + intent drift badge + token efficiency badge — amber gap block, coloured pill badge, word count ratio + delta pts
    → Full specs: vibe/features/2026-05-19-eval-rich-metrics/FEATURE_TASKS.md (agent use)
 
 ## What just happened
-✅ EVAL-M-002 · Dimension breakdown rendered in EvalPanel — 4 rows (Clarity / Specificity / Context / Actionability) each with INPUT A bar (grey) + INPUT B bar (green via evalScoreColor), scores clamped 0–100, section hidden when evalData.dimensions absent.
+✅ EVAL-M-003 · Gap block, intent drift badge, token efficiency badge complete — amber gap coaching block (hidden when absent), intent drift pill (green none / amber minor / red significant with intentDriftLabel text), token efficiency badge (word count ratio + delta pts, hidden when rawWords=0). All 3 tasks done — FEATURE-EVAL-METRICS complete (3/3).
 
 ## What's next
-⬜ EVAL-M-003 · Render gap + intent drift badge + token efficiency badge
-   When done: amber gap coaching block, coloured intent drift pill (green/amber/red), and word count ratio badge all appear in the eval panel.
-Say "next" to begin.
+Feature complete — manual smoke test: run eval, expand panel, verify gap block (amber border), drift badge (green/amber/red), efficiency badge, dimension bars, critique. Then say "push it".

@@ -127,7 +127,7 @@ Do NOT re-import `evalScoreColor` — it is already imported at the top of EvalP
 ---
 
 ### EVAL-M-003 · Render gap + intent drift badge + token efficiency badge
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria, FEATURE_PLAN.md#4-frontend-changes
 - **Dependencies**: EVAL-M-002
