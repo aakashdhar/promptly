@@ -54,6 +54,7 @@ export default function ExpandedDetailPanel({
 }) {
   const [entryCopied, setEntryCopied] = useState(false)
   const [entryExported, setEntryExported] = useState(false)
+  const [evalCache, setEvalCache] = useState({})
 
   const isRefine = mode === 'refine'
   const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
@@ -299,7 +300,13 @@ export default function ExpandedDetailPanel({
           {/* Eval scorecard for history entry */}
           {selected.transcript && (
             <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
-              <EvalPanel key={selected.id} transcript={selected.transcript} prompt={selected.prompt} />
+              <EvalPanel
+                key={selected.id}
+                transcript={selected.transcript}
+                prompt={selected.prompt}
+                cachedResult={evalCache[selected.id]}
+                onResult={(data) => setEvalCache(prev => ({ ...prev, [selected.id]: data }))}
+              />
             </div>
           )}
 

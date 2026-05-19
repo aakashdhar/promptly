@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import { evalScoreColor, evalVerdict } from '../utils/promptUtils.js'
 
-export default function EvalPanel({ transcript, prompt }) {
+export default function EvalPanel({ transcript, prompt, cachedResult, onResult }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [evalData, setEvalData] = useState(null)
+  const [evalData, setEvalData] = useState(cachedResult || null)
   const [evalFailed, setEvalFailed] = useState(false)
 
   useEffect(() => {
+    if (cachedResult) return
     window.electronAPI.evaluatePrompt({ transcript, prompt })
       .then((result) => {
         if (result?.success) {
           setEvalData(result.data)
+          onResult?.(result.data)
         } else {
           setEvalFailed(true)
         }
