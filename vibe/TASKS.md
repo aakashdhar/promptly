@@ -839,7 +839,7 @@ Feature complete — ready for smoke test and merge to main.
    Estimated: approx. 6–8 hours (S: 6, M: 1)
    [x] EVAL-001 · main.js: evaluate-prompt IPC handler — spawn Claude, 30s timeout, return JSON scores
    [x] EVAL-002 · preload.js: expose evaluatePrompt via contextBridge
-   [ ] EVAL-003 · EvalPanel.jsx: new self-contained component — loading + scorecard states
+   [x] EVAL-003 · EvalPanel.jsx: new self-contained component — loading + scorecard states
    [ ] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
    [ ] EVAL-005 · EmailReadyState: mount EvalPanel
    [ ] EVAL-006 · WorkflowBuilderDoneState: transcript prop + mount EvalPanel

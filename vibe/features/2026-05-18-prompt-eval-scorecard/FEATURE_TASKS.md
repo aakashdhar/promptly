@@ -87,7 +87,7 @@ Add it near the other generation-related methods (e.g. after `generateRaw`).
 ---
 
 ### EVAL-003 · EvalPanel.jsx: new self-contained eval component
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria, FEATURE_PLAN.md#4-frontend-changes
 - **Dependencies**: EVAL-002
