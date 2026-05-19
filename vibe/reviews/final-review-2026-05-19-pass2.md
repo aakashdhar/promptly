@@ -113,34 +113,37 @@ Security: clean.
 
 ---
 
-## Open P3 carryovers (unchanged from pass 1 — no P3 fixes required)
+## P3 status — post fix(backlog) sweep audit (70a74b5)
+
+All code-fixable P3s were resolved in the `fix(backlog)` sweep commit `70a74b5` (2026-05-19 10:29).
+Remaining items are monitor-only — no code fix is possible without unrelated feature scope.
 
 | ID | File | Finding | Status |
 |----|------|---------|--------|
-| BL-FINAL2-004 | `vibe/CODEBASE.md` | OperationErrorPanel "105 lines" → actual 128 lines | Open |
-| P3-EXP-002 | `src/renderer/components/ExpandedDetailPanel.jsx` | 490 lines — 10 under P1 threshold | Open |
-| P3-WFL-DEL-001 | `src/renderer/components/WorkflowBuilderState.jsx` | × delete btn no hover state | Open |
-| P3-IIFE-001 | `src/renderer/components/EvalPanel.jsx` | IIFE JSX pattern for drift badge scoped consts | Open |
-| P3-IMG2-002 | `src/renderer/hooks/useImageBuilder.js` | generateVariations silent failure, no retry affordance | Open |
-| BL-EMAIL-011 | `src/renderer/App.jsx` | useState ordering cosmetic | Open |
-| P3-EXP-003 | `src/renderer/components/ExpandedDetailPanel.jsx` | 27+ props — boundary layer, all consumed | Open |
+| ~~BL-FINAL2-004~~ | `vibe/CODEBASE.md` | OperationErrorPanel "105 lines" → 128 | ✅ RESOLVED — shows 128 lines |
+| ~~P3-WFL-DEL-001~~ | `WorkflowBuilderState.jsx` | × delete btn no hover | ✅ RESOLVED — onMouseEnter/Leave added |
+| ~~P3-IIFE-001~~ | `EvalPanel.jsx` | driftColor IIFE | ✅ RESOLVED — moved to component scope |
+| ~~P3-IMG2-002~~ | `useImageBuilder.js` | generateVariations silent failure | ✅ RESOLVED — VariationsPanel shows failure message + retry button |
+| ~~BL-EMAIL-011~~ | `App.jsx` | useState ordering | ✅ RESOLVED — all useState before useRef |
+| P3-EXP-002 | `ExpandedDetailPanel.jsx` | 490 lines — monitor | Monitor only |
+| P3-EXP-003 | `ExpandedDetailPanel.jsx` | 27+ props — boundary layer | Monitor only |
 
 ---
 
-## Score calculation
+## Score calculation (corrected)
 
 ```
 Start:                                        10.0
 P0 findings (× 1.0):                          0.0   (0 P0)
-P1 findings (× 0.5):                          0.0   (0 P1 — all pass-1 P1s resolved)
-P2 findings (× 0.2):                          0.0   (0 P2 — all pass-1 P2s resolved)
-P3 findings (× 0.1):                         -0.7   (7 P3 carryovers — unchanged from pass 1)
-Architecture drift violations (× 0.5):        0.0   (0 — IPC table + email state both resolved)
+P1 findings (× 0.5):                          0.0   (0 P1)
+P2 findings (× 0.2):                          0.0   (0 P2)
+P3 findings (× 0.1):                         -0.2   (2 monitor-only P3s — EXP-002, EXP-003)
+Architecture drift violations (× 0.5):        0.0   (0)
 ─────────────────────────────────────────
-Score:                                         9.3 / 10 — Grade A
+Score:                                         9.8 / 10 — Grade A
 ```
 
-Δ from pass 1: +1.9 (P1-001 acceptance resolved −0.5; P1-002 npm fix −0.5; P2-001+P2-002 fixed −0.4; arch drift resolved −0.5 = +1.9 total)
+Corrected: 5 P3s were already resolved in the sweep; only 2 remain as genuine monitor-only items.
 
 ---
 
@@ -149,9 +152,9 @@ Score:                                         9.3 / 10 — Grade A
 ```
 ✅ PASS — Final gate cleared.
 
-P0: 0  |  P1: 0  |  P2: 0  |  P3: 7 (all open carryovers, logged to backlog)
+P0: 0  |  P1: 0  |  P2: 0  |  P3: 2 (monitor-only — ExpandedDetailPanel size + props)
 
-Score: 9.3/10 — Grade A
+Score: 9.8/10 — Grade A
 
 The codebase may be tagged and distributed.
 ```
@@ -163,6 +166,6 @@ The codebase may be tagged and distributed.
 | Severity | Count | Items |
 |----------|-------|-------|
 | P0 | 0 | — |
-| P1 | 0 | All resolved (npm audit fix + D-APP-ORCHESTRATOR acceptance) |
-| P2 | 0 | All resolved (ARCHITECTURE.md IPC table + email state/mode) |
-| P3 | 7 | Monitor-only carryovers — logged to backlog |
+| P1 | 0 | All resolved |
+| P2 | 0 | All resolved |
+| P3 | 2 | Monitor only — ExpandedDetailPanel 490 lines + 27-prop boundary layer |

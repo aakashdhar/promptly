@@ -930,6 +930,6 @@ Final review gate run 2026-05-19. See blocking tasks below.
 ## What just happened
 ✅ Final review gate passed (pass 2) — Score 9.3/10 Grade A — 0 P0, 0 P1, 0 P2. All P1/P2 fixes from pass 1 confirmed. 7 P3 carryovers logged to backlog. Codebase cleared for distribution.
 
-## Final gate — 2026-05-19 (Pass 2)
-✅ PASS — Score 9.3/10 — Grade A — 0 P0, 0 P1, 0 P2 — 7 P3 (monitor only)
+## Final gate — 2026-05-19 (Pass 2 — corrected)
+✅ PASS — Score 9.8/10 — Grade A — 0 P0, 0 P1, 0 P2 — 2 P3 (monitor only)
 → Full report: vibe/reviews/final-review-2026-05-19-pass2.md

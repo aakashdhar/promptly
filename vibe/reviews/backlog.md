@@ -540,13 +540,13 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-FINAL2-004 | `vibe/CODEBASE.md` | OperationErrorPanel row | Stale: "105 lines" → actual 128 lines. | Open (carryover BL-FINAL-003) |
-| P3-EXP-002 | `src/renderer/components/ExpandedDetailPanel.jsx` | 1–490 | 490 lines — 10 under P1 threshold. Monitor. | Open (carryover) |
-| P3-WFL-DEL-001 | `src/renderer/components/WorkflowBuilderState.jsx` | × delete btn | No hover state on × delete. | Open (carryover) |
-| P3-IIFE-001 | `src/renderer/components/EvalPanel.jsx` | IIFE JSX | `driftColor`/`driftBg`/`driftBorder` inside IIFE in JSX — valid but could move to component scope. | Open (carryover BL-EVAL-M-002) |
-| P3-IMG2-002 | `src/renderer/hooks/useImageBuilder.js` | generateVariations | Silent failure — no retry affordance when 0 variations returned. | Open (carryover) |
-| BL-EMAIL-011 | `src/renderer/App.jsx` | 96–97 | `transcriptionError`/`generationError` useState ordering cosmetic. | Open (carryover) |
-| P3-EXP-003 | `src/renderer/components/ExpandedDetailPanel.jsx` | props | 27+ props — boundary layer, all consumed. | Open (carryover) |
+| ~~BL-FINAL2-004~~ | `vibe/CODEBASE.md` | OperationErrorPanel row | Stale: "105 lines" → actual 128 lines. | ✅ RESOLVED — CODEBASE.md already shows 128 lines |
+| P3-EXP-002 | `src/renderer/components/ExpandedDetailPanel.jsx` | 1–490 | 490 lines — 10 under P1 threshold. | Monitor only — no fix possible without feature scope |
+| ~~P3-WFL-DEL-001~~ | `src/renderer/components/WorkflowBuilderState.jsx` | × delete btn | No hover state on × delete. | ✅ RESOLVED — onMouseEnter/Leave added in fix(backlog) 70a74b5 |
+| ~~P3-IIFE-001~~ | `src/renderer/components/EvalPanel.jsx` | IIFE JSX | `driftColor`/`driftBg`/`driftBorder` inside IIFE. | ✅ RESOLVED — moved to component scope in fix(backlog) 70a74b5 |
+| ~~P3-IMG2-002~~ | `src/renderer/hooks/useImageBuilder.js` | generateVariations | Silent failure — no retry affordance. | ✅ RESOLVED — VariationsPanel shows "Variation generation failed. Use the button below to retry." in fix(backlog) 70a74b5 |
+| ~~BL-EMAIL-011~~ | `src/renderer/App.jsx` | 96–97 | `transcriptionError`/`generationError` useState ordering cosmetic. | ✅ RESOLVED — all useState grouped before useRef in fix(backlog) 70a74b5 |
+| P3-EXP-003 | `src/renderer/components/ExpandedDetailPanel.jsx` | props | 27+ props — boundary layer, all consumed. | Monitor only — boundary layer necessity; no action without major refactor |
 
 **Gate: ✅ PASS (pass 2) — 2026-05-19 — Score 9.3/10 — Grade A — 0 P0, 0 P1, 0 P2**
 → Full report: vibe/reviews/final-review-2026-05-19-pass2.md
