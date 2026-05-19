@@ -851,5 +851,9 @@ Feature complete — ready for smoke test and merge to main.
 ## What just happened
 ✅ FEATURE-EVAL-SCORECARD complete 2026-05-19 — All 7 tasks implemented. New "↗ Eval" button on Balanced/Detailed/Concise/Chain/Code/Design/Refine/Polish result screens, Email done screen, and Workflow done screen. EvalPanel fires parallel Claude CLI call on mount, shows loading state, then two-column scorecard (Without Promptly / With Promptly) with score bars, reasons, delta, and verdict badge. Silent failure — button disappears if IPC fails. Build clean, lint 0 errors.
 
+## FEATURE-EVAL-SCORECARD gate — 2026-05-19
+✅ PASS — reviewed 2026-05-19 — Score 9.4/10 (A) — 0 P0, 0 P1 — 2 P2 + 2 P3 logged to backlog
+→ Full report: vibe/reviews/feature-eval-scorecard-review.md
+
 ## What's next
-Smoke test FEATURE-EVAL-SCORECARD across all applicable modes. Then ready for review gate.
+Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm ↗ Eval button, loading state, scorecard render, and silent failure on Image/Video screens.

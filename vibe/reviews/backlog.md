@@ -487,3 +487,22 @@
 | P3-IMG2-001 | src/renderer/utils/promptUtils.js | 46–78 | parseImageAnalysisOutput and parseImageAssemblyOutput are identical implementations. One could delegate to the other. | Open |
 | P3-IMG2-002 | src/renderer/hooks/useImageBuilder.js | 211–226 | generateVariations fails silently — on error, isGeneratingVariations resets to false and 0 variations shown indefinitely. Consider a retry affordance or fallback state. | Open |
 | P3-IMG2-003 | src/renderer/hooks/useImageBuilder.js | 13–161 | buildPhase1Prompt, buildVariationsPrompt, buildPhase2Prompt are pure functions with no test coverage. | Open |
+
+
+---
+
+## From FEATURE-EVAL-SCORECARD Review (2026-05-19) — Score 9.4/10 — Grade A
+
+### P2 — Fix before next distribution
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-EVAL-001 | `main.js` | ~1022 | `child.stdin.end()` missing in evaluate-prompt IPC handler — all other spawn handlers call this; stdin pipe remains open after spawn. Add after `child.stdout.on(...)` setup. | Open |
+| BL-EVAL-002 | `src/renderer/components/EvalPanel.jsx` | 115 | `ScoreColumn` is a second non-exported component defined in EvalPanel.jsx — violates ARCHITECTURE.md "one component per file" rule. Inline JSX or extract to `EvalScoreColumn.jsx`. | Open |
+
+### P3 — Monitor
+
+| ID | File | Line | Finding | Status |
+|----|------|------|---------|--------|
+| BL-EVAL-003 | `src/renderer/components/EvalPanel.jsx` | 3–17 | `scoreColor` (5 branches) and `verdict` (5 branches) pure helper functions have no unit tests. Export and add to `tests/utils.test.js` if test coverage is desired. | Open |
+| BL-EVAL-004 | `src/renderer/components/EvalPanel.jsx` | 138 | `key={i}` array-index key in reasons list. Static list with no reorder risk — no correctness issue, minor React best-practice gap. | Open |
