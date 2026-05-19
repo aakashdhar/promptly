@@ -178,7 +178,7 @@ export default function ExpandedPromptReadyContent({
           </button>
         </div>
         <div style={{ padding: '0 24px 16px' }}>
-          <EvalPanel transcript={transcript} prompt={evalPrompt} />
+          <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} />
         </div>
       </div>
     </div>
