@@ -18,18 +18,18 @@ export default function EvalPanel({ transcript, prompt }) {
       .catch(() => setEvalFailed(true))
   }, [])
 
-  if (evalFailed) return null
-
   const delta = evalData ? evalData.promptlyScore - evalData.rawScore : 0
   const deltaLabel = delta >= 0 ? `Δ +${delta} points` : `Δ ${delta} points`
 
   return (
     <div>
       <button
-        onClick={() => setIsOpen(v => !v)}
+        onClick={evalFailed ? undefined : () => setIsOpen(v => !v)}
         style={{
-          fontSize: '12px', color: 'rgba(255,255,255,0.50)',
-          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: '12px',
+          color: evalFailed ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.50)',
+          background: 'none', border: 'none',
+          cursor: evalFailed ? 'default' : 'pointer',
           padding: 0, WebkitAppRegion: 'no-drag',
         }}
       >
@@ -38,8 +38,8 @@ export default function EvalPanel({ transcript, prompt }) {
 
       <div style={{
         overflow: 'hidden',
-        maxHeight: isOpen ? '500px' : '0',
-        opacity: isOpen ? 1 : 0,
+        maxHeight: isOpen && !evalFailed ? '500px' : '0',
+        opacity: isOpen && !evalFailed ? 1 : 0,
         transition: 'max-height 150ms ease, opacity 150ms ease',
       }}>
         <div style={{

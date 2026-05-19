@@ -11,6 +11,7 @@ import WorkflowBuilderState from './WorkflowBuilderState.jsx'
 import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 import ExpandedErrorContent from './ExpandedErrorContent.jsx'
 import EmailReadyState from './EmailReadyState.jsx'
+import EvalPanel from './EvalPanel.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -294,6 +295,13 @@ export default function ExpandedDetailPanel({
               </div>
             )}
           </div>
+
+          {/* Eval scorecard for history entry */}
+          {selected.transcript && (
+            <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
+              <EvalPanel transcript={selected.transcript} prompt={selected.prompt} />
+            </div>
+          )}
 
           {/* Entry action buttons */}
           <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', borderTop: '0.5px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
