@@ -68,7 +68,7 @@ Updated example JSON output to include in the prompt:
 ---
 
 ### EVAL-M-002 · Render dimension breakdown in EvalPanel
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#acceptance-criteria, FEATURE_PLAN.md#4-frontend-changes
 - **Dependencies**: EVAL-M-001 (needs new fields in evalData)

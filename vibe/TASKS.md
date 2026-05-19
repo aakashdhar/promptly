@@ -864,14 +864,14 @@ Run smoke test across all applicable modes (Balanced, Email, Workflow). Confirm 
 > Spec: vibe/features/2026-05-19-eval-rich-metrics/ | Added: 2026-05-19
 > Estimated: approx. 5–7 hours (S: 1, M: 2)
    [x] EVAL-M-001 · Update eval system prompt with new JSON fields — add dimensions/gap/intentDrift/intentDriftLabel to evalSystemPrompt in main.js
-   [ ] EVAL-M-002 · Render dimension breakdown in EvalPanel — 4 rows (clarity/specificity/context/actionability), 2 mini bars each (INPUT A grey, INPUT B green)
+   [x] EVAL-M-002 · Render dimension breakdown in EvalPanel — 4 rows (clarity/specificity/context/actionability), 2 mini bars each (INPUT A grey, INPUT B green)
    [ ] EVAL-M-003 · Render gap + intent drift badge + token efficiency badge — amber gap block, coloured pill badge, word count ratio + delta pts
    → Full specs: vibe/features/2026-05-19-eval-rich-metrics/FEATURE_TASKS.md (agent use)
 
 ## What just happened
-✅ EVAL-M-001 · evalSystemPrompt extended — dimensions (4 sub-scores per version), gap (what both miss), intentDrift (none/minor/significant), intentDriftLabel (short phrase). All fields in example JSON. Dimension scoring rules, gap specificity rule, and intentDrift enum documented explicitly in prompt.
+✅ EVAL-M-002 · Dimension breakdown rendered in EvalPanel — 4 rows (Clarity / Specificity / Context / Actionability) each with INPUT A bar (grey) + INPUT B bar (green via evalScoreColor), scores clamped 0–100, section hidden when evalData.dimensions absent.
 
 ## What's next
-⬜ EVAL-M-002 · Render dimension breakdown in EvalPanel
-   When done: eval panel shows 4 labelled rows (Clarity / Specificity / Context / Actionability), each with two mini progress bars side by side.
+⬜ EVAL-M-003 · Render gap + intent drift badge + token efficiency badge
+   When done: amber gap coaching block, coloured intent drift pill (green/amber/red), and word count ratio badge all appear in the eval panel.
 Say "next" to begin.
