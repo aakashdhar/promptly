@@ -429,6 +429,7 @@ export default function ExpandedDetailPanel({
 
       {currentState === 'WORKFLOW_BUILDER_DONE' && workflowBuilderProps && (
         <WorkflowBuilderDoneState
+          transcript={thinkTranscript}
           workflowAnalysis={workflowBuilderProps.workflowAnalysis}
           workflowJson={workflowBuilderProps.workflowJson}
           onEdit={workflowBuilderProps.onEdit}
