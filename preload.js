@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   generateRaw: (systemPrompt) =>
     ipcRenderer.invoke('generate-raw', { systemPrompt }),
+  evaluatePrompt: (args) => ipcRenderer.invoke('evaluate-prompt', args),
 
   saveFile: (opts) =>
     ipcRenderer.invoke('save-file', opts),
