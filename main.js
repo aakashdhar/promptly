@@ -995,6 +995,62 @@ app.whenReady().then(async () => {
     });
   });
 
+  ipcMain.handle('evaluate-prompt', async (_event, { transcript, prompt }) => {
+    if (!claudePath) return { success: false };
+    if (!transcript || !prompt) return { success: false };
+
+    const evalSystemPrompt = `You are a prompt quality scorer. You will evaluate two text inputs.
+
+RAW: A raw spoken transcription (unpolished, as-spoken by the user).
+STRUCTURED: A version refined by the Promptly AI assistant.
+
+Score each from 0 to 100 on how clearly an AI assistant would understand the user's intent and produce a high-quality, accurate response. Consider: clarity of intent, specificity, completeness of context, actionability.
+
+RAW:
+"${transcript}"
+
+STRUCTURED:
+"${prompt}"
+
+Respond ONLY with a JSON object, no markdown fences, no explanation:
+{"rawScore":75,"promptlyScore":92,"rawReasons":["Reason one","Reason two","Reason three"],"promptlyReasons":["Reason one","Reason two","Reason three"]}
+
+Each reason must be 5–9 words. rawReasons explain why the RAW score is what it is. promptlyReasons explain why the STRUCTURED score is what it is.`;
+
+    return new Promise((resolve) => {
+      let stdout = '';
+      let timedOut = false;
+      const child = spawn(claudePath, ['-p', evalSystemPrompt], { env: makeClaudeEnv(claudePath) });
+
+      const timer = setTimeout(() => {
+        timedOut = true;
+        child.kill();
+        resolve({ success: false });
+      }, 30000);
+
+      child.stdout.on('data', (data) => { stdout += data.toString(); });
+      child.on('close', () => {
+        if (timedOut) return;
+        clearTimeout(timer);
+        try {
+          const raw = stdout.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.rawScore === 'number' && typeof parsed.promptlyScore === 'number') {
+            resolve({ success: true, data: parsed });
+          } else {
+            resolve({ success: false });
+          }
+        } catch {
+          resolve({ success: false });
+        }
+      });
+      child.on('error', () => {
+        clearTimeout(timer);
+        resolve({ success: false });
+      });
+    });
+  });
+
   ipcMain.handle('copy-to-clipboard', (_event, { text }) => {
     clipboard.writeText(text);
     return { success: true };
