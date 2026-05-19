@@ -422,7 +422,7 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-FINAL-001 | src/renderer/App.jsx | 1–724 | 724 lines — 224 over threshold. useOperationHandlers extracted (756→724). Residual: handleTypingSubmit+handleRegenerate (~useTextInput), handleExpand/Collapse (~useWindowLayout). | Open — tracked as BL-EMAIL-003 |
+| BL-FINAL-001 | src/renderer/App.jsx | 1–724 | 724 lines — 224 over threshold. useOperationHandlers extracted (756→724). Residual: handleTypingSubmit+handleRegenerate (~useTextInput), handleExpand/Collapse (~useWindowLayout). | ✅ RESOLVED — all 10 hooks extracted; 719 lines accepted as irreducible orchestrator; D-APP-ORCHESTRATOR in DECISIONS.md 2026-05-19 |
 
 ### P2 — Fix before next distribution
 
@@ -526,15 +526,15 @@
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-FINAL2-001 | `package.json` (devDep) | — | 2 moderate vulnerabilities: `ip-address <=10.1.0` (XSS in HTML-emitting methods) + `brace-expansion` (dep chain). Both in electron-builder devDep chain only — NOT in packaged .dmg. `npm audit fix` resolves without breaking changes. | Open — run `npm audit fix` before release tag |
-| BL-EMAIL-003 | `src/renderer/App.jsx` | 1–719 | 719 lines — 219 over threshold. All extractable hooks applied (useOperationHandlers, useTextInput, useWindowLayout, useRecording, useKeyboardShortcuts, usePolishMode, useIteration, useImageBuilder, useVideoBuilder, useWorkflowBuilder). Residual is irreducible orchestrator. Recommend DECISIONS.md acceptance entry + downgrade to P3. | Open — pending RFX-FINAL-2-002 acceptance decision |
+| BL-FINAL2-001 | `package.json` (devDep) | — | 2 moderate vulnerabilities: `ip-address <=10.1.0` (XSS in HTML-emitting methods) + `brace-expansion` (dep chain). Both in electron-builder devDep chain only — NOT in packaged .dmg. `npm audit fix` resolves without breaking changes. | ✅ RESOLVED — `npm audit fix` run 2026-05-19, 0 vulnerabilities |
+| BL-EMAIL-003 | `src/renderer/App.jsx` | 1–719 | 719 lines — 219 over threshold. All extractable hooks applied (10 hooks). Residual is irreducible orchestrator. | ✅ RESOLVED — accepted as architectural reality; D-APP-ORCHESTRATOR in DECISIONS.md 2026-05-19 |
 
 ### P2 — Fix before next distribution
 
 | ID | File | Line | Finding | Status |
 |----|------|------|---------|--------|
-| BL-FINAL2-002 | `vibe/ARCHITECTURE.md` | IPC table (148–186) | 16 IPC channels registered in main.js absent from ARCHITECTURE.md table: `evaluate-prompt`, `check-claude`, `check-ffmpeg`, `check-whisper`, `check-whisper-model`, `download-whisper-model`, `check-setup-complete`, `set-setup-complete`, `reset-setup-complete`, `reopen-wizard`, `retry-transcription`, `retry-generation`, `set-last-prompt`, `whisper-download-progress`, `transcription-slow-warning`, `generation-slow-warning`. Added by ONBD + EVAL + QuickCopy features. | Open |
-| BL-FINAL2-003 | `vibe/ARCHITECTURE.md` | 81, ~88–94, ~314–328 | State count "17 total" → should be 18 (EMAIL_READY added by FEATURE-EMAIL-MODE). State diagram missing email-mode transition. Prompt modes table missing email row (teal accent, always-expanded). | Open |
+| BL-FINAL2-002 | `vibe/ARCHITECTURE.md` | IPC table (148–186) | 16 IPC channels registered in main.js absent from ARCHITECTURE.md table: `evaluate-prompt`, `check-claude`, `check-ffmpeg`, `check-whisper`, `check-whisper-model`, `download-whisper-model`, `check-setup-complete`, `set-setup-complete`, `reset-setup-complete`, `reopen-wizard`, `retry-transcription`, `retry-generation`, `set-last-prompt`, `whisper-download-progress`, `transcription-slow-warning`, `generation-slow-warning`. Added by ONBD + EVAL + QuickCopy features. | ✅ RESOLVED — all 16 added to ARCHITECTURE.md IPC table 2026-05-19 |
+| BL-FINAL2-003 | `vibe/ARCHITECTURE.md` | 81, ~88–94, ~314–328 | State count "17 total" → should be 18 (EMAIL_READY added by FEATURE-EMAIL-MODE). State diagram missing email-mode transition. Prompt modes table missing email row (teal accent, always-expanded). | ✅ RESOLVED — state count 17→18, email transition added to diagram, email row added to modes table 2026-05-19 |
 
 ### P3 — Monitor
 

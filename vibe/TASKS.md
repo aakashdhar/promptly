@@ -884,17 +884,15 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔴 Review fixes required — Final gate 2026-05-19 (0/2)
-Must complete before deploy clearance.
-[ ] RFX-FINAL-2-001 · Run `npm audit fix` — resolves 2 moderate devDep vulns (ip-address + brace-expansion)
-                      Command: `npm audit fix && npm test` — confirm 45 tests still pass
-[ ] RFX-FINAL-2-002 · Document App.jsx orchestrator acceptance in DECISIONS.md — add entry
-                      explaining that all hooks extracted, 719 lines is the irreducible orchestrator,
-                      accepting as architectural reality; downgrade BL-EMAIL-003 to P3 monitor in backlog
+## ✅ Review fixes — Final gate 2026-05-19 (4/4 COMPLETE)
+[x] RFX-FINAL-2-001 · `npm audit fix` — 0 vulnerabilities, 45/45 tests pass
+[x] RFX-FINAL-2-002 · D-APP-ORCHESTRATOR in DECISIONS.md — App.jsx 719 lines accepted; BL-EMAIL-003 resolved
+[x] RFX-FINAL-2-003 · ARCHITECTURE.md IPC table — 16 missing channels added (ONBD + EVAL + QuickCopy + Email)
+[x] RFX-FINAL-2-004 · ARCHITECTURE.md — state count 17→18, EMAIL_READY diagram + email modes table row
 → Full report: vibe/reviews/final-review-2026-05-19.md
 
 ## Final gate — 2026-05-19
-🔴 BLOCKED — 2 P1 issues — Score 7.4/10 (B) — 0 P0, 2 P1, 2 P2, 7 P3
+✅ PASS (post-fix) — 0 P0, 0 P1, 0 P2 — all P1/P2 fixes applied — ready for distribution
 → Full report: vibe/reviews/final-review-2026-05-19.md
 
 ---
