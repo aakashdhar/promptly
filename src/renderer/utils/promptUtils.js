@@ -72,7 +72,7 @@ export function evalScoreColor(score, isPromptly) {
 }
 
 export function evalVerdict(delta) {
-  if (delta >= 30) return '🚀 Big upgrade'
+  if (delta >= 30) return '⇑ Big upgrade'
   if (delta >= 15) return '↑ Clear improvement'
   if (delta >= 5)  return '↗ Modest improvement'
   if (delta > -5)  return '→ Minimal difference'

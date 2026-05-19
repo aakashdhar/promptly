@@ -270,8 +270,8 @@ describe('evalScoreColor', () => {
 
 describe('evalVerdict', () => {
   it('returns big upgrade for delta >= 30', () => {
-    expect(evalVerdict(30)).toBe('🚀 Big upgrade')
-    expect(evalVerdict(50)).toBe('🚀 Big upgrade')
+    expect(evalVerdict(30)).toBe('⇑ Big upgrade')
+    expect(evalVerdict(50)).toBe('⇑ Big upgrade')
   })
   it('returns clear improvement for delta 15–29', () => {
     expect(evalVerdict(15)).toBe('↑ Clear improvement')
