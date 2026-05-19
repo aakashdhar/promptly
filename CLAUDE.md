@@ -540,3 +540,47 @@ Never: modify `s1UseManualPath()` · fix other bugs noticed · add runtime npm p
 **Session startup:** Read CLAUDE.md · CODEBASE.md · ARCHITECTURE.md · TASKS.md · BUG_SPEC.md · BUG_TASKS.md
 **Between tasks:** "next" → lint → code commit → doc commit → state next task → confirm.
 ---
+
+### Active Feature: FEATURE-EVAL-METRICS
+> Folder: vibe/features/2026-05-19-eval-rich-metrics/ | Added: 2026-05-19
+
+**Feature summary**: Extends EvalPanel with 4 rich metrics — dimension breakdown (4 sub-scores), gap coaching line, intent drift badge, token efficiency badge. All sourced from Claude JSON; EvalPanel degrades gracefully when fields absent.
+**Files in scope**: `main.js`, `src/renderer/components/EvalPanel.jsx`, `vibe/CODEBASE.md`, `vibe/DECISIONS.md`, `vibe/TASKS.md`
+**Files out of scope**: App.jsx, preload.js, ExpandedDetailPanel.jsx, ExpandedPromptReadyContent.jsx, EmailReadyState.jsx, WorkflowBuilderDoneState.jsx, promptUtils.js, tests/utils.test.js, all other files
+
+**Conventions** (from vibe/CODEBASE.md + vibe/ARCHITECTURE.md):
+- One component per file — EvalPanel.jsx is the only component in that file. No sub-components extracted to separate files.
+- Inline styles for dynamic/stateful values (bar widths, badge colours).
+- No dangerouslySetInnerHTML — JSX text nodes only.
+- No emoji in any new UI text (font characters + Unicode only).
+- All new sections gated: `evalData.fieldName && (...)` — graceful degradation.
+- evalScoreColor already imported in EvalPanel — do NOT re-import.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md patterns · run lint after every change ·
+        keep changes additive · update CODEBASE.md · update TASKS.md after every task
+
+Ask first: touching any file not in scope list
+Never: extract sub-components to new files · change existing IPC handler logic · touch any out-of-scope file
+
+**Session startup:**
+1. Read CLAUDE.md · 2. Read vibe/CODEBASE.md · 3. Read vibe/ARCHITECTURE.md
+4. Read vibe/SPEC_INDEX.md · 5. Read vibe/TASKS.md · 6. Read FEATURE_TASKS.md
+7. Confirm task before writing any code
+
+**Between tasks:** "next" triggers this exact sequence — no deviations:
+1. Run lint: `npm run lint 2>&1 | tail -10`
+2. Stage and commit code changes:
+   ```
+   git add main.js src/renderer/components/EvalPanel.jsx
+   git commit -m "feat(eval-metrics): [TASK-ID] — description"
+   ```
+3. Stage and commit doc updates separately:
+   ```
+   git add vibe/features/2026-05-19-eval-rich-metrics/FEATURE_TASKS.md vibe/TASKS.md vibe/DECISIONS.md vibe/CODEBASE.md
+   git commit -m "docs(FEATURE_TASKS+TASKS): mark [TASK-ID] done — eval-metrics"
+   ```
+4. Re-read TASKS.md silently → state next task in plain English → confirm.
+---

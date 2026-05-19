@@ -1747,6 +1747,15 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Deviations from BUG_PLAN.md**: none
 ---
 
+---
+
+## — Feature Start: FEATURE-EVAL-METRICS — 2026-05-19
+> Folder: vibe/features/2026-05-19-eval-rich-metrics/
+> Extends EvalPanel with 4 additional metrics: dimension breakdown (clarity/specificity/context/actionability), gap coaching line, intent drift badge, token efficiency badge.
+> Tasks: EVAL-M-001, EVAL-M-002, EVAL-M-003 | Estimated: ~5–7 hours
+
+---
+
 ### D-EVAL-001 — Prompt Eval Scorecard — 2026-05-19
 - **Date**: 2026-05-19 · **Type**: feature
 - **Folder**: vibe/features/2026-05-18-prompt-eval-scorecard/
