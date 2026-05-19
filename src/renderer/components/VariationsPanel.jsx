@@ -31,6 +31,11 @@ export default function VariationsPanel({ variations, selectedVariation, isLoadi
             <div className="skeleton-pulse" style={{ height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', width: '40%', marginTop: '4px' }} />
           </div>
         ))}
+        {!isLoading && variations.length === 0 && (
+          <div style={{ padding: '24px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '12px', lineHeight: 1.6 }}>
+            Variation generation failed.<br />Use the button below to retry.
+          </div>
+        )}
         {!isLoading && variations.map(v => {
           const isSelected = v.id === selectedVariation
           return (

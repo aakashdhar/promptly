@@ -60,19 +60,23 @@ export function parseImageAnalysisOutput(raw) {
 }
 
 export function parseImageAssemblyOutput(raw) {
-  if (!raw) return null
-  try {
-    const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-    try {
-      return JSON.parse(stripped)
-    } catch {
-      const match = stripped.match(/\{[\s\S]*\}/)
-      if (match) return JSON.parse(match[0])
-      return null
-    }
-  } catch {
-    return null
-  }
+  return parseImageAnalysisOutput(raw)
+}
+
+export function evalScoreColor(score, isPromptly) {
+  if (isPromptly) return 'rgba(48,209,88,0.85)'
+  if (score >= 80) return 'rgba(48,209,88,0.85)'
+  if (score >= 60) return 'rgba(48,209,88,0.55)'
+  if (score >= 40) return 'rgba(255,159,10,0.85)'
+  return 'rgba(255,69,58,0.85)'
+}
+
+export function evalVerdict(delta) {
+  if (delta >= 30) return '🚀 Big upgrade'
+  if (delta >= 15) return '↑ Clear improvement'
+  if (delta >= 5)  return '↗ Modest improvement'
+  if (delta > -5)  return '→ Minimal difference'
+  return '↓ Raw was clearer'
 }
 
 export function getModeTagStyle(mode) {

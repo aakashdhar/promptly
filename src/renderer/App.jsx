@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import useMode from './hooks/useMode.js'
 import usePolishMode, { parsePolishOutput } from './hooks/usePolishMode.js'
 import useWindowResize from './hooks/useWindowResize.js'
+import useWindowLayout from './hooks/useWindowLayout.js'
 import useRecording from './hooks/useRecording.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import useIteration from './hooks/useIteration.js'
@@ -81,8 +82,6 @@ export default function App() {
   const [displayState, setDisplayState] = useState(STATES.IDLE)
   const [stateClass, setStateClass] = useState('')
   const [generatedPrompt, setGeneratedPrompt] = useState('')
-  const [isExpanded, setIsExpanded] = useState(false)
-  const isExpandedRef = useRef(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [thinkTranscript, setThinkTranscript] = useState('')
   const [thinkingLabel, setThinkingLabel] = useState('')
@@ -90,6 +89,10 @@ export default function App() {
   const [thinkingPhase, setThinkingPhase] = useState(1)
   const [emailOutput, setEmailOutput] = useState(null)
   const [emailSaved, setEmailSaved] = useState(false)
+  const [transcriptionError, setTranscriptionError] = useState(null)
+  const [generationError, setGenerationError] = useState(null)
+  const [transcriptionSlow, setTranscriptionSlow] = useState(false)
+  const [generationSlow, setGenerationSlow] = useState(false)
 
   const originalTranscript = useRef('')
   const stateRef = useRef(STATES.IDLE)
@@ -97,16 +100,32 @@ export default function App() {
   const generatedPromptRef = useRef('')
   const isIterated = useRef(false)
   const transitionTimerRef = useRef(null)
-  const [transcriptionError, setTranscriptionError] = useState(null)
-  const [generationError, setGenerationError] = useState(null)
-  const [transcriptionSlow, setTranscriptionSlow] = useState(false)
-  const [generationSlow, setGenerationSlow] = useState(false)
   const transitionRef = useRef(null)
+  const animateToStateRef = useRef(null)
   const abortRef = useRef(false)
   const emailHistoryIdRef = useRef(null)
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
+
+  const {
+    isExpanded,
+    isExpandedRef,
+    handleExpand,
+    handleCollapse,
+    openHistory,
+    closeHistory,
+    openSettings,
+    closeSettings,
+  } = useWindowLayout({
+    animateToStateRef,
+    stateRef,
+    setCurrentState,
+    prevStateRef,
+    transitionRef,
+    STATES,
+    STATE_HEIGHTS,
+  })
 
   // POLISH-001: animate between states
   function animateToState(newState) {
@@ -121,6 +140,7 @@ export default function App() {
       }, 200)
     }, 120)
   }
+  animateToStateRef.current = animateToState
 
   useEffect(() => {
     // Skip IDLE resize when mode auto-expands on mount — handleExpand fires directly
@@ -160,25 +180,6 @@ export default function App() {
       window.electronAPI.updateMenuBarState?.(newState)
     }
     animateToState(newState)
-  }
-
-  function handleExpand() {
-    isExpandedRef.current = true
-    setIsExpanded(true)
-    if (window.electronAPI) window.electronAPI.setWindowSize(1100, STATE_HEIGHTS.EXPANDED)
-  }
-
-  function handleCollapse() {
-    isExpandedRef.current = false
-    setIsExpanded(false)
-    stateRef.current = STATES.IDLE
-    setCurrentState(STATES.IDLE)
-    if (window.electronAPI) {
-      window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
-      window.electronAPI.setWindowButtonsVisible(true)
-      window.electronAPI.updateMenuBarState?.(STATES.IDLE)
-    }
-    animateToState(STATES.IDLE)
   }
 
   transitionRef.current = transition
@@ -442,37 +443,6 @@ Return ONLY valid JSON:
     phase: thinkingPhase,
     isActive: currentState === STATES.THINKING,
   })
-
-  function openHistory() {
-    isExpandedRef.current = false
-    setIsExpanded(false)
-    prevStateRef.current = stateRef.current
-    if (window.electronAPI) {
-      window.electronAPI.setWindowSize(746, STATE_HEIGHTS.HISTORY)
-      window.electronAPI.setWindowButtonsVisible(true)
-      window.electronAPI.updateMenuBarState?.(STATES.HISTORY)
-    }
-    setCurrentState(STATES.HISTORY)
-    stateRef.current = STATES.HISTORY
-    animateToState(STATES.HISTORY)
-  }
-  function closeHistory() {
-    if (window.electronAPI) {
-      window.electronAPI.setWindowSize(520, STATE_HEIGHTS.IDLE)
-      window.electronAPI.setWindowButtonsVisible(true)
-      window.electronAPI.updateMenuBarState?.(STATES.IDLE)
-    }
-    setCurrentState(STATES.IDLE)
-    stateRef.current = STATES.IDLE
-    animateToState(STATES.IDLE)
-  }
-  function openSettings() {
-    prevStateRef.current = stateRef.current
-    transition(STATES.SETTINGS)
-  }
-  function closeSettings() {
-    transition(prevStateRef.current || STATES.IDLE)
-  }
 
   useEffect(() => {
     if (!window.electronAPI) return

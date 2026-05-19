@@ -302,6 +302,8 @@ export default function WorkflowBuilderState({
                   {nodes.length > 1 && (
                     <button
                       onClick={() => onDeleteNode(node.id)}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,69,58,0.7)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)' }}
                       style={{
                         fontSize: 14, lineHeight: 1,
                         color: 'rgba(255,255,255,0.2)',
@@ -310,6 +312,7 @@ export default function WorkflowBuilderState({
                         WebkitAppRegion: 'no-drag',
                         padding: '0 2px',
                         flexShrink: 0,
+                        transition: 'color 120ms ease',
                       }}
                     >
                       ×

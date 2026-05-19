@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput } from '../src/renderer/utils/promptUtils.js'
+import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict } from '../src/renderer/utils/promptUtils.js'
 import { formatTime } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 
@@ -242,5 +242,52 @@ describe('parsePolishOutput', () => {
     const raw = 'POLISHED:\n  Has leading/trailing whitespace  \n\nCHANGES:\n'
     const result = parsePolishOutput(raw)
     expect(result.polished).toBe('Has leading/trailing whitespace')
+  })
+})
+
+describe('evalScoreColor', () => {
+  it('always returns green for promptly', () => {
+    expect(evalScoreColor(30, true)).toBe('rgba(48,209,88,0.85)')
+    expect(evalScoreColor(0, true)).toBe('rgba(48,209,88,0.85)')
+  })
+  it('returns green for raw score >= 80', () => {
+    expect(evalScoreColor(80, false)).toBe('rgba(48,209,88,0.85)')
+    expect(evalScoreColor(100, false)).toBe('rgba(48,209,88,0.85)')
+  })
+  it('returns muted green for raw score 60–79', () => {
+    expect(evalScoreColor(60, false)).toBe('rgba(48,209,88,0.55)')
+    expect(evalScoreColor(79, false)).toBe('rgba(48,209,88,0.55)')
+  })
+  it('returns amber for raw score 40–59', () => {
+    expect(evalScoreColor(40, false)).toBe('rgba(255,159,10,0.85)')
+    expect(evalScoreColor(59, false)).toBe('rgba(255,159,10,0.85)')
+  })
+  it('returns red for raw score < 40', () => {
+    expect(evalScoreColor(39, false)).toBe('rgba(255,69,58,0.85)')
+    expect(evalScoreColor(0, false)).toBe('rgba(255,69,58,0.85)')
+  })
+})
+
+describe('evalVerdict', () => {
+  it('returns big upgrade for delta >= 30', () => {
+    expect(evalVerdict(30)).toBe('🚀 Big upgrade')
+    expect(evalVerdict(50)).toBe('🚀 Big upgrade')
+  })
+  it('returns clear improvement for delta 15–29', () => {
+    expect(evalVerdict(15)).toBe('↑ Clear improvement')
+    expect(evalVerdict(29)).toBe('↑ Clear improvement')
+  })
+  it('returns modest improvement for delta 5–14', () => {
+    expect(evalVerdict(5)).toBe('↗ Modest improvement')
+    expect(evalVerdict(14)).toBe('↗ Modest improvement')
+  })
+  it('returns minimal difference for delta -4 to 4', () => {
+    expect(evalVerdict(0)).toBe('→ Minimal difference')
+    expect(evalVerdict(-4)).toBe('→ Minimal difference')
+    expect(evalVerdict(4)).toBe('→ Minimal difference')
+  })
+  it('returns raw was clearer for delta <= -5', () => {
+    expect(evalVerdict(-5)).toBe('↓ Raw was clearer')
+    expect(evalVerdict(-20)).toBe('↓ Raw was clearer')
   })
 })

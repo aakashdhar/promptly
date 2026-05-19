@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react'
 import EvalPanel from './EvalPanel.jsx'
 
-const TEAL_FULL = 'rgba(20,184,166,1)'
 const TEAL_85 = 'rgba(20,184,166,0.85)'
 const TEAL_60 = 'rgba(20,184,166,0.6)'
 const TEAL_12 = 'rgba(20,184,166,0.12)'

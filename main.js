@@ -1021,6 +1021,7 @@ Each reason must be 5–9 words. rawReasons explain why the RAW score is what it
       let stdout = '';
       let timedOut = false;
       const child = spawn(claudePath, ['-p', evalSystemPrompt], { env: makeClaudeEnv(claudePath) });
+      child.stdin.end();
 
       const timer = setTimeout(() => {
         timedOut = true;
