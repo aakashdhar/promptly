@@ -85,9 +85,20 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
                   </div>
                 ))}
               </div>
+              {evalData.critique && (
+                <div style={{
+                  marginTop: 12, paddingTop: 10,
+                  borderTop: '0.5px solid rgba(255,255,255,0.06)',
+                  fontSize: 12, color: 'rgba(255,255,255,0.45)',
+                  fontStyle: 'italic', lineHeight: 1.6,
+                }}>
+                  {evalData.critique}
+                </div>
+              )}
+
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                marginTop: 12, paddingTop: 10,
+                marginTop: 10, paddingTop: 10,
                 borderTop: '0.5px solid rgba(255,255,255,0.06)',
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>

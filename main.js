@@ -999,23 +999,39 @@ app.whenReady().then(async () => {
     if (!claudePath) return { success: false };
     if (!transcript || !prompt) return { success: false };
 
-    const evalSystemPrompt = `You are a prompt quality scorer. You will evaluate two text inputs.
+    const evalSystemPrompt = `You are a rigorous prompt quality evaluator. Score two versions of the same user request.
 
-RAW: A raw spoken transcription (unpolished, as-spoken by the user).
-STRUCTURED: A version refined by the Promptly AI assistant.
+INPUT A: The user's original spoken input, unedited.
+INPUT B: A reformatted version produced by an AI assistant.
 
-Score each from 0 to 100 on how clearly an AI assistant would understand the user's intent and produce a high-quality, accurate response. Consider: clarity of intent, specificity, completeness of context, actionability.
+Score each 0–100 on how well an AI model would understand the intent and produce a high-quality, accurate response. Evaluate on:
+- Intent clarity: Is the goal unambiguous and actionable?
+- Specificity: Are requirements concrete, not vague?
+- Context: Is relevant background included?
+- Constraints: Are preferences, limits, or edge cases specified?
+- Output guidance: Does it define what a good response looks like?
 
-RAW:
+Be honest and strict. INPUT B is NOT automatically better. Penalise it if it:
+- Adds verbose framing or filler that contributes nothing
+- Dilutes or subtly shifts the user's actual intent
+- Is longer without being more precise or useful
+- Over-structures a simple request that was already clear
+
+If INPUT A communicates the intent more directly and concisely, score it higher.
+
+INPUT A:
 "${transcript}"
 
-STRUCTURED:
+INPUT B:
 "${prompt}"
 
-Respond ONLY with a JSON object, no markdown fences, no explanation:
-{"rawScore":75,"promptlyScore":92,"rawReasons":["Reason one","Reason two","Reason three"],"promptlyReasons":["Reason one","Reason two","Reason three"]}
+Respond ONLY with valid JSON, no markdown fences, no explanation:
+{"rawScore":72,"promptlyScore":85,"rawReasons":["Missing output format and length constraints","Intent clear but role context absent","No examples to anchor expected response style"],"promptlyReasons":["Role and output format clearly specified","Adds useful context that narrows the task","Still lacks concrete examples or success criteria"],"critique":"Adds useful structure but the role framing is generic and the core ask needed only one extra constraint to land."}
 
-Each reason must be 5–9 words. rawReasons explain why the RAW score is what it is. promptlyReasons explain why the STRUCTURED score is what it is.`;
+Rules:
+- rawReasons: exactly 3 items, each 8–14 words, honest about both weaknesses AND strengths
+- promptlyReasons: exactly 3 items, same length, include real flaws if present
+- critique: one sentence, 10–25 words, honest net verdict on INPUT B — no flattery`;
 
     return new Promise((resolve) => {
       let stdout = '';
