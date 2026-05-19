@@ -840,7 +840,7 @@ Feature complete — ready for smoke test and merge to main.
    [x] EVAL-001 · main.js: evaluate-prompt IPC handler — spawn Claude, 30s timeout, return JSON scores
    [x] EVAL-002 · preload.js: expose evaluatePrompt via contextBridge
    [x] EVAL-003 · EvalPanel.jsx: new self-contained component — loading + scorecard states
-   [ ] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
+   [x] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
    [ ] EVAL-005 · EmailReadyState: mount EvalPanel
    [ ] EVAL-006 · WorkflowBuilderDoneState: transcript prop + mount EvalPanel
    [ ] EVAL-007 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md + CLAUDE.md
