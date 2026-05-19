@@ -842,7 +842,7 @@ Feature complete — ready for smoke test and merge to main.
    [x] EVAL-003 · EvalPanel.jsx: new self-contained component — loading + scorecard states
    [x] EVAL-004 · ExpandedPromptReadyContent: transcript prop + mount EvalPanel
    [x] EVAL-005 · EmailReadyState: mount EvalPanel
-   [ ] EVAL-006 · WorkflowBuilderDoneState: transcript prop + mount EvalPanel
+   [x] EVAL-006 · WorkflowBuilderDoneState: transcript prop + mount EvalPanel
    [ ] EVAL-007 · Docs: CODEBASE.md + DECISIONS.md + TASKS.md + CLAUDE.md
    → Full specs: vibe/features/2026-05-18-prompt-eval-scorecard/FEATURE_TASKS.md (agent use)
 

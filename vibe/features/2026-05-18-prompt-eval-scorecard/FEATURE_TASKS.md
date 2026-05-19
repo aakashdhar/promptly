@@ -296,7 +296,7 @@ Display delta as: `delta >= 0 ? \`Δ +${delta} points\` : \`Δ ${delta} points\`
 ---
 
 ### EVAL-006 · WorkflowBuilderDoneState: add transcript prop + mount EvalPanel
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#5-integration-points
 - **Dependencies**: EVAL-003
