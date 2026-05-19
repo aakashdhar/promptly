@@ -23,6 +23,12 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
   const delta = evalData ? evalData.promptlyScore - evalData.rawScore : 0
   const deltaLabel = delta >= 0 ? `Δ +${delta} points` : `Δ ${delta} points`
 
+  const rawWords = (transcript || '').split(/\s+/).filter(Boolean).length
+  const promptWords = (prompt || '').split(/\s+/).filter(Boolean).length
+  const showEfficiency = rawWords > 0
+  const ratio = rawWords > 0 ? (promptWords / rawWords).toFixed(1) : null
+  const efficiencyLabel = ratio ? (parseFloat(ratio) >= 1 ? `${ratio}× longer` : `${ratio}× shorter`) : null
+
   return (
     <div>
       <button
@@ -115,6 +121,23 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
                 </div>
               )}
 
+              {evalData.gap && (
+                <div style={{
+                  marginTop: 10,
+                  padding: '8px 10px',
+                  background: 'rgba(255,159,10,0.05)',
+                  border: '0.5px solid rgba(255,159,10,0.12)',
+                  borderRadius: 6,
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.10em', color: 'rgba(255,159,10,0.45)', marginBottom: 4 }}>
+                    What&apos;s missing
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>
+                    {evalData.gap}
+                  </div>
+                </div>
+              )}
+
               {evalData.critique && (
                 <div style={{
                   marginTop: 12, paddingTop: 10,
@@ -125,6 +148,47 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
                   {evalData.critique}
                 </div>
               )}
+
+              {(evalData.intentDrift || showEfficiency) && (() => {
+                const driftColor = evalData.intentDrift === 'significant'
+                  ? 'rgba(255,69,58,0.8)'
+                  : evalData.intentDrift === 'minor'
+                    ? 'rgba(255,159,10,0.8)'
+                    : 'rgba(48,209,88,0.7)'
+                const driftBg = evalData.intentDrift === 'significant'
+                  ? 'rgba(255,69,58,0.08)'
+                  : evalData.intentDrift === 'minor'
+                    ? 'rgba(255,159,10,0.08)'
+                    : 'rgba(48,209,88,0.08)'
+                const driftBorder = evalData.intentDrift === 'significant'
+                  ? '0.5px solid rgba(255,69,58,0.2)'
+                  : evalData.intentDrift === 'minor'
+                    ? '0.5px solid rgba(255,159,10,0.2)'
+                    : '0.5px solid rgba(48,209,88,0.2)'
+                return (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {evalData.intentDrift && (
+                      <span style={{
+                        background: driftBg,
+                        border: driftBorder,
+                        borderRadius: 20, padding: '2px 8px',
+                        fontSize: 10, color: driftColor,
+                      }}>
+                        {evalData.intentDriftLabel || 'Intent evaluated'}
+                      </span>
+                    )}
+                    {showEfficiency && (
+                      <span style={{
+                        background: 'rgba(255,255,255,0.06)',
+                        borderRadius: 20, padding: '2px 8px',
+                        fontSize: 10, color: 'rgba(255,255,255,0.45)',
+                      }}>
+                        {efficiencyLabel} · {delta >= 0 ? `+${delta}` : delta} pts
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
 
               <div style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
