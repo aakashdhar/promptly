@@ -1,4 +1,10 @@
-export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, polishTone, onPolishToneChange, onExpand }) {
+import { useState, useRef } from 'react'
+import ModeDropdown from './ModeDropdown.jsx'
+
+const IDLE_HEIGHT = 134
+const DROPDOWN_WINDOW_HEIGHT = 480
+
+export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, polishTone, onPolishToneChange, onExpand, onModeSelect, onShowShortcuts, onShowHistory }) {
   const isRefine = mode === 'refine'
   const isPolish = mode === 'polish'
   const isImage = mode === 'image'
@@ -6,9 +12,28 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
   const isWorkflow = mode === 'workflow'
   const isEmail = mode === 'email'
 
+  const [showModeDropdown, setShowModeDropdown] = useState(false)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
+  const pillRef = useRef(null)
+
   function handleModePillClick(e) {
     e.stopPropagation()
-    if (window.electronAPI) window.electronAPI.showModeMenu(mode)
+    if (showModeDropdown) {
+      setShowModeDropdown(false)
+      window.electronAPI?.resizeWindow(IDLE_HEIGHT)
+      return
+    }
+    const rect = pillRef.current?.getBoundingClientRect()
+    const top = rect ? rect.bottom + 6 : 90
+    const right = rect ? window.innerWidth - rect.right : 20
+    setDropdownPos({ top, right })
+    window.electronAPI?.resizeWindow(DROPDOWN_WINDOW_HEIGHT)
+    setShowModeDropdown(true)
+  }
+
+  function handleDropdownClose() {
+    setShowModeDropdown(false)
+    window.electronAPI?.resizeWindow(IDLE_HEIGHT)
   }
 
   const ringColor = isPolish ? 'rgba(48,209,88,' : isRefine ? 'rgba(168,85,247,' : isImage ? 'rgba(245,158,11,' : isVideo ? 'rgba(251,146,60,' : isWorkflow ? 'rgba(34,197,94,' : isEmail ? 'rgba(20,184,166,' : 'rgba(10,132,255,'
@@ -164,8 +189,9 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
             >
               {polishTone === 'formal' ? 'Formal' : 'Casual'}
             </span>
-            {/* Mode pill — click to change mode */}
+            {/* Mode pill */}
             <span
+              ref={pillRef}
               id="mode-pill"
               style={{
                 padding:'4px 12px', borderRadius:'20px', fontSize:'10px',
@@ -181,6 +207,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           </div>
         ) : (
           <span
+            ref={pillRef}
             className="absolute right-[20px] rounded-full text-[10px] font-medium tracking-[0.03em]"
             id="mode-pill"
             style={{
@@ -214,6 +241,18 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
       }}>
         built using vibe-* skills
       </div>
+
+      {showModeDropdown && (
+        <ModeDropdown
+          mode={mode}
+          top={dropdownPos.top}
+          right={dropdownPos.right}
+          onSelect={onModeSelect}
+          onShowShortcuts={onShowShortcuts}
+          onShowHistory={onShowHistory}
+          onClose={handleDropdownClose}
+        />
+      )}
     </div>
   )
 }

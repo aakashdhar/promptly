@@ -49,6 +49,9 @@ export default function ExpandedView({
   transcriptionSlow,
   generationErrorProps,
   generationSlow,
+  onModeSelect,
+  onShowShortcuts,
+  onShowHistory,
 }) {
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
@@ -97,6 +100,9 @@ export default function ExpandedView({
         thinkingElapsed={thinkingElapsed}
         thinkingCurrentLabel={thinkingCurrentLabel}
         thinkingLabelOpacity={thinkingLabelOpacity}
+        onModeSelect={onModeSelect}
+        onShowShortcuts={onShowShortcuts}
+        onShowHistory={onShowHistory}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>

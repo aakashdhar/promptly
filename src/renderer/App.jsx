@@ -556,6 +556,9 @@ Return ONLY valid JSON:
             thinkingElapsed={thinkingElapsed}
             thinkingCurrentLabel={thinkingCurrentLabel}
             thinkingLabelOpacity={thinkingLabelOpacity}
+            onModeSelect={setMode}
+            onShowShortcuts={() => { prevStateRef.current = stateRef.current; transition(STATES.SHORTCUTS) }}
+            onShowHistory={openHistory}
           />
         ) : (
           <>
@@ -568,6 +571,9 @@ Return ONLY valid JSON:
                 polishTone={polishTone}
                 onPolishToneChange={setPolishToneValue}
                 onExpand={handleExpand}
+                onModeSelect={setMode}
+                onShowShortcuts={() => { prevStateRef.current = stateRef.current; transition(STATES.SHORTCUTS) }}
+                onShowHistory={openHistory}
               />
             )}
             {displayState === STATES.RECORDING && (

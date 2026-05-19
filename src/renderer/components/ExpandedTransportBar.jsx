@@ -2,6 +2,7 @@ import { useState, useRef, useLayoutEffect } from 'react'
 import WaveformCanvas from './WaveformCanvas.jsx'
 import MorphCanvas from './MorphCanvas.jsx'
 import { getModeAccent } from '../utils/thinkingLabels.js'
+import ModeDropdown from './ModeDropdown.jsx'
 
 export default function ExpandedTransportBar({
   currentState,
@@ -20,6 +21,9 @@ export default function ExpandedTransportBar({
   thinkingElapsed,
   thinkingCurrentLabel,
   thinkingLabelOpacity,
+  onModeSelect,
+  onShowShortcuts,
+  onShowHistory,
 }) {
   const isRecording = currentState === 'RECORDING'
   const isThinking = currentState === 'THINKING'
@@ -45,6 +49,18 @@ export default function ExpandedTransportBar({
 
   const transportRef = useRef(null)
   const [waveWidth, setWaveWidth] = useState(0)
+  const [showModeDropdown, setShowModeDropdown] = useState(false)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
+  const pillRef = useRef(null)
+
+  function handleModePillClick() {
+    if (showModeDropdown) { setShowModeDropdown(false); return }
+    const rect = pillRef.current?.getBoundingClientRect()
+    const top = rect ? rect.bottom + 6 : 90
+    const right = rect ? window.innerWidth - rect.right : 20
+    setDropdownPos({ top, right })
+    setShowModeDropdown(true)
+  }
 
   useLayoutEffect(() => {
     const el = transportRef.current
@@ -94,6 +110,7 @@ export default function ExpandedTransportBar({
     : 'transparent'
 
   return (
+    <>
     <div style={{
       background: 'transparent',
       borderBottom: '0.5px solid rgba(255,255,255,0.06)',
@@ -293,11 +310,13 @@ export default function ExpandedTransportBar({
 
           {/* Mode pill */}
           <span
-            onClick={() => { if (window.electronAPI) window.electronAPI.showModeMenu(mode) }}
+            ref={pillRef}
+            onClick={handleModePillClick}
             style={{
               padding: '5px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
               background: pillBg, border: pillBorder, color: pillColor,
               cursor: 'pointer', whiteSpace: 'nowrap',
+              WebkitAppRegion: 'no-drag',
             }}
           >
             {modeLabel}
@@ -434,5 +453,18 @@ export default function ExpandedTransportBar({
         </div>
       </div>
     </div>
+
+    {showModeDropdown && (
+      <ModeDropdown
+        mode={mode}
+        top={dropdownPos.top}
+        right={dropdownPos.right}
+        onSelect={onModeSelect}
+        onShowShortcuts={onShowShortcuts}
+        onShowHistory={onShowHistory}
+        onClose={() => setShowModeDropdown(false)}
+      />
+    )}
+    </>
   )
 }
