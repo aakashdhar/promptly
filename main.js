@@ -1047,7 +1047,7 @@ Rules:
     return new Promise((resolve) => {
       let stdout = '';
       let timedOut = false;
-      const child = spawn(claudePath, ['-p', evalSystemPrompt], { env: makeClaudeEnv(claudePath) });
+      const child = spawn(claudePath, ['-p', evalSystemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
       child.stdin.end();
 
       const timer = setTimeout(() => {
@@ -1057,9 +1057,10 @@ Rules:
       }, 30000);
 
       child.stdout.on('data', (data) => { stdout += data.toString(); });
-      child.on('close', () => {
+      child.on('close', (code) => {
         if (timedOut) return;
         clearTimeout(timer);
+        if (code !== 0) { resolve({ success: false }); return; }
         try {
           const raw = stdout.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
           const parsed = JSON.parse(raw);
