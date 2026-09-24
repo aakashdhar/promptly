@@ -1962,3 +1962,15 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   to a prompt. Regenerate/Iterate are hidden on dictation results (they'd re-run the dictation).
 > Next candidates: a second shortcut so one key dictates and another crafts; the Interviewer (clarifying questions).
 ---
+
+---
+## D-DOUBLE-CONTROL — Double-tap Control is the default talk shortcut — 2026-09-24
+> Request (product owner): double-tap Control instead of Option+Space.
+> Decision: new preset `double-control`, the default. Double-tap either Control key starts talking hands-free; one tap of
+>   Control stops; double-tap and hold is hold to talk. The helper (native/helper) counts a tap only if it's quick
+>   (≤350 ms) and clean — no other key, mouse click or modifier in between — and the two taps must be ≤400 ms apart, so ⌃C
+>   and Control-click never trigger it. A single tap only ever stops a recording, and the second press of a stopping
+>   double-tap is ignored for 700 ms so it can't restart one.
+> Needs the helper's event tap (Accessibility). Without it, the shortcut falls back to ⌥ Space (tap to start and stop),
+>   and every hint in the app names the shortcut that actually works (hotkeyWords). Existing users keep their choice.
+---
