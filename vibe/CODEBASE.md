@@ -35,8 +35,6 @@
 | `native/helper/main.swift` | promptly-helper: JSON-lines protocol; active event tap for the talk key (down/up/cancel), frontmost app, selected text via AX | — |
 | `main/helper.js` | Spawns the helper, request/response with ids + timeouts, restarts on crash, reports trust/tap status | `createHelper()` → `{ start, stop, isRunning, status, configure, context, requestAccess, refreshStatus }` |
 | `main/hotkey.js` | Hotkey presets and the hold (≥350 ms) vs tap state machine | `HOTKEY_PRESETS`, `getPreset`, `createHoldToTalk` |
-| `main/screenshot.js` | Captures the front window (screencapture -l, shrunk with sips to 1600 px), keeps it on disk under an id for 10 min or until quit | `createScreenshots()` → `{ capture, read, clear, has }` |
-| `main/prompts/do.txt` | Do it mode: the finished result (reply, rewrite, answer) instead of a prompt | — |
 | `main/shortcuts.js` | globalShortcut registration with fallback + notice | `registerRecordingShortcut` |
 | `pill.html` | Floating pill window: recording (waveform, mode, destination), streaming text, copied | — |
 | `src/renderer/utils/spokenMode.js` | "code mode, …" prefix detection | `detectSpokenMode` |

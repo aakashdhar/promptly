@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences, desktopCapturer } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -19,7 +19,6 @@ const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, createHoldToTalk } = require(
 const { destinationFor } = require('./main/prompts');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
-const { createScreenshots } = require('./main/screenshot');
 
 // End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
 const IS_E2E = !!process.env.PROMPTLY_USER_DATA;
@@ -172,29 +171,10 @@ function dictionaryWords() {
   return String(config.read().dictionary || '').split(/[\n,]/).map((w) => w.trim()).filter(Boolean).slice(0, 200);
 }
 
-// ── Screenshots of the window you're talking about ──
-
-const screenshots = createScreenshots({
-  dir: path.join(os.tmpdir(), 'promptly-screens'),
-  // Tests swap in a fake capture tool and skip the permission check.
-  getCapturePath: () => (IS_E2E && process.env.PROMPTLY_SCREENCAPTURE) || platform.SCREENCAPTURE_PATH,
-});
-
-function screenRecordingStatus() {
-  if (IS_E2E) return process.env.PROMPTLY_SCREENCAPTURE ? 'granted' : 'not-determined';
-  return process.platform === 'darwin' ? systemPreferences.getMediaAccessStatus('screen') : 'granted';
-}
-
-function seeScreenEnabled() {
-  return config.read().seeScreen !== false && screenRecordingStatus() === 'granted';
-}
-
 async function runGeneratePrompt({ transcript, mode, options = {} }) {
   const modeConf = getMode(mode);
   if (modeConf.kind === 'builder') return { success: true, prompt: transcript };
-  const { screenshotId, ...givenContext } = options.context || {};
-  const screenshot = screenshotId && !options.overrideSystemPrompt ? screenshots.read(screenshotId) : null;
-  const context = { ...givenContext, hasScreenshot: !!screenshot, dictionary: dictionaryWords() };
+  const context = { ...(options.context || {}), dictionary: dictionaryWords() };
   const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, { ...options, context });
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
   const streams = !options.overrideSystemPrompt && mode !== 'email';
@@ -206,7 +186,7 @@ async function runGeneratePrompt({ transcript, mode, options = {} }) {
     winSend('generation-delta', { text });
     pillSend({ state: 'thinking', text });
   } : undefined;
-  return claude.run(prompt, { onDelta, images: screenshot ? [screenshot] : [] });
+  return claude.run(prompt, { onDelta });
 }
 
 // ── Menu bar ──────────────────────────────────────────────────────────────────
@@ -274,7 +254,6 @@ async function handleUninstall() {
     try { fs.rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
   }
   await platform.resetMicrophonePermission(BUNDLE_ID);
-  await platform.resetScreenRecordingPermission(BUNDLE_ID);
   await platform.removeInstalledApp();
   isQuitting = true;
   app.quit();
@@ -347,15 +326,11 @@ async function startFromHotkey() {
   const ctx = helper.isRunning() ? await helper.context() : null;
   if (ctx && ctx.app && ctx.app.bundleId !== BUNDLE_ID && !String(ctx.app.bundleId || '').startsWith('com.github.Electron')) {
     const destination = destinationFor(ctx.app.bundleId);
-    // A selection says exactly what the user means; without one, the window they're looking at does.
-    const screenshotId = !ctx.selectedText && ctx.windowId && seeScreenEnabled() ? await screenshots.capture(ctx.windowId) : null;
     const context = {
       appName: ctx.app.name || '',
       bundleId: ctx.app.bundleId || '',
       destinationLabel: destination ? destination.label : null,
       selectedText: ctx.selectedText || null,
-      screenshotId,
-      hasScreenshot: !!screenshotId,
     };
     winSend('recording-context', context);
     if (pillSession) pillSend({ state: 'recording', mode: currentModeLabel, context });
@@ -654,7 +629,6 @@ function finishSetup() {
 app.on('before-quit', () => {
   isQuitting = true;
   helper.stop();
-  screenshots.clear();
 });
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -774,8 +748,6 @@ app.whenReady().then(async () => {
       hotkeyOptions: Object.entries(HOTKEY_PRESETS).map(([value, p]) => ({ value, label: p.label, holdOnly: !p.accelerator })),
       dictionary: stored.dictionary || '',
       autoCopy: stored.autoCopy !== false,
-      seeScreen: stored.seeScreen !== false,
-      screenRecording: screenRecordingStatus(),
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
       accessibility: helper.status(),
       helperAvailable: helper.isRunning(),
@@ -787,7 +759,6 @@ app.whenReady().then(async () => {
     if (typeof prefs.hotkey === 'string' && HOTKEY_PRESETS[prefs.hotkey]) patch.hotkey = prefs.hotkey;
     if (typeof prefs.dictionary === 'string') patch.dictionary = prefs.dictionary.slice(0, 5000);
     if (typeof prefs.autoCopy === 'boolean') patch.autoCopy = prefs.autoCopy;
-    if (typeof prefs.seeScreen === 'boolean') patch.seeScreen = prefs.seeScreen;
     config.update(patch);
     if (typeof prefs.launchAtLogin === 'boolean' && !IS_E2E) app.setLoginItemSettings({ openAtLogin: prefs.launchAtLogin });
     if (patch.hotkey) applyHotkey();
@@ -809,19 +780,6 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('open-accessibility-settings', () => {
     shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
-  });
-
-  // Screen Recording: macOS has no "ask" call for it. Listing screens once makes macOS show its
-  // prompt and puts Promptly in the Screen Recording list; the settings pane opens so the user
-  // can switch it on. macOS applies it after Promptly restarts.
-  ipcMain.handle('screen-recording-status', () => ({ status: screenRecordingStatus() }));
-
-  ipcMain.handle('request-screen-recording', async () => {
-    if (!IS_E2E && screenRecordingStatus() !== 'granted') {
-      try { await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }); } catch { /* denied: the pane below is the way on */ }
-      if (screenRecordingStatus() !== 'granted') shell.openExternal(platform.SCREEN_RECORDING_SETTINGS_URL);
-    }
-    return { status: screenRecordingStatus() };
   });
 
   // ── Theme ──

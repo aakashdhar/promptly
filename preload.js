@@ -245,12 +245,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openAccessibilitySettings: () =>
     ipcRenderer.invoke('open-accessibility-settings'),
 
-  screenRecordingStatus: () =>
-    ipcRenderer.invoke('screen-recording-status'),
-
-  requestScreenRecording: () =>
-    ipcRenderer.invoke('request-screen-recording'),
-
   retryGeneration: () =>
     ipcRenderer.invoke('retry-generation'),
 

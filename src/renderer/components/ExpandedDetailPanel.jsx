@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { readableColor, isResultMode } from '../utils/promptUtils.js'
+import { readableColor } from '../utils/promptUtils.js'
 import { bookmarkHistoryItem, rateHistoryItem, formatTime } from '../utils/history.js'
 import ExpandedTypingContent from './ExpandedTypingContent.jsx'
 import ExpandedPromptReadyContent from './ExpandedPromptReadyContent.jsx'
@@ -237,7 +237,7 @@ export default function ExpandedDetailPanel({
           <div style={{ height: '0.5px', background: 'linear-gradient(90deg,transparent,rgba(var(--ink),0.07),transparent)', margin: '0 28px', flexShrink: 0 }} />
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '18px 28px', minHeight: 0 }}>
-            <PromptSections prompt={selected.prompt} plain={isResultMode(selected.mode)} labelColor={labelColor} textSize="14px" textColor="rgba(var(--ink),0.82)" />
+            <PromptSections prompt={selected.prompt} labelColor={labelColor} textSize="14px" textColor="rgba(var(--ink),0.82)" />
             {selected.polishChanges && selected.polishChanges.length > 0 && (
               <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '8px' }}>
                 <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
@@ -299,7 +299,7 @@ export default function ExpandedDetailPanel({
           </div>
 
           {/* Eval scorecard for history entry */}
-          {selected.transcript && !isResultMode(selected.mode) && (
+          {selected.transcript && (
             <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
               <EvalPanel
                 key={selected.id}
@@ -324,7 +324,7 @@ export default function ExpandedDetailPanel({
                 transition: 'all 200ms',
               }}
             >
-              {entryCopied ? 'Copied ✓' : isResultMode(selected?.mode) ? 'Copy' : 'Copy prompt'}
+              {entryCopied ? 'Copied ✓' : 'Copy prompt'}
             </button>
             <button
               onClick={handleEntryReuse}

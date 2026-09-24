@@ -5,7 +5,11 @@ const MODE_LABELS = Object.fromEntries(MODES.modes.map((m) => [m.key, m.label]))
 const DEFAULT_MODE = MODES.defaultMode
 
 export default function useMode() {
-  const [mode, setModeState] = useState(() => localStorage.getItem('mode') || DEFAULT_MODE)
+  // A mode saved by an older version may no longer exist (e.g. "do" from 2.6.0): use the default.
+  const [mode, setModeState] = useState(() => {
+    const stored = localStorage.getItem('mode')
+    return stored && MODE_LABELS[stored] ? stored : DEFAULT_MODE
+  })
 
   // The floating pill shows the current mode; main keeps a copy of its label.
   useEffect(() => { window.electronAPI?.reportMode?.(MODE_LABELS[mode] || MODE_LABELS[DEFAULT_MODE]) }, [mode])

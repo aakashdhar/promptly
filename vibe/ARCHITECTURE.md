@@ -182,7 +182,6 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `get-theme-setting` / `set-theme-setting` | Appearance: system / light / dark |
 | renderer → main | `get-preferences` / `set-preferences` | Hotkey preset, dictionary, auto-copy, launch at login, Accessibility status |
 | renderer/splash → main | `request-accessibility` / `accessibility-status` / `open-accessibility-settings` | Hold to talk + selected text permission |
-| renderer → main | `screen-recording-status` / `request-screen-recording` | Screen Recording permission for window screenshots (Settings → See the window you're in) |
 | renderer → main (send) | `audio-level` / `mode-changed` | Mic level for the pill waveform; current mode label for the pill |
 | main → renderer | `hotkey-start` / `hotkey-stop` / `hotkey-cancel` | Hold-to-talk / tap decisions from main |
 | main → renderer | `recording-context` | App + selected text captured when a hotkey recording started |

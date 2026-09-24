@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { parseSections, readableColor, isResultMode } from '../utils/promptUtils.js'
+import { parseSections, readableColor } from '../utils/promptUtils.js'
 import EvalPanel from './EvalPanel.jsx'
 
 export default function ExpandedPromptReadyContent({
@@ -80,7 +80,7 @@ export default function ExpandedPromptReadyContent({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px 12px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>
           <span style={{ color: 'var(--color-green, #30D158)', fontSize: '17px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
-          <span>{isResultMode(mode) ? 'Ready' : 'Prompt ready'}</span>
+          <span>Prompt ready</span>
           {isIterated && (
             <span style={{
               fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
@@ -110,11 +110,6 @@ export default function ExpandedPromptReadyContent({
               outlineOffset: '4px', borderRadius: '6px', minHeight: '100px',
             }}
           >
-            {generatedPrompt}
-          </div>
-        ) : isResultMode(mode) ? (
-          // A finished result reads as one piece of text, not prompt sections.
-          <div className="selectable" style={{ fontSize: '14px', color: 'rgba(var(--ink),0.95)', lineHeight: '1.8', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>
             {generatedPrompt}
           </div>
         ) : (
@@ -179,14 +174,12 @@ export default function ExpandedPromptReadyContent({
               transition: 'all 300ms ease',
             }}
           >
-            {isCopied ? '✓ Copied' : isResultMode(mode) ? 'Copy' : 'Copy prompt'}
+            {isCopied ? '✓ Copied' : 'Copy prompt'}
           </button>
         </div>
-        {!isResultMode(mode) && (
-          <div style={{ padding: '0 24px 16px' }}>
-            <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} />
-          </div>
-        )}
+        <div style={{ padding: '0 24px 16px' }}>
+          <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} />
+        </div>
       </div>
     </div>
   )

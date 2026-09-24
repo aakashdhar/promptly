@@ -62,20 +62,12 @@ function destinationFor(bundleId) {
 }
 
 // Extra context placed just before the transcript: where the prompt is going (template modes
-// only), the app to shape the result for (appAware modes), an attached screenshot, text the
-// user selected, and words to spell exactly. Empty when there is none, so
+// only), text the user selected, and words to spell exactly. Empty when there is none, so
 // prompts without context are unchanged.
 function buildContextBlock(mode, context = {}) {
   const parts = [];
   const destination = mode.kind === 'template' ? destinationFor(context.bundleId) : null;
   if (destination) parts.push(`Where this prompt will be used: ${destination.guidance}`);
-  if (mode.appAware && context.appName) {
-    parts.push(`The user is in ${context.appName}. Shape the result so it can be pasted straight into ${context.appName} (for example, a chat message stays short and has no subject line; an email reply has no subject line unless asked).`);
-  }
-  if (context.hasScreenshot) {
-    const where = context.appName ? ` (${context.appName})` : '';
-    parts.push(`A screenshot of the window the user is looking at${where} is attached.`);
-  }
   if (context.selectedText) {
     const where = context.appName ? ` in ${context.appName}` : '';
     parts.push(`The user has selected this text${where} and is talking about it. Treat it as the material to work on:\n<selected_text>\n${context.selectedText}\n</selected_text>`);

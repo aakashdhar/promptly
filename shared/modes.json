@@ -1,9 +1,7 @@
 {
-  "_comment": "Single source of truth for modes. Read by main (prompt building, native mode menu) and the renderer (labels, dropdown). kind: template = PROMPT_TEMPLATE filled with promptName + instruction; standalone = main/prompts/<key>.txt; builder = handled by a renderer builder flow, transcript passed through unchanged. output: result = the finished text itself, not a prompt (default: prompt). appAware: the app you were in shapes the result.",
-  "defaultMode": "do",
+  "_comment": "Single source of truth for modes. Read by main (prompt building, native mode menu) and the renderer (labels, dropdown). kind: template = PROMPT_TEMPLATE filled with promptName + instruction; standalone = main/prompts/<key>.txt; builder = handled by a renderer builder flow, transcript passed through unchanged.",
+  "defaultMode": "balanced",
   "modes": [
-    { "key": "do", "label": "Do it", "group": "general", "kind": "standalone", "output": "result", "appAware": true,
-      "desc": "The finished thing: a reply, a rewrite, an answer, using what you selected or what's on screen", "dot": "rgba(255,159,10,0.9)" },
     { "key": "balanced", "label": "Balanced", "group": "general", "kind": "template", "promptName": "Balanced",
       "desc": "Role · Task · Context · Output — works for anything", "dot": "rgba(100,170,255,0.9)",
       "instruction": "Create a well-rounded prompt with appropriate detail for general use." },
