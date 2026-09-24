@@ -93,7 +93,8 @@ describe('getModeTagStyle', () => {
   it('returns teal style for email mode', () => {
     const style = getModeTagStyle('email')
     expect(style.background).toBe('rgba(20,184,166,0.1)')
-    expect(style.color).toBe('rgba(45,212,191,0.65)')
+    expect(style.color).toContain('45,212,191')
+    expect(style.color).toContain('var(--accent-text-strength)')
   })
 })
 

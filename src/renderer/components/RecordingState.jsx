@@ -11,13 +11,13 @@ export default function RecordingState({ onStop, onDismiss, onPause, duration })
         style={PAD}
       >
         <div
-          className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/[0.10] flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] hover:bg-white/[0.12] transition-colors duration-150"
+          className="w-8 h-8 rounded-full bg-[rgba(var(--ink),0.06)] border border-[rgba(var(--ink),0.10)] flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] hover:bg-[rgba(var(--ink),0.12)] transition-colors duration-150"
           id="dismissBtn"
           onClick={onDismiss}
         >
           {/* POLISH-009: stroke 0.45 → 0.75 */}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(var(--ink),0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
         <div className="flex-1 flex items-center h-9 [-webkit-app-region:no-drag]">
@@ -26,7 +26,7 @@ export default function RecordingState({ onStop, onDismiss, onPause, duration })
         {/* POLISH-003: timer fontWeight 400, letterSpacing 0.08em; POLISH-009: 0.30 → 0.60 */}
         <span
           className="text-[11px] flex-shrink-0 min-w-[28px] text-right tabular-nums [-webkit-app-region:no-drag]"
-          style={{ color: 'rgba(255,255,255,0.60)', fontWeight: 400, letterSpacing: '0.08em' }}
+          style={{ color: 'rgba(var(--ink),0.8)', fontWeight: 400, letterSpacing: '0.08em' }}
           id="recDur"
         >
           {duration}
@@ -55,7 +55,7 @@ export default function RecordingState({ onStop, onDismiss, onPause, duration })
           </svg>
         </div>
       </div>
-      <div className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" style={{marginLeft:32, marginRight:32}} />
+      <div className="h-px bg-gradient-to-r from-transparent via-[rgba(var(--ink),0.07)] to-transparent" style={{marginLeft:32, marginRight:32}} />
     </div>
   )
 }

@@ -312,7 +312,7 @@ function registerShortcut() {
 function createSplashWindow() {
   splashWin = new BrowserWindow({
     width: 560,
-    height: 620,
+    height: 520,
     show: false,
     frame: false,
     transparent: false,

@@ -14,19 +14,19 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
         style={{
           position:'absolute', top:'14px', right:'16px',
           width:'26px', height:'26px', borderRadius:'7px',
-          background:'rgba(255,255,255,0.05)',
-          border:'0.5px solid rgba(255,255,255,0.1)',
+          background:'rgba(var(--ink),0.05)',
+          border:'0.5px solid rgba(var(--ink),0.1)',
           display:'flex', alignItems:'center', justifyContent:'center',
           cursor:'pointer', zIndex:10,
           WebkitAppRegion:'no-drag', padding:0,
           transition:'background 150ms',
         }}
-        onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.12)'}
-        onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+        onMouseEnter={e => e.currentTarget.style.background='rgba(var(--ink),0.12)'}
+        onMouseLeave={e => e.currentTarget.style.background='rgba(var(--ink),0.05)'}
       >
         <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
-          <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
-          <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
+          <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(var(--ink),0.45)"/>
+          <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(var(--ink),0.45)"/>
         </svg>
       </button>
 
@@ -45,15 +45,15 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
               <path d="M1 3l2 2 4-4" stroke="rgba(48,209,88,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </span>
-          <span style={{fontSize:'12px', fontWeight:500, color:'rgba(255,255,255,0.75)'}}>
+          <span style={{fontSize:'12px', fontWeight:500, color:'rgba(var(--ink),0.95)'}}>
             Polished & ready
           </span>
         </div>
 
         {/* Tone toggle */}
         <div style={{
-          display:'flex', background:'rgba(255,255,255,0.05)',
-          border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:'20px',
+          display:'flex', background:'rgba(var(--ink),0.05)',
+          border:'0.5px solid rgba(var(--ink),0.1)', borderRadius:'20px',
           padding:'2px', gap:'2px'
         }}>
           {['Formal','Casual'].map(t => (
@@ -66,7 +66,7 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
                 cursor:'pointer',
                 background: tone === t.toLowerCase() ? 'rgba(48,209,88,0.15)' : 'transparent',
                 border: tone === t.toLowerCase() ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid transparent',
-                color: tone === t.toLowerCase() ? 'rgba(100,220,130,0.9)' : 'rgba(255,255,255,0.3)'
+                color: tone === t.toLowerCase() ? 'color-mix(in oklab, rgba(100,220,130,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.3)'
               }}
             >
               {t}
@@ -78,8 +78,8 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
         <button
           onClick={onReset}
           style={{
-            background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.12)',
-            borderRadius:'8px', color:'rgba(255,255,255,0.45)', cursor:'pointer',
+            background:'rgba(var(--ink),0.06)', border:'0.5px solid rgba(var(--ink),0.12)',
+            borderRadius:'8px', color:'rgba(var(--ink),0.62)', cursor:'pointer',
             fontSize:'11px', padding:'5px 10px'
           }}
         >
@@ -90,18 +90,18 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
       {/* Scrollable content area */}
       <div style={{flex:1, overflowY:'auto', padding:'0 20px', minHeight:0}}>
         {/* Divider */}
-        <div style={{height:'0.5px', background:'rgba(255,255,255,0.07)', marginBottom:'10px'}} />
+        <div style={{height:'0.5px', background:'rgba(var(--ink),0.07)', marginBottom:'10px'}} />
 
         {/* You said */}
         <div style={{marginBottom:'12px'}}>
           <div style={{
             fontSize:'9px', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
-            color:'rgba(255,255,255,0.25)', marginBottom:'5px'
+            color:'rgba(var(--ink),0.38)', marginBottom:'5px'
           }}>
             You said
           </div>
           <div style={{
-            fontSize:'12px', color:'rgba(255,255,255,0.45)', lineHeight:1.5,
+            fontSize:'12px', color:'rgba(var(--ink),0.62)', lineHeight:1.5,
             display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'
           }}>
             {transcript}
@@ -109,18 +109,18 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
         </div>
 
         {/* Divider */}
-        <div style={{height:'0.5px', background:'rgba(255,255,255,0.07)', marginBottom:'10px'}} />
+        <div style={{height:'0.5px', background:'rgba(var(--ink),0.07)', marginBottom:'10px'}} />
 
         {/* Polished text */}
         <div style={{marginBottom:'12px'}}>
           <div style={{
             fontSize:'9px', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
-            color:'rgba(48,209,88,0.65)', marginBottom:'5px'
+            color:'color-mix(in oklab, rgba(48,209,88,0.65) var(--accent-text-strength), rgb(var(--ink)))', marginBottom:'5px'
           }}>
             Polished text
           </div>
           <div style={{
-            fontSize:'13px', color:'rgba(255,255,255,0.88)', lineHeight:1.6,
+            fontSize:'13px', color:'rgba(var(--ink),0.95)', lineHeight:1.6,
             whiteSpace:'pre-wrap'
           }}>
             {polished}
@@ -138,12 +138,12 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
           }}>
             <div style={{
               fontSize:'9px', fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase',
-              color:'rgba(48,209,88,0.5)', marginBottom:'6px'
+              color:'color-mix(in oklab, rgba(48,209,88,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginBottom:'6px'
             }}>
               What changed
             </div>
             {changes.map((note, i) => (
-              <div key={i} style={{fontSize:'11.5px', color:'rgba(255,255,255,0.45)', lineHeight:1.5}}>
+              <div key={i} style={{fontSize:'11.5px', color:'rgba(var(--ink),0.62)', lineHeight:1.5}}>
                 {note}
               </div>
             ))}
@@ -159,7 +159,7 @@ export default function PolishReadyState({ polished, changes, transcript, tone, 
             width:'100%', padding:'10px', borderRadius:'10px', cursor:'pointer',
             background: copied ? 'rgba(48,209,88,0.2)' : 'rgba(48,209,88,0.15)',
             border: copied ? '0.5px solid rgba(48,209,88,0.5)' : '0.5px solid rgba(48,209,88,0.3)',
-            color: copied ? 'rgba(100,220,130,1)' : 'rgba(100,220,130,0.9)',
+            color: copied ? 'color-mix(in oklab, rgba(100,220,130,1) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(100,220,130,0.9) var(--accent-text-strength), rgb(var(--ink)))',
             fontSize:'12px', fontWeight:500, transition:'all 150ms'
           }}
         >

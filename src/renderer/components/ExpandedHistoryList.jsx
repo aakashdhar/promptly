@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getHistory, deleteHistoryItem, clearHistory, searchHistory } from '../utils/history.js'
-import { getModeTagStyle } from '../utils/promptUtils.js'
+import { getModeTagStyle, readableColor } from '../utils/promptUtils.js'
 
 export default function ExpandedHistoryList({ currentState, selected, onSelect }) {
   const [history, setHistory] = useState(() => getHistory())
@@ -73,18 +73,18 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
     <div style={{
       width: '300px', flexShrink: 0,
       background: 'transparent',
-      borderRight: '0.5px solid rgba(255,255,255,0.06)',
+      borderRight: '0.5px solid rgba(var(--ink),0.06)',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Header */}
       <div style={{
         padding: '16px 18px 12px', flexShrink: 0,
-        borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+        borderBottom: '0.5px solid rgba(var(--ink),0.05)',
       }}>
         {searchOpen ? (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '7px',
-            height: '28px', background: 'rgba(255,255,255,0.07)',
+            height: '28px', background: 'rgba(var(--ink),0.07)',
             border: '0.5px solid rgba(10,132,255,0.35)',
             borderRadius: '7px', padding: '0 10px',
           }}>
@@ -100,11 +100,11 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
               style={{
                 flex: 1, background: 'transparent', border: 'none',
                 outline: 'none', fontSize: '11px',
-                color: 'rgba(255,255,255,0.8)', fontFamily: 'inherit',
+                color: 'rgba(var(--ink),0.95)', fontFamily: 'inherit',
               }}
             />
             <button onClick={handleClearSearch} style={{
-              fontSize: '10px', color: 'rgba(255,255,255,0.5)',
+              fontSize: '10px', color: 'rgba(var(--ink),0.68)',
               background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             }}>✕</button>
           </div>
@@ -112,7 +112,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{
               fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
-              color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase',
+              color: 'rgba(var(--ink),0.38)', textTransform: 'uppercase',
             }}>
               Session History
             </span>
@@ -120,15 +120,15 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
               onClick={() => setSearchOpen(true)}
               style={{
                 width: '24px', height: '24px', borderRadius: '6px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '0.5px solid rgba(255,255,255,0.09)',
+                background: 'rgba(var(--ink),0.05)',
+                border: '0.5px solid rgba(var(--ink),0.09)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', padding: 0,
               }}
             >
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <circle cx="5" cy="5" r="4" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" />
-                <path d="M8.5 8.5L11 11" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="5" cy="5" r="4" stroke="rgba(var(--ink),0.5)" strokeWidth="1.2" />
+                <path d="M8.5 8.5L11 11" stroke="rgba(var(--ink),0.5)" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
             </button>
           </div>
@@ -149,10 +149,10 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
                 background: isActive
                   ? (isSaved ? 'rgba(255,189,46,0.12)' : 'rgba(10,132,255,0.12)')
-                  : 'rgba(255,255,255,0.04)',
+                  : 'rgba(var(--ink),0.04)',
                 border: `0.5px solid ${isActive
                   ? (isSaved ? 'rgba(255,189,46,0.28)' : 'rgba(10,132,255,0.25)')
-                  : 'rgba(255,255,255,0.08)'}`,
+                  : 'rgba(var(--ink),0.08)'}`,
                 transition: 'all 150ms',
               }}
             >
@@ -160,16 +160,16 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 <svg width="9" height="11" viewBox="0 0 10 13" fill="none">
                   <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z"
                     fill={isActive ? 'rgba(255,189,46,0.85)' : 'none'}
-                    stroke={isActive ? 'rgba(255,189,46,0.85)' : 'rgba(255,255,255,0.3)'}
+                    stroke={isActive ? 'rgba(255,189,46,0.85)' : 'rgba(var(--ink),0.3)'}
                     strokeWidth="1.2" strokeLinejoin="round" />
                 </svg>
               )}
               <span style={{
                 fontSize: '10px',
                 fontWeight: isActive ? 500 : 400,
-                color: isActive
+                color: readableColor(isActive
                   ? (isSaved ? 'rgba(255,189,46,0.9)' : 'rgba(100,180,255,0.9)')
-                  : 'rgba(255,255,255,0.35)',
+                  : 'rgba(var(--ink),0.35)'),
               }}>
                 {tab === 'all' ? 'All' : 'Saved'}
               </span>
@@ -188,18 +188,18 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
         ].map(f => {
           const isActive = activeFilter === f.id
           const activeColors = {
-            all:     { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.14)', text: 'rgba(255,255,255,0.55)' },
+            all:     { bg: 'rgba(var(--ink),0.08)', border: 'rgba(var(--ink),0.14)', text: 'rgba(var(--ink),0.55)' },
             up:      { bg: 'rgba(48,209,88,0.10)',   border: 'rgba(48,209,88,0.25)',   text: 'rgba(100,220,130,0.8)' },
             down:    { bg: 'rgba(255,59,48,0.10)',   border: 'rgba(255,59,48,0.25)',   text: 'rgba(255,100,90,0.75)' },
-            unrated: { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.14)', text: 'rgba(255,255,255,0.55)' },
+            unrated: { bg: 'rgba(var(--ink),0.08)', border: 'rgba(var(--ink),0.14)', text: 'rgba(var(--ink),0.55)' },
           }
-          const inactiveColor = { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.3)' }
+          const inactiveColor = { bg: 'rgba(var(--ink),0.04)', border: 'rgba(var(--ink),0.08)', text: 'rgba(var(--ink),0.3)' }
           const c = isActive ? activeColors[f.id] : inactiveColor
           return (
             <span key={f.id} onClick={() => setActiveFilter(f.id)} style={{
               padding: '2px 7px', borderRadius: '20px', fontSize: '9px',
               fontWeight: 600, cursor: 'pointer',
-              background: c.bg, border: `0.5px solid ${c.border}`, color: c.text,
+              background: c.bg, border: `0.5px solid ${c.border}`, color: readableColor(c.text),
               transition: 'all 120ms',
             }}>
               {f.label}
@@ -212,20 +212,20 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       {activeTab === 'all' && history.length > 0 && (
         <div style={{
           margin: '0 10px 8px', padding: '6px 10px',
-          background: 'rgba(255,255,255,0.03)',
-          border: '0.5px solid rgba(255,255,255,0.06)',
+          background: 'rgba(var(--ink),0.03)',
+          border: '0.5px solid rgba(var(--ink),0.06)',
           borderRadius: '7px', display: 'flex',
           justifyContent: 'space-between', alignItems: 'center',
           flexShrink: 0,
         }}>
-          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+          <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.44)' }}>
             {history.length} prompt{history.length !== 1 ? 's' : ''}
           </span>
           {statsRated.total > 0 && (
             <div style={{ display: 'flex', gap: '7px', alignItems: 'center' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(100,220,130,0.7)' }}>👍 {upPct}%</span>
-              <div style={{ width: '0.5px', height: '9px', background: 'rgba(255,255,255,0.1)' }} />
-              <span style={{ fontSize: '10px', color: 'rgba(255,100,90,0.65)' }}>👎 {downPct}%</span>
+              <span style={{ fontSize: '10px', color: 'color-mix(in oklab, rgba(100,220,130,0.7) var(--accent-text-strength), rgb(var(--ink)))' }}>👍 {upPct}%</span>
+              <div style={{ width: '0.5px', height: '9px', background: 'rgba(var(--ink),0.1)' }} />
+              <span style={{ fontSize: '10px', color: 'color-mix(in oklab, rgba(255,100,90,0.65) var(--accent-text-strength), rgb(var(--ink)))' }}>👎 {downPct}%</span>
             </div>
           )}
         </div>
@@ -235,7 +235,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {filteredEntries.length === 0 ? (
           <div style={{
-            fontSize: '11px', color: 'rgba(255,255,255,0.25)',
+            fontSize: '11px', color: 'rgba(var(--ink),0.38)',
             textAlign: 'center', padding: '24px 16px',
           }}>
             {activeFilter !== 'all' ? 'No prompts match this filter'
@@ -254,8 +254,8 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
             const ratingTagIsPositive = entry.ratingTag && POSITIVE_TAGS.includes(entry.ratingTag)
             const ratingTagStyle = entry.ratingTag
               ? ratingTagIsPositive
-                ? { bg: 'rgba(48,209,88,0.10)', border: 'rgba(48,209,88,0.25)', color: 'rgba(100,220,130,0.9)' }
-                : { bg: 'rgba(255,59,48,0.09)', border: 'rgba(255,59,48,0.25)', color: 'rgba(255,100,90,0.9)' }
+                ? { bg: 'rgba(48,209,88,0.10)', border: 'rgba(48,209,88,0.25)', color: 'color-mix(in oklab, rgba(100,220,130,0.9) var(--accent-text-strength), rgb(var(--ink)))' }
+                : { bg: 'rgba(255,59,48,0.09)', border: 'rgba(255,59,48,0.25)', color: 'color-mix(in oklab, rgba(255,100,90,0.9) var(--accent-text-strength), rgb(var(--ink)))' }
               : null
             return (
               <div
@@ -265,13 +265,13 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 onMouseLeave={() => setHoveredId(null)}
                 style={{
                   padding: isActive ? '10px 18px 10px 16px' : '10px 18px',
-                  borderBottom: '0.5px solid rgba(255,255,255,0.04)',
+                  borderBottom: '0.5px solid rgba(var(--ink),0.04)',
                   borderLeft: isActive
                     ? (isEntryPolish ? '2px solid rgba(48,209,88,0.5)' : '2px solid rgba(10,132,255,0.5)')
                     : '2px solid transparent',
                   background: isActive
                     ? (isEntryPolish ? 'rgba(48,209,88,0.07)' : 'rgba(10,132,255,0.07)')
-                    : hoveredId === entry.id ? 'rgba(255,255,255,0.03)' : 'transparent',
+                    : hoveredId === entry.id ? 'rgba(var(--ink),0.03)' : 'transparent',
                   cursor: 'pointer', position: 'relative',
                   transition: 'background 100ms',
                 }}
@@ -279,11 +279,11 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 {/* Row 1: timestamp + mode pill + rating tag */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.22)' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(var(--ink),0.34)' }}>
                       {ts}
                     </span>
                     {entry.isIteration && (
-                      <span style={{ fontSize: '9px', color: 'rgba(10,132,255,0.6)' }}>↻</span>
+                      <span style={{ fontSize: '9px', color: 'color-mix(in oklab, rgba(10,132,255,0.6) var(--accent-text-strength), rgb(var(--ink)))' }}>↻</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -292,7 +292,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                         fontSize: '9px', fontWeight: 500, padding: '1px 6px', borderRadius: '3px',
                         background: ratingTagStyle.bg,
                         border: `0.5px solid ${ratingTagStyle.border}`,
-                        color: ratingTagStyle.color,
+                        color: readableColor(ratingTagStyle.color),
                       }}>
                         {entry.ratingTag}
                       </span>
@@ -300,7 +300,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                     <span style={{
                       fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em',
                       textTransform: 'uppercase', padding: '2px 7px', borderRadius: '3px',
-                      background: tagStyle.background, color: tagStyle.color,
+                      background: tagStyle.background, color: readableColor(tagStyle.color),
                     }}>
                       {entry.mode}
                     </span>
@@ -314,7 +314,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 }}>
                   <span style={{
                     fontSize: '13px',
-                    color: isActive ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.48)',
+                    color: isActive ? 'rgba(var(--ink),0.82)' : 'rgba(var(--ink),0.48)',
                     fontWeight: isActive ? 500 : 400,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     flex: 1, minWidth: 0,
@@ -336,7 +336,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                   onClick={(e) => handleEntryDelete(entry.id, e)}
                   style={{
                     position: 'absolute', top: '10px', right: '10px',
-                    fontSize: '10px', color: 'rgba(255,255,255,0.4)',
+                    fontSize: '10px', color: 'rgba(var(--ink),0.56)',
                     background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                     opacity: hoveredId === entry.id ? 1 : 0,
                     transition: 'opacity 120ms',
@@ -354,16 +354,16 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '9px 14px',
-        borderTop: '0.5px solid rgba(255,255,255,0.06)',
+        borderTop: '0.5px solid rgba(var(--ink),0.06)',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+        <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.44)' }}>
           {activeTab === 'saved' ? `${tabFiltered.length} saved` : footerText}
         </span>
         <button
           onClick={handleClearAll}
           style={{
-            fontSize: '10px', color: 'rgba(255,59,48,0.5)',
+            fontSize: '10px', color: 'color-mix(in oklab, rgba(255,59,48,0.5) var(--accent-text-strength), rgb(var(--ink)))',
             background: 'none', border: 'none', cursor: 'pointer',
             fontFamily: 'inherit', padding: 0,
             transition: 'color 120ms',

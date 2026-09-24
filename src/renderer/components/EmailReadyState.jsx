@@ -83,19 +83,19 @@ export default function EmailReadyState({
 
   const btnBase = {
     fontSize: 12,
-    background: 'rgba(255,255,255,0.06)',
+    background: 'rgba(var(--ink),0.06)',
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',
     padding: '5px 12px',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'var(--on-accent)',
     fontFamily: 'inherit',
     WebkitAppRegion: 'no-drag',
   }
 
   const linkBtn = {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(var(--ink),0.5)',
     cursor: 'pointer',
     background: 'none',
     border: 'none',
@@ -107,7 +107,7 @@ export default function EmailReadyState({
   const sectionLabel = {
     fontSize: 10,
     letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(var(--ink),0.56)',
     fontWeight: 600,
     textTransform: 'uppercase',
     marginBottom: 6,
@@ -116,7 +116,7 @@ export default function EmailReadyState({
 
   const divider = {
     height: 1,
-    background: 'rgba(255,255,255,0.07)',
+    background: 'rgba(var(--ink),0.07)',
     margin: '10px 0',
     flexShrink: 0,
   }
@@ -142,13 +142,13 @@ export default function EmailReadyState({
             width: 8, height: 8, borderRadius: '50%',
             background: TEAL_85, flexShrink: 0,
           }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-accent)' }}>
             Email ready
           </span>
           {toneAnalysis.tone && (
             <span style={{
               background: TEAL_12,
-              color: 'rgba(45,212,191,0.8)',
+              color: 'color-mix(in oklab, rgba(45,212,191,0.8) var(--accent-text-strength), rgb(var(--ink)))',
               borderRadius: 4,
               padding: '2px 8px',
               fontSize: 11,
@@ -188,7 +188,7 @@ export default function EmailReadyState({
           <p style={{
             fontSize: 12,
             fontStyle: 'italic',
-            color: 'rgba(255,255,255,0.7)',
+            color: 'var(--on-accent)',
             lineHeight: 1.55,
             margin: '0 0 16px 0',
           }}>
@@ -207,10 +207,10 @@ export default function EmailReadyState({
               ['Approach', toneAnalysis.approach],
             ].map(([label, value]) => value ? (
               <div key={label}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 2, letterSpacing: '0.05em' }}>
+                <div style={{ fontSize: 10, color: 'rgba(var(--ink),0.56)', marginBottom: 2, letterSpacing: '0.05em' }}>
                   {label}
                 </div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>
+                <div style={{ fontSize: 13, color: 'var(--on-accent)', lineHeight: 1.4 }}>
                   {value}
                 </div>
               </div>
@@ -225,10 +225,10 @@ export default function EmailReadyState({
               background: TEAL_06,
               borderRadius: '0 6px 6px 0',
             }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4, letterSpacing: '0.05em', fontWeight: 600 }}>
+              <div style={{ fontSize: 10, color: 'rgba(var(--ink),0.56)', marginBottom: 4, letterSpacing: '0.05em', fontWeight: 600 }}>
                 Why this tone
               </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.55, margin: 0 }}>
+              <p style={{ fontSize: 12, color: 'var(--on-accent)', lineHeight: 1.55, margin: 0 }}>
                 {toneAnalysis.whyThisTone}
               </p>
             </div>
@@ -238,7 +238,7 @@ export default function EmailReadyState({
           <div style={{
             fontSize: 9,
             letterSpacing: '0.1em',
-            color: 'rgba(255,255,255,0.22)',
+            color: 'rgba(var(--ink),0.34)',
             fontWeight: 600,
             textTransform: 'uppercase',
             marginTop: 14,
@@ -253,10 +253,10 @@ export default function EmailReadyState({
                 style={{
                   padding: '5px 12px',
                   borderRadius: 8,
-                  background: selectedChip === chip ? 'rgba(20,184,166,0.12)' : 'rgba(255,255,255,0.04)',
-                  border: `0.5px solid ${selectedChip === chip ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                  background: selectedChip === chip ? 'rgba(20,184,166,0.12)' : 'rgba(var(--ink),0.04)',
+                  border: `0.5px solid ${selectedChip === chip ? 'rgba(20,184,166,0.3)' : 'rgba(var(--ink),0.1)'}`,
                   fontSize: 11.5,
-                  color: selectedChip === chip ? 'rgba(45,212,191,0.9)' : 'rgba(255,255,255,0.5)',
+                  color: selectedChip === chip ? 'color-mix(in oklab, rgba(45,212,191,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.5)',
                   fontWeight: selectedChip === chip ? 500 : 400,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -273,12 +273,12 @@ export default function EmailReadyState({
             placeholder="Custom instruction — e.g. 'sound more like me'"
             rows={2}
             style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '0.5px solid rgba(255,255,255,0.08)',
+              background: 'rgba(var(--ink),0.03)',
+              border: '0.5px solid rgba(var(--ink),0.08)',
               borderRadius: 9,
               padding: '9px 12px',
               fontSize: 12,
-              color: 'rgba(255,255,255,0.65)',
+              color: 'var(--on-accent)',
               fontFamily: 'inherit',
               resize: 'none',
               width: '100%',
@@ -317,13 +317,13 @@ export default function EmailReadyState({
           flexDirection: 'column',
           overflowY: 'auto',
           minHeight: 0,
-          borderLeft: '0.5px solid rgba(255,255,255,0.07)',
+          borderLeft: '0.5px solid rgba(var(--ink),0.07)',
           paddingLeft: 20,
         }}>
           {/* SUBJECT LINE */}
           <div style={{ ...sectionLabel, marginBottom: 4 }}>Subject Line</div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.85)', flex: 1, lineHeight: 1.4 }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--on-accent)', flex: 1, lineHeight: 1.4 }}>
               {subject}
             </span>
             <button
@@ -333,8 +333,8 @@ export default function EmailReadyState({
                 fontSize: 11,
                 padding: '3px 9px',
                 flexShrink: 0,
-                color: copiedSubject ? 'rgba(45,212,191,0.85)' : 'rgba(255,255,255,0.5)',
-                background: copiedSubject ? TEAL_12 : 'rgba(255,255,255,0.05)',
+                color: copiedSubject ? 'color-mix(in oklab, rgba(45,212,191,0.85) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.5)',
+                background: copiedSubject ? TEAL_12 : 'rgba(var(--ink),0.05)',
               }}
             >
               {copiedSubject ? 'Copied ✓' : 'Copy'}
@@ -354,7 +354,7 @@ export default function EmailReadyState({
             }}
             style={{
               fontSize: 13,
-              color: 'rgba(255,255,255,0.75)',
+              color: 'var(--on-accent)',
               lineHeight: 1.7,
               whiteSpace: 'pre-wrap',
               outline: 'none',
@@ -378,7 +378,7 @@ export default function EmailReadyState({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid rgba(var(--ink),0.06)',
         padding: '12px 20px',
         flexShrink: 0,
         marginTop: 8,
@@ -389,8 +389,8 @@ export default function EmailReadyState({
             onClick={handleEditToggle}
             style={{
               ...btnBase,
-              color: isEditing ? 'rgba(45,212,191,0.85)' : 'rgba(255,255,255,0.6)',
-              background: isEditing ? TEAL_12 : 'rgba(255,255,255,0.06)',
+              color: isEditing ? 'color-mix(in oklab, rgba(45,212,191,0.85) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.6)',
+              background: isEditing ? TEAL_12 : 'rgba(var(--ink),0.06)',
             }}
           >
             {isEditing ? 'Done' : 'Edit'}
@@ -399,8 +399,8 @@ export default function EmailReadyState({
             onClick={onSave}
             style={{
               ...btnBase,
-              color: isSaved ? 'rgba(74,222,128,0.8)' : 'rgba(255,255,255,0.6)',
-              background: isSaved ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.06)',
+              color: isSaved ? 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.6)',
+              background: isSaved ? 'rgba(34,197,94,0.1)' : 'rgba(var(--ink),0.06)',
             }}
           >
             {isSaved ? 'Saved ✓' : 'Save'}
@@ -413,8 +413,8 @@ export default function EmailReadyState({
             onClick={handleCopySubject}
             style={{
               ...btnBase,
-              color: copiedSubject ? 'rgba(45,212,191,0.85)' : 'rgba(255,255,255,0.6)',
-              background: copiedSubject ? TEAL_12 : 'rgba(255,255,255,0.06)',
+              color: copiedSubject ? 'color-mix(in oklab, rgba(45,212,191,0.85) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.6)',
+              background: copiedSubject ? TEAL_12 : 'rgba(var(--ink),0.06)',
             }}
           >
             {copiedSubject ? 'Copied ✓' : 'Copy subject'}
@@ -424,7 +424,7 @@ export default function EmailReadyState({
             style={{
               ...btnBase,
               fontWeight: 600,
-              color: copiedEmail ? 'rgba(45,212,191,0.9)' : 'rgba(255,255,255,0.85)',
+              color: copiedEmail ? 'color-mix(in oklab, rgba(45,212,191,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.85)',
               background: copiedEmail
                 ? TEAL_12
                 : `linear-gradient(135deg, ${TEAL_85} 0%, rgba(13,148,136,0.8) 100%)`,

@@ -23,17 +23,17 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{
         padding: '16px 28px 14px',
-        borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+        borderBottom: '0.5px solid rgba(var(--ink),0.05)',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
-            <line x1="3" y1="6" x2="8" y2="6" stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeLinecap="round"/>
-            <line x1="3" y1="8.5" x2="11" y2="8.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1" strokeLinecap="round"/>
+            <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="rgba(var(--ink),0.35)" strokeWidth="1"/>
+            <line x1="3" y1="6" x2="8" y2="6" stroke="rgba(var(--ink),0.35)" strokeWidth="1" strokeLinecap="round"/>
+            <line x1="3" y1="8.5" x2="11" y2="8.5" stroke="rgba(var(--ink),0.35)" strokeWidth="1" strokeLinecap="round"/>
           </svg>
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Type your prompt</span>
+          <span style={{ fontSize: '13px', color: 'rgba(var(--ink),0.68)' }}>Type your prompt</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
@@ -41,18 +41,18 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '5px 12px', borderRadius: '8px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '0.5px solid rgba(255,255,255,0.08)',
+              background: 'rgba(var(--ink),0.04)',
+              border: '0.5px solid rgba(var(--ink),0.08)',
               cursor: 'pointer', WebkitAppRegion: 'no-drag',
             }}
           >
             <svg width="11" height="13" viewBox="0 0 12 16" fill="none">
-              <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
-              <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeLinecap="round"/>
+              <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(var(--ink),0.4)" strokeWidth="1"/>
+              <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(var(--ink),0.4)" strokeWidth="1" strokeLinecap="round"/>
             </svg>
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.38)' }}>Switch to voice</span>
+            <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.54)' }}>Switch to voice</span>
           </div>
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.18)' }}>⌘↵ to generate</span>
+          <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.3)' }}>⌘↵ to generate</span>
         </div>
       </div>
 
@@ -70,12 +70,12 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             placeholder="Describe what you want Claude to build, design, or write..."
             style={{
               width: '100%', height: '100%', minHeight: '320px',
-              background: 'rgba(255,255,255,0.02)',
+              background: 'rgba(var(--ink),0.02)',
               border: '0.5px solid rgba(10,132,255,0.2)',
               borderRadius: '14px',
               padding: '20px 22px',
               fontSize: '15px',
-              color: 'rgba(255,255,255,0.75)',
+              color: 'rgba(var(--ink),0.95)',
               lineHeight: 1.75,
               fontFamily: 'inherit',
               outline: 'none',
@@ -86,7 +86,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           />
           <span style={{
             position: 'absolute', bottom: '14px', right: '16px',
-            fontSize: '11px', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace',
+            fontSize: '11px', color: 'rgba(var(--ink),0.26)', fontFamily: 'monospace',
             pointerEvents: 'none',
           }}>
             {typingText.length} chars
@@ -102,7 +102,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           flexShrink: 0,
         }}>
           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(10,132,255,0.7)', flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.5)' }}>
             {MODE_DESCRIPTIONS[mode] || `Output will be structured for ${mode} mode`}
           </span>
         </div>
@@ -110,7 +110,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
 
       <div style={{
         padding: '14px 24px 20px',
-        borderTop: '0.5px solid rgba(255,255,255,0.05)',
+        borderTop: '0.5px solid rgba(var(--ink),0.05)',
         display: 'flex', gap: '10px', alignItems: 'center',
         flexShrink: 0,
       }}>
@@ -118,10 +118,10 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           onClick={() => setTypingText('')}
           style={{
             height: '40px', padding: '0 20px',
-            border: '0.5px solid rgba(255,255,255,0.1)',
+            border: '0.5px solid rgba(var(--ink),0.1)',
             borderRadius: '10px',
-            background: 'rgba(255,255,255,0.04)',
-            fontSize: '13px', color: 'rgba(255,255,255,0.38)',
+            background: 'rgba(var(--ink),0.04)',
+            fontSize: '13px', color: 'rgba(var(--ink),0.54)',
             cursor: 'pointer', fontFamily: 'inherit',
             WebkitAppRegion: 'no-drag',
           }}
@@ -129,7 +129,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           Clear
         </button>
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.18)' }}>or press ⌘↵</span>
+        <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.3)' }}>or press ⌘↵</span>
         <button
           onClick={() => typingText.trim() && onTypingSubmit(typingText.trim())}
           disabled={!typingText.trim()}

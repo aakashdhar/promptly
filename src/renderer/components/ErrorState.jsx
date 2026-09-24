@@ -13,11 +13,11 @@ export default function ErrorState({ message, onDismiss }) {
         </div>
         <div className="flex-1 [-webkit-app-region:no-drag]" style={{marginLeft:16}}>
           {/* error message stays at 0.50 */}
-          <div className="text-[13px] font-medium tracking-[0.01em] mb-[3px]" style={{color:'rgba(255,255,255,0.75)'}} id="error-message">
+          <div className="text-[13px] font-medium tracking-[0.01em] mb-[3px]" style={{color:'rgba(var(--ink),0.95)'}} id="error-message">
             {message || 'Something went wrong'}
           </div>
           {/* POLISH-009: 0.18 → 0.48 */}
-          <div className="text-[11px] tracking-[0.01em]" style={{color:'rgba(255,255,255,0.48)'}}>Tap to retry</div>
+          <div className="text-[11px] tracking-[0.01em]" style={{color:'rgba(var(--ink),0.66)'}}>Tap to retry</div>
         </div>
       </div>
     </div>

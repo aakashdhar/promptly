@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 
 // POLISH-008: section dividers between body and next label
 // POLISH-003: label tracking 0.12em
@@ -24,7 +25,7 @@ function renderPromptOutput(text, labelColor = 'rgba(100,170,255,0.70)') {
       if (!firstLabel) {
         // POLISH-008: divider between sections
         result.push(
-          <div key={key++} style={{ height: '0.5px', background: 'rgba(255,255,255,0.04)', margin: '12px 0 14px' }} />
+          <div key={key++} style={{ height: '0.5px', background: 'rgba(var(--ink),0.04)', margin: '12px 0 14px' }} />
         )
       }
       firstLabel = false
@@ -32,7 +33,7 @@ function renderPromptOutput(text, labelColor = 'rgba(100,170,255,0.70)') {
         <span
           key={key++}
           className="block text-[8.5px] font-bold uppercase mb-[6px]"
-          style={{ color: labelColor, letterSpacing: '0.12em' }}
+          style={{ color: readableColor(labelColor), letterSpacing: '0.12em' }}
         >
           {m[1].trim()}
         </span>
@@ -49,7 +50,7 @@ function Divider() {
   return (
     <div
       className="flex-shrink-0"
-      style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '0 22px' }}
+      style={{ height: '0.5px', background: 'rgba(var(--ink),0.06)', margin: '0 22px' }}
     />
   )
 }
@@ -151,19 +152,19 @@ export default function PromptReadyState({
         style={{
           position: 'absolute', top: '14px', right: '16px',
           width: '26px', height: '26px', borderRadius: '7px',
-          background: 'rgba(255,255,255,0.05)',
-          border: '0.5px solid rgba(255,255,255,0.1)',
+          background: 'rgba(var(--ink),0.05)',
+          border: '0.5px solid rgba(var(--ink),0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', zIndex: 10,
           WebkitAppRegion: 'no-drag', padding: 0,
           transition: 'background 150ms',
         }}
-        onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.12)'}
-        onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+        onMouseEnter={e => e.currentTarget.style.background='rgba(var(--ink),0.12)'}
+        onMouseLeave={e => e.currentTarget.style.background='rgba(var(--ink),0.05)'}
       >
         <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
-          <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
-          <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(255,255,255,0.45)"/>
+          <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(var(--ink),0.45)"/>
+          <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(var(--ink),0.45)"/>
         </svg>
       </button>
 
@@ -175,14 +176,14 @@ export default function PromptReadyState({
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}
         <div
           className="flex items-center text-[13px] font-medium"
-          style={{ gap: '8px', color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.01em', WebkitAppRegion: 'no-drag' }}
+          style={{ gap: '8px', color: 'rgba(var(--ink),0.95)', letterSpacing: '-0.01em', WebkitAppRegion: 'no-drag' }}
         >
           <span style={{ color: 'var(--color-green)', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
           <span>{isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
           {isIterated && (
             <span style={{
               fontSize: '10px',
-              color: 'rgba(10,132,255,0.72)',
+              color: 'color-mix(in oklab, rgba(10,132,255,0.72) var(--accent-text-strength), rgb(var(--ink)))',
               background: 'rgba(10,132,255,0.08)',
               border: '0.5px solid rgba(10,132,255,0.2)',
               borderRadius: '20px',
@@ -201,7 +202,7 @@ export default function PromptReadyState({
             onMouseLeave={() => setIterateHovered(false)}
             style={{
               fontSize: '11px',
-              color: iterateHovered ? 'rgba(10,132,255,1)' : 'rgba(10,132,255,0.85)',
+              color: iterateHovered ? 'color-mix(in oklab, rgba(10,132,255,1) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(10,132,255,0.85) var(--accent-text-strength), rgb(var(--ink)))',
               textShadow: iterateHovered ? '0 0 8px rgba(10,132,255,0.4)' : 'none',
               fontWeight: 500,
               background: 'none',
@@ -218,7 +219,7 @@ export default function PromptReadyState({
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
-              color: regenerateHovered ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.58)',
+              color: regenerateHovered ? 'rgba(var(--ink),0.8)' : 'rgba(var(--ink),0.58)',
               transition: 'color 120ms ease',
             }}
             onMouseEnter={() => setRegenerateHovered(true)}
@@ -231,7 +232,7 @@ export default function PromptReadyState({
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
-              color: exportHovered ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.58)',
+              color: exportHovered ? 'rgba(var(--ink),0.8)' : 'rgba(var(--ink),0.58)',
               transition: 'color 120ms ease',
             }}
             onMouseEnter={() => setExportHovered(true)}
@@ -244,7 +245,7 @@ export default function PromptReadyState({
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
-              color: resetHovered ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.58)',
+              color: resetHovered ? 'rgba(var(--ink),0.8)' : 'rgba(var(--ink),0.58)',
               transition: 'color 120ms ease',
             }}
             onMouseEnter={() => setResetHovered(true)}
@@ -264,7 +265,7 @@ export default function PromptReadyState({
         {/* POLISH-003: section label tracking 0.12em; POLISH-009: 0.16 → 0.45 */}
         <div
           className="text-[9px] font-bold uppercase"
-          style={{ letterSpacing: '0.12em', color: 'rgba(255,255,255,0.45)', marginBottom: '10px' }}
+          style={{ letterSpacing: '0.12em', color: 'rgba(var(--ink),0.62)', marginBottom: '10px' }}
         >
           YOU SAID
         </div>
@@ -272,7 +273,7 @@ export default function PromptReadyState({
         <div
           className="text-[13px] overflow-hidden"
           style={{
-            color: 'rgba(255,255,255,0.58)',
+            color: 'rgba(var(--ink),0.78)',
             lineHeight: '1.65',
             letterSpacing: '-0.01em',
             display: '-webkit-box',
@@ -299,7 +300,7 @@ export default function PromptReadyState({
           padding: '20px 22px',
           fontSize: '13.5px',
           lineHeight: '1.85',
-          color: 'rgba(255,255,255,0.82)',
+          color: 'rgba(var(--ink),0.95)',
           letterSpacing: '-0.01em',
           whiteSpace: 'pre-wrap',
           outline: '1.5px solid rgba(10,132,255,0.6)',
@@ -310,7 +311,7 @@ export default function PromptReadyState({
           padding: '20px 22px',
           fontSize: '13.5px',
           lineHeight: '1.85',
-          color: 'rgba(255,255,255,0.82)',
+          color: 'rgba(var(--ink),0.95)',
           letterSpacing: '-0.01em',
           whiteSpace: 'pre-wrap',
           WebkitAppRegion: 'no-drag',
@@ -334,9 +335,9 @@ export default function PromptReadyState({
           style={{
             height: '44px',
             padding: '0 24px',
-            border: editHovered ? '0.5px solid rgba(255,255,255,0.16)' : '0.5px solid rgba(255,255,255,0.1)',
-            background: editHovered ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-            color: 'rgba(255,255,255,0.70)',
+            border: editHovered ? '0.5px solid rgba(var(--ink),0.16)' : '0.5px solid rgba(var(--ink),0.1)',
+            background: editHovered ? 'rgba(var(--ink),0.08)' : 'rgba(var(--ink),0.04)',
+            color: 'rgba(var(--ink),0.92)',
             transition: 'all 150ms ease',
           }}
         >
@@ -345,7 +346,7 @@ export default function PromptReadyState({
 
         {/* POLISH-007: copy button smooth transition; POLISH-004: borderTop */}
         <button
-          className={`flex-1 cursor-pointer text-[13px] font-semibold tracking-[0.02em] rounded-[10px] text-white ${
+          className={`flex-1 cursor-pointer text-[13px] font-semibold tracking-[0.02em] rounded-[10px] ${
             isCopied
               ? 'hover:shadow-[0_4px_28px_rgba(48,209,88,0.65)]'
               : isRefine
@@ -357,7 +358,8 @@ export default function PromptReadyState({
           style={{
             height: '44px',
             border: 'none',
-            borderTop: '0.5px solid rgba(255,255,255,0.20)',
+            color: 'var(--on-accent)',
+            borderTop: '0.5px solid rgba(var(--ink),0.2)',
             background: isCopied
               ? 'linear-gradient(135deg, rgba(48,209,88,0.85), rgba(30,168,70,0.85))'
               : isRefine

@@ -1,4 +1,5 @@
 import { useState, useRef, useLayoutEffect } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 import WaveformCanvas from './WaveformCanvas.jsx'
 import MorphCanvas from './MorphCanvas.jsx'
 import { getModeAccent } from '../utils/thinkingLabels.js'
@@ -43,9 +44,9 @@ export default function ExpandedTransportBar({
   const pillBorder = isPolish ? '0.5px solid rgba(48,209,88,0.3)' : isRefine ? '0.5px solid rgba(168,85,247,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : isWorkflow ? '0.5px solid rgba(34,197,94,0.3)' : isEmail ? '0.5px solid rgba(20,184,166,0.3)' : '0.5px solid rgba(10,132,255,0.25)'
   const pillColor = isPolish ? 'rgba(100,220,130,0.9)' : isRefine ? 'rgba(200,160,255,1.0)' : isVideo ? 'rgba(251,146,60,0.85)' : isWorkflow ? 'rgba(74,222,128,0.9)' : isEmail ? 'rgba(45,212,191,0.9)' : 'rgba(100,180,255,0.85)'
 
-  const pauseBtnBg = isRecording ? 'rgba(255,189,46,0.12)' : 'rgba(255,255,255,0.06)'
-  const pauseBtnBorder = isRecording ? '0.5px solid rgba(255,189,46,0.3)' : '0.5px solid rgba(255,255,255,0.1)'
-  const pauseIconFill = isRecording ? 'rgba(255,189,46,0.9)' : 'rgba(255,255,255,0.5)'
+  const pauseBtnBg = isRecording ? 'rgba(255,189,46,0.12)' : 'rgba(var(--ink),0.06)'
+  const pauseBtnBorder = isRecording ? '0.5px solid rgba(255,189,46,0.3)' : '0.5px solid rgba(var(--ink),0.1)'
+  const pauseIconFill = isRecording ? 'rgba(255,189,46,0.9)' : 'rgba(var(--ink),0.5)'
 
   const transportRef = useRef(null)
   const [waveWidth, setWaveWidth] = useState(0)
@@ -113,7 +114,7 @@ export default function ExpandedTransportBar({
     <>
     <div style={{
       background: 'transparent',
-      borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+      borderBottom: '0.5px solid rgba(var(--ink),0.06)',
       flexShrink: 0,
       position: 'relative',
     }}>
@@ -128,19 +129,19 @@ export default function ExpandedTransportBar({
             title="Path settings (⌘/)"
             style={{
               width: '28px', height: '28px', borderRadius: '7px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '0.5px solid rgba(255,255,255,0.1)',
+              background: 'rgba(var(--ink),0.05)',
+              border: '0.5px solid rgba(var(--ink),0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
               WebkitAppRegion: 'no-drag', padding: 0,
               transition: 'background 150ms', flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.12)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.05)' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+              <circle cx="12" cy="12" r="3" stroke="rgba(var(--ink),0.5)" strokeWidth="1.5"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="rgba(var(--ink),0.5)" strokeWidth="1.5"/>
             </svg>
           </button>
         )}
@@ -149,22 +150,22 @@ export default function ExpandedTransportBar({
           title={isWorkflow ? 'Workflow mode uses full view' : isVideo ? 'Video mode requires expanded view' : isEmail ? 'Email mode uses expanded view' : 'Collapse'}
           style={{
             width: '28px', height: '28px', borderRadius: '7px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '0.5px solid rgba(255,255,255,0.1)',
+            background: 'rgba(var(--ink),0.05)',
+            border: '0.5px solid rgba(var(--ink),0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: isFullViewMode ? 'not-allowed' : 'pointer', marginRight: '18px',
             WebkitAppRegion: 'no-drag', padding: 0, pointerEvents: isFullViewMode ? 'none' : 'auto',
             transition: 'background 150ms', flexShrink: 0,
             opacity: isFullViewMode ? 0.3 : 1,
           }}
-          onMouseEnter={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
-          onMouseLeave={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+          onMouseEnter={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(var(--ink),0.12)' }}
+          onMouseLeave={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(var(--ink),0.05)' }}
         >
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M10 2L6.5 5.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M8.5 5.5H6.5V3.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 10L5.5 6.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M3.5 6.5H5.5V8.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M10 2L6.5 5.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M8.5 5.5H6.5V3.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 10L5.5 6.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M3.5 6.5H5.5V8.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       </div>
@@ -199,7 +200,7 @@ export default function ExpandedTransportBar({
           {/* Timer */}
           <span style={{
             fontFamily: 'monospace', fontSize: '13px',
-            color: 'rgba(255,255,255,0.35)', minWidth: '28px', textAlign: 'right',
+            color: 'rgba(var(--ink),0.5)', minWidth: '28px', textAlign: 'right',
             letterSpacing: '0.06em',
             opacity: isTyping || isIterating ? 0.2 : 1,
             transition: 'opacity 200ms',
@@ -244,8 +245,8 @@ export default function ExpandedTransportBar({
             {isThinking ? (
               <div style={{
                 width: '52px', height: '52px', borderRadius: '50%',
-                background: 'rgba(255,255,255,0.06)',
-                border: '0.5px solid rgba(255,255,255,0.1)',
+                background: 'rgba(var(--ink),0.06)',
+                border: '0.5px solid rgba(var(--ink),0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <svg width="36" height="36" viewBox="0 0 40 40" fill="none"
@@ -255,8 +256,8 @@ export default function ExpandedTransportBar({
                 </svg>
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '0.5px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(var(--ink),0.04)',
+                  border: '0.5px solid rgba(var(--ink),0.08)',
                 }} />
               </div>
             ) : (
@@ -268,8 +269,8 @@ export default function ExpandedTransportBar({
                     ? 'rgba(200,50,35,0.95)'
                     : isIterating
                       ? 'rgba(10,132,255,0.95)'
-                      : 'rgba(255,255,255,0.06)',
-                  border: (isRecording || isIterating) ? 'none' : '0.5px solid rgba(255,255,255,0.12)',
+                      : 'rgba(var(--ink),0.06)',
+                  border: (isRecording || isIterating) ? 'none' : '0.5px solid rgba(var(--ink),0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', position: 'relative',
                   boxShadow: isRecording
@@ -288,7 +289,7 @@ export default function ExpandedTransportBar({
                 {!isRecording && !isIterating && (
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: '50%',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(var(--ink),0.06)',
                     animation: 'breathe 3s ease-in-out infinite',
                     pointerEvents: 'none',
                   }} />
@@ -299,9 +300,9 @@ export default function ExpandedTransportBar({
                   </svg>
                 ) : (
                   <svg width="13" height="15" viewBox="0 0 12 16" fill="none">
-                    <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
-                    <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1" strokeLinecap="round" />
-                    <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1" strokeLinecap="round" />
+                    <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(var(--ink),0.55)" strokeWidth="1" />
+                    <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(var(--ink),0.55)" strokeWidth="1" strokeLinecap="round" />
+                    <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(var(--ink),0.55)" strokeWidth="1" strokeLinecap="round" />
                   </svg>
                 )}
               </div>
@@ -314,7 +315,7 @@ export default function ExpandedTransportBar({
             onClick={handleModePillClick}
             style={{
               padding: '5px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
-              background: pillBg, border: pillBorder, color: pillColor,
+              background: pillBg, border: pillBorder, color: readableColor(pillColor),
               cursor: 'pointer', whiteSpace: 'nowrap',
               WebkitAppRegion: 'no-drag',
             }}
@@ -327,21 +328,21 @@ export default function ExpandedTransportBar({
             onClick={onTypePrompt}
             style={{
               width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-              background: isTyping ? 'rgba(10,132,255,0.15)' : 'rgba(255,255,255,0.06)',
-              border: isTyping ? '0.5px solid rgba(10,132,255,0.35)' : '0.5px solid rgba(255,255,255,0.1)',
+              background: isTyping ? 'rgba(10,132,255,0.15)' : 'rgba(var(--ink),0.06)',
+              border: isTyping ? '0.5px solid rgba(10,132,255,0.35)' : '0.5px solid rgba(var(--ink),0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
               transition: 'background 150ms, border 150ms',
             }}
-            onMouseEnter={e => { if (!isTyping) e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
-            onMouseLeave={e => { if (!isTyping) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+            onMouseEnter={e => { if (!isTyping) e.currentTarget.style.background = 'rgba(var(--ink),0.1)' }}
+            onMouseLeave={e => { if (!isTyping) e.currentTarget.style.background = 'rgba(var(--ink),0.06)' }}
           >
             <svg width="14" height="10" viewBox="0 0 15 11" fill="none">
-              <rect x="0.5" y="0.5" width="14" height="10" rx="2" stroke={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'} strokeWidth="1"/>
-              <rect x="2.5" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
-              <rect x="6.25" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
-              <rect x="10" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
-              <rect x="2.5" y="6.5" width="10" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(255,255,255,0.45)'}/>
+              <rect x="0.5" y="0.5" width="14" height="10" rx="2" stroke={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(var(--ink),0.45)'} strokeWidth="1"/>
+              <rect x="2.5" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(var(--ink),0.45)'}/>
+              <rect x="6.25" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(var(--ink),0.45)'}/>
+              <rect x="10" y="3" width="2" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(var(--ink),0.45)'}/>
+              <rect x="2.5" y="6.5" width="10" height="1.5" rx="0.5" fill={isTyping ? 'rgba(100,180,255,0.8)' : 'rgba(var(--ink),0.45)'}/>
             </svg>
           </div>
 
@@ -351,26 +352,26 @@ export default function ExpandedTransportBar({
             title="Reset to start"
             style={{
               width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(255,255,255,0.06)',
-              border: '0.5px solid rgba(255,255,255,0.1)',
+              background: 'rgba(var(--ink),0.06)',
+              border: '0.5px solid rgba(var(--ink),0.1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: currentState === 'IDLE' ? 'default' : 'pointer',
               opacity: currentState === 'IDLE' ? 0.3 : 1,
               transition: 'background 150ms, opacity 150ms',
             }}
-            onMouseEnter={e => { if (currentState !== 'IDLE') e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+            onMouseEnter={e => { if (currentState !== 'IDLE') e.currentTarget.style.background = 'rgba(var(--ink),0.1)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.06)' }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
-                stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+                stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
               <path d="M6.5 5.5L9 3L6.5 0.5"
-                stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
 
           {/* Divider */}
-          <div style={{ width: '0.5px', height: '28px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+          <div style={{ width: '0.5px', height: '28px', background: 'rgba(var(--ink),0.1)', flexShrink: 0 }} />
 
           {/* State text block — fixed width so label changes never shift buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '220px', flexShrink: 0, overflow: 'hidden' }}>
@@ -379,14 +380,14 @@ export default function ExpandedTransportBar({
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '7px',
                   fontSize: '13px', fontWeight: 500,
-                  color: 'rgba(255,255,255,0.6)',
+                  color: 'rgba(var(--ink),0.8)',
                   opacity: thinkingLabelOpacity,
                   transition: 'opacity 150ms ease',
                 }}>
                   <div style={{ animation: 'spin 1.1s linear infinite', flexShrink: 0, display: 'flex' }}>
                     <svg width="12" height="12" viewBox="0 0 32 32" fill="none">
                       <circle cx="16" cy="16" r="12"
-                        stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+                        stroke="rgba(var(--ink),0.15)" strokeWidth="3" />
                       <path d="M16 4A12 12 0 0 1 28 16"
                         stroke={getModeAccent(mode)} strokeWidth="3" strokeLinecap="round" />
                     </svg>
@@ -395,7 +396,7 @@ export default function ExpandedTransportBar({
                 </div>
                 <div style={{
                   fontFamily: 'monospace', fontSize: '11px',
-                  color: 'rgba(255,255,255,0.2)',
+                  color: 'rgba(var(--ink),0.32)',
                   paddingLeft: '19px',
                 }}>
                   {`${Math.floor(thinkingElapsed / 60)}:${(thinkingElapsed % 60).toString().padStart(2, '0')}`}
@@ -413,14 +414,14 @@ export default function ExpandedTransportBar({
                     }} />
                   )}
                   <span style={{
-                    fontSize: '12px', fontWeight: 500, color: 'rgba(255,255,255,0.75)',
+                    fontSize: '12px', fontWeight: 500, color: 'rgba(var(--ink),0.95)',
                     letterSpacing: '-0.01em',
                   }}>
                     {textLine1}
                   </span>
                 </div>
                 {textLine2 && (
-                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', paddingLeft: textDot ? '11px' : '0' }}>
+                  <span style={{ fontSize: '11px', color: 'rgba(var(--ink),0.42)', paddingLeft: textDot ? '11px' : '0' }}>
                     {textLine2}
                   </span>
                 )}
@@ -448,7 +449,7 @@ export default function ExpandedTransportBar({
           ) : isThinking || isIterating ? (
             <MorphCanvas />
           ) : (
-            <div style={{ height: '1px', width: '100%', background: 'rgba(255,255,255,0.07)' }} />
+            <div style={{ height: '1px', width: '100%', background: 'rgba(var(--ink),0.07)' }} />
           )}
         </div>
       </div>

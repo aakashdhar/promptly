@@ -48,21 +48,21 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           title="Expand"
           style={{
             width: '22px', height: '22px', borderRadius: '6px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '0.5px solid rgba(255,255,255,0.09)',
+            background: 'rgba(var(--ink),0.04)',
+            border: '0.5px solid rgba(var(--ink),0.09)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', marginRight: '14px',
             WebkitAppRegion: 'no-drag', flexShrink: 0,
             padding: 0, transition: 'background 150ms',
           }}
-          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'}
-          onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(var(--ink),0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(var(--ink),0.04)'}
         >
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-            <path d="M1 4V1h3" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M1 1l4 4" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M11 8v3H8" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 11L7 7" stroke="rgba(255,255,255,0.38)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M1 4V1h3" stroke="rgba(var(--ink),0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 1l4 4" stroke="rgba(var(--ink),0.38)" strokeWidth="1.2" strokeLinecap="round"/>
+            <path d="M11 8v3H8" stroke="rgba(var(--ink),0.38)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 11L7 7" stroke="rgba(var(--ink),0.38)" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
         </button>
       </div>
@@ -130,19 +130,19 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           {/* POLISH-003: status text */}
           <div
             className="text-[13px] font-medium mb-[3px]"
-            style={{ color:'rgba(255,255,255,0.82)', letterSpacing:'-0.01em' }}
+            style={{ color:'rgba(var(--ink),0.95)', letterSpacing:'-0.01em' }}
           >
             Promptly is ready
           </div>
           {/* POLISH-009: subtitle from 0.18 → 0.48 */}
           <div
             className="text-[11px]"
-            style={{ color:'rgba(255,255,255,0.48)', letterSpacing:'-0.01em' }}
+            style={{ color:'rgba(var(--ink),0.66)', letterSpacing:'-0.01em' }}
           >
             {isPolish ? "Speak it rough — get it polished" : isRefine ? "Describe what exists, what's wrong, and what you want" : isImage ? 'Speak your image idea' : isVideo ? 'Speak your video idea' : isWorkflow ? 'Describe your automation' : isEmail ? 'Describe your email situation naturally' : '⌥ Space to speak · ⌘T to type'}
           </div>
           {/* POLISH-009: hint from 0.10 → 0.40 */}
-          <span className="text-[9px] mt-[4px] block" style={{color:'rgba(255,255,255,0.40)'}}>⌘? for shortcuts</span>
+          <span className="text-[9px] mt-[4px] block" style={{color:'rgba(var(--ink),0.56)'}}>⌘? for shortcuts</span>
         </div>
 
         {/* Keyboard icon — type prompt */}
@@ -152,20 +152,20 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           style={{
             position:'absolute', right: isPolish ? '156px' : '108px',
             width:'32px', height:'32px', borderRadius:'9px',
-            background:'rgba(255,255,255,0.05)',
-            border:'0.5px solid rgba(255,255,255,0.1)',
+            background:'rgba(var(--ink),0.05)',
+            border:'0.5px solid rgba(var(--ink),0.1)',
             display:'flex', alignItems:'center', justifyContent:'center',
             cursor:'pointer', flexShrink:0,
             WebkitAppRegion:'no-drag',
             transition:'background 150ms'
           }}
-          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'}
-          onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.05)'}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(var(--ink),0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(var(--ink),0.05)'}
         >
           <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
-            <rect x="1" y="1" width="12" height="8" rx="2" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2"/>
-            <line x1="3.5" y1="4" x2="10.5" y2="4" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <line x1="3.5" y1="6.5" x2="7.5" y2="6.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <rect x="1" y="1" width="12" height="8" rx="2" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2"/>
+            <line x1="3.5" y1="4" x2="10.5" y2="4" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+            <line x1="3.5" y1="6.5" x2="7.5" y2="6.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
         </div>
 
@@ -184,7 +184,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
                 fontWeight:500, cursor:'pointer', textAlign:'center',
                 background:'rgba(48,209,88,0.08)',
                 border:'0.5px solid rgba(48,209,88,0.2)',
-                color:'rgba(100,220,130,0.75)', whiteSpace:'nowrap'
+                color:'color-mix(in oklab, rgba(100,220,130,0.75) var(--accent-text-strength), rgb(var(--ink)))', whiteSpace:'nowrap'
               }}
             >
               {polishTone === 'formal' ? 'Formal' : 'Casual'}
@@ -198,7 +198,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
                 fontWeight:500, cursor:'pointer', textAlign:'center',
                 background:'rgba(48,209,88,0.12)',
                 border:'0.5px solid rgba(48,209,88,0.3)',
-                color:'rgba(100,220,130,0.9)', whiteSpace:'nowrap'
+                color:'color-mix(in oklab, rgba(100,220,130,0.9) var(--accent-text-strength), rgb(var(--ink)))', whiteSpace:'nowrap'
               }}
               onClick={handleModePillClick}
             >
@@ -217,7 +217,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
               textAlign: 'center',
               background: isRefine ? 'rgba(139,92,246,0.12)' : isImage ? 'rgba(245,158,11,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : isWorkflow ? 'rgba(34,197,94,0.12)' : isEmail ? 'rgba(20,184,166,0.12)' : 'rgba(10,132,255,0.12)',
               border: isRefine ? '0.5px solid rgba(139,92,246,0.3)' : isImage ? '0.5px solid rgba(245,158,11,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : isWorkflow ? '0.5px solid rgba(34,197,94,0.3)' : isEmail ? '0.5px solid rgba(20,184,166,0.3)' : '0.5px solid rgba(10,132,255,0.25)',
-              color: isRefine ? 'rgba(200,160,255,1.0)' : isImage ? 'rgba(252,211,77,0.9)' : isVideo ? 'rgba(251,146,60,0.85)' : isWorkflow ? 'rgba(74,222,128,0.9)' : isEmail ? 'rgba(45,212,191,0.9)' : 'rgba(100,180,255,0.85)',
+              color: isRefine ? 'color-mix(in oklab, rgba(200,160,255,1.0) var(--accent-text-strength), rgb(var(--ink)))' : isImage ? 'color-mix(in oklab, rgba(252,211,77,0.9) var(--accent-text-strength), rgb(var(--ink)))' : isVideo ? 'color-mix(in oklab, rgba(251,146,60,0.85) var(--accent-text-strength), rgb(var(--ink)))' : isWorkflow ? 'color-mix(in oklab, rgba(74,222,128,0.9) var(--accent-text-strength), rgb(var(--ink)))' : isEmail ? 'color-mix(in oklab, rgba(45,212,191,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(100,180,255,0.85) var(--accent-text-strength), rgb(var(--ink)))',
             }}
             onClick={handleModePillClick}
           >
@@ -233,7 +233,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
         textAlign: 'center',
         fontSize: '9px',
         letterSpacing: '0.08em',
-        color: 'rgba(255,255,255,0.12)',
+        color: 'rgba(var(--ink),0.22)',
         fontWeight: 400,
         pointerEvents: 'none',
         userSelect: 'none',

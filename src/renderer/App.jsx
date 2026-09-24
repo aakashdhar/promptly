@@ -494,13 +494,10 @@ Return ONLY valid JSON:
 
   return (
     <div
-      style={{width:'100%', height:'100vh', display:'flex', flexDirection:'column', borderRadius:'18px', overflow:'hidden', position:'relative', background:'linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%)', borderTop:'1px solid rgba(255,255,255,0.18)', borderLeft:'1px solid rgba(255,255,255,0.10)', borderRight:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.04)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)'}}
+      style={{width:'100%', height:'100vh', display:'flex', flexDirection:'column', borderRadius:'18px', overflow:'hidden', position:'relative', background:'var(--bg)', border:'0.5px solid var(--window-edge)', boxShadow:'var(--window-shadow)'}}
       id="bar"
       onContextMenu={handleContextMenu}
     >
-      <div style={{position:'absolute',top:'-60px',right:'-40px',width:'280px',height:'280px',borderRadius:'50%',background:'radial-gradient(circle, rgba(10,132,255,0.08) 0%, transparent 70%)',pointerEvents:'none',zIndex:-1}} />
-      <div style={{position:'absolute',bottom:'-60px',left:'-40px',width:'240px',height:'240px',borderRadius:'50%',background:'radial-gradient(circle, rgba(120,40,200,0.1) 0%, transparent 70%)',pointerEvents:'none',zIndex:-1}} />
-      <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/[0.28] to-transparent pointer-events-none z-10" />
 
       {/* POLISH-001: animated state wrapper */}
       <div
@@ -701,25 +698,23 @@ Return ONLY valid JSON:
           style={{
             position: 'absolute', top: '10px', right: '14px', zIndex: 20,
             width: '26px', height: '26px', borderRadius: '7px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '0.5px solid rgba(255,255,255,0.1)',
+            background: 'rgba(var(--ink),0.05)',
+            border: '0.5px solid rgba(var(--ink),0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', WebkitAppRegion: 'no-drag', padding: 0,
             transition: 'background 150ms',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--ink),0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(var(--ink),0.05)'}
         >
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
-              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round"/>
+              stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
             <path d="M6.5 5.5L9 3L6.5 0.5"
-              stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       )}
-
-      <div className="absolute bottom-0 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-[var(--color-red)]/20 to-transparent pointer-events-none z-10" />
     </div>
   )
 }

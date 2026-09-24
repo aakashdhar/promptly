@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 import { bookmarkHistoryItem, rateHistoryItem, formatTime } from '../utils/history.js'
 import ExpandedTypingContent from './ExpandedTypingContent.jsx'
 import ExpandedPromptReadyContent from './ExpandedPromptReadyContent.jsx'
@@ -124,12 +125,12 @@ export default function ExpandedDetailPanel({
       {!isContentState && (
         <div style={{
           padding: '12px 20px 10px', flexShrink: 0,
-          borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+          borderBottom: '0.5px solid rgba(var(--ink),0.05)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           gap: '10px',
         }}>
           <span style={{
-            fontSize: '12px', color: 'rgba(255,255,255,0.35)',
+            fontSize: '12px', color: 'rgba(var(--ink),0.5)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
             letterSpacing: '0.01em',
           }}>
@@ -145,9 +146,9 @@ export default function ExpandedDetailPanel({
                 style={{
                   height: '24px', padding: '0 8px', borderRadius: '5px',
                   fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer',
-                  background: entryCopied ? 'rgba(48,209,88,0.1)' : 'rgba(255,255,255,0.05)',
-                  border: entryCopied ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(255,255,255,0.1)',
-                  color: entryCopied ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.4)',
+                  background: entryCopied ? 'rgba(48,209,88,0.1)' : 'rgba(var(--ink),0.05)',
+                  border: entryCopied ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(var(--ink),0.1)',
+                  color: entryCopied ? 'color-mix(in oklab, rgba(48,209,88,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)',
                   transition: 'all 150ms',
                 }}
               >
@@ -159,9 +160,9 @@ export default function ExpandedDetailPanel({
                 style={{
                   height: '24px', padding: '0 8px', borderRadius: '5px',
                   fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer',
-                  background: entryExported ? 'rgba(48,209,88,0.1)' : 'rgba(255,255,255,0.05)',
-                  border: entryExported ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(255,255,255,0.1)',
-                  color: entryExported ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.4)',
+                  background: entryExported ? 'rgba(48,209,88,0.1)' : 'rgba(var(--ink),0.05)',
+                  border: entryExported ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(var(--ink),0.1)',
+                  color: entryExported ? 'color-mix(in oklab, rgba(48,209,88,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)',
                   transition: 'all 150ms',
                 }}
               >
@@ -180,13 +181,13 @@ export default function ExpandedDetailPanel({
           minHeight: '200px',
         }}>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2"/>
-            <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="12" cy="12" r="9" stroke="rgba(var(--ink),0.18)" strokeWidth="1.2"/>
+            <path d="M12 7v5l3 3" stroke="rgba(var(--ink),0.18)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: '16px', fontWeight: 400, color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.01em' }}>
+          <span style={{ fontSize: '16px', fontWeight: 400, color: 'rgba(var(--ink),0.44)', letterSpacing: '-0.01em' }}>
             Select a session to view details
           </span>
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.16)' }}>
+          <span style={{ fontSize: '13px', color: 'rgba(var(--ink),0.27)' }}>
             Your generated prompts appear here
           </span>
         </div>
@@ -199,7 +200,7 @@ export default function ExpandedDetailPanel({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{
                 fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
-                textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)',
+                textTransform: 'uppercase', color: 'rgba(var(--ink),0.5)',
               }}>
                 You said · {formatTime(selected.timestamp)}
               </div>
@@ -209,48 +210,48 @@ export default function ExpandedDetailPanel({
                   display: 'flex', alignItems: 'center', gap: '5px',
                   padding: '3px 8px', borderRadius: '6px', cursor: 'pointer',
                   fontFamily: 'inherit',
-                  background: selected.bookmarked ? 'rgba(255,189,46,0.10)' : 'rgba(255,255,255,0.04)',
-                  border: `0.5px solid ${selected.bookmarked ? 'rgba(255,189,46,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                  background: selected.bookmarked ? 'rgba(255,189,46,0.10)' : 'rgba(var(--ink),0.04)',
+                  border: `0.5px solid ${selected.bookmarked ? 'rgba(255,189,46,0.25)' : 'rgba(var(--ink),0.08)'}`,
                 }}
               >
                 <svg width="9" height="11" viewBox="0 0 10 13" fill="none">
                   <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z"
                     fill={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'none'}
-                    stroke={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(255,255,255,0.3)'}
+                    stroke={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(var(--ink),0.3)'}
                     strokeWidth="1.2" strokeLinejoin="round" />
                 </svg>
                 <span style={{
                   fontSize: '10px',
                   fontWeight: selected.bookmarked ? 500 : 400,
-                  color: selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(255,255,255,0.35)',
+                  color: selected.bookmarked ? 'color-mix(in oklab, rgba(255,189,46,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.35)',
                 }}>
                   {selected.bookmarked ? 'Saved' : 'Save'}
                 </span>
               </button>
             </div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
+            <div style={{ fontSize: '14px', color: 'rgba(var(--ink),0.86)', lineHeight: 1.7 }}>
               {selected.transcript}
             </div>
           </div>
 
-          <div style={{ height: '0.5px', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', margin: '0 28px', flexShrink: 0 }} />
+          <div style={{ height: '0.5px', background: 'linear-gradient(90deg,transparent,rgba(var(--ink),0.07),transparent)', margin: '0 28px', flexShrink: 0 }} />
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '18px 28px', minHeight: 0 }}>
-            <PromptSections prompt={selected.prompt} labelColor={labelColor} textSize="14px" textColor="rgba(255,255,255,0.82)" />
+            <PromptSections prompt={selected.prompt} labelColor={labelColor} textSize="14px" textColor="rgba(var(--ink),0.82)" />
             {selected.polishChanges && selected.polishChanges.length > 0 && (
               <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(48,209,88,0.5)', marginBottom: '6px' }}>Changes made</div>
+                <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(48,209,88,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
                 {selected.polishChanges.map((note, i) => (
-                  <div key={i} style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{note}</div>
+                  <div key={i} style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.62)', lineHeight: 1.5 }}>{note}</div>
                 ))}
               </div>
             )}
           </div>
 
           {/* Rating section */}
-          <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.06)', padding: '12px 28px', flexShrink: 0 }}>
+          <div style={{ borderTop: '0.5px solid rgba(var(--ink),0.06)', padding: '12px 28px', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: selected.rating ? '10px' : 0 }}>
-              <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)' }}>
+              <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.34)' }}>
                 Rate this prompt
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
@@ -262,10 +263,10 @@ export default function ExpandedDetailPanel({
                     fontFamily: 'inherit', transition: 'all 150ms',
                     background: selected.rating === r
                       ? (r === 'up' ? 'rgba(48,209,88,0.15)' : 'rgba(255,59,48,0.15)')
-                      : 'rgba(255,255,255,0.04)',
+                      : 'rgba(var(--ink),0.04)',
                     border: `0.5px solid ${selected.rating === r
                       ? (r === 'up' ? 'rgba(48,209,88,0.35)' : 'rgba(255,59,48,0.35)')
-                      : 'rgba(255,255,255,0.1)'}`,
+                      : 'rgba(var(--ink),0.1)'}`,
                   }}>
                     {r === 'up' ? '👍' : '👎'}
                   </button>
@@ -280,14 +281,14 @@ export default function ExpandedDetailPanel({
                   const activeStyle = isPositive
                     ? { bg: 'rgba(48,209,88,0.12)', border: 'rgba(48,209,88,0.3)', text: 'rgba(100,220,130,0.85)' }
                     : { bg: 'rgba(255,59,48,0.10)', border: 'rgba(255,59,48,0.3)', text: 'rgba(255,100,90,0.85)' }
-                  const inactiveStyle = { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.35)' }
+                  const inactiveStyle = { bg: 'rgba(var(--ink),0.04)', border: 'rgba(var(--ink),0.08)', text: 'rgba(var(--ink),0.35)' }
                   const s = isActiveTag ? activeStyle : inactiveStyle
                   return (
                     <span key={tag} onClick={() => handleTag(tag)} style={{
                       padding: '3px 10px', borderRadius: '6px',
                       fontSize: '10px', fontWeight: isActiveTag ? 500 : 400,
                       cursor: 'pointer', transition: 'all 150ms',
-                      background: s.bg, border: `0.5px solid ${s.border}`, color: s.text,
+                      background: s.bg, border: `0.5px solid ${s.border}`, color: readableColor(s.text),
                     }}>
                       {tag}
                     </span>
@@ -311,15 +312,15 @@ export default function ExpandedDetailPanel({
           )}
 
           {/* Entry action buttons */}
-          <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', borderTop: '0.5px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', borderTop: '0.5px solid rgba(var(--ink),0.06)', flexShrink: 0 }}>
             <button
               onClick={handleEntryCopy}
               style={{
                 flex: 1, height: '40px', borderRadius: '9px',
                 fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer',
-                background: entryCopied ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.06)',
-                border: entryCopied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(255,255,255,0.12)',
-                color: entryCopied ? 'rgba(48,209,88,0.9)' : 'rgba(255,255,255,0.72)',
+                background: entryCopied ? 'rgba(48,209,88,0.12)' : 'rgba(var(--ink),0.06)',
+                border: entryCopied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(var(--ink),0.12)',
+                color: entryCopied ? 'color-mix(in oklab, rgba(48,209,88,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.72)',
                 transition: 'all 200ms',
               }}
             >
@@ -464,10 +465,10 @@ export default function ExpandedDetailPanel({
           minHeight: '200px',
         }}>
           <span style={{ fontSize: '40px', lineHeight: 1 }}>✉</span>
-          <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em', textAlign: 'center' }}>
+          <span style={{ fontSize: '14px', color: 'rgba(var(--ink),0.68)', letterSpacing: '-0.01em', textAlign: 'center' }}>
             Describe your email situation naturally
           </span>
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.5)', textAlign: 'center' }}>
             Claude will draft a ready-to-send email
           </span>
         </div>

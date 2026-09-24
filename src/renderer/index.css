@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+/* Theme tokens. Colour only carries meaning (recording red, each mode's colour); the chrome is
+   neutral. The app follows macOS appearance unless Settings forces light or dark (main.js sets
+   nativeTheme.themeSource, which drives prefers-color-scheme). Components use
+   rgba(var(--ink), alpha) for text, lines and fills so one alpha scale works in both themes. */
+:root {
+  color-scheme: light;
+  --ink: 28, 28, 32;               /* text + overlays, as an RGB triple */
+  --bg: #F4F4F6;                   /* window */
+  --surface: #FFFFFF;              /* panels, inputs */
+  --surface-raised: #FFFFFF;       /* dropdowns, popovers */
+  --on-accent: #FFFFFF;            /* text on coloured buttons */
+  --accent-text-strength: 58%;     /* coloured text is mixed toward ink so pastels stay readable */
+  --window-edge: rgba(0, 0, 0, 0.12);
+  --window-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.12);
+  --popover-shadow: 0 8px 28px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink: 236, 236, 240;
+    --bg: #1C1C1F;
+    --surface: #242428;
+    --surface-raised: #3A3A40;
+    --accent-text-strength: 100%;
+    --window-edge: rgba(255, 255, 255, 0.10);
+    --window-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 40px rgba(0, 0, 0, 0.45);
+    --popover-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  }
+}
+
 @theme {
   --color-blue: #0A84FF;
   --color-red: #FF3B30;
@@ -83,7 +114,8 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #0A0A14;
+  background: var(--bg);
+  color: rgb(var(--ink));
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -96,9 +128,9 @@ body {
 *::-webkit-scrollbar { width: 3px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
+  background: rgba(var(--ink),0.12);
   border-radius: 2px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.18);
+  background: rgba(var(--ink),0.24);
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 import PromptSections from './PromptSections.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
@@ -18,7 +19,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: '13px',
-        color: 'rgba(255,255,255,0.55)',
+        color: 'rgba(var(--ink),0.74)',
       }}>
         Select a prompt to view
       </div>
@@ -34,7 +35,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
         }}>
           <div style={{
             fontSize: '10px', fontWeight: 700, letterSpacing: '.12em',
-            textTransform: 'uppercase', color: 'rgba(255,255,255,0.60)',
+            textTransform: 'uppercase', color: 'rgba(var(--ink),0.8)',
           }}>
             You said
           </div>
@@ -42,49 +43,49 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
             display: 'flex', alignItems: 'center', gap: '5px',
             padding: '3px 8px', borderRadius: '6px', cursor: 'pointer',
             fontFamily: 'inherit',
-            background: selected.bookmarked ? 'rgba(255,189,46,0.10)' : 'rgba(255,255,255,0.04)',
-            border: `0.5px solid ${selected.bookmarked ? 'rgba(255,189,46,0.25)' : 'rgba(255,255,255,0.08)'}`,
+            background: selected.bookmarked ? 'rgba(255,189,46,0.10)' : 'rgba(var(--ink),0.04)',
+            border: `0.5px solid ${selected.bookmarked ? 'rgba(255,189,46,0.25)' : 'rgba(var(--ink),0.08)'}`,
           }}>
             <svg width="9" height="11" viewBox="0 0 10 13" fill="none">
               <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z"
                 fill={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'none'}
-                stroke={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(255,255,255,0.3)'}
+                stroke={selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(var(--ink),0.3)'}
                 strokeWidth="1.2" strokeLinejoin="round"/>
             </svg>
             <span style={{
               fontSize: '10px', fontWeight: selected.bookmarked ? 500 : 400,
-              color: selected.bookmarked ? 'rgba(255,189,46,0.8)' : 'rgba(255,255,255,0.35)',
+              color: selected.bookmarked ? 'color-mix(in oklab, rgba(255,189,46,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.35)',
             }}>
               {selected.bookmarked ? 'Saved' : 'Save'}
             </span>
           </button>
         </div>
-        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.70)', lineHeight: 1.65 }}>
+        <div style={{ fontSize: '13px', color: 'rgba(var(--ink),0.92)', lineHeight: 1.65 }}>
           {selected.transcript}
         </div>
       </div>
 
       <div style={{
         height: '0.5px',
-        background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)',
+        background: 'linear-gradient(90deg,transparent,rgba(var(--ink),0.08),transparent)',
         margin: '0 24px 16px', flexShrink: 0,
       }}/>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px', minHeight: 0 }}>
-        <PromptSections prompt={selected.prompt} textSize="13.5px" textColor="rgba(255,255,255,0.88)" />
+        <PromptSections prompt={selected.prompt} textSize="13.5px" textColor="rgba(var(--ink),0.88)" />
         {selected.polishChanges && selected.polishChanges.length > 0 && (
           <div style={{ margin: '12px 0 20px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '10px' }}>
-            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(48,209,88,0.5)', marginBottom: '6px' }}>Changes made</div>
+            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(48,209,88,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
             {selected.polishChanges.map((note, i) => (
-              <div key={i} style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{note}</div>
+              <div key={i} style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.62)', lineHeight: 1.5 }}>{note}</div>
             ))}
           </div>
         )}
       </div>
 
-      <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.06)', padding: '12px 22px', flexShrink: 0 }}>
+      <div style={{ borderTop: '0.5px solid rgba(var(--ink),0.06)', padding: '12px 22px', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)' }}>Rate this prompt</span>
+          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.34)' }}>Rate this prompt</span>
           <div style={{ display: 'flex', gap: '6px' }}>
             {['up', 'down'].map(r => (
               <button key={r} onClick={() => onRate(r)} style={{
@@ -95,10 +96,10 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
                 fontFamily: 'inherit',
                 background: selected.rating === r
                   ? (r === 'up' ? 'rgba(48,209,88,0.15)' : 'rgba(255,59,48,0.15)')
-                  : 'rgba(255,255,255,0.04)',
+                  : 'rgba(var(--ink),0.04)',
                 border: `0.5px solid ${selected.rating === r
                   ? (r === 'up' ? 'rgba(48,209,88,0.35)' : 'rgba(255,59,48,0.35)')
-                  : 'rgba(255,255,255,0.1)'}`,
+                  : 'rgba(var(--ink),0.1)'}`,
               }}>
                 {r === 'up' ? '👍' : '👎'}
               </button>
@@ -113,14 +114,14 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
               const activeStyle = isPositive
                 ? { bg: 'rgba(48,209,88,0.12)', border: 'rgba(48,209,88,0.3)', text: 'rgba(100,220,130,0.85)' }
                 : { bg: 'rgba(255,59,48,0.10)', border: 'rgba(255,59,48,0.3)', text: 'rgba(255,100,90,0.85)' }
-              const inactiveStyle = { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.35)' }
+              const inactiveStyle = { bg: 'rgba(var(--ink),0.04)', border: 'rgba(var(--ink),0.08)', text: 'rgba(var(--ink),0.35)' }
               const s = isActive ? activeStyle : inactiveStyle
               return (
                 <span key={tag} onClick={() => onTag(tag)} style={{
                   padding: '3px 10px', borderRadius: '6px',
                   fontSize: '10px', fontWeight: isActive ? 500 : 400,
                   cursor: 'pointer', transition: 'all 150ms',
-                  background: s.bg, border: `0.5px solid ${s.border}`, color: s.text,
+                  background: s.bg, border: `0.5px solid ${s.border}`, color: readableColor(s.text),
                 }}>
                   {tag}
                 </span>
@@ -133,7 +134,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
       <div style={{
         display: 'flex', gap: '10px',
         padding: '16px 24px 20px',
-        borderTop: '0.5px solid rgba(255,255,255,0.06)',
+        borderTop: '0.5px solid rgba(var(--ink),0.06)',
         marginTop: '8px', flexShrink: 0,
       }}>
         <button
@@ -141,9 +142,9 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
           style={{
             flex: 1, height: '38px', borderRadius: '10px',
             fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer',
-            background: copied ? 'rgba(48,209,88,0.12)' : 'rgba(255,255,255,0.06)',
-            border: copied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(255,255,255,0.12)',
-            color: copied ? 'rgba(48,209,88,0.9)' : 'rgba(255,255,255,0.72)',
+            background: copied ? 'rgba(48,209,88,0.12)' : 'rgba(var(--ink),0.06)',
+            border: copied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(var(--ink),0.12)',
+            color: copied ? 'color-mix(in oklab, rgba(48,209,88,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.72)',
             transition: 'all 200ms',
           }}
         >

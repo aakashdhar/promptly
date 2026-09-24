@@ -55,7 +55,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
 .frame { display: flex; flex-direction: column; height: calc(100% - 36px); padding: 0 40px 32px; }
 
 /* Step rail: the setup really is a sequence, so it is numbered. */
-.rail { display: flex; gap: 18px; margin-bottom: 36px; }
+.rail { display: flex; gap: 18px; margin-bottom: 28px; }
+.rail[hidden] { display: none; }
 .rail li { list-style: none; display: flex; align-items: center; gap: 7px; color: var(--faint); font-size: 12px; }
 .rail .n {
   width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
@@ -135,7 +136,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
 
   <!-- Welcome -->
   <section class="screen visible" id="screen-welcome" aria-labelledby="welcome-title">
-    <div class="spacer" style="max-height:60px"></div>
+    <div class="spacer" style="max-height:24px"></div>
     <h1 id="welcome-title">Say it. Get a prompt.</h1>
     <p class="lede">Promptly turns what you say into a clear, structured prompt for Claude. Setup takes about a minute.</p>
     <ul class="tips" style="margin-bottom:28px">

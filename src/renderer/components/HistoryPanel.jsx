@@ -1,15 +1,16 @@
 import { useState } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 import { getHistory, deleteHistoryItem, clearHistory, searchHistory, bookmarkHistoryItem, rateHistoryItem } from '../utils/history'
 import HistoryEntryItem from './HistoryEntryItem.jsx'
 import HistoryDetailPanel from './HistoryDetailPanel.jsx'
 
 const FILTER_CHIP_COLORS = {
-  all:     { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' },
+  all:     { bg:'rgba(var(--ink),0.08)', border:'rgba(var(--ink),0.14)', text:'rgba(var(--ink),0.55)' },
   up:      { bg:'rgba(48,209,88,0.10)',   border:'rgba(48,209,88,0.25)',   text:'rgba(100,220,130,0.8)' },
   down:    { bg:'rgba(255,59,48,0.10)',   border:'rgba(255,59,48,0.25)',   text:'rgba(255,100,90,0.75)' },
-  unrated: { bg:'rgba(255,255,255,0.08)', border:'rgba(255,255,255,0.14)', text:'rgba(255,255,255,0.55)' }
+  unrated: { bg:'rgba(var(--ink),0.08)', border:'rgba(var(--ink),0.14)', text:'rgba(var(--ink),0.55)' }
 }
-const FILTER_CHIP_INACTIVE = { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', text:'rgba(255,255,255,0.3)' }
+const FILTER_CHIP_INACTIVE = { bg:'rgba(var(--ink),0.04)', border:'rgba(var(--ink),0.08)', text:'rgba(var(--ink),0.3)' }
 
 export default function HistoryPanel({ onClose, onReuse }) {
   const [entries, setEntries] = useState(() => {
@@ -122,7 +123,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
         {/* LEFT PANEL */}
         <div style={{
           width:'240px', flexShrink:0,
-          borderRight:'0.5px solid rgba(255,255,255,0.07)',
+          borderRight:'0.5px solid rgba(var(--ink),0.07)',
           display:'flex', flexDirection:'column',
           overflow:'hidden'
         }}>
@@ -132,7 +133,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             {searchOpen ? (
               <div style={{
                 display:'flex', alignItems:'center', gap:'8px',
-                height:'34px', background:'rgba(255,255,255,0.07)',
+                height:'34px', background:'rgba(var(--ink),0.07)',
                 border:'0.5px solid rgba(10,132,255,0.35)',
                 borderRadius:'9px', padding:'0 12px'
               }}>
@@ -148,34 +149,34 @@ export default function HistoryPanel({ onClose, onReuse }) {
                   style={{
                     flex:1, background:'transparent', border:'none',
                     outline:'none', fontSize:'12px',
-                    color:'rgba(255,255,255,0.8)', fontFamily:'inherit'
+                    color:'rgba(var(--ink),0.95)', fontFamily:'inherit'
                   }}
                 />
                 {/* POLISH-009: 0.30 → 0.60 */}
                 <button onClick={handleClearSearch} style={{
-                  fontSize:'11px', color:'rgba(255,255,255,0.60)',
+                  fontSize:'11px', color:'rgba(var(--ink),0.8)',
                   background:'none', border:'none', cursor:'pointer', padding:0
                 }}>✕</button>
               </div>
             ) : (
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 {/* 0.55 stays above threshold */}
-                <span style={{fontSize:'12px', fontWeight:500, color:'rgba(255,255,255,0.55)'}}>
+                <span style={{fontSize:'12px', fontWeight:500, color:'rgba(var(--ink),0.74)'}}>
                   Recent
                 </span>
                 <button
                   onClick={() => setSearchOpen(true)}
                   style={{
                     width:'28px', height:'28px', borderRadius:'7px',
-                    background:'rgba(255,255,255,0.06)',
-                    border:'0.5px solid rgba(255,255,255,0.1)',
+                    background:'rgba(var(--ink),0.06)',
+                    border:'0.5px solid rgba(var(--ink),0.1)',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     cursor:'pointer'
                   }}>
                   {/* POLISH-009: stroke 0.40 → 0.70 */}
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <circle cx="5" cy="5" r="4" stroke="rgba(255,255,255,0.70)" strokeWidth="1.2"/>
-                    <path d="M8.5 8.5L11 11" stroke="rgba(255,255,255,0.70)" strokeWidth="1.2" strokeLinecap="round"/>
+                    <circle cx="5" cy="5" r="4" stroke="rgba(var(--ink),0.7)" strokeWidth="1.2"/>
+                    <path d="M8.5 8.5L11 11" stroke="rgba(var(--ink),0.7)" strokeWidth="1.2" strokeLinecap="round"/>
                   </svg>
                 </button>
               </div>
@@ -196,25 +197,25 @@ export default function HistoryPanel({ onClose, onReuse }) {
                     display:'flex', alignItems:'center', justifyContent:'center', gap:'4px',
                     background: isActive
                       ? (isSaved ? 'rgba(255,189,46,0.12)' : 'rgba(10,132,255,0.12)')
-                      : 'rgba(255,255,255,0.04)',
+                      : 'rgba(var(--ink),0.04)',
                     border: `0.5px solid ${isActive
                       ? (isSaved ? 'rgba(255,189,46,0.28)' : 'rgba(10,132,255,0.25)')
-                      : 'rgba(255,255,255,0.08)'}`
+                      : 'rgba(var(--ink),0.08)'}`
                   }}>
                   {isSaved && (
                     <svg width="10" height="12" viewBox="0 0 10 13" fill="none">
                       <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z"
                         fill={isActive ? 'rgba(255,189,46,0.85)' : 'none'}
-                        stroke={isActive ? 'rgba(255,189,46,0.85)' : 'rgba(255,255,255,0.3)'}
+                        stroke={isActive ? 'rgba(255,189,46,0.85)' : 'rgba(var(--ink),0.3)'}
                         strokeWidth="1.2" strokeLinejoin="round"/>
                     </svg>
                   )}
                   <span style={{
                     fontSize:'11px',
                     fontWeight: isActive ? 500 : 400,
-                    color: isActive
+                    color: readableColor(isActive
                       ? (isSaved ? 'rgba(255,189,46,0.9)' : 'rgba(100,180,255,0.9)')
-                      : 'rgba(255,255,255,0.35)'
+                      : 'rgba(var(--ink),0.35)')
                   }}>
                     {tab === 'all' ? 'All' : 'Saved'}
                   </span>
@@ -237,7 +238,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
                 <span key={f.id} onClick={() => setActiveFilter(f.id)} style={{
                   padding:'2px 8px', borderRadius:'20px', fontSize:'9px',
                   fontWeight:600, cursor:'pointer',
-                  background:c.bg, border:`0.5px solid ${c.border}`, color:c.text
+                  background:c.bg, border:`0.5px solid ${c.border}`, color: readableColor(c.text)
                 }}>
                   {f.label}
                 </span>
@@ -249,19 +250,19 @@ export default function HistoryPanel({ onClose, onReuse }) {
           {activeTab === 'all' && (
             <div style={{
               margin:'0 12px 10px', padding:'8px 10px',
-              background:'rgba(255,255,255,0.03)',
-              border:'0.5px solid rgba(255,255,255,0.06)',
+              background:'rgba(var(--ink),0.03)',
+              border:'0.5px solid rgba(var(--ink),0.06)',
               borderRadius:'8px', display:'flex',
               justifyContent:'space-between', alignItems:'center'
             }}>
-              <span style={{fontSize:'10px', color:'rgba(255,255,255,0.3)'}}>
+              <span style={{fontSize:'10px', color:'rgba(var(--ink),0.44)'}}>
                 {allHistory.length} prompt{allHistory.length !== 1 ? 's' : ''}
               </span>
               {statsRated.total > 0 && (
                 <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                  <span style={{fontSize:'10px', color:'rgba(100,220,130,0.7)'}}>👍 {upPct}%</span>
-                  <div style={{width:'0.5px', height:'10px', background:'rgba(255,255,255,0.1)'}}/>
-                  <span style={{fontSize:'10px', color:'rgba(255,100,90,0.65)'}}>👎 {downPct}%</span>
+                  <span style={{fontSize:'10px', color:'color-mix(in oklab, rgba(100,220,130,0.7) var(--accent-text-strength), rgb(var(--ink)))'}}>👍 {upPct}%</span>
+                  <div style={{width:'0.5px', height:'10px', background:'rgba(var(--ink),0.1)'}}/>
+                  <span style={{fontSize:'10px', color:'color-mix(in oklab, rgba(255,100,90,0.65) var(--accent-text-strength), rgb(var(--ink)))'}}>👎 {downPct}%</span>
                 </div>
               )}
             </div>
@@ -272,7 +273,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             {filteredEntries.length === 0 && (
               <div style={{
                 padding:'40px 20px', textAlign:'center',
-                fontSize:'12px', color:'rgba(255,255,255,0.55)'
+                fontSize:'12px', color:'rgba(var(--ink),0.74)'
               }}>
                 {activeFilter !== 'all' ? 'No prompts match this filter' : activeTab === 'saved' ? 'No saved prompts yet' : (query ? 'No results found' : 'No history yet')}
               </div>
@@ -294,10 +295,10 @@ export default function HistoryPanel({ onClose, onReuse }) {
           {/* Count footer */}
           <div style={{
             padding:'12px 16px',
-            borderTop:'0.5px solid rgba(255,255,255,0.06)',
+            borderTop:'0.5px solid rgba(var(--ink),0.06)',
             flexShrink:0
           }}>
-            <span style={{fontSize:'10px', color:'rgba(255,255,255,0.45)'}}>
+            <span style={{fontSize:'10px', color:'rgba(var(--ink),0.62)'}}>
               {activeTab === 'saved'
                 ? `${tabFiltered.length} saved prompt${tabFiltered.length !== 1 ? 's' : ''}`
                 : footerText}
@@ -325,7 +326,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
       <div style={{
         display:'flex', justifyContent:'space-between', alignItems:'center',
         padding:'12px 20px',
-        borderTop:'0.5px solid rgba(255,255,255,0.06)',
+        borderTop:'0.5px solid rgba(var(--ink),0.06)',
         flexShrink:0
       }}>
         {/* POLISH-004: Clear all hover */}
@@ -335,7 +336,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
           onMouseLeave={() => setClearHovered(false)}
           style={{
             fontSize:'12px',
-            color: clearHovered ? 'rgba(255,59,48,0.75)' : 'rgba(255,59,48,0.55)',
+            color: clearHovered ? 'color-mix(in oklab, rgba(255,59,48,0.75) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(255,59,48,0.55) var(--accent-text-strength), rgb(var(--ink)))',
             background:'none', border:'none', cursor:'pointer', fontFamily:'inherit',
             transition: 'color 120ms ease',
           }}
@@ -349,7 +350,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
           onMouseLeave={() => setDoneHovered(false)}
           style={{
             fontSize:'12px',
-            color: doneHovered ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.70)',
+            color: doneHovered ? 'rgba(var(--ink),0.9)' : 'rgba(var(--ink),0.7)',
             background:'none', border:'none', cursor:'pointer', fontFamily:'inherit',
             transition: 'color 120ms ease',
           }}

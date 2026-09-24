@@ -6,13 +6,13 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
       <div className="h-[13px] [-webkit-app-region:drag]" />
       <div className="h-[68px] flex items-center gap-3 [-webkit-app-region:drag]" style={PAD}>
         <div
-          className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] hover:bg-white/[0.12] transition-colors duration-150"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)' }}
+          className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer flex-shrink-0 [-webkit-app-region:no-drag] hover:bg-[rgba(var(--ink),0.12)] transition-colors duration-150"
+          style={{ background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.1)' }}
           onClick={onDismiss}
         >
           {/* POLISH-009: stroke 0.45 → 0.75 */}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(var(--ink),0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
         <div className="flex-1 flex items-center h-9 [-webkit-app-region:no-drag]">
@@ -25,7 +25,7 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
         {/* POLISH-003: timer fontWeight 400, letterSpacing 0.08em */}
         <span
           className="text-[11px] flex-shrink-0 min-w-[28px] text-right tabular-nums [-webkit-app-region:no-drag]"
-          style={{ color: 'rgba(255,189,46,0.7)', fontWeight: 400, letterSpacing: '0.08em' }}
+          style={{ color: 'color-mix(in oklab, rgba(255,189,46,0.7) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 400, letterSpacing: '0.08em' }}
         >
           {duration}
         </span>
@@ -52,10 +52,10 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
           </svg>
         </div>
       </div>
-      <div className="h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" style={{ marginLeft: 32, marginRight: 32 }} />
+      <div className="h-px bg-gradient-to-r from-transparent via-[rgba(var(--ink),0.07)] to-transparent" style={{ marginLeft: 32, marginRight: 32 }} />
       <div style={{ padding: '10px 18px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FFBD2E', flexShrink: 0 }} />
-        <span style={{ fontSize: '12px', color: 'rgba(255,189,46,0.75)', letterSpacing: '.02em' }}>
+        <span style={{ fontSize: '12px', color: 'color-mix(in oklab, rgba(255,189,46,0.75) var(--accent-text-strength), rgb(var(--ink)))', letterSpacing: '.02em' }}>
           Paused — tap resume to continue
         </span>
       </div>

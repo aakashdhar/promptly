@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 
 export default function WorkflowBuilderState({
   transcript,
@@ -88,13 +89,13 @@ export default function WorkflowBuilderState({
   const workflowNameStyle = {
     fontSize: 13,
     fontWeight: 600,
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(var(--ink),0.95)',
   }
 
   const placeholderBadgeStyle = {
     fontSize: 10,
     fontWeight: 600,
-    color: 'rgba(255,189,46,0.85)',
+    color: 'color-mix(in oklab, rgba(255,189,46,0.85) var(--accent-text-strength), rgb(var(--ink)))',
     background: 'rgba(255,189,46,0.12)',
     border: '0.5px solid rgba(255,189,46,0.25)',
     borderRadius: 5,
@@ -104,7 +105,7 @@ export default function WorkflowBuilderState({
 
   const reiterateStyle = {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(var(--ink),0.5)',
     cursor: 'pointer',
     WebkitAppRegion: 'no-drag',
     background: 'none',
@@ -121,20 +122,20 @@ export default function WorkflowBuilderState({
     fontSize: 9,
     fontWeight: 700,
     letterSpacing: '0.12em',
-    color: 'rgba(255,255,255,0.2)',
+    color: 'rgba(var(--ink),0.32)',
     marginBottom: 3,
   }
 
   const transcriptStyle = {
     fontSize: 11,
     fontStyle: 'italic',
-    color: 'rgba(255,255,255,0.38)',
+    color: 'rgba(var(--ink),0.54)',
     lineHeight: 1.4,
   }
 
   const dividerStyle = {
     height: '0.5px',
-    background: 'rgba(255,255,255,0.07)',
+    background: 'rgba(var(--ink),0.07)',
     marginBottom: 10,
     flexShrink: 0,
   }
@@ -148,8 +149,8 @@ export default function WorkflowBuilderState({
   const cardStyle = {
     padding: '10px 14px',
     borderRadius: 10,
-    background: 'rgba(255,255,255,0.03)',
-    border: '0.5px solid rgba(255,255,255,0.07)',
+    background: 'rgba(var(--ink),0.03)',
+    border: '0.5px solid rgba(var(--ink),0.07)',
     marginBottom: 4,
   }
 
@@ -175,14 +176,14 @@ export default function WorkflowBuilderState({
     gap: 6,
     padding: '8px 0',
     marginTop: 4,
-    border: '0.5px dashed rgba(255,255,255,0.08)',
+    border: '0.5px dashed rgba(var(--ink),0.08)',
     borderRadius: 10,
     cursor: 'pointer',
     WebkitAppRegion: 'no-drag',
     background: 'none',
     width: '100%',
     fontSize: 12,
-    color: 'rgba(255,255,255,0.25)',
+    color: 'rgba(var(--ink),0.38)',
   }
 
   const actionRowStyle = {
@@ -204,7 +205,7 @@ export default function WorkflowBuilderState({
             <rect x="1" y="7" width="5" height="4" rx="1.5" fill="rgba(34,197,94,0.6)" />
             <rect x="12" y="2" width="5" height="4" rx="1.5" fill="rgba(100,170,255,0.6)" />
             <rect x="12" y="12" width="5" height="4" rx="1.5" fill="rgba(100,170,255,0.6)" />
-            <path d="M6 9h3M9 9V4h3M9 9v5h3" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+            <path d="M6 9h3M9 9V4h3M9 9v5h3" stroke="rgba(var(--ink),0.2)" strokeWidth="1" />
           </svg>
           <span style={workflowNameStyle}>{workflowName}</span>
           {unfilled > 0 && (
@@ -242,13 +243,13 @@ export default function WorkflowBuilderState({
                     width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                     background: badgeColor.bg, border: `0.5px solid ${badgeColor.border}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 700, color: badgeColor.text,
+                    fontSize: 10, fontWeight: 700, color: readableColor(badgeColor.text),
                   }}>
                     {idx + 1}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {node.name ? (
-                      <div style={{ fontSize: 12.5, fontWeight: 500, color: 'rgba(255,255,255,0.75)', marginBottom: 1 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 500, color: 'rgba(var(--ink),0.95)', marginBottom: 1 }}>
                         {node.name}
                       </div>
                     ) : (
@@ -256,9 +257,9 @@ export default function WorkflowBuilderState({
                         placeholder="Node name"
                         style={{
                           fontSize: 12.5, fontWeight: 500,
-                          color: 'rgba(255,255,255,0.75)',
-                          background: 'rgba(255,255,255,0.06)',
-                          border: '0.5px solid rgba(255,255,255,0.15)',
+                          color: 'rgba(var(--ink),0.95)',
+                          background: 'rgba(var(--ink),0.06)',
+                          border: '0.5px solid rgba(var(--ink),0.15)',
                           borderRadius: 5, padding: '2px 6px', width: '100%',
                           outline: 'none',
                         }}
@@ -267,7 +268,7 @@ export default function WorkflowBuilderState({
                       />
                     )}
                     {node.type ? (
-                      <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.28)' }}>
+                      <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(var(--ink),0.42)' }}>
                         {node.type}
                       </div>
                     ) : (
@@ -275,9 +276,9 @@ export default function WorkflowBuilderState({
                         placeholder="n8n-nodes-base.nodetype"
                         style={{
                           fontSize: 10, fontFamily: 'monospace',
-                          color: 'rgba(255,255,255,0.5)',
-                          background: 'rgba(255,255,255,0.06)',
-                          border: '0.5px solid rgba(255,255,255,0.15)',
+                          color: 'rgba(var(--ink),0.68)',
+                          background: 'rgba(var(--ink),0.06)',
+                          border: '0.5px solid rgba(var(--ink),0.15)',
                           borderRadius: 5, padding: '2px 6px', width: '100%',
                           marginTop: 2, outline: 'none',
                         }}
@@ -291,7 +292,7 @@ export default function WorkflowBuilderState({
                       fontSize: 9, fontWeight: 600, letterSpacing: '0.05em',
                       padding: '2px 6px', borderRadius: 4,
                       background: isTrigger ? 'rgba(34,197,94,0.12)' : 'rgba(10,132,255,0.12)',
-                      color: isTrigger ? 'rgba(74,222,128,0.8)' : 'rgba(100,170,255,0.8)',
+                      color: isTrigger ? 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(100,170,255,0.8) var(--accent-text-strength), rgb(var(--ink)))',
                       flexShrink: 0,
                     }}>
                       {isTrigger ? 'Trigger' : 'Action'}
@@ -301,10 +302,10 @@ export default function WorkflowBuilderState({
                     <button
                       onClick={() => onDeleteNode(node.id)}
                       onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,69,58,0.7)' }}
-                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(var(--ink),0.2)' }}
                       style={{
                         fontSize: 14, lineHeight: 1,
-                        color: 'rgba(255,255,255,0.2)',
+                        color: 'rgba(var(--ink),0.32)',
                         background: 'none', border: 'none',
                         cursor: 'pointer',
                         WebkitAppRegion: 'no-drag',
@@ -320,7 +321,7 @@ export default function WorkflowBuilderState({
 
                 {/* Purpose */}
                 {node.purpose && (
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(var(--ink),0.62)', marginBottom: 6, lineHeight: 1.4 }}>
                     {node.purpose}
                   </div>
                 )}
@@ -334,7 +335,7 @@ export default function WorkflowBuilderState({
 
                   return (
                     <div key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', minWidth: 80, paddingTop: 1 }}>
+                      <span style={{ fontSize: 10, color: 'rgba(var(--ink),0.44)', minWidth: 80, paddingTop: 1 }}>
                         {key}
                       </span>
                       {isPlaceholder && !filledVal ? (
@@ -347,8 +348,8 @@ export default function WorkflowBuilderState({
                             onKeyDown={e => handleInputKeyDown(e, node.id, key)}
                             style={{
                               fontSize: 11,
-                              color: 'rgba(255,255,255,0.75)',
-                              background: 'rgba(255,255,255,0.06)',
+                              color: 'rgba(var(--ink),0.95)',
+                              background: 'rgba(var(--ink),0.06)',
                               border: '0.5px solid rgba(255,189,46,0.4)',
                               borderRadius: 5, padding: '2px 7px',
                               outline: 'none', flex: 1,
@@ -359,7 +360,7 @@ export default function WorkflowBuilderState({
                             onClick={() => handleChipClick(node.id, key)}
                             style={{
                               fontSize: 11,
-                              color: 'rgba(255,189,46,0.7)',
+                              color: 'color-mix(in oklab, rgba(255,189,46,0.7) var(--accent-text-strength), rgb(var(--ink)))',
                               background: 'rgba(255,189,46,0.06)',
                               border: '0.5px solid rgba(255,189,46,0.18)',
                               borderRadius: 5, padding: '2px 7px',
@@ -374,7 +375,7 @@ export default function WorkflowBuilderState({
                         <span
                           onClick={() => handleChipClick(node.id, key)}
                           style={{
-                            fontSize: 11, color: 'rgba(74,222,128,0.8)',
+                            fontSize: 11, color: 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))',
                             background: 'rgba(34,197,94,0.06)',
                             border: '0.5px solid rgba(34,197,94,0.18)',
                             borderRadius: 5, padding: '2px 7px',
@@ -384,11 +385,11 @@ export default function WorkflowBuilderState({
                           {filledVal}
                         </span>
                       ) : isExpression(val) ? (
-                        <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: 'rgba(74,222,128,0.65)' }}>
+                        <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: 'color-mix(in oklab, rgba(74,222,128,0.65) var(--accent-text-strength), rgb(var(--ink)))' }}>
                           {String(val)}
                         </span>
                       ) : (
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                        <span style={{ fontSize: 11, color: 'rgba(var(--ink),0.8)' }}>
                           {String(val)}
                         </span>
                       )}
@@ -399,8 +400,8 @@ export default function WorkflowBuilderState({
                 {/* Credentials */}
                 {node.credentialType && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', minWidth: 80 }}>Credentials</span>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: 10, color: 'rgba(var(--ink),0.44)', minWidth: 80 }}>Credentials</span>
+                    <span style={{ fontSize: 11, color: 'rgba(var(--ink),0.42)', fontStyle: 'italic' }}>
                       {node.credentialType} — map in n8n after import
                     </span>
                   </div>
@@ -410,8 +411,8 @@ export default function WorkflowBuilderState({
               {/* Connector */}
               {idx < nodes.length - 1 && (
                 <div style={connectorStyle}>
-                  <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.1)', marginLeft: 9, flexShrink: 0 }} />
-                  <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.2)' }}>
+                  <div style={{ width: 1, height: 12, background: 'rgba(var(--ink),0.1)', marginLeft: 9, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10.5, color: 'rgba(var(--ink),0.32)' }}>
                     {nodes.length === 2 ? '↓' : (idx === 0 ? connections || '↓' : '↓')}
                   </span>
                 </div>
@@ -430,7 +431,7 @@ export default function WorkflowBuilderState({
       <div style={actionRowStyle}>
         <div>
           {unfilled > 0 && (
-            <span style={{ fontSize: 11, color: 'rgba(255,189,46,0.5)' }}>
+            <span style={{ fontSize: 11, color: 'color-mix(in oklab, rgba(255,189,46,0.5) var(--accent-text-strength), rgb(var(--ink)))' }}>
               {unfilled} placeholder{unfilled !== 1 ? 's' : ''} unfilled — fill here or in n8n after import
             </span>
           )}
@@ -439,8 +440,8 @@ export default function WorkflowBuilderState({
           <button
             onClick={onStartOver}
             style={{
-              fontSize: 12, color: 'rgba(255,255,255,0.4)',
-              background: 'none', border: '0.5px solid rgba(255,255,255,0.12)',
+              fontSize: 12, color: 'rgba(var(--ink),0.56)',
+              background: 'none', border: '0.5px solid rgba(var(--ink),0.12)',
               borderRadius: 7, padding: '6px 12px', cursor: 'pointer',
               WebkitAppRegion: 'no-drag',
             }}
@@ -451,7 +452,7 @@ export default function WorkflowBuilderState({
             onClick={onConfirm}
             style={{
               fontSize: 12, fontWeight: 600,
-              color: 'rgba(255,255,255,0.9)',
+              color: 'rgba(var(--ink),0.95)',
               background: 'linear-gradient(135deg, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.25) 100%)',
               border: '0.5px solid rgba(34,197,94,0.3)',
               borderRadius: 7, padding: '6px 14px',

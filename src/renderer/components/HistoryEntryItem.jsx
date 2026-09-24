@@ -1,4 +1,5 @@
 import { formatTime } from '../utils/history.js'
+import { readableColor } from '../utils/promptUtils.js'
 
 export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelect, onHoverEnter, onHoverLeave, onDelete }) {
   const isPolish = entry.mode === 'polish'
@@ -10,7 +11,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
       onMouseLeave={onHoverLeave}
       style={{
         padding: '12px 16px',
-        borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+        borderBottom: '0.5px solid rgba(var(--ink),0.05)',
         borderLeft: isSelected
           ? isPolish ? '2px solid rgba(48,209,88,0.5)' : '2px solid rgba(10,132,255,0.6)'
           : '2px solid transparent',
@@ -25,7 +26,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
       <div style={{
         fontSize: '12px',
         fontWeight: isSelected ? 500 : 400,
-        color: isSelected ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.72)',
+        color: isSelected ? 'rgba(var(--ink),0.9)' : 'rgba(var(--ink),0.72)',
         marginBottom: '6px',
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         paddingRight: '20px',
@@ -40,17 +41,17 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
           borderRadius: '20px',
           background: isSelected
             ? isPolish ? 'rgba(48,209,88,0.15)' : 'rgba(10,132,255,0.15)'
-            : 'rgba(255,255,255,0.07)',
-          color: isSelected
+            : 'rgba(var(--ink),0.07)',
+          color: readableColor(isSelected
             ? isPolish ? 'rgba(100,220,130,0.85)' : 'rgba(100,180,255,0.85)'
-            : 'rgba(255,255,255,0.70)',
+            : 'rgba(var(--ink),0.7)'),
         }}>
           {entry.mode}
         </span>
         {entry.isIteration && (
-          <span style={{ fontSize: '9px', color: 'rgba(10,132,255,0.72)', marginLeft: '4px' }}>↻</span>
+          <span style={{ fontSize: '9px', color: 'color-mix(in oklab, rgba(10,132,255,0.72) var(--accent-text-strength), rgb(var(--ink)))', marginLeft: '4px' }}>↻</span>
         )}
-        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.58)' }}>
+        <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.78)' }}>
           {formatTime(entry.timestamp)}
         </span>
         {entry.rating === 'down' && entry.ratingTag && (
@@ -58,7 +59,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
             fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
             background: 'rgba(255,59,48,0.08)',
             border: '0.5px solid rgba(255,59,48,0.2)',
-            color: 'rgba(255,100,90,0.7)',
+            color: 'color-mix(in oklab, rgba(255,100,90,0.7) var(--accent-text-strength), rgb(var(--ink)))',
           }}>
             {entry.ratingTag}
           </span>
@@ -68,7 +69,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
             fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
             background: 'rgba(48,209,88,0.08)',
             border: '0.5px solid rgba(48,209,88,0.2)',
-            color: 'rgba(100,220,130,0.7)',
+            color: 'color-mix(in oklab, rgba(100,220,130,0.7) var(--accent-text-strength), rgb(var(--ink)))',
           }}>
             {entry.ratingTag}
           </span>
@@ -79,7 +80,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
         onClick={(e) => { e.stopPropagation(); onDelete(entry.id) }}
         style={{
           position: 'absolute', top: '12px', right: '12px',
-          fontSize: '11px', color: 'rgba(255,255,255,0.50)',
+          fontSize: '11px', color: 'rgba(var(--ink),0.68)',
           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
           lineHeight: 1,
           opacity: isHovered ? 1 : 0,

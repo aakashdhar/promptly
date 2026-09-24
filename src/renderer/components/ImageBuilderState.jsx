@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 import VariationsPanel from './VariationsPanel.jsx'
 import { REQUIRED, FIELD_LABELS, SUBJECT_PARAMS, LIGHTING_PARAMS, CAMERA_PARAMS, STYLE_PARAMS, TECHNICAL_PARAMS, TECHNICAL_NUMERIC_PARAMS, PRESET_CATEGORIES } from './ImageBuilderState.constants.js'
 
@@ -22,17 +23,17 @@ function Chip({ label, isSelected, isAi, onClick }) {
         padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
         cursor: 'pointer', userSelect: 'none', transition: 'background 150ms',
         border: isSelected
-          ? isAi ? '0.5px solid rgba(139,92,246,0.5)' : '0.5px solid rgba(255,255,255,0.18)'
-          : isAi ? '0.5px solid rgba(139,92,246,0.25)' : '0.5px solid rgba(255,255,255,0.1)',
+          ? isAi ? '0.5px solid rgba(139,92,246,0.5)' : '0.5px solid rgba(var(--ink),0.18)'
+          : isAi ? '0.5px solid rgba(139,92,246,0.25)' : '0.5px solid rgba(var(--ink),0.1)',
         background: isSelected
-          ? isAi ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.1)'
-          : isAi ? 'rgba(139,92,246,0.07)' : 'rgba(255,255,255,0.04)',
-        color: isSelected
-          ? isAi ? 'rgba(196,168,255,0.95)' : 'rgba(255,255,255,0.85)'
-          : isAi ? 'rgba(196,168,255,0.65)' : 'rgba(255,255,255,0.5)',
+          ? isAi ? 'rgba(139,92,246,0.18)' : 'rgba(var(--ink),0.1)'
+          : isAi ? 'rgba(139,92,246,0.07)' : 'rgba(var(--ink),0.04)',
+        color: readableColor(isSelected
+          ? isAi ? 'rgba(196,168,255,0.95)' : 'rgba(var(--ink),0.85)'
+          : isAi ? 'rgba(196,168,255,0.65)' : 'rgba(var(--ink),0.5)'),
       }}
     >
-      {isAi && <span style={{ color: 'rgba(139,92,246,0.7)', fontSize: '10px' }}>·</span>}
+      {isAi && <span style={{ color: 'color-mix(in oklab, rgba(139,92,246,0.7) var(--accent-text-strength), rgb(var(--ink)))', fontSize: '10px' }}>·</span>}
       {label}
     </button>
   )
@@ -71,7 +72,7 @@ function ParamRow({ tab, field, options, answers, defaults, onParamChange, onRem
     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
       <div style={{
         minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
-        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+        letterSpacing: '.06em', color: 'rgba(var(--ink),0.44)', paddingTop: '6px', flexShrink: 0,
       }}>
         {FIELD_LABELS[field] || field}
       </div>
@@ -91,8 +92,8 @@ function ParamRow({ tab, field, options, answers, defaults, onParamChange, onRem
             onClick={() => { setAddMode(true); setTimeout(() => inputRef.current?.focus(), 50) }}
             style={{
               padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
-              background: 'transparent', border: '0.5px dashed rgba(255,255,255,0.15)',
-              color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
+              background: 'transparent', border: '0.5px dashed rgba(var(--ink),0.15)',
+              color: 'rgba(var(--ink),0.44)', cursor: 'pointer',
             }}
           >
             + add
@@ -111,8 +112,8 @@ function ParamRow({ tab, field, options, answers, defaults, onParamChange, onRem
             placeholder="Type & enter…"
             style={{
               padding: '3px 10px', borderRadius: '7px', fontSize: '11.5px',
-              background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.2)',
-              color: 'rgba(255,255,255,0.85)', outline: 'none', width: '130px',
+              background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.2)',
+              color: 'rgba(var(--ink),0.95)', outline: 'none', width: '130px',
               WebkitAppRegion: 'no-drag',
             }}
           />
@@ -138,7 +139,7 @@ function NegativeRow({ negativePrompts, onSetNegative, onRemoveNegative }) {
     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
       <div style={{
         minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
-        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+        letterSpacing: '.06em', color: 'rgba(var(--ink),0.44)', paddingTop: '6px', flexShrink: 0,
       }}>
         Negative
       </div>
@@ -148,12 +149,12 @@ function NegativeRow({ negativePrompts, onSetNegative, onRemoveNegative }) {
             display: 'inline-flex', alignItems: 'center', gap: '5px',
             padding: '4px 9px', borderRadius: '7px', fontSize: '11.5px',
             background: 'rgba(255,59,48,0.08)', border: '0.5px solid rgba(255,59,48,0.2)',
-            color: 'rgba(255,150,140,0.85)',
+            color: 'color-mix(in oklab, rgba(255,150,140,0.85) var(--accent-text-strength), rgb(var(--ink)))',
           }}>
             {neg}
             <button type="button" onClick={() => onRemoveNegative(neg)} style={{
               background: 'none', border: 'none', padding: '0 1px', cursor: 'pointer',
-              color: 'rgba(255,150,140,0.6)', fontSize: '11px', lineHeight: 1,
+              color: 'color-mix(in oklab, rgba(255,150,140,0.6) var(--accent-text-strength), rgb(var(--ink)))', fontSize: '11px', lineHeight: 1,
             }}>✕</button>
           </span>
         ))}
@@ -164,7 +165,7 @@ function NegativeRow({ negativePrompts, onSetNegative, onRemoveNegative }) {
             style={{
               padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
               background: 'transparent', border: '0.5px dashed rgba(255,59,48,0.2)',
-              color: 'rgba(255,150,140,0.4)', cursor: 'pointer',
+              color: 'color-mix(in oklab, rgba(255,150,140,0.4) var(--accent-text-strength), rgb(var(--ink)))', cursor: 'pointer',
             }}
           >
             + add exclusions
@@ -183,8 +184,8 @@ function NegativeRow({ negativePrompts, onSetNegative, onRemoveNegative }) {
             placeholder="e.g. blur, grain…"
             style={{
               padding: '3px 10px', borderRadius: '7px', fontSize: '11.5px',
-              background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.2)',
-              color: 'rgba(255,255,255,0.85)', outline: 'none', width: '140px',
+              background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.2)',
+              color: 'rgba(var(--ink),0.95)', outline: 'none', width: '140px',
               WebkitAppRegion: 'no-drag',
             }}
           />
@@ -212,7 +213,7 @@ function SeedRow({ seed, onSetSeed }) {
     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
       <div style={{
         minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
-        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+        letterSpacing: '.06em', color: 'rgba(var(--ink),0.44)', paddingTop: '6px', flexShrink: 0,
       }}>
         Seed
       </div>
@@ -222,12 +223,12 @@ function SeedRow({ seed, onSetSeed }) {
             display: 'inline-flex', alignItems: 'center', gap: '5px',
             padding: '4px 9px', borderRadius: '7px', fontSize: '11.5px',
             background: 'rgba(139,92,246,0.1)', border: '0.5px solid rgba(139,92,246,0.3)',
-            color: 'rgba(196,168,255,0.85)',
+            color: 'color-mix(in oklab, rgba(196,168,255,0.85) var(--accent-text-strength), rgb(var(--ink)))',
           }}>
             {seed}
             <button type="button" onClick={() => onSetSeed(null)} style={{
               background: 'none', border: 'none', padding: '0 1px', cursor: 'pointer',
-              color: 'rgba(196,168,255,0.5)', fontSize: '11px', lineHeight: 1,
+              color: 'color-mix(in oklab, rgba(196,168,255,0.5) var(--accent-text-strength), rgb(var(--ink)))', fontSize: '11px', lineHeight: 1,
             }}>✕</button>
           </span>
         )}
@@ -237,8 +238,8 @@ function SeedRow({ seed, onSetSeed }) {
             onClick={() => { setInputMode(true); setTimeout(() => inputRef.current?.focus(), 50) }}
             style={{
               padding: '4px 11px', borderRadius: '7px', fontSize: '11.5px',
-              background: 'transparent', border: '0.5px dashed rgba(255,255,255,0.15)',
-              color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
+              background: 'transparent', border: '0.5px dashed rgba(var(--ink),0.15)',
+              color: 'rgba(var(--ink),0.44)', cursor: 'pointer',
             }}
           >
             + set seed
@@ -258,8 +259,8 @@ function SeedRow({ seed, onSetSeed }) {
             placeholder="e.g. 12345"
             style={{
               padding: '3px 10px', borderRadius: '7px', fontSize: '11.5px',
-              background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.2)',
-              color: 'rgba(255,255,255,0.85)', outline: 'none', width: '100px',
+              background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.2)',
+              color: 'rgba(var(--ink),0.95)', outline: 'none', width: '100px',
               WebkitAppRegion: 'no-drag',
             }}
           />
@@ -287,7 +288,7 @@ function NumericParamRow({ tab, field, options, answers, defaults, onParamChange
     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
       <div style={{
         minWidth: '90px', fontSize: '9.5px', textTransform: 'uppercase',
-        letterSpacing: '.06em', color: 'rgba(255,255,255,0.3)', paddingTop: '6px', flexShrink: 0,
+        letterSpacing: '.06em', color: 'rgba(var(--ink),0.44)', paddingTop: '6px', flexShrink: 0,
       }}>
         {FIELD_LABELS[field] || field}
       </div>
@@ -410,43 +411,43 @@ export default function ImageBuilderState({
 
         {/* Header */}
         <div style={{
-          padding: '14px 22px 10px', borderBottom: '0.5px solid rgba(255,255,255,0.06)', flexShrink: 0,
+          padding: '14px 22px 10px', borderBottom: '0.5px solid rgba(var(--ink),0.06)', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{
               width: '7px', height: '7px', borderRadius: '50%',
               background: 'rgba(139,92,246,0.8)', flexShrink: 0,
             }} />
-            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'rgba(var(--ink),0.95)' }}>
               Image builder
             </span>
             <span style={{
               padding: '2px 7px', borderRadius: '5px', fontSize: '9.5px',
               background: 'rgba(139,92,246,0.12)', border: '0.5px solid rgba(139,92,246,0.25)',
-              color: 'rgba(196,168,255,0.7)',
+              color: 'color-mix(in oklab, rgba(196,168,255,0.7) var(--accent-text-strength), rgb(var(--ink)))',
             }}>Nano Banana</span>
             {unfilled > 0 && (
               <span style={{
                 padding: '2px 7px', borderRadius: '5px', fontSize: '9.5px',
                 background: 'rgba(255,196,0,0.08)', border: '0.5px solid rgba(255,196,0,0.2)',
-                color: 'rgba(255,210,80,0.7)',
+                color: 'color-mix(in oklab, rgba(255,210,80,0.7) var(--accent-text-strength), rgb(var(--ink)))',
               }}>⚠ {unfilled} unfilled</span>
             )}
             {activePreset && (
               <span style={{
                 padding: '2px 7px', borderRadius: '5px', fontSize: '9.5px',
                 background: 'rgba(251,146,60,0.08)', border: '0.5px solid rgba(251,146,60,0.2)',
-                color: 'rgba(251,180,100,0.7)',
+                color: 'color-mix(in oklab, rgba(251,180,100,0.7) var(--accent-text-strength), rgb(var(--ink)))',
               }}>Preset: {activePreset}</span>
             )}
             <div style={{ flex: 1 }} />
             <button type="button" onClick={onReiterate} style={{
               background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-              fontSize: '11px', color: 'rgba(255,255,255,0.35)', WebkitAppRegion: 'no-drag',
+              fontSize: '11px', color: 'rgba(var(--ink),0.5)', WebkitAppRegion: 'no-drag',
             }}>↺ Reiterate</button>
           </div>
           {transcript && (
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(var(--ink),0.44)', fontStyle: 'italic' }}>
               &ldquo;{transcript.length > 120 ? transcript.slice(0, 120) + '…' : transcript}&rdquo;
             </div>
           )}
@@ -454,7 +455,7 @@ export default function ImageBuilderState({
 
         {/* Tab bar */}
         <div style={{
-          display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+          display: 'flex', borderBottom: '0.5px solid rgba(var(--ink),0.06)',
           padding: '0 22px', gap: '2px', flexShrink: 0,
         }}>
           {TABS.map(tab => {
@@ -467,7 +468,7 @@ export default function ImageBuilderState({
                 style={{
                   padding: '8px 14px', fontSize: '11.5px', background: 'none', border: 'none',
                   borderBottom: isActive ? '2px solid rgba(139,92,246,0.7)' : '2px solid transparent',
-                  color: isActive ? 'rgba(196,168,255,0.9)' : 'rgba(255,255,255,0.35)',
+                  color: isActive ? 'color-mix(in oklab, rgba(196,168,255,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.35)',
                   fontWeight: isActive ? 500 : 400, cursor: 'pointer',
                   transition: 'color 150ms, border-color 150ms', WebkitAppRegion: 'no-drag',
                 }}
@@ -485,20 +486,20 @@ export default function ImageBuilderState({
 
         {/* Presets strip */}
         <div style={{
-          padding: '10px 22px 12px', borderTop: '0.5px solid rgba(255,255,255,0.04)', flexShrink: 0,
+          padding: '10px 22px 12px', borderTop: '0.5px solid rgba(var(--ink),0.04)', flexShrink: 0,
         }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px',
           }}>
             <span style={{
               fontSize: '9px', textTransform: 'uppercase', letterSpacing: '.08em',
-              color: 'rgba(255,255,255,0.18)',
+              color: 'rgba(var(--ink),0.3)',
             }}>
               Nano Banana Pro presets
             </span>
             <button type="button" onClick={() => setShowAllPresets(v => !v)} style={{
               background: 'none', border: 'none', padding: 0,
-              fontSize: '10.5px', color: 'rgba(255,255,255,0.25)', cursor: 'pointer',
+              fontSize: '10.5px', color: 'rgba(var(--ink),0.38)', cursor: 'pointer',
               WebkitAppRegion: 'no-drag',
             }}>
               {showAllPresets ? 'Show less ↑' : 'Show all 48 →'}
@@ -508,7 +509,7 @@ export default function ImageBuilderState({
             <div key={cat.label} style={{ marginBottom: '7px' }}>
               <div style={{
                 fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '.07em',
-                color: 'rgba(255,255,255,0.2)', marginBottom: '4px',
+                color: 'rgba(var(--ink),0.32)', marginBottom: '4px',
               }}>
                 {cat.label}
               </div>
@@ -524,13 +525,13 @@ export default function ImageBuilderState({
                         display: 'inline-flex', alignItems: 'center', gap: '4px',
                         padding: '3px 9px', borderRadius: '6px', fontSize: '10.5px',
                         cursor: 'pointer', userSelect: 'none',
-                        background: isActive ? 'rgba(251,146,60,0.12)' : 'rgba(255,255,255,0.03)',
-                        border: isActive ? '0.5px solid rgba(251,146,60,0.35)' : '0.5px solid rgba(255,255,255,0.08)',
-                        color: isActive ? 'rgba(251,200,130,0.9)' : 'rgba(255,255,255,0.4)',
+                        background: isActive ? 'rgba(251,146,60,0.12)' : 'rgba(var(--ink),0.03)',
+                        border: isActive ? '0.5px solid rgba(251,146,60,0.35)' : '0.5px solid rgba(var(--ink),0.08)',
+                        color: isActive ? 'color-mix(in oklab, rgba(251,200,130,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)',
                         WebkitAppRegion: 'no-drag',
                       }}
                     >
-                      {isActive && <span style={{ color: 'rgba(251,146,60,0.7)', fontSize: '9px' }}>·</span>}
+                      {isActive && <span style={{ color: 'color-mix(in oklab, rgba(251,146,60,0.7) var(--accent-text-strength), rgb(var(--ink)))', fontSize: '9px' }}>·</span>}
                       {preset.name}
                     </button>
                   )
@@ -542,18 +543,18 @@ export default function ImageBuilderState({
 
         {/* Action row */}
         <div style={{
-          padding: '12px 22px', borderTop: '0.5px solid rgba(255,255,255,0.06)',
+          padding: '12px 22px', borderTop: '0.5px solid rgba(var(--ink),0.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', flexShrink: 0,
         }}>
           {unfilled > 0 && (
-            <span style={{ fontSize: '11px', color: 'rgba(255,200,60,0.65)', marginRight: 'auto' }}>
+            <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgba(255,200,60,0.65) var(--accent-text-strength), rgb(var(--ink)))', marginRight: 'auto' }}>
               ⚠ {unfilled} required field{unfilled !== 1 ? 's' : ''} unfilled
             </span>
           )}
           <button type="button" onClick={onStartOver} style={{
             padding: '8px 14px', borderRadius: '8px', fontSize: '12px',
-            background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)',
-            color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
+            background: 'rgba(var(--ink),0.04)', border: '0.5px solid rgba(var(--ink),0.1)',
+            color: 'rgba(var(--ink),0.62)', cursor: 'pointer',
           }}>
             Start over
           </button>
@@ -566,7 +567,7 @@ export default function ImageBuilderState({
               padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
               background: confirmDisabled ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.85)',
               border: '0.5px solid rgba(139,92,246,0.4)',
-              color: confirmDisabled ? 'rgba(196,168,255,0.3)' : 'rgba(255,255,255,0.95)',
+              color: confirmDisabled ? 'color-mix(in oklab, rgba(196,168,255,0.3) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.95)',
               cursor: confirmDisabled ? 'default' : 'pointer',
               opacity: confirmDisabled ? 0.5 : 1, pointerEvents: confirmDisabled ? 'none' : 'auto',
             }}

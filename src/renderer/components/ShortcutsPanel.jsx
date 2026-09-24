@@ -1,9 +1,11 @@
+import { readableColor } from '../utils/promptUtils.js'
+
 export default function ShortcutsPanel({ onClose }) {
 
   const groups = [
     {
       label: 'Recording',
-      color: 'rgba(10,132,255,0.55)',
+      color: 'color-mix(in oklab, rgba(10,132,255,0.55) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Start / stop recording', keys: ['⌥', 'Space'] },
         { desc: 'Pause / resume recording', keys: ['⌥', 'P'] },
@@ -11,7 +13,7 @@ export default function ShortcutsPanel({ onClose }) {
     },
     {
       label: 'Prompt',
-      color: 'rgba(10,132,255,0.55)',
+      color: 'color-mix(in oklab, rgba(10,132,255,0.55) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Type prompt', keys: ['⌘', 'T'] },
         { desc: 'Copy last prompt', keys: ['⌘', 'C'] },
@@ -21,7 +23,7 @@ export default function ShortcutsPanel({ onClose }) {
     },
     {
       label: 'Navigation',
-      color: 'rgba(10,132,255,0.55)',
+      color: 'color-mix(in oklab, rgba(10,132,255,0.55) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Open history', keys: ['⌘', 'H'] },
         { desc: 'Open path settings', keys: ['⌘', '/'] },
@@ -54,7 +56,7 @@ export default function ShortcutsPanel({ onClose }) {
           fontWeight: 700,
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.28)'
+          color: 'rgba(var(--ink),0.42)'
         }}>
           Keyboard shortcuts
         </span>
@@ -62,9 +64,9 @@ export default function ShortcutsPanel({ onClose }) {
           onClick={onClose}
           style={{
             fontSize: '12px',
-            color: 'rgba(255,255,255,0.45)',
-            background: 'rgba(255,255,255,0.05)',
-            border: '0.5px solid rgba(255,255,255,0.1)',
+            color: 'rgba(var(--ink),0.62)',
+            background: 'rgba(var(--ink),0.05)',
+            border: '0.5px solid rgba(var(--ink),0.1)',
             borderRadius: '7px',
             padding: '4px 10px',
             cursor: 'pointer',
@@ -83,7 +85,7 @@ export default function ShortcutsPanel({ onClose }) {
           {gi > 0 && (
             <div style={{
               height: '0.5px',
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(var(--ink),0.06), transparent)',
               margin: '10px 0'
             }}/>
           )}
@@ -94,7 +96,7 @@ export default function ShortcutsPanel({ onClose }) {
             fontWeight: 700,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: group.color,
+            color: readableColor(group.color),
             marginBottom: '6px',
             marginTop: gi === 0 ? '0' : '14px',
             paddingLeft: '2px'
@@ -115,13 +117,13 @@ export default function ShortcutsPanel({ onClose }) {
                 marginBottom: '3px',
                 cursor: 'default'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--ink),0.04)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               {/* Description */}
               <span style={{
                 fontSize: '12.5px',
-                color: 'rgba(255,255,255,0.6)',
+                color: 'rgba(var(--ink),0.8)',
                 letterSpacing: '0.01em'
               }}>
                 {item.desc}
@@ -139,7 +141,7 @@ export default function ShortcutsPanel({ onClose }) {
                     {ki > 0 && (
                       <span style={{
                         fontSize: '10px',
-                        color: 'rgba(255,255,255,0.2)',
+                        color: 'rgba(var(--ink),0.32)',
                         margin: '0 1px'
                       }}>+</span>
                     )}
@@ -150,15 +152,15 @@ export default function ShortcutsPanel({ onClose }) {
                       minWidth: '24px',
                       height: '22px',
                       padding: '0 6px',
-                      background: 'rgba(255,255,255,0.07)',
-                      border: '0.5px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(var(--ink),0.07)',
+                      border: '0.5px solid rgba(var(--ink),0.14)',
                       borderBottom: '1.5px solid rgba(0,0,0,0.35)',
                       borderRadius: '5px',
                       fontSize: '11px',
-                      color: 'rgba(255,255,255,0.55)',
+                      color: 'rgba(var(--ink),0.74)',
                       fontFamily: 'inherit',
                       letterSpacing: '0.01em',
-                      boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+                      boxShadow: '0 1px 0 rgba(var(--ink),0.04) inset'
                     }}>
                       {key}
                     </span>

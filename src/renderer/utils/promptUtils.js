@@ -123,9 +123,17 @@ export function evalVerdict(delta) {
 }
 
 export function getModeTagStyle(mode) {
-  if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'rgba(100,220,130,0.6)' }
-  if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'rgba(167,139,250,0.65)' }
-  if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'rgba(74,222,128,0.65)' }
-  if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'rgba(45,212,191,0.65)' }
-  return { background: 'rgba(10,132,255,0.1)', color: 'rgba(100,170,255,0.65)' }
+  if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgba(100,220,130,0.6) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgba(167,139,250,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgba(74,222,128,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'color-mix(in oklab, rgba(45,212,191,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
+  return { background: 'rgba(10,132,255,0.1)', color: 'color-mix(in oklab, rgba(100,170,255,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
+}
+
+// Coloured text (mode colours are tuned for dark) mixed toward the ink colour by the theme's
+// --accent-text-strength, so it stays readable on light backgrounds. Neutral colours pass
+// through unchanged, so it's safe to wrap any text colour.
+export function readableColor(color) {
+  if (!color || typeof color !== 'string' || color.startsWith('var(') || color === 'inherit' || color === 'transparent') return color
+  return `color-mix(in oklab, ${color} var(--accent-text-strength), rgb(var(--ink)))`
 }

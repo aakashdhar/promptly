@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { readableColor } from '../utils/promptUtils.js'
 
 export default function SettingsPanel({ onClose }) {
   const [claudeVal, setClaudeVal] = useState('')
@@ -8,13 +9,17 @@ export default function SettingsPanel({ onClose }) {
   const [whisperStatus, setWhisperStatus] = useState(null)
   const [ffmpegStatus, setFfmpegStatus] = useState(null)
   const [saveMsg, setSaveMsg] = useState('')
-  const [saveMsgColor, setSaveMsgColor] = useState('rgba(255,255,255,0.35)')
+  const [saveMsgColor, setSaveMsgColor] = useState('rgba(var(--ink),0.35)')
+  const [themeVal, setThemeVal] = useState('system')
+  const [speechBuiltIn, setSpeechBuiltIn] = useState(false)
   const [modelVal, setModelVal] = useState('')
   const [modelOptions, setModelOptions] = useState([])
 
   useEffect(() => {
     if (!window.electronAPI) return
-    window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath, claudeModel, modelOptions: options }) => {
+    window.electronAPI.getThemeSetting?.().then(({ theme }) => setThemeVal(theme))
+    window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath, claudeModel, modelOptions: options, speechBuiltIn: builtIn }) => {
+      setSpeechBuiltIn(!!builtIn)
       setModelVal(claudeModel || '')
       setModelOptions(options || [])
       setClaudeVal(claudePath || '')
@@ -50,6 +55,11 @@ export default function SettingsPanel({ onClose }) {
     }
   }
 
+  async function handleThemeChange(value) {
+    setThemeVal(value)
+    await window.electronAPI.setThemeSetting(value)
+  }
+
   async function handleModelChange(value) {
     setModelVal(value)
     await window.electronAPI.savePaths({ claudeModel: value })
@@ -58,7 +68,7 @@ export default function SettingsPanel({ onClose }) {
   }
 
   async function handleSaveRecheck() {
-    setSaveMsgColor('rgba(255,255,255,0.35)')
+    setSaveMsgColor('rgba(var(--ink),0.35)')
     setSaveMsg('Saving...')
     await window.electronAPI.savePaths({ claudePath: claudeVal.trim(), whisperPath: whisperVal.trim(), ffmpegPath: ffmpegVal.trim() })
     setSaveMsg('Rechecking...')
@@ -84,12 +94,12 @@ export default function SettingsPanel({ onClose }) {
   const dotStyle = (status) => ({
     width: 7, height: 7, borderRadius: '50%', flexShrink: 0, marginLeft: 4,
     background: status === null
-      ? 'rgba(255,255,255,0.15)'
+      ? 'rgba(var(--ink),0.15)'
       : status.ok ? 'rgba(48,209,88,0.9)' : 'rgba(255,59,48,0.7)',
   })
 
   const inputBorder = (status) =>
-    status === null ? 'rgba(255,255,255,0.12)'
+    status === null ? 'rgba(var(--ink),0.12)'
     : status.ok ? 'rgba(48,209,88,0.3)' : 'rgba(255,59,48,0.3)'
 
   const hintText = (status, val) => {
@@ -99,19 +109,44 @@ export default function SettingsPanel({ onClose }) {
   }
 
   const hintColor = (status) =>
-    status === null ? 'rgba(255,255,255,0.2)'
+    status === null ? 'rgba(var(--ink),0.2)'
     : status.ok ? 'rgba(48,209,88,0.6)' : 'rgba(255,59,48,0.5)'
 
-  const sectionLabel = { fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: 5, fontFamily: 'inherit' }
-  const inputStyle = (status) => ({ width: '100%', height: 32, background: 'rgba(255,255,255,0.05)', border: `0.5px solid ${inputBorder(status)}`, borderRadius: 8, padding: '0 10px', fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', WebkitAppRegion: 'no-drag' })
-  const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
+  const sectionLabel = { fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.42)', marginBottom: 5, fontFamily: 'inherit' }
+  const inputStyle = (status) => ({ width: '100%', height: 32, background: 'rgba(var(--ink),0.05)', border: `0.5px solid ${inputBorder(status)}`, borderRadius: 8, padding: '0 10px', fontSize: 11, color: 'rgba(var(--ink),0.95)', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', WebkitAppRegion: 'no-drag' })
+  const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(var(--ink),0.56)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
 
   return (
     <div style={{ padding: '16px 20px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
       {/* header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.65)', fontFamily: 'inherit' }}>Path configuration</span>
-        <button onClick={onClose} style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' }}>← Back</button>
+        <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(var(--ink),0.86)', fontFamily: 'inherit' }}>Settings</span>
+        <button onClick={onClose} style={{ fontSize: 11, color: 'rgba(var(--ink),0.5)', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' }}>← Back</button>
+      </div>
+
+      {/* Appearance */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={sectionLabel}>Appearance</div>
+        <div role="radiogroup" aria-label="Appearance" style={{ display: 'flex', gap: 4, padding: 3, borderRadius: 9, background: 'rgba(var(--ink),0.05)' }}>
+          {[['system', 'Match macOS'], ['light', 'Light'], ['dark', 'Dark']].map(([value, label]) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={themeVal === value}
+              onClick={() => handleThemeChange(value)}
+              style={{
+                flex: 1, height: 26, borderRadius: 7, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5,
+                fontWeight: themeVal === value ? 600 : 400,
+                background: themeVal === value ? 'var(--surface-raised)' : 'transparent',
+                boxShadow: themeVal === value ? '0 1px 2px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(var(--ink),0.18)' : 'none',
+                color: themeVal === value ? 'rgb(var(--ink))' : 'rgba(var(--ink),0.6)',
+                WebkitAppRegion: 'no-drag',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Claude CLI */}
@@ -124,9 +159,15 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseClaude} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: hintColor(claudeStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(claudeStatus, claudeVal)}</div>
+        <div style={{ fontSize: 10, color: readableColor(hintColor(claudeStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(claudeStatus, claudeVal)}</div>
       </div>
 
+      {speechBuiltIn ? (
+        <div style={{ marginBottom: 14 }}>
+          <div style={sectionLabel}>Speech-to-text</div>
+          <div style={{ fontSize: 11.5, color: 'rgba(var(--ink),0.7)', fontFamily: 'inherit' }}>Built in — runs on this Mac, nothing to install.</div>
+        </div>
+      ) : (<>
       {/* Whisper */}
       <div style={{ marginBottom: 12 }}>
         <div style={sectionLabel}>Whisper path</div>
@@ -137,7 +178,7 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseWhisper} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: hintColor(whisperStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
+        <div style={{ fontSize: 10, color: readableColor(hintColor(whisperStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
       </div>
 
       {/* ffmpeg */}
@@ -150,8 +191,10 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseFfmpeg} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: hintColor(ffmpegStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(ffmpegStatus, ffmpegVal)}</div>
+        <div style={{ fontSize: 10, color: readableColor(hintColor(ffmpegStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(ffmpegStatus, ffmpegVal)}</div>
       </div>
+
+      </>)}
 
       {/* Claude model */}
       {modelOptions.length > 0 && (
@@ -169,25 +212,25 @@ export default function SettingsPanel({ onClose }) {
       )}
 
       {/* divider */}
-      <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', marginBottom: 12 }} />
+      <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(var(--ink),0.07),transparent)', marginBottom: 12 }} />
 
       {/* save button */}
       <button
         onClick={handleSaveRecheck}
-        style={{ width: '100%', height: 34, background: 'linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9))', color: 'rgba(255,255,255,0.92)', border: '0.5px solid rgba(10,132,255,0.35)', borderRadius: 9, fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}
+        style={{ width: '100%', height: 34, background: 'linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9))', color: 'var(--on-accent)', border: '0.5px solid rgba(10,132,255,0.35)', borderRadius: 9, fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.01em' }}
       >
         Save &amp; Recheck
       </button>
 
-      <div style={{ fontSize: 10.5, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: 'inherit', color: saveMsgColor }}>{saveMsg}</div>
+      <div style={{ fontSize: 10.5, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: 'inherit', color: readableColor(saveMsgColor) }}>{saveMsg}</div>
 
       {/* divider */}
-      <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', margin: '12px 0' }} />
+      <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(var(--ink),0.07),transparent)', margin: '12px 0' }} />
 
       {/* recheck setup */}
       <button
         onClick={() => window.electronAPI?.reopenWizard?.()}
-        style={{ width: '100%', height: 30, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
+        style={{ width: '100%', height: 30, background: 'rgba(var(--ink),0.04)', color: 'rgba(var(--ink),0.56)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
       >
         Recheck setup ↺
       </button>

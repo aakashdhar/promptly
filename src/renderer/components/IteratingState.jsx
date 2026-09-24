@@ -72,7 +72,7 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
           fontWeight: 700,
           letterSpacing: '.10em',
           textTransform: 'uppercase',
-          color: 'rgba(100,180,255,0.80)',
+          color: 'color-mix(in oklab, rgba(100,180,255,0.80) var(--accent-text-strength), rgb(var(--ink)))',
           marginBottom: '4px',
         }}>
           ITERATING ON
@@ -80,7 +80,7 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
         {/* 0.55 is above threshold, stays */}
         <div style={{
           fontSize: '12px',
-          color: 'rgba(255,255,255,0.58)',
+          color: 'rgba(var(--ink),0.78)',
           lineHeight: 1.55,
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -105,8 +105,8 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
             width: '32px',
             height: '32px',
             borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'rgba(var(--ink),0.06)',
+            border: '1px solid rgba(var(--ink),0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -118,7 +118,7 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
         >
           {/* POLISH-009: stroke 0.45 → 0.75 */}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M1 1L9 9M9 1L1 9" stroke="rgba(var(--ink),0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
 
@@ -141,7 +141,7 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
         <span style={{
           fontSize: '11px',
           fontWeight: 400,
-          color: 'rgba(255,255,255,0.60)',
+          color: 'rgba(var(--ink),0.8)',
           flexShrink: 0,
           minWidth: '28px',
           textAlign: 'right',
@@ -176,7 +176,7 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
 
       <div style={{
         height: '0.5px',
-        background: 'rgba(255,255,255,0.06)',
+        background: 'rgba(var(--ink),0.06)',
         margin: '0 18px',
       }} />
     </div>
