@@ -179,9 +179,13 @@ export default function SettingsPanel({ onClose }) {
               {prefs.hotkeyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5, lineHeight: 1.5 }}>
-              {prefs.accessibility?.tap
-                ? 'Hold it while you talk and let go to finish, or tap it to start and stop.'
-                : 'Tap to start and stop. Allow Accessibility below to hold it while you talk.'}
+              {prefs.hotkey === 'double-control'
+                ? (prefs.accessibility?.tap
+                  ? 'Double-tap Control to start, tap it once to stop. Or double-tap and hold while you talk.'
+                  : 'Needs Accessibility (below). Until then, tap ⌥ Space to start and stop.')
+                : prefs.accessibility?.tap
+                  ? 'Hold it while you talk and let go to finish, or tap it to start and stop.'
+                  : 'Tap to start and stop. Allow Accessibility below to hold it while you talk.'}
               {prefs.hotkey === 'fn' && ' Set System Settings → Keyboard → "Press 🌐 key to" to "Do Nothing" first.'}
             </div>
           </div>

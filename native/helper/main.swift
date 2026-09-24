@@ -30,6 +30,74 @@ struct Hotkey {
     var keyCode: Int64 = 49                  // Space
     var modifiers: CGEventFlags = .maskAlternate
     var modifierOnly = false                  // e.g. Right Option or Fn held on its own
+    var doubleTap = false                     // double-tap Control: either Control key
+}
+
+// Double-tap state. A tap is a quick, clean press and release of Control: no other key, mouse
+// click or modifier in between (so ⌃C and Control-click never count).
+struct DoubleTap {
+    var down = false
+    var pressedAt: TimeInterval = 0
+    var clean = false
+    var lastTapAt: TimeInterval? = nil        // release time of the previous clean tap
+    var secondPress = false                   // this press is the second of a double tap
+}
+var doubleTap = DoubleTap()
+let tapMaxHold: TimeInterval = 0.35          // longer than this is a hold, not a tap
+let doubleTapWindow: TimeInterval = 0.40     // max gap between the two taps
+
+func resetDoubleTap() {
+    doubleTap.lastTapAt = nil
+    doubleTap.clean = false
+    if doubleTap.secondPress {
+        doubleTap.secondPress = false
+        emit(["type": "hotkey", "phase": "cancel"])
+    }
+}
+
+// Double-tap Control → "down" on the second press and "up" on its release (so double-tap and
+// hold is hold to talk). Any other single clean tap → "tap", which Promptly uses to stop.
+func handleDoubleTap(type: CGEventType, event: CGEvent) {
+    let now = ProcessInfo.processInfo.systemUptime
+    switch type {
+    case .flagsChanged:
+        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        let flags = event.flags
+        guard keyCode == 59 || keyCode == 62 else {
+            // Another modifier: not a clean Control tap.
+            if doubleTap.down { doubleTap.clean = false }
+            resetDoubleTap()
+            return
+        }
+        let pressed = flags.contains(.maskControl)
+        if pressed && !doubleTap.down {
+            doubleTap.down = true
+            doubleTap.pressedAt = now
+            doubleTap.clean = flags.intersection([.maskCommand, .maskAlternate, .maskShift]).isEmpty
+            if doubleTap.clean, let last = doubleTap.lastTapAt, now - last <= doubleTapWindow {
+                doubleTap.secondPress = true
+                doubleTap.lastTapAt = nil
+                emit(["type": "hotkey", "phase": "down"])
+            }
+        } else if !pressed && doubleTap.down {
+            doubleTap.down = false
+            if doubleTap.secondPress {
+                doubleTap.secondPress = false
+                emit(["type": "hotkey", "phase": "up"])
+            } else if doubleTap.clean && now - doubleTap.pressedAt <= tapMaxHold {
+                doubleTap.lastTapAt = now
+                emit(["type": "hotkey", "phase": "tap"])
+            } else {
+                doubleTap.lastTapAt = nil
+            }
+        }
+    case .keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown:
+        // Typing or clicking: Control was part of something else (⌃C, Control-click).
+        if doubleTap.down { doubleTap.clean = false }
+        resetDoubleTap()
+    default:
+        break
+    }
 }
 
 let relevantModifiers: CGEventFlags = [.maskCommand, .maskControl, .maskAlternate, .maskShift]
@@ -53,6 +121,11 @@ func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
         if let tap = eventTap { CGEvent.tapEnable(tap: tap, enable: true) }
         return Unmanaged.passUnretained(event)
+    }
+
+    if hotkey.doubleTap {
+        handleDoubleTap(type: type, event: event)
+        return Unmanaged.passUnretained(event)   // Control still works normally everywhere
     }
 
     let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
@@ -98,6 +171,7 @@ func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
 func installTap() -> Bool {
     if eventTap != nil { return true }
     let mask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
+        | (1 << CGEventType.leftMouseDown.rawValue) | (1 << CGEventType.rightMouseDown.rawValue) | (1 << CGEventType.otherMouseDown.rawValue)
     guard let tap = CGEvent.tapCreate(
         tap: .cgSessionEventTap,
         place: .headInsertEventTap,
@@ -210,7 +284,9 @@ func handleCommand(_ line: String) {
             hotkey.keyCode = Int64((key["keyCode"] as? Int) ?? 49)
             hotkey.modifiers = modifiers(from: (key["modifiers"] as? [String]) ?? [])
             hotkey.modifierOnly = (key["modifierOnly"] as? Bool) ?? false
+            hotkey.doubleTap = (key["doubleTap"] as? Bool) ?? false
             hotkeyDown = false
+            doubleTap = DoubleTap()
         }
         var reply = status()
         reply["id"] = id

@@ -15,7 +15,7 @@ const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
 const claudeSetup = require('./main/claude-setup');
 const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
-const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, createHoldToTalk } = require('./main/hotkey');
+const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor } = require('./main/prompts');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt, buildLearnStylePrompt } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
@@ -29,6 +29,11 @@ if (IS_E2E) {
   // Chromium's fake microphone, so recording works without touching the real one.
   app.commandLine.appendSwitch('use-fake-device-for-media-stream');
   app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
+  // Keep painting when other windows cover the app (someone using the Mac mid-run); otherwise
+  // Chromium stops drawing an occluded window and screenshots wait forever.
+  app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+  app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+  app.commandLine.appendSwitch('disable-renderer-backgrounding');
   // Lets tests fire the global hotkey and read state without registering real shortcuts.
   globalThis.__promptlyE2E = {
     pressHotkey: () => onPrimaryShortcut(),
@@ -423,6 +428,7 @@ function onHelperHotkey(phase) {
   if (phase === 'down') holdToTalk.down();
   else if (phase === 'up') holdToTalk.up();
   else if (phase === 'cancel') holdToTalk.cancel();
+  else if (phase === 'tap') holdToTalk.tap();
 }
 
 // globalShortcut fallback: a press is a tap (start, or stop if already recording).
@@ -829,6 +835,7 @@ app.whenReady().then(async () => {
     const stored = config.read();
     return {
       hotkey: HOTKEY_PRESETS[stored.hotkey] ? stored.hotkey : DEFAULT_HOTKEY,
+      hotkeyWords: hotkeyWords(stored.hotkey, { helperActive: !!helper.status().tap }),
       hotkeyOptions: Object.entries(HOTKEY_PRESETS).map(([value, p]) => ({ value, label: p.label, holdOnly: !p.accelerator })),
       dictionary: stored.dictionary || '',
       voiceNotes: stored.voiceNotes || '',

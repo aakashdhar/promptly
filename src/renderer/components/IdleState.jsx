@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import ModeDropdown from './ModeDropdown.jsx'
+import useHotkeyWords from '../hooks/useHotkeyWords.js'
 
 const IDLE_HEIGHT = 134
 
@@ -11,6 +12,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
   const isWorkflow = mode === 'workflow'
   const isEmail = mode === 'email'
 
+  const hotkey = useHotkeyWords()
   const [showModeDropdown, setShowModeDropdown] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
   const pillRef = useRef(null)
@@ -135,7 +137,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
             className="text-[11px]"
             style={{ color:'var(--text-secondary)', letterSpacing:'-0.01em' }}
           >
-            {isPolish ? 'Speak it rough, get it polished' : isRefine ? "Describe what's there and what should change" : isImage ? 'Speak your image idea' : isVideo ? 'Speak your video idea' : isWorkflow ? 'Describe your automation' : isEmail ? 'Describe the email you need' : mode === 'dictate' ? 'Hold ⌥ Space and talk: it types where your cursor is' : '⌥ Space to speak · ⌘T to type'}
+            {isPolish ? 'Speak it rough, get it polished' : isRefine ? "Describe what's there and what should change" : isImage ? 'Speak your image idea' : isVideo ? 'Speak your video idea' : isWorkflow ? 'Describe your automation' : isEmail ? 'Describe the email you need' : mode === 'dictate' ? `${hotkey.action} and talk: it types where your cursor is` : `${hotkey.action} to speak · ⌘T to type`}
           </div>
           <span className="text-[11px] mt-[3px] block" style={{color:'var(--text-tertiary)'}}>⌘? for shortcuts</span>
         </div>

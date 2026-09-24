@@ -489,7 +489,7 @@ test('preferences are saved', async () => {
   ctx = await launch()
   const { page } = ctx
   const before = await page.evaluate(() => window.electronAPI.getPreferences())
-  expect(before).toMatchObject({ hotkey: 'option-space', autoCopy: true, dictionary: '' })
+  expect(before).toMatchObject({ hotkey: 'double-control', autoCopy: true, dictionary: '' })
   expect(before.hotkeyOptions.map((o) => o.value)).toContain('fn')
   await page.evaluate(() => window.electronAPI.setPreferences({ hotkey: 'right-option', autoCopy: false, dictionary: 'Kubernetes' }))
   const after = await page.evaluate(() => window.electronAPI.getPreferences())
@@ -505,9 +505,10 @@ test('setup offers hold to talk when the helper is available, and notices when i
   await expect(setup.getByText('Claude Code is ready.')).toBeVisible({ timeout: 10000 })
   await setup.locator('#claude-next').click()
   // The fake helper reports Accessibility as granted.
-  await expect(setup.getByText('Hold to talk is on.')).toBeVisible({ timeout: 5000 })
+  await expect(setup.getByText('Talking from any app is on.')).toBeVisible({ timeout: 5000 })
   await setup.locator('#hold-next').click()
-  await expect(setup.getByText('Hold this anywhere on your Mac and talk.', { exact: false })).toBeVisible({ timeout: 5000 })
+  await expect(setup.getByText('Double-tap this anywhere on your Mac and talk.', { exact: false })).toBeVisible({ timeout: 5000 })
+  await expect(setup.locator('#key-space')).toHaveText('control')
 })
 
 test('your notes shape results: "About you" for prompts, "How you write" for Polish', async () => {

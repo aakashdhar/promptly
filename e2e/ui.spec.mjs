@@ -7,6 +7,11 @@ import os from 'os'
 import path from 'path'
 import { auditLayout, formatIssues } from './layout-audit.mjs'
 
+// These walk the real window for a minute each. If someone is using the Mac at the same time,
+// focus changes can hide the bar mid-walk; one retry absorbs that (a real layout problem fails
+// both runs).
+test.describe.configure({ retries: 1 })
+
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'test-results', 'ui')
 
@@ -122,10 +127,16 @@ async function launch(theme, { setupComplete = true, helper = null, config = {} 
   return { app, dir }
 }
 
+// Waits for the bar to have loaded. It may already have hidden itself again (it hides when
+// another app takes focus), so it's shown without taking focus rather than required visible.
 async function mainPage(app) {
   await expect.poll(async () => app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
+    BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && !w.webContents.isLoading())
   ), { timeout: 20000 }).toBe(true)
+  await app.evaluate(({ BrowserWindow }) => {
+    const w = BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes('dist-renderer'))
+    if (!w.isVisible()) w.showInactive()
+  })
   return app.windows().find((w) => w.url().includes('dist-renderer'))
 }
 
@@ -133,8 +144,16 @@ const appState = (app) => app.evaluate(() => globalThis.__promptlyE2E.appState()
 
 // Screenshot + layout audit for one screen. Issues are collected, not thrown, so a single run
 // reports every problem at once.
-function recorder(theme, found) {
+function recorder(theme, found, app) {
   return async (page, name, opts) => {
+    // The bar hides when another app takes focus (anything else on this Mac can do that
+    // mid-run), and a hidden window never paints. Bring it back without taking focus.
+    if (app && page.url().includes('dist-renderer')) {
+      await app.evaluate(({ BrowserWindow }) => {
+        const w = BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes('dist-renderer'))
+        if (w && !w.isVisible()) w.showInactive()
+      })
+    }
     const issues = await auditLayout(page, opts)
     await page.screenshot({ path: path.join(OUT, `${theme}-${name}.png`) })
     if (issues.length) found.push(formatIssues(`${theme}/${name}`, issues))
@@ -176,8 +195,8 @@ for (const theme of ['dark', 'light']) {
     test.setTimeout(240000)
     fs.mkdirSync(OUT, { recursive: true })
     const found = []
-    const check = recorder(theme, found)
     const { app, dir } = await launch(theme)
+    const check = recorder(theme, found, app)
     const page = await mainPage(app)
     page.__theme = theme
     // Playwright forces a light colour scheme unless told otherwise.

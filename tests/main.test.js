@@ -428,8 +428,8 @@ describe('hold to talk', () => {
     expect(events).toEqual(['start', 'cancel'])
   })
 
-  it('has presets, falling back to Option+Space', () => {
-    expect(getPreset('nope')).toBe(HOTKEY_PRESETS['option-space'])
+  it('has presets, falling back to the default (double-tap Control)', () => {
+    expect(getPreset('nope')).toBe(HOTKEY_PRESETS['double-control'])
     expect(HOTKEY_PRESETS.fn.accelerator).toBeNull()
     expect(HOTKEY_PRESETS['right-option'].helper).toEqual({ keyCode: 61, modifiers: [], modifierOnly: true })
   })
@@ -623,5 +623,58 @@ describe('Dictation', () => {
   it('is the default mode for new installs, and needs no Claude call', () => {
     expect(MODES.defaultMode).toBe('dictate')
     expect(getMode('dictate').kind).toBe('dictation')
+  })
+})
+
+describe('Double-tap Control', () => {
+  const { createHoldToTalk, hotkeyWords, getPreset, DEFAULT_HOTKEY } = require('../main/hotkey.js')
+
+  function machine() {
+    let t = 0
+    let recording = false
+    const log = []
+    const h = createHoldToTalk({
+      isRecording: () => recording,
+      onStart: () => { recording = true; log.push('start') },
+      onStop: () => { recording = false; log.push('stop') },
+      onCancel: () => { recording = false; log.push('cancel') },
+      now: () => t,
+    })
+    return { h, log, at: (ms) => { t = ms } }
+  }
+
+  it('is the default, and needs the helper (no globalShortcut fallback of its own)', () => {
+    expect(DEFAULT_HOTKEY).toBe('double-control')
+    expect(getPreset('double-control').accelerator).toBeNull()
+    expect(getPreset('double-control').helper).toMatchObject({ doubleTap: true, modifierOnly: true })
+  })
+
+  it('double-tap starts hands-free; one tap stops', () => {
+    const { h, log, at } = machine()
+    at(0); h.tap() // first tap of the double: nothing to stop
+    at(150); h.down(); at(210); h.up() // second tap: start, released quickly → keeps recording
+    expect(log).toEqual(['start'])
+    at(5000); h.tap()
+    expect(log).toEqual(['start', 'stop'])
+  })
+
+  it('double-tap and hold is hold to talk', () => {
+    const { h, log, at } = machine()
+    at(0); h.tap(); at(150); h.down(); at(2000); h.up()
+    expect(log).toEqual(['start', 'stop'])
+  })
+
+  it('double-tapping to stop does not start a new recording', () => {
+    const { h, log, at } = machine()
+    at(0); h.down(); at(60); h.up() // start
+    at(5000); h.tap() // first tap stops…
+    at(5150); h.down(); at(5210); h.up() // …the second press is ignored
+    expect(log).toEqual(['start', 'stop'])
+  })
+
+  it('names the shortcut that actually works right now', () => {
+    expect(hotkeyWords('double-control', { helperActive: true })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap ⌃' })
+    expect(hotkeyWords('double-control', { helperActive: false })).toEqual({ short: '⌥ Space', action: 'Press ⌥ Space' })
+    expect(hotkeyWords('option-space', { helperActive: true }).action).toBe('Hold ⌥ Space')
   })
 })
