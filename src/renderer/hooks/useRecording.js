@@ -9,6 +9,7 @@ export default function useRecording({
   setThinkingAccentColor,
   setThinkingLabel,
   onGenerateResult,
+  opIdRef,
   isIterated,
   originalTranscript,
   isExpandedRef,
@@ -72,6 +73,7 @@ export default function useRecording({
       }
       transitionRef.current(STATES.THINKING)
       isProcessingRef.current = false
+      const opId = ++opIdRef.current
 
       if (!window.electronAPI) {
         transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
@@ -79,6 +81,8 @@ export default function useRecording({
       }
 
       const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer)
+      // The user aborted (or started something else) while Whisper was running.
+      if (opId !== opIdRef.current) return
       if (!transcribeResult.success) {
         if (isExpandedRef?.current) {
           setTranscriptionError?.({
@@ -108,7 +112,7 @@ export default function useRecording({
         mode,
         mode === 'polish' ? { tone: polishToneRef.current } : undefined
       )
-      onGenerateResult.current(genResult, text)
+      onGenerateResult.current(genResult, text, opId)
     }
   }, [])
 

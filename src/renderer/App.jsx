@@ -102,7 +102,8 @@ export default function App() {
   const transitionTimerRef = useRef(null)
   const transitionRef = useRef(null)
   const animateToStateRef = useRef(null)
-  const abortRef = useRef(false)
+  // Bumped on every new generation and on abort; a result whose id is stale is ignored.
+  const opIdRef = useRef(0)
   const emailHistoryIdRef = useRef(null)
 
   const { mode, setMode, modeLabel } = useMode()
@@ -162,12 +163,13 @@ export default function App() {
   }, [mode])
 
   function transition(newState, payload = {}) {
+    const fromState = stateRef.current
     stateRef.current = newState
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
     if (newState === STATES.THINKING) {
       const builderStates = [STATES.IMAGE_BUILDER, STATES.VIDEO_BUILDER, STATES.WORKFLOW_BUILDER]
-      setThinkingPhase(builderStates.includes(stateRef.current) ? 2 : 1)
+      setThinkingPhase(builderStates.includes(fromState) ? 2 : 1)
     }
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
@@ -184,7 +186,7 @@ export default function App() {
 
   transitionRef.current = transition
 
-  const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })
+  const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef })
 
   const handleGenerateResultRef = useRef(null)
 
@@ -210,6 +212,7 @@ export default function App() {
     setThinkingAccentColor,
     setThinkingLabel,
     onGenerateResult: handleGenerateResultRef,
+    opIdRef,
     isIterated,
     originalTranscript,
     isExpandedRef,
@@ -264,8 +267,8 @@ export default function App() {
     startRecordingRef,
   })
 
-  const handleGenerateResult = useCallback((genResult, transcript) => {
-    if (abortRef.current) { abortRef.current = false; return }
+  const handleGenerateResult = useCallback((genResult, transcript, opId) => {
+    if (opId !== undefined && opId !== opIdRef.current) return
     if (!genResult.success) {
       if (isExpandedRef.current) {
         setGenerationError({
@@ -368,6 +371,7 @@ export default function App() {
     setThinkingLabel('Adjusting tone...')
     setThinkingAccentColor('rgba(20,184,166,0.85)')
     transition(STATES.THINKING)
+    const opId = ++opIdRef.current
     const systemPrompt = `You are an expert email writer. Rewrite the following email applying this tone adjustment: ${adjustment}
 
 Original situation: ${originalTranscript.current}
@@ -388,6 +392,7 @@ Return ONLY valid JSON:
   }
 }`
     const result = await window.electronAPI.generatePrompt('', 'email', { overrideSystemPrompt: systemPrompt })
+    if (opId !== opIdRef.current) return
     if (result?.success) {
       try {
         const parsed = parseEmailOutput(result.prompt)
@@ -416,7 +421,7 @@ Return ONLY valid JSON:
     handleGenerateResultRef,
     originalTranscript,
     setThinkTranscript,
-    abortRef,
+    opIdRef,
     handleDismiss,
     dismissIterating,
     handleImageStartOver,
@@ -436,6 +441,7 @@ Return ONLY valid JSON:
     modeRef,
     polishToneRef,
     handleGenerateResultRef,
+    opIdRef,
   })
 
   const { elapsed: thinkingElapsed, currentLabel: thinkingCurrentLabel, labelOpacity: thinkingLabelOpacity } = useThinkingProgress({

@@ -5,7 +5,7 @@ process.on('uncaughtException', (err) => {
   console.error('[Promptly] Uncaught exception:', err.message, err.stack);
 });
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session, screen } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session, screen, Notification } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -22,6 +22,29 @@ function writeConfig(data) {
 
 const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
+const SHORTCUT_PAUSE = 'Alt+P';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+// Must match the model the onboarding wizard downloads and check-whisper-model looks for.
+const WHISPER_MODEL = 'base';
+
+// App states in which the bar stays visible when focus moves to another app.
+// PROMPT_READY is deliberately absent: the user is expected to go and paste.
+const KEEP_VISIBLE_ON_BLUR = new Set([
+  'RECORDING', 'PAUSED', 'THINKING', 'ITERATING', 'TYPING', 'SETTINGS',
+  'IMAGE_BUILDER', 'IMAGE_BUILDER_DONE',
+  'VIDEO_BUILDER', 'VIDEO_BUILDER_DONE',
+  'WORKFLOW_BUILDER', 'WORKFLOW_BUILDER_DONE',
+  'EMAIL_READY', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR',
+]);
+
+// Replace {KEY} placeholders. A function replacer keeps `$&`, `$'` etc. in user text literal.
+function fillTemplate(template, values) {
+  let out = template;
+  for (const [key, value] of Object.entries(values)) {
+    out = out.replace(`{${key}}`, () => value);
+  }
+  return out;
+}
 
 const PROMPT_TEMPLATE = `You are an expert Claude prompt engineer. Your job is to transform raw spoken descriptions into precision-engineered Claude prompts that get exceptional results.
 
@@ -218,8 +241,25 @@ let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
 let preExpandBounds = null;
 let lastTempAudioPath = null;
-let lastTranscript = null;
-let currentMode = 'balanced';
+let lastGenerateRequest = null;
+let currentAppState = 'IDLE';
+let shortcutsRegistered = false;
+// Claude and Whisper child processes in flight, so an abort can stop them.
+const activeChildren = new Set();
+
+const audioTmpDir = path.join(os.tmpdir(), 'promptly-audio');
+
+function safeUnlink(p) {
+  if (!p) return;
+  try { fs.unlinkSync(p); } catch { /* already gone */ }
+}
+
+// Recordings kept after a failure (for retry) are removed at startup and when a new
+// recording replaces them, so voice data never piles up in the temp directory.
+function resetAudioTmpDir() {
+  try { fs.rmSync(audioTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
+  try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
+}
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -608,41 +648,173 @@ async function resolveFfmpegPath() {
   });
 }
 
+function makeWhisperEnv() {
+  const home = os.homedir();
+  return {
+    ...process.env,
+    PATH: [
+      '/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin', '/opt/local/bin',
+      path.join(home, '.local/bin'), path.join(home, '.pyenv/bin'), path.join(home, '.pyenv/shims'),
+      path.join(home, 'anaconda3/bin'), path.join(home, 'miniconda3/bin'), path.join(home, 'miniforge3/bin'),
+      '/usr/local/opt/ffmpeg/bin', ffmpegPath ? path.dirname(ffmpegPath) : null, process.env.PATH,
+    ].filter(Boolean).join(':'),
+    PYTHONUNBUFFERED: '1',
+    // Python.org macOS installer doesn't connect to the system keychain by default.
+    // Point to macOS's system CA bundle so Whisper can download models over HTTPS.
+    SSL_CERT_FILE: '/etc/ssl/cert.pem',
+    REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
+  };
+}
+
+// whisperPath is either a binary path or the literal 'python3 -m whisper'.
+function whisperCommand(args) {
+  return whisperPath === 'python3 -m whisper'
+    ? ['python3', ['-m', 'whisper', ...args]]
+    : [whisperPath, args];
+}
+
+// Transcribes an audio file and resolves with its text. Uses execFile (no shell), so
+// a path saved in Settings can never be interpreted as shell syntax.
+function runWhisper(audioFile, { timeoutMs, slowWarningMs }) {
+  const outDir = path.dirname(audioFile);
+  const txtFile = path.join(outDir, path.basename(audioFile, path.extname(audioFile)) + '.txt');
+  const [cmd, args] = whisperCommand([
+    audioFile, '--model', WHISPER_MODEL, '--language', 'en', '--output_format', 'txt', '--output_dir', outDir,
+  ]);
+  return new Promise((resolve, reject) => {
+    const child = execFile(cmd, args, { env: makeWhisperEnv(), maxBuffer: 10 * 1024 * 1024 }, (err, _stdout, stderr) => {
+      clearTimeout(slowTimer);
+      clearTimeout(killTimer);
+      activeChildren.delete(child);
+      if (err) {
+        const wrapped = new Error(stderr || err.message || 'Whisper failed');
+        if (timedOut) wrapped.timedOut = true;
+        reject(wrapped);
+        return;
+      }
+      try {
+        const text = fs.readFileSync(txtFile, 'utf8').trim();
+        safeUnlink(txtFile);
+        resolve(text);
+      } catch {
+        reject(new Error('Whisper output not found'));
+      }
+    });
+    activeChildren.add(child);
+    let timedOut = false;
+    const slowTimer = setTimeout(() => winSend('transcription-slow-warning'), slowWarningMs);
+    const killTimer = setTimeout(() => {
+      timedOut = true;
+      child.kill();
+    }, timeoutMs);
+  });
+}
+
 function winSend(channel, payload) {
   if (!win || win.isDestroyed()) return;
   win.webContents.send(channel, payload);
 }
 
-function registerShortcut() {
-  const primaryRegistered = globalShortcut.register(SHORTCUT_PRIMARY, () => {
-    winSend('shortcut-triggered');
-  });
-  if (!primaryRegistered) {
-    const fallbackRegistered = globalShortcut.register(SHORTCUT_FALLBACK, () => {
-      winSend('shortcut-triggered');
+// Runs `claude -p <prompt>` and resolves { success, prompt } or { success: false, error, errorType }.
+function runClaude(prompt, { timeoutMs = 45000, slowWarningMs = 30000 } = {}) {
+  return new Promise((resolve) => {
+    if (!claudePath) {
+      resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
+      return;
+    }
+    const child = spawn(claudePath, ['-p', prompt, '--model', CLAUDE_MODEL], { env: makeClaudeEnv(claudePath) });
+    activeChildren.add(child);
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(slowTimer);
+      clearTimeout(killTimer);
+      activeChildren.delete(child);
+      resolve(result);
+    };
+    const slowTimer = setTimeout(() => winSend('generation-slow-warning'), slowWarningMs);
+    const killTimer = setTimeout(() => {
+      child.kill();
+      finish({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
+    }, timeoutMs);
+    child.stdout.on('data', (d) => { stdout += d.toString(); });
+    child.stderr.on('data', (d) => { stderr += d.toString(); });
+    child.stdin.end();
+    child.on('close', (code, signal) => {
+      if (signal && !settled) { finish({ success: false, error: 'Cancelled', errorType: 'cancelled', cancelled: true }); return; }
+      if (code !== 0) { finish({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) }); return; }
+      const out = stdout.trim();
+      if (!out) { finish({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' }); return; }
+      finish({ success: true, prompt: out });
     });
-    if (fallbackRegistered && win && !win.isDestroyed()) {
-      win.webContents.on('did-finish-load', () => {
-        winSend('shortcut-conflict', { fallback: SHORTCUT_FALLBACK });
-      });
-    }
+    child.on('error', (err) => finish({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' }));
+  });
+}
+
+function buildModePrompt(transcript, mode, options = {}) {
+  const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
+  if (modeConf.standalone) {
+    const tone = options.tone || 'formal';
+    return fillTemplate(modeConf.instruction, {
+      TRANSCRIPT: transcript,
+      TONE: tone.charAt(0).toUpperCase() + tone.slice(1),
+    });
   }
-  globalShortcut.register('CommandOrControl+Shift+/', () => {
-    winSend('show-shortcuts');
+  return fillTemplate(PROMPT_TEMPLATE, {
+    MODE_NAME: modeConf.name,
+    MODE_INSTRUCTION: modeConf.instruction,
+    TRANSCRIPT: transcript,
   });
-  globalShortcut.register('Alt+P', () => {
-    winSend('shortcut-pause');
-  });
-  globalShortcut.register('CommandOrControl+/', () => {
-    if (win && !win.isDestroyed()) {
-      win.show();
-      win.focus();
-      winSend('open-settings');
-    }
-  });
-  globalShortcut.register('CommandOrControl+Option+I', () => {
-    if (win && !win.isDestroyed()) win.webContents.openDevTools({ mode: 'detach' });
-  });
+}
+
+async function runGeneratePrompt({ transcript, mode, options = {} }) {
+  const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
+  if (modeConf.passthrough) return { success: true, prompt: transcript };
+  const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, options);
+  return runClaude(prompt);
+}
+
+function showWindow() {
+  if (!win || win.isDestroyed()) return;
+  if (!win.isVisible()) win.show();
+  win.focus();
+}
+
+function onPrimaryShortcut() {
+  // Bring the bar forward so the user can see what the hotkey started or stopped.
+  showWindow();
+  winSend('shortcut-triggered');
+}
+
+function notify(body) {
+  if (!Notification.isSupported()) return;
+  new Notification({ title: 'Promptly', body }).show();
+}
+
+// Option+P is only claimed while a recording is live, so it doesn't steal the
+// key from other apps the rest of the time.
+function updatePauseShortcut(appState) {
+  const recording = appState === 'RECORDING' || appState === 'PAUSED';
+  const registered = globalShortcut.isRegistered(SHORTCUT_PAUSE);
+  if (recording && !registered) {
+    globalShortcut.register(SHORTCUT_PAUSE, () => winSend('shortcut-pause'));
+  } else if (!recording && registered) {
+    globalShortcut.unregister(SHORTCUT_PAUSE);
+  }
+}
+
+function registerShortcut() {
+  if (shortcutsRegistered) return;
+  shortcutsRegistered = true;
+  if (globalShortcut.register(SHORTCUT_PRIMARY, onPrimaryShortcut)) return;
+  if (globalShortcut.register(SHORTCUT_FALLBACK, onPrimaryShortcut)) {
+    notify('Option+Space is used by another app, so Promptly is listening on Control+` instead.');
+  } else {
+    notify('Promptly could not register a recording shortcut. Open it from the menu bar icon.');
+  }
 }
 
 function createWindow() {
@@ -676,10 +848,21 @@ function createWindow() {
     }
   });
   win.on('blur', () => {
-    // Hide when focus moves to another app, unless mic is actively capturing or a
-    // long-running Claude call is in progress (animated resize can trigger spurious blur)
-    if (currentIconState !== 'recording' && currentIconState !== 'thinking' && currentIconState !== 'builder') win.hide();
+    // Hide when focus moves to another app, except in the expanded window and in states
+    // where the user is mid-task (animated resize can also trigger a spurious blur).
+    if (preExpandBounds) return;
+    if (KEEP_VISIBLE_ON_BLUR.has(currentAppState)) return;
+    win.hide();
   });
+  if (!app.isPackaged) {
+    // Dev-only devtools shortcut, scoped to this window instead of registered system-wide.
+    win.webContents.on('before-input-event', (event, input) => {
+      if (input.type === 'keyDown' && input.meta && input.alt && input.key.toLowerCase() === 'i') {
+        win.webContents.openDevTools({ mode: 'detach' });
+        event.preventDefault();
+      }
+    });
+  }
   win.on('hide', () => {
     clearInterval(pulseInterval);
     pulseInterval = null;
@@ -743,6 +926,7 @@ app.whenReady().then(async () => {
     callback(permission === 'media');
   });
 
+  resetAudioTmpDir();
   claudePath = await resolveClaudePath();
   whisperPath = await resolveWhisperPath();
   ffmpegPath = await resolveFfmpegPath();
@@ -778,7 +962,8 @@ app.whenReady().then(async () => {
       if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
       if (win && !win.isDestroyed()) { win.show(); win.center(); }
       registerShortcut();
-      createMenuBarIcon();
+      // splash-done fires again after the wizard is reopened from Settings.
+      if (!menuBarTray || menuBarTray.isDestroyed()) createMenuBarIcon();
     }, 1200);
   });
 
@@ -787,16 +972,9 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('splash-check-whisper', async () => {
-    const ffmpegPaths = [
-      '/usr/local/bin/ffmpeg',
-      '/opt/homebrew/bin/ffmpeg',
-      path.join(os.homedir(), '.local/bin/ffmpeg'),
-      '/usr/bin/ffmpeg',
-    ];
-    const ffmpegFound = ffmpegPaths.some(p => {
-      try { return fs.existsSync(p); } catch { return false; }
-    });
-    return { ok: !!whisperPath, path: whisperPath, ffmpegFound };
+    // Honours a custom ffmpeg path saved in Settings, not just the default locations.
+    const resolvedFfmpeg = ffmpegPath || await resolveFfmpegPath();
+    return { ok: !!whisperPath, path: whisperPath, ffmpegFound: !!resolvedFfmpeg };
   });
 
   ipcMain.handle('splash-open-url', async (_event, url) => {
@@ -857,142 +1035,20 @@ app.whenReady().then(async () => {
     return { granted: status === 'granted' };
   });
 
-  // P1-008: IPC handlers
   ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} }) => {
-    currentMode = mode || 'balanced';
-    return new Promise((resolve) => {
-      if (!claudePath) {
-        resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
-        return;
-      }
-      const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
-      if (modeConf.passthrough) {
-        resolve({ success: true, prompt: transcript });
-        return;
-      }
-      if (options.overrideSystemPrompt) {
-        const child = spawn(claudePath, ['-p', options.overrideSystemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
-        let stdout = '';
-        let stderr = '';
-        let resolved = false;
-        const slowTimer = setTimeout(() => { if (!win.isDestroyed()) win.webContents.send('generation-slow-warning'); }, 30000);
-        const killTimer = setTimeout(() => { resolved = true; child.kill(); resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' }); }, 45000);
-        child.stdout.on('data', (d) => { stdout += d.toString(); });
-        child.stderr.on('data', (d) => { stderr += d.toString(); });
-        child.stdin.end();
-        child.on('close', (code) => {
-          if (resolved) return;
-          clearTimeout(slowTimer);
-          clearTimeout(killTimer);
-          resolved = true;
-          if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) }); return; }
-          const prompt = stdout.trim();
-          if (!prompt) { resolve({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' }); return; }
-          resolve({ success: true, prompt });
-        });
-        child.on('error', (err) => { if (resolved) return; clearTimeout(slowTimer); clearTimeout(killTimer); resolved = true; resolve({ success: false, error: err.message, errorType: 'unknown' }); });
-        return;
-      }
-      let systemPrompt = modeConf.standalone
-        ? modeConf.instruction.replace('{TRANSCRIPT}', transcript)
-        : PROMPT_TEMPLATE
-          .replace('{MODE_NAME}', modeConf.name)
-          .replace('{MODE_INSTRUCTION}', modeConf.instruction)
-          .replace('{TRANSCRIPT}', transcript);
-      if (mode === 'polish') {
-        const tone = options.tone || 'formal';
-        systemPrompt = systemPrompt.replace('{TONE}', tone.charAt(0).toUpperCase() + tone.slice(1));
-      }
-      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
-      let stdout = '';
-      let stderr = '';
-      let resolved = false;
-
-      const slowTimer = setTimeout(() => {
-        if (!win.isDestroyed()) win.webContents.send('generation-slow-warning');
-      }, 30000);
-
-      const killTimer = setTimeout(() => {
-        resolved = true;
-        child.kill();
-        resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
-      }, 45000);
-
-      child.stdout.on('data', (d) => { stdout += d.toString(); });
-      child.stderr.on('data', (d) => { stderr += d.toString(); });
-      child.stdin.end();
-      child.on('close', (code) => {
-        if (resolved) return;
-        clearTimeout(slowTimer);
-        clearTimeout(killTimer);
-        resolved = true;
-        if (code !== 0) {
-          resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) });
-          return;
-        }
-        const prompt = stdout.trim();
-        if (!prompt) {
-          resolve({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' });
-          return;
-        }
-        resolve({ success: true, prompt });
-      });
-      child.on('error', (err) => {
-        if (resolved) return;
-        clearTimeout(slowTimer);
-        clearTimeout(killTimer);
-        resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' });
-      });
-    });
+    lastGenerateRequest = { transcript, mode: mode || 'balanced', options };
+    return runGeneratePrompt(lastGenerateRequest);
   });
 
-  ipcMain.handle('generate-raw', (_event, { systemPrompt }) => {
-    return new Promise((resolve) => {
-      if (!claudePath) {
-        resolve({ success: false, error: 'Claude CLI not found.', errorType: 'unknown' });
-        return;
-      }
-      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
-      let stdout = '', stderr = '', resolved = false;
+  ipcMain.handle('generate-raw', (_event, { systemPrompt }) => runClaude(systemPrompt));
 
-      const slowTimer = setTimeout(() => {
-        if (!win.isDestroyed()) win.webContents.send('generation-slow-warning');
-      }, 30000);
-
-      const killTimer = setTimeout(() => {
-        resolved = true;
-        child.kill();
-        resolve({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
-      }, 45000);
-
-      child.stdout.on('data', (d) => { stdout += d.toString(); });
-      child.stderr.on('data', (d) => { stderr += d.toString(); });
-      child.stdin.end();
-      child.on('close', (code) => {
-        if (resolved) return;
-        clearTimeout(slowTimer);
-        clearTimeout(killTimer);
-        resolved = true;
-        if (code !== 0) {
-          resolve({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) });
-          return;
-        }
-        const prompt = stdout.trim();
-        if (!prompt) {
-          resolve({ success: false, error: 'Claude returned empty response — try again', errorType: 'empty' });
-          return;
-        }
-        resolve({ success: true, prompt });
-      });
-      child.on('error', (err) => {
-        if (resolved) return;
-        clearTimeout(slowTimer);
-        clearTimeout(killTimer);
-        resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' });
-      });
-    });
+  // Stops in-flight Claude and Whisper processes when the user aborts.
+  ipcMain.handle('cancel-operations', () => {
+    for (const child of activeChildren) {
+      try { child.kill(); } catch { /* already exited */ }
+    }
+    activeChildren.clear();
+    return { ok: true };
   });
 
   ipcMain.handle('evaluate-prompt', async (_event, { transcript, prompt }) => {
@@ -1047,7 +1103,7 @@ Rules:
     return new Promise((resolve) => {
       let stdout = '';
       let timedOut = false;
-      const child = spawn(claudePath, ['-p', evalSystemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
+      const child = spawn(claudePath, ['-p', evalSystemPrompt, '--model', CLAUDE_MODEL], { env: makeClaudeEnv(claudePath) });
       child.stdin.end();
 
       const timer = setTimeout(() => {
@@ -1220,167 +1276,47 @@ Rules:
   });
 
   ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
-    lastTempAudioPath = null; // reset on new recording
+    // A new recording replaces the one kept for retry.
+    safeUnlink(lastTempAudioPath);
+    lastTempAudioPath = null;
     if (!whisperPath) {
       return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
     }
-    const tmpFile = path.join(os.tmpdir(), `promptly-${Date.now()}.webm`);
-    const outDir = os.tmpdir();
-    const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
+    try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
+    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}.webm`);
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
-      lastTempAudioPath = tmpFile; // capture for retry
-      const transcript = await new Promise((resolve, reject) => {
-        const whisperCmd = whisperPath === 'python3 -m whisper'
-          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
-          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
-
-        const pyenvVersion = process.env.PYENV_VERSION || '';
-        const pythonPath = process.env.PYTHONPATH || '';
-        const whisperEnv = {
-          ...process.env,
-          PATH: [
-            '/usr/local/bin',
-            '/usr/bin',
-            '/bin',
-            '/opt/homebrew/bin',
-            '/opt/homebrew/sbin',
-            '/opt/local/bin',
-            path.join(os.homedir(), '.local/bin'),
-            path.join(os.homedir(), '.pyenv/bin'),
-            path.join(os.homedir(), '.pyenv/shims'),
-            path.join(os.homedir(), 'anaconda3/bin'),
-            path.join(os.homedir(), 'miniconda3/bin'),
-            path.join(os.homedir(), 'miniforge3/bin'),
-            '/usr/local/opt/ffmpeg/bin',
-            process.env.PATH,
-          ].filter(Boolean).join(':'),
-          ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
-          ...(pythonPath && { PYTHONPATH: pythonPath }),
-          PYTHONUNBUFFERED: '1',
-          // Python.org macOS installer doesn't connect to the system keychain by default.
-          // Point to macOS's system CA bundle so Whisper can download models over HTTPS.
-          SSL_CERT_FILE: '/etc/ssl/cert.pem',
-          REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
-        };
-
-        const whisperChild = exec(whisperCmd, { env: whisperEnv }, (err, stdout, stderr) => {
-          clearTimeout(slowTimer);
-          clearTimeout(killTimer);
-          if (err) {
-            const wrappedErr = new Error(stderr || err.message || 'Whisper failed');
-            if (err.killed) wrappedErr.timedOut = true;
-            reject(wrappedErr);
-            return;
-          }
-          try {
-            const text = fs.readFileSync(txtFile, 'utf8').trim();
-            try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
-            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
-            resolve(text);
-          } catch {
-            reject(new Error('Whisper output not found'));
-          }
-        });
-
-        const slowTimer = setTimeout(() => {
-          if (!win.isDestroyed()) win.webContents.send('transcription-slow-warning');
-        }, 20000);
-
-        const killTimer = setTimeout(() => {
-          whisperChild.kill();
-          const timeoutErr = new Error('Transcription timed out after 30 seconds');
-          timeoutErr.timedOut = true;
-          reject(timeoutErr);
-        }, 30000);
-      });
-      lastTranscript = transcript; // capture for retry
+      lastTempAudioPath = tmpFile;
+      const transcript = await runWhisper(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 });
+      safeUnlink(tmpFile);
+      lastTempAudioPath = null;
       return { success: true, transcript };
     } catch (err) {
-      // keep tmpFile on error so retry-transcription can reuse it
+      // Keep tmpFile on error so retry-transcription can reuse it.
       return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
     }
   });
 
   ipcMain.handle('retry-transcription', async () => {
-    if (!lastTempAudioPath) {
-      return { success: false, error: 'No audio available — please record again' };
-    }
-    try { if (!fs.existsSync(lastTempAudioPath)) return { success: false, error: 'No audio available — please record again' }; } catch {
-      return { success: false, error: 'No audio available — please record again' };
-    }
+    const noAudio = { success: false, error: 'No audio available — please record again' };
+    if (!lastTempAudioPath) return noAudio;
+    try { if (!fs.existsSync(lastTempAudioPath)) return noAudio; } catch { return noAudio; }
     if (!whisperPath) return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
-    const tmpFile = lastTempAudioPath;
-    const outDir = os.tmpdir();
-    const txtFile = path.join(outDir, path.basename(tmpFile, '.webm') + '.txt');
     try {
-      const transcript = await new Promise((resolve, reject) => {
-        const whisperCmd = whisperPath === 'python3 -m whisper'
-          ? `python3 -m whisper "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`
-          : `"${whisperPath}" "${tmpFile}" --model tiny --language en --output_format txt --output_dir "${outDir}"`;
-        const pyenvVersion = process.env.PYENV_VERSION || '';
-        const pythonPath = process.env.PYTHONPATH || '';
-        const whisperEnv = {
-          ...process.env,
-          PATH: ['/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin', '/opt/local/bin',
-            path.join(os.homedir(), '.local/bin'), path.join(os.homedir(), '.pyenv/bin'), path.join(os.homedir(), '.pyenv/shims'),
-            path.join(os.homedir(), 'anaconda3/bin'), path.join(os.homedir(), 'miniconda3/bin'), path.join(os.homedir(), 'miniforge3/bin'),
-            '/usr/local/opt/ffmpeg/bin', process.env.PATH].filter(Boolean).join(':'),
-          ...(pyenvVersion && { PYENV_VERSION: pyenvVersion }),
-          ...(pythonPath && { PYTHONPATH: pythonPath }),
-          PYTHONUNBUFFERED: '1',
-          SSL_CERT_FILE: '/etc/ssl/cert.pem',
-          REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
-        };
-        exec(whisperCmd, { timeout: 90000, env: whisperEnv }, (err, _stdout, stderr) => {
-          if (err) { reject(new Error(stderr || err.message || 'Whisper failed')); return; }
-          try {
-            const text = fs.readFileSync(txtFile, 'utf8').trim();
-            try { fs.unlinkSync(txtFile); } catch { /* ignore */ }
-            resolve(text);
-          } catch { reject(new Error('Whisper output not found')); }
-        });
-      });
-      lastTranscript = transcript;
+      const transcript = await runWhisper(lastTempAudioPath, { timeoutMs: 90000, slowWarningMs: 20000 });
+      safeUnlink(lastTempAudioPath);
+      lastTempAudioPath = null;
       return { success: true, transcript };
     } catch (err) {
-      return { success: false, error: err.message || 'Transcription failed' };
+      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
     }
   });
 
+  // Replays the last generate-prompt request with the same mode and options
+  // (tone, email override), so a retry produces what the original call would have.
   ipcMain.handle('retry-generation', () => {
-    if (!lastTranscript) return { success: false, error: 'No transcript available — please record again' };
-    const mode = currentMode || 'balanced';
-    const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
-    if (modeConf.passthrough) return { success: true, prompt: lastTranscript };
-    let systemPrompt = modeConf.standalone
-      ? modeConf.instruction.replace('{TRANSCRIPT}', lastTranscript)
-      : PROMPT_TEMPLATE.replace('{MODE_NAME}', modeConf.name).replace('{MODE_INSTRUCTION}', modeConf.instruction).replace('{TRANSCRIPT}', lastTranscript);
-    if (mode === 'polish') {
-      systemPrompt = systemPrompt.replace('{TONE}', 'Formal');
-    }
-    return new Promise((resolve) => {
-      if (!claudePath) { resolve({ success: false, error: 'Claude CLI not found.' }); return; }
-      const child = spawn(claudePath, ['-p', systemPrompt, '--model', 'claude-sonnet-4-6'], { env: makeClaudeEnv(claudePath) });
-      let stdout = '', stderr = '', resolved = false;
-      const timer = setTimeout(() => { resolved = true; child.kill(); resolve({ success: false, error: 'Claude took too long — try again' }); }, 60000);
-      child.stdout.on('data', (d) => { stdout += d.toString(); });
-      child.stderr.on('data', (d) => { stderr += d.toString(); });
-      child.stdin.end();
-      child.on('close', (code) => {
-        if (resolved) return;
-        clearTimeout(timer); resolved = true;
-        if (code !== 0) { resolve({ success: false, error: stderr.trim() || 'Claude CLI error' }); return; }
-        const prompt = stdout.trim();
-        if (!prompt) { resolve({ success: false, error: 'Claude returned an empty response — try again' }); return; }
-        resolve({ success: true, prompt });
-      });
-      child.on('error', (err) => {
-        if (resolved) return;
-        clearTimeout(timer); resolved = true;
-        resolve({ success: false, error: err.message || 'Claude CLI error' });
-      });
-    });
+    if (!lastGenerateRequest) return { success: false, error: 'Nothing to retry — please record again', errorType: 'unknown' };
+    return runGeneratePrompt(lastGenerateRequest);
   });
 
   ipcMain.handle('save-file', async (_event, { content, filename }) => {
@@ -1504,8 +1440,8 @@ Rules:
   ipcMain.handle('check-whisper-model', () => {
     const home = os.homedir();
     const cachePaths = [
-      path.join(home, '.cache', 'whisper', 'base.pt'),
-      path.join(home, 'Library', 'Caches', 'whisper', 'base.pt'),
+      path.join(home, '.cache', 'whisper', `${WHISPER_MODEL}.pt`),
+      path.join(home, 'Library', 'Caches', 'whisper', `${WHISPER_MODEL}.pt`),
     ];
     const MIN_BYTES = 104857600; // 100 MB
     for (const p of cachePaths) {
@@ -1535,25 +1471,8 @@ Rules:
         return parts[0] || null;
       }
 
-      const [cmd, spawnArgs] = whisperPath === 'python3 -m whisper'
-        ? ['python3', ['-m', 'whisper', '/dev/null', '--model', 'base']]
-        : [whisperPath, ['/dev/null', '--model', 'base']];
-
-      const downloadEnv = {
-        ...process.env,
-        PATH: [
-          '/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin',
-          '/opt/local/bin', path.join(os.homedir(), '.local/bin'),
-          path.join(os.homedir(), '.pyenv/bin'), path.join(os.homedir(), '.pyenv/shims'),
-          path.join(os.homedir(), 'anaconda3/bin'), path.join(os.homedir(), 'miniconda3/bin'),
-          path.join(os.homedir(), 'miniforge3/bin'), process.env.PATH,
-        ].filter(Boolean).join(':'),
-        PYTHONUNBUFFERED: '1',
-        // macOS Python.org installer doesn't use system keychain — point to system CA bundle
-        // so Whisper can download models from huggingface over HTTPS without SSL errors.
-        SSL_CERT_FILE: '/etc/ssl/cert.pem',
-        REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
-      };
+      const [cmd, spawnArgs] = whisperCommand(['/dev/null', '--model', WHISPER_MODEL]);
+      const downloadEnv = makeWhisperEnv();
 
       const child = spawn(cmd, spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'], env: downloadEnv });
       let stderrBuf = '';
@@ -1646,7 +1565,11 @@ Rules:
       THINKING: 'thinking', ITERATING: 'thinking',
       PROMPT_READY: 'ready',
       IMAGE_BUILDER: 'builder', IMAGE_BUILDER_DONE: 'builder',
+      VIDEO_BUILDER: 'builder', VIDEO_BUILDER_DONE: 'builder',
+      WORKFLOW_BUILDER: 'builder', WORKFLOW_BUILDER_DONE: 'builder',
     };
+    currentAppState = appState;
+    updatePauseShortcut(appState);
     updateMenuBarIcon(stateMap[appState] || 'idle');
   });
 

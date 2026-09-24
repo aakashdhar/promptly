@@ -72,6 +72,7 @@ Rules:
 - Respond ONLY with the JSON object`
 
     const result = await window.electronAPI.generateRaw(systemPrompt)
+    if (result?.cancelled) return
     if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'Workflow mapping failed. Please try again.' })
       return
@@ -142,6 +143,7 @@ Rules:
 9. Output ONLY the JSON object`
 
     const result = await window.electronAPI.generateRaw(systemPrompt)
+    if (result?.cancelled) return
     if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'JSON assembly failed. Please try again.' })
       return

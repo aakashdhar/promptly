@@ -1,5 +1,9 @@
 import { useEffect } from 'react'
 
+// States in which the global hotkey starts a fresh recording. Finished and error
+// states are included so the hotkey keeps working after the first prompt.
+const RESTARTABLE_STATES = ['IDLE', 'SHORTCUTS', 'PROMPT_READY', 'EMAIL_READY', 'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR']
+
 export default function useKeyboardShortcuts({
   STATES,
   stateRef,
@@ -29,9 +33,9 @@ export default function useKeyboardShortcuts({
           handleExpand?.()
           return
         }
-        if (stateRef.current === STATES.IDLE) startRecordingRef.current()
-        else if (stateRef.current === STATES.RECORDING) stopRecordingRef.current()
-        else if (stateRef.current === STATES.SHORTCUTS) startRecordingRef.current()
+        const s = stateRef.current
+        if (s === STATES.RECORDING || s === STATES.PAUSED) stopRecordingRef.current()
+        else if (RESTARTABLE_STATES.includes(s)) startRecordingRef.current()
       }),
 
       window.electronAPI.onModeSelected((key) => {
@@ -98,6 +102,8 @@ export default function useKeyboardShortcuts({
         return
       }
       if (meta && e.key === 'c' && stateRef.current === STATES.PROMPT_READY) {
+        // With text selected, let the normal copy of the selection happen.
+        if (window.getSelection()?.toString()) return
         e.preventDefault()
         if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPromptRef.current)
         return
@@ -106,9 +112,20 @@ export default function useKeyboardShortcuts({
         e.preventDefault()
         document.dispatchEvent(new CustomEvent('export-prompt'))
       }
+      if (meta && e.key === '?') {
+        e.preventDefault()
+        prevStateRef.current = stateRef.current
+        transitionRef.current(STATES.SHORTCUTS)
+        return
+      }
       if (meta && e.key === '/') {
         e.preventDefault()
         openSettings()
+      }
+      // Pause/resume while the bar has focus; main also claims Option+P globally during recording.
+      if (e.altKey && !meta && e.code === 'KeyP') {
+        if (stateRef.current === STATES.RECORDING) { e.preventDefault(); pauseRecordingRef.current() }
+        else if (stateRef.current === STATES.PAUSED) { e.preventDefault(); resumeRecordingRef.current() }
       }
       if (meta && e.key === ',' && stateRef.current === STATES.IDLE) {
         e.preventDefault()

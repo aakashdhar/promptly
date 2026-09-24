@@ -83,6 +83,7 @@ Rules:
 8. Output ONLY the prompt — no preamble, no explanation`
 
     const genResult = await window.electronAPI.generateRaw(systemPrompt)
+    if (genResult?.cancelled) return
     if (!genResult.success) {
       transitionRef.current(STATES.ERROR, { message: "Couldn't assemble prompt — tap to try again" })
       return
@@ -138,6 +139,7 @@ Rules:
 - Respond ONLY with the JSON object`
 
     const genResult = await window.electronAPI.generateRaw(systemPrompt)
+    if (genResult?.cancelled) return
     if (!genResult.success) {
       setVideoDefaults(deepCopy(EMPTY_DEFAULTS))
       setVideoAnswers(deepCopy(EMPTY_DEFAULTS))

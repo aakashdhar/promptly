@@ -181,6 +181,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   retryGeneration: () =>
     ipcRenderer.invoke('retry-generation'),
 
+  cancelOperations: () =>
+    ipcRenderer.invoke('cancel-operations'),
+
   onGenerationSlowWarning: (callback) => {
     const cb = () => callback()
     ipcRenderer.on('generation-slow-warning', cb)

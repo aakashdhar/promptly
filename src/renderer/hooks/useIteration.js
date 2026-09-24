@@ -90,6 +90,7 @@ User's new input:
 Mode: ${iterationBase.current.mode}`
 
       const genResult = await window.electronAPI.generateRaw(iterationSystemPrompt)
+      if (genResult?.cancelled) return
       if (!genResult.success) {
         transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
         return
