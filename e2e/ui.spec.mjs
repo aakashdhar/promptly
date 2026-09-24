@@ -31,6 +31,7 @@ A short project plan, then the code for the ticket sync job with tests.`
 function writeFakeClaude(dir) {
   const answers = {
     prompt: PROMPT,
+    styleNotes: '- Short, direct sentences; gets to the point in the first line\n- British spelling (organise, colour)\n- Opens with "Hi all" or "Hi <name>", never "Dear"\n- Signs off with "Cheers, Sam"\n- Avoids filler like "just checking in" or "I hope this finds you well"\n- Uses a short list when there are three or more items',
     polish: 'POLISHED:\nCould you send me the quarterly numbers by Thursday? I want to review them before the board meeting on Friday morning.\n\nCHANGES:\n· Removed filler words\n· Split a run-on sentence\n· Made the request direct',
     email: JSON.stringify({
       subject: 'Release moved to Friday: what it means for the onboarding launch',
@@ -68,6 +69,7 @@ process.stdin.on('end', () => {
       : has('Assemble a final') ? a.imageAssembly
       : has('expert email writer') ? a.email
       : has('POLISHED:') ? a.polish
+      : has('write short style notes') ? a.styleNotes
       : has("Veo 3.1 (Google's") ? a.videoDefaults
       : has('Assemble the following parameters') ? a.videoPrompt
       : has('n8n workflow engineer. Analyse') ? a.workflowAnalysis
@@ -190,6 +192,16 @@ for (const theme of ['dark', 'light']) {
     await page.keyboard.press('Escape')
     await page.keyboard.press('Meta+/')
     await check(page, 'settings')
+    // Settings → You: drafting "How you write" from pasted writing.
+    await page.getByRole('button', { name: 'Learn from my writing' }).click()
+    await page.locator('#settings-samples').fill('Hi all, quick one: the release moves to Friday so we can finish load testing. Nothing else changes. Cheers, Sam')
+    await page.getByRole('button', { name: 'Draft my notes' }).click()
+    await expect(page.getByText('Suggested notes')).toBeVisible({ timeout: 15000 })
+    await page.getByText('Suggested notes').scrollIntoViewIfNeeded()
+    await check(page, 'settings-you-suggestion')
+    await page.getByRole('button', { name: 'Use these' }).click()
+    await page.locator('#settings-voice').scrollIntoViewIfNeeded()
+    await check(page, 'settings-you')
     await scrollAll(page)
     await check(page, 'settings-bottom')
     await page.keyboard.press('Escape')

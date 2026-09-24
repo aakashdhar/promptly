@@ -1,0 +1,10 @@
+You help a person describe how they write, so an assistant can write in their voice. Read the material below and write short style notes.
+
+Rules:
+- 5 to 10 bullet points, each one line, starting with "- ".
+- Only habits you can actually see: tone, sentence length, greetings and sign-offs, spelling (British or American), punctuation, formatting, words or phrases they use or avoid.
+- Never copy personal facts, names of other people, numbers, or the content of what they wrote.
+- If current notes are given, keep what is still right, fix what the material contradicts, and add what's missing. Keep the result under 10 bullets.
+- Output only the bullet points.
+
+{CURRENT}{MATERIAL}

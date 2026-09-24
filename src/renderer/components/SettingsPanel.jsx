@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
+import YouSection from './YouSection.jsx'
 
 export default function SettingsPanel({ onClose }) {
   const [claudeVal, setClaudeVal] = useState('')
@@ -198,6 +199,8 @@ export default function SettingsPanel({ onClose }) {
               </div>
             )}
           </div>
+
+          <YouSection prefs={prefs} onSave={savePrefs} onEditCount={(editCount) => setPrefs((p) => ({ ...p, editCount }))} />
 
           <div style={{ marginBottom: 14 }}>
             <label htmlFor="settings-dictionary" style={{ ...sectionLabel, display: 'block' }}>Dictionary</label>

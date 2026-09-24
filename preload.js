@@ -245,6 +245,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openAccessibilitySettings: () =>
     ipcRenderer.invoke('open-accessibility-settings'),
 
+  recordEdit: (mode, before, after) =>
+    ipcRenderer.invoke('record-edit', { mode, before, after }),
+
+  clearEdits: () =>
+    ipcRenderer.invoke('clear-edits'),
+
+  learnStyle: (samples) =>
+    ipcRenderer.invoke('learn-style', { samples }),
+
   retryGeneration: () =>
     ipcRenderer.invoke('retry-generation'),
 

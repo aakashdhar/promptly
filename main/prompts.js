@@ -62,12 +62,19 @@ function destinationFor(bundleId) {
 }
 
 // Extra context placed just before the transcript: where the prompt is going (template modes
-// only), text the user selected, and words to spell exactly. Empty when there is none, so
+// only), the user's own notes (how they write, or about them), text they selected, and words
+// to spell exactly. Empty when there is none, so
 // prompts without context are unchanged.
 function buildContextBlock(mode, context = {}) {
   const parts = [];
   const destination = mode.kind === 'template' ? destinationFor(context.bundleId) : null;
   if (destination) parts.push(`Where this prompt will be used: ${destination.guidance}`);
+  if (context.voiceNotes) {
+    parts.push(`Write it the way this user writes. Their own notes on their style:\n<how_i_write>\n${context.voiceNotes}\n</how_i_write>\nFollow these unless the user asks for something different this time.`);
+  }
+  if (context.aboutMe) {
+    parts.push(`About the user (use what's relevant to this request, ignore the rest):\n<about_me>\n${context.aboutMe}\n</about_me>`);
+  }
   if (context.selectedText) {
     const where = context.appName ? ` in ${context.appName}` : '';
     parts.push(`The user has selected this text${where} and is talking about it. Treat it as the material to work on:\n<selected_text>\n${context.selectedText}\n</selected_text>`);
@@ -96,8 +103,19 @@ function buildModePrompt(transcript, modeKey, options = {}) {
   });
 }
 
+// Asks Claude to draft "How you write" notes from writing samples or from the user's edits.
+function buildLearnStylePrompt({ current = '', samples = '', edits = '' } = {}) {
+  const material = samples
+    ? `Things the user wrote:\n<samples>\n${samples}\n</samples>`
+    : `Results an assistant wrote for the user, and how the user edited them before using them. The edits show what the user prefers:\n${edits}`;
+  return fillTemplate(loadPrompt('learn-style'), {
+    CURRENT: current ? `Current notes:\n<current_notes>\n${current}\n</current_notes>\n\n` : '',
+    MATERIAL: material,
+  });
+}
+
 function buildEvalPrompt(transcript, prompt) {
   return fillTemplate(loadPrompt('eval'), { TRANSCRIPT: transcript, PROMPT: prompt });
 }
 
-module.exports = { MODES, DESTINATIONS, fillTemplate, getMode, loadPrompt, buildModePrompt, buildEvalPrompt, destinationFor, buildContextBlock };
+module.exports = { MODES, DESTINATIONS, fillTemplate, getMode, loadPrompt, buildModePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };

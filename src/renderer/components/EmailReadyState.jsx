@@ -61,6 +61,8 @@ export default function EmailReadyState({
         ? (bodyRef.current.innerText || bodyRef.current.textContent)
         : editedBody
       setEditedBody(newText)
+      // Your edits teach Promptly how you write (Settings → You).
+      window.electronAPI?.recordEdit?.('email', preEditBody, newText)
       setIsEditing(false)
     } else {
       setPreEditBody(editedBody)

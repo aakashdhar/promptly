@@ -63,7 +63,12 @@ export default function ExpandedPromptReadyContent({
       preEditValue.current = generatedPrompt
       setIsEditing(true)
     } else {
-      if (promptRef.current) setGeneratedPrompt(promptRef.current.textContent)
+      if (promptRef.current) {
+        const edited = promptRef.current.textContent
+        setGeneratedPrompt(edited)
+        // Your edits teach Promptly what you prefer (Settings → You).
+        window.electronAPI?.recordEdit?.(mode, preEditValue.current, edited)
+      }
       setIsEditing(false)
     }
   }

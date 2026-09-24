@@ -17,7 +17,8 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor } = require('./main/prompts');
-const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
+const { MODES, getMode, buildModePrompt, buildEvalPrompt, buildLearnStylePrompt } = require('./main/prompts');
+const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
 // End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
@@ -167,6 +168,9 @@ function resetAudioTmpDir() {
 
 // ── Generation ────────────────────────────────────────────────────────────────
 
+// Edits the user makes to results, for "Suggest updates from your edits" in Settings.
+const editLog = createEditLog(path.join(app.getPath('userData'), 'style-edits.json'));
+
 function dictionaryWords() {
   return String(config.read().dictionary || '').split(/[\n,]/).map((w) => w.trim()).filter(Boolean).slice(0, 200);
 }
@@ -174,7 +178,7 @@ function dictionaryWords() {
 async function runGeneratePrompt({ transcript, mode, options = {} }) {
   const modeConf = getMode(mode);
   if (modeConf.kind === 'builder') return { success: true, prompt: transcript };
-  const context = { ...(options.context || {}), dictionary: dictionaryWords() };
+  const context = { ...(options.context || {}), ...profileFor(modeConf, config.read()), dictionary: dictionaryWords() };
   const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, { ...options, context });
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
   const streams = !options.overrideSystemPrompt && mode !== 'email';
@@ -747,6 +751,9 @@ app.whenReady().then(async () => {
       hotkey: HOTKEY_PRESETS[stored.hotkey] ? stored.hotkey : DEFAULT_HOTKEY,
       hotkeyOptions: Object.entries(HOTKEY_PRESETS).map(([value, p]) => ({ value, label: p.label, holdOnly: !p.accelerator })),
       dictionary: stored.dictionary || '',
+      voiceNotes: stored.voiceNotes || '',
+      aboutMe: stored.aboutMe || '',
+      editCount: editLog.count(),
       autoCopy: stored.autoCopy !== false,
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
       accessibility: helper.status(),
@@ -759,6 +766,8 @@ app.whenReady().then(async () => {
     if (typeof prefs.hotkey === 'string' && HOTKEY_PRESETS[prefs.hotkey]) patch.hotkey = prefs.hotkey;
     if (typeof prefs.dictionary === 'string') patch.dictionary = prefs.dictionary.slice(0, 5000);
     if (typeof prefs.autoCopy === 'boolean') patch.autoCopy = prefs.autoCopy;
+    if (typeof prefs.voiceNotes === 'string') patch.voiceNotes = cleanNotes(prefs.voiceNotes);
+    if (typeof prefs.aboutMe === 'string') patch.aboutMe = cleanNotes(prefs.aboutMe);
     config.update(patch);
     if (typeof prefs.launchAtLogin === 'boolean' && !IS_E2E) app.setLoginItemSettings({ openAtLogin: prefs.launchAtLogin });
     if (patch.hotkey) applyHotkey();
@@ -776,6 +785,33 @@ app.whenReady().then(async () => {
   ipcMain.handle('accessibility-status', async () => {
     const status = await helper.refreshStatus();
     return { available: helper.isRunning(), ...(status ? { trusted: !!status.trusted, tap: !!status.tap } : helper.status()) };
+  });
+
+  // ── It writes like you ──
+
+  ipcMain.handle('record-edit', (_event, { mode, before, after } = {}) => {
+    const recorded = editLog.add({ mode, before, after });
+    return { recorded, editCount: editLog.count() };
+  });
+
+  ipcMain.handle('clear-edits', () => {
+    editLog.clear();
+    return { editCount: 0 };
+  });
+
+  // Drafts "How you write" notes from pasted samples, or from the logged edits. The result is
+  // only a suggestion: Settings shows it and the user decides whether to use it.
+  ipcMain.handle('learn-style', async (_event, { samples } = {}) => {
+    const text = String(samples || '').trim().slice(0, 12000);
+    const edits = editLog.list();
+    if (!text && !edits.length) return { success: false, error: 'Nothing to learn from yet' };
+    const prompt = buildLearnStylePrompt({
+      current: cleanNotes(config.read().voiceNotes),
+      samples: text,
+      edits: text ? '' : formatEdits(edits),
+    });
+    const result = await claude.run(prompt, { timeoutMs: 60000 });
+    return result.success ? { success: true, notes: cleanNotes(result.prompt) } : result;
   });
 
   ipcMain.handle('open-accessibility-settings', () => {

@@ -38,6 +38,11 @@ if printf '%s' "$input" | grep -q "Assemble a final"; then
   printf '%s' '{"prompt":"A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic","flags":"--ar 4:5 --stylize 750 --chaos 20"}'
   exit 0
 fi
+if printf '%s' "$input" | grep -q "write short style notes"; then
+  printf '%s' '- Short sentences
+- Signs off with "Cheers, Sam"'
+  exit 0
+fi
 last=$(printf '%s' "$input" | tail -n 1 | tr -d '"')
 out=$(printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s' "$last")
 if [[ " $* " == *" stream-json "* ]]; then
@@ -491,4 +496,66 @@ test('setup offers hold to talk when the helper is available, and notices when i
   await expect(setup.getByText('Hold to talk is on.')).toBeVisible({ timeout: 5000 })
   await setup.locator('#hold-next').click()
   await expect(setup.getByText('Hold this anywhere on your Mac and talk.', { exact: false })).toBeVisible({ timeout: 5000 })
+})
+
+test('your notes shape results: "About you" for prompts, "How you write" for Polish', async () => {
+  ctx = await launch()
+  const { page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ voiceNotes: '- Short sentences', aboutMe: 'PM at a fintech; TypeScript and Postgres' }))
+  await typeAndSubmit(page, 'a dashboard for failed payments')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  let stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('<about_me>\nPM at a fintech; TypeScript and Postgres\n</about_me>')
+  expect(stdin).not.toContain('how_i_write')
+
+  await page.evaluate(() => localStorage.setItem('mode', 'polish'))
+  await page.reload()
+  await expect(page.locator('#mode-pill')).toHaveText('Polish', { timeout: 10000 })
+  await typeAndSubmit(page, 'so um can you send me the numbers')
+  await expect.poll(() => calls(fakeDir).length).toBe(2)
+  await expect.poll(() => fs.existsSync(path.join(fakeDir, 'call-1.done'))).toBe(true)
+  stdin = fs.readFileSync(path.join(fakeDir, 'call-1.stdin'), 'utf8')
+  expect(stdin).toContain('<how_i_write>\n- Short sentences\n</how_i_write>')
+  expect(stdin).not.toContain('about_me')
+})
+
+test('edits you make are remembered, and Settings drafts your style notes from them', async () => {
+  ctx = await launch()
+  const { app, page, fakeDir } = ctx
+  await typeAndSubmit(page, 'a note to the team about friday')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.locator('#prompt-output').evaluate((el) => { el.textContent = 'Role:\nYou are my editor.\n\nTask:\nKeep it short.' })
+  await page.getByRole('button', { name: 'Done' }).click()
+  expect((await page.evaluate(() => window.electronAPI.getPreferences())).editCount).toBe(1)
+
+  await page.keyboard.press('Escape')
+  await expect.poll(() => appState(app)).toBe('IDLE')
+  await page.keyboard.press('Meta+/')
+  await page.getByRole('button', { name: 'Suggest from my 1 edit' }).click()
+  await expect(page.getByText('Suggested notes')).toBeVisible({ timeout: 15000 })
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('<after>\nRole:\nYou are my editor.')
+
+  await page.getByRole('button', { name: 'Use these' }).click()
+  await expect(page.locator('#settings-voice')).toHaveValue('- Short sentences\n- Signs off with "Cheers, Sam"')
+  expect((await page.evaluate(() => window.electronAPI.getPreferences())).voiceNotes).toContain('Cheers, Sam')
+
+  await page.getByRole('button', { name: 'Forget my edits' }).click()
+  await expect(page.getByRole('button', { name: /Suggest from my/ })).toHaveCount(0)
+})
+
+test('Settings drafts your style notes from pasted writing', async () => {
+  ctx = await launch()
+  const { page, fakeDir } = ctx
+  await page.keyboard.press('Meta+/')
+  await page.getByRole('button', { name: 'Learn from my writing' }).click()
+  await page.locator('#settings-samples').fill('Hi all, quick one: the release moves to Friday. Nothing else changes. Cheers, Sam')
+  await page.getByRole('button', { name: 'Draft my notes' }).click()
+  await expect(page.getByText('Suggested notes')).toBeVisible({ timeout: 15000 })
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('<samples>\nHi all, quick one')
+  await page.getByRole('button', { name: 'Dismiss' }).click()
+  expect((await page.evaluate(() => window.electronAPI.getPreferences())).voiceNotes).toBe('')
 })

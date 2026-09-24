@@ -545,3 +545,49 @@ fi
     expect(r).toMatchObject({ success: false, errorType: 'auth' })
   })
 })
+
+describe('It writes like you', () => {
+  const { createEditLog, profileFor, isMeaningfulEdit, formatEdits } = require('../main/profile.js')
+  const { buildLearnStylePrompt } = require('../main/prompts.js')
+
+  it('uses "How you write" for Polish and Email, "About you" for prompts, nothing for builders', () => {
+    const notes = { voiceNotes: '- Short sentences', aboutMe: 'PM at a fintech' }
+    expect(profileFor(getMode('polish'), notes)).toEqual({ voiceNotes: '- Short sentences' })
+    expect(profileFor(getMode('email'), notes)).toEqual({ voiceNotes: '- Short sentences' })
+    expect(profileFor(getMode('balanced'), notes)).toEqual({ aboutMe: 'PM at a fintech' })
+    expect(profileFor(getMode('design'), notes)).toEqual({ aboutMe: 'PM at a fintech' })
+    expect(profileFor(getMode('image'), notes)).toEqual({})
+  })
+
+  it('puts the notes in the prompt only when there are some', () => {
+    const polish = buildModePrompt('send me the numbers', 'polish', { context: { voiceNotes: '- Sign off: Cheers, Sam' } })
+    expect(polish).toContain('<how_i_write>\n- Sign off: Cheers, Sam\n</how_i_write>')
+    const code = buildModePrompt('add a retry', 'code', { context: { aboutMe: 'We use TypeScript' } })
+    expect(code).toContain('<about_me>\nWe use TypeScript\n</about_me>')
+    const plain = buildModePrompt('add a retry', 'code', { context: { aboutMe: '' } })
+    expect(plain).not.toContain('about_me')
+  })
+
+  it('keeps the last 20 real edits, ignoring no-op and whitespace-only ones', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'edits-'))
+    const log = createEditLog(path.join(dir, 'style-edits.json'))
+    expect(log.add({ mode: 'email', before: 'Hi', after: 'Hi' })).toBe(false)
+    expect(log.add({ mode: 'email', before: 'Hi  there', after: 'Hi there' })).toBe(false)
+    expect(isMeaningfulEdit('', 'x')).toBe(false)
+    for (let i = 0; i < 25; i++) log.add({ mode: 'email', before: `Dear team ${i}`, after: `Hi all ${i}` })
+    expect(log.count()).toBe(20)
+    expect(log.list()[0].before).toBe('Dear team 5')
+    log.clear()
+    expect(log.count()).toBe(0)
+  })
+
+  it('asks Claude for style notes from samples, or from edits, keeping current notes', () => {
+    const fromSamples = buildLearnStylePrompt({ current: '- Short', samples: 'Cheers, Sam' })
+    expect(fromSamples).toContain('<current_notes>\n- Short\n</current_notes>')
+    expect(fromSamples).toContain('<samples>\nCheers, Sam\n</samples>')
+    expect(fromSamples).toContain('Never copy personal facts')
+    const fromEdits = buildLearnStylePrompt({ edits: formatEdits([{ mode: 'email', before: 'Dear team', after: 'Hi all' }]) })
+    expect(fromEdits).toContain('<before>\nDear team\n</before>\n<after>\nHi all\n</after>')
+    expect(fromEdits).not.toContain('current_notes')
+  })
+})
