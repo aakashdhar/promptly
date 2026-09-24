@@ -12,8 +12,8 @@
 **Stack (as-built):**
   Shell:    Electron 41, universal binary (arm64 + x64)
   Frontend: React 19 + Vite 8 — `src/renderer/` → built to `dist-renderer/` (devDeps only)
-  Styling:  Tailwind v4 for static classes; inline styles for dynamic/stateful layout
-  Speech:   getUserMedia + MediaRecorder (renderer) → `transcribe-audio` IPC → Whisper CLI (`main/whisper.js`)
+  Styling:  Tailwind v4 for static classes; inline styles for dynamic layout; theme tokens in index.css (light/dark/system)
+  Speech:   MediaRecorder → 16 kHz WAV in the renderer → `transcribe-audio` → built-in whisper.cpp (`main/whisper.js`); Python Whisper fallback
   LLM:      Claude Code CLI `claude -p` through `main/llm.js` — prompt on stdin, `--model` always passed
             CLI only by design: no Anthropic API/SDK, no API keys (D-CLI-ONLY)
   IPC:      Electron ipcMain + preload.js contextBridge; contract enforced by `tests/ipc-contract.test.js`
@@ -177,6 +177,9 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `browse-for-binary` | Native file picker |
 | renderer → main | `recheck-paths` | Re-resolve all three binaries |
 | renderer → main | `reopen-wizard` | Show the setup wizard again |
+| splash → main | `request-microphone` / `open-microphone-settings` | Mic permission status (prompt only when asked) / open the Privacy pane |
+| splash → main | `claude-status` / `claude-install` / `claude-login` | Claude Code status; open Terminal with the installer or `claude auth login` |
+| renderer → main | `get-theme-setting` / `set-theme-setting` | Appearance: system / light / dark |
 | splash → main | `splash-done` | Hide splash, show bar, register shortcut + tray (once) |
 | splash → main | `splash-check-cli` / `splash-check-whisper` | Quick checks (Whisper check honours a custom ffmpeg path) |
 | splash → main | `splash-open-url` | Open an https:// install link |
@@ -413,3 +416,4 @@ The following are P0 review findings — they block phase gates:
 > 📝 2026-04-18 · Scope change D-003 — speech engine changed from webkitSpeechRecognition to MediaRecorder + Whisper CLI; transcribe-audio IPC channel added
 > 📝 2026-04-18 · Scope change D-004 — frame: false → titleBarStyle: hiddenInset + trafficLightPosition; 30-bar waveform pattern added
 > 📝 2026-09-24 · Foundation pass — main process split into main/, shared mode registry, Claude via stdin, IPC contract + e2e tests, lint over the renderer, dead IPC removed (see DECISIONS.md D-FOUNDATION)
+> 📝 2026-09-24 · Built-in whisper.cpp, in-app Claude Code setup, themes (see DECISIONS.md D-INSTALL, D-THEME)

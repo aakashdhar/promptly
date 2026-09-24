@@ -1,6 +1,6 @@
 # CLAUDE.md — Promptly
 > Promptly is a macOS menu bar app: speak or type what you want, and it turns it into a structured prompt (or an email, image/video prompt, or n8n workflow) using the Claude Code CLI.
-> Electron 41 · React 19 + Vite 8 + Tailwind 4 renderer · main process split into `main/` modules · Whisper for transcription.
+> Electron 41 · React 19 + Vite 8 + Tailwind 4 renderer · main process split into `main/` modules · built-in whisper.cpp for transcription · light/dark themes.
 
 ---
 
@@ -21,7 +21,8 @@ promptly/
 ├── main.js              ← Electron wiring: windows, tray, shortcuts, IPC handlers
 ├── main/                ← main-process logic, no Electron imports, unit-tested
 │   ├── llm.js           ←   every Claude CLI call (stdin prompt, --model, cancel, timeouts)
-│   ├── whisper.js       ←   transcription + model download
+│   ├── whisper.js       ←   transcription: built-in whisper.cpp (default), Python Whisper fallback
+│   ├── claude-setup.js  ←   Claude Code status, install/sign-in via Terminal
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv
 │   ├── platform/        ←   darwin.js holds every macOS path/command
 │   ├── prompts.js       ←   builds prompts from prompts/*.txt + shared/modes.json
@@ -44,6 +45,7 @@ promptly/
 ## Commands
 
 ```bash
+npm run fetch-whisper # build whisper.cpp + download the model into vendor/ (once)
 npm run start:react   # build the renderer and run the app
 npm run dev           # Vite dev server for the renderer only
 npm run lint          # ESLint over the whole repo — must have 0 errors
@@ -64,9 +66,10 @@ npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh)
 5. **IPC**: renderer talks to main only through `window.electronAPI` from `preload.js`. Adding a channel means a preload method + an `ipcMain.handle`; `tests/ipc-contract.test.js` fails if they drift.
 6. **State**: all renderer state changes go through `transition()` in App.jsx. Use `stateRef.current` (not `currentState`) inside event handlers. Async work tags itself with `opIdRef` so aborted or superseded results are ignored.
 7. **Security**: `contextIsolation: true`, `nodeIntegration: false`. No `dangerouslySetInnerHTML` with user or Claude text.
-8. **Storage**: localStorage only via `useMode()`, `useTone()`, `utils/history.js`. App settings (paths, model, window bounds) live in `config.json` via `main/config.js`.
-9. **Dependencies**: zero runtime npm dependencies in the packaged app. Dev dependencies are fine; new runtime ones need a DECISIONS.md entry.
-10. **Packaging**: a new top-level folder the app needs at runtime must be added to `build.files` in package.json.
+8. **Colours**: use theme tokens from `src/renderer/index.css` — `rgba(var(--ink), a)` for text/lines/fills, `var(--bg)`/`var(--surface)` for backgrounds, `var(--on-accent)` for text on coloured buttons, and `readableColor()` for mode-coloured text. Never hardcode white-on-dark.
+9. **Storage**: localStorage only via `useMode()`, `useTone()`, `utils/history.js`. App settings (paths, model, window bounds) live in `config.json` via `main/config.js`.
+10. **Dependencies**: zero runtime npm dependencies in the packaged app. Dev dependencies are fine; new runtime ones need a DECISIONS.md entry.
+11. **Packaging**: a new top-level folder the app needs at runtime must be added to `build.files` in package.json.
 
 ---
 
@@ -94,7 +97,8 @@ npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh)
 
 - App.jsx still threads refs through ~12 hooks; a reducer/state-machine refactor is planned once e2e covers the expanded view and builders.
 - Renderer-side prompts (image/video/workflow builders, iteration, email tone adjust) still live in hooks, not `main/prompts/`.
-- Requires the user to have Claude Code, Python Whisper and ffmpeg installed.
+- Requires Claude Code (by design, D-CLI-ONLY); setup installs or signs in to it from inside the app.
+- Self-signed, shared personally: first open needs System Settings → Open Anyway (no Apple Developer account; notarization and auto-update are backlogged).
 
 ---
 

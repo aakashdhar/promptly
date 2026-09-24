@@ -1867,3 +1867,28 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   streaming, stdin for prompts — all through main/llm.js.
 > Supersedes: the "call the Anthropic API directly" recommendation from the 2026-09-24 review.
 ---
+
+---
+## D-INSTALL — Built-in speech-to-text and in-app Claude Code setup — 2026-09-24
+> Problem (from people the app was shared with): installing needed Python, openai-whisper and Homebrew ffmpeg, a 6-screen
+>   wizard, and often a message back to the author for help.
+> Decision: ship whisper.cpp (v1.9.4, universal, Metal) + ggml-base.en-q5_1.bin in the app (Contents/Resources/whisper),
+>   built by scripts/fetch-whisper.sh. The renderer records WAV (16 kHz mono), so ffmpeg isn't needed. Python Whisper stays
+>   as a fallback only. This is speech-to-text, not AI generation, so it doesn't conflict with D-CLI-ONLY.
+> Decision: setup = microphone → Claude Code → ready. Claude Code status from `claude auth status`; install/sign-in open
+>   Terminal with a .command file (official installer / `claude auth login`) — visible to the user, no Automation permission —
+>   and the wizard polls every 3 s. Returning users skip the splash unless something is missing.
+> Decision: no Apple Developer account for now; the app stays self-signed and is shared personally. The DMG background
+>   explains the one-time "Open Anyway" step. Notarization and auto-update are backlogged.
+> Trade-off: DMG grows 215 → 233 MB. GPU transcription needs a one-time ~20 s shader compile, done in the background;
+>   until then transcription runs on the CPU (~1.8 s for a 27 s clip).
+---
+
+---
+## D-THEME — Light, dark and system themes — 2026-09-24
+> Decision: tokens in src/renderer/index.css (and matching ones in splash.html); dark via prefers-color-scheme, driven by
+>   nativeTheme.themeSource from the Appearance setting (config.json `theme`: system | light | dark).
+> Decision: colour only carries meaning — neutral graphite/paper chrome, recording red, per-mode colours. Decorative glows
+>   removed. Mode-coloured text goes through readableColor() (color-mix toward ink) so pastels stay readable on light.
+> Supersedes: the original design tokens (--color-action etc.) and the navy #0A0A14 background.
+---
