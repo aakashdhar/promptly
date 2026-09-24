@@ -40,6 +40,11 @@ module.exports = [
     rules: baseRules,
   },
   {
+    // Playwright page.evaluate callbacks run in the renderer
+    files: ['e2e/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     // React renderer
     files: ['src/**/*.{js,jsx}'],
     plugins: { react, 'react-hooks': reactHooks },
