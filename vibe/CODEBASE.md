@@ -170,6 +170,21 @@ See the IPC surface table in `vibe/ARCHITECTURE.md` (kept complete; `tests/ipc-c
 
 ---
 
+## Gotchas (learned the hard way)
+
+Carried over from the project-memory notes (July 2026) that are still true and not enforced by code or tests.
+
+- **Clipboard:** `navigator.clipboard` is unreliable in the packaged app — always use `window.electronAPI.copyToClipboard`.
+- **Outside-click to close:** the listener must exclude the trigger element, or the closing click reopens the dropdown (ModeDropdown).
+- **Fetch-on-mount components** (e.g. EvalPanel) need a `key` that changes with their identity, or they show stale data when you switch history entries or regenerate.
+- **Overlays that drive state** (e.g. SettingsPanel) must render in both the collapsed and expanded layouts, or the state machine gets stuck with no way out.
+- **History:** save at the moment the output is produced (prompt assembly), not only on an explicit Save.
+- **Window resizing:** resize locks belong to one window state — a collapsed-bar lock must not leak into expanded mode. Native maximize needs `fullscreenable: true`, and on Electron 41 `setMaximizable`/`setFullScreenable` must be called after `setResizable`, deferred a tick.
+- **Setup wizard:** every failure screen needs a manual path override, placed above the fold (scripts/assert-splash.js checks the Claude screens).
+- **UI text:** no emoji — use Unicode font characters (e.g. ↑) instead.
+
+---
+
 ## Known issues / watch items
 
 - `npm run lint` — 0 errors; 27 `react-hooks/exhaustive-deps` warnings from the ref-based state design (tracked: state-machine refactor)
