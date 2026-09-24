@@ -10,7 +10,15 @@ You need a Mac with macOS 12 or later and a Claude account. Everything else is s
 4. Promptly's setup takes about a minute:
    - **Microphone.** Click **Allow microphone** and accept the macOS prompt.
    - **Claude Code.** Promptly checks for it. If it's missing, click **Install Claude Code**: Terminal opens and runs Anthropic's installer. If you're signed out, click **Sign in to Claude**: Terminal opens and your browser finishes the sign-in. Promptly notices when either is done, so there's nothing to click afterwards.
-5. Press **⌥ Space** (Option + Space) anywhere, talk, and press it again.
+   - **Hold to talk (optional).** Click **Allow Accessibility** and turn on Promptly in System Settings. This lets you hold the shortcut while you talk, and lets Promptly use text you've selected as context. You can skip it and turn it on later in Settings.
+5. **Hold ⌥ Space** (Option + Space) in any app, talk, and let go. A small pill at the bottom of the screen shows it's listening; your prompt appears and is copied to the clipboard. Without Accessibility, tap ⌥ Space to start and tap again to stop.
+
+## Using it
+
+- **Where you are shapes the prompt.** Talking from Terminal, VS Code or Cursor gives a task for a coding agent like Claude Code; from a browser or the Claude app, a self-contained chat prompt; from Figma, a design brief.
+- **Select text first** to work on it: select an error, a paragraph or some code, hold ⌥ Space and say "fix this" or "turn this into a spec".
+- **Say the mode first** to switch: "code mode, …", "email mode, …", "polish mode, …".
+- **Settings** (⌘/): shortcut (including Right Option or Fn held on its own), a dictionary of names and terms to spell right, auto-copy, open at login, and light/dark.
 
 Speech-to-text is built in and runs on your Mac. There's nothing to install for it: no Python, Whisper or ffmpeg.
 

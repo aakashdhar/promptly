@@ -23,6 +23,9 @@ promptly/
 │   ├── llm.js           ←   every Claude CLI call (stdin prompt, --model, cancel, timeouts)
 │   ├── whisper.js       ←   transcription: built-in whisper.cpp (default), Python Whisper fallback
 │   ├── claude-setup.js  ←   Claude Code status, install/sign-in via Terminal
+│   ├── helper.js        ←   runs native/helper (hold to talk, frontmost app, selected text)
+│   ├── hotkey.js        ←   hotkey presets + hold-vs-tap state machine
+│   ├── shortcuts.js     ←   globalShortcut fallback registration
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv
 │   ├── platform/        ←   darwin.js holds every macOS path/command
 │   ├── prompts.js       ←   builds prompts from prompts/*.txt + shared/modes.json
@@ -33,6 +36,8 @@ promptly/
 ├── shared/modes.json    ← the one mode list (main + renderer)
 ├── preload.js           ← contextBridge → window.electronAPI
 ├── splash.html          ← setup wizard (vanilla HTML/JS, not React)
+├── pill.html            ← floating pill shown while talking from another app
+├── native/helper/       ← promptly-helper (Swift): hotkey down/up, frontmost app, selected text
 ├── src/renderer/        ← React app: App.jsx state machine, hooks/, components/, utils/
 ├── tests/               ← Vitest unit tests + IPC contract test
 ├── e2e/                 ← Playwright tests driving the real app with a fake Claude CLI
@@ -46,6 +51,7 @@ promptly/
 
 ```bash
 npm run fetch-whisper # build whisper.cpp + download the model into vendor/ (once)
+npm run build-helper  # build native/helper into vendor/helper (swiftc, universal)
 npm run start:react   # build the renderer and run the app
 npm run dev           # Vite dev server for the renderer only
 npm run lint          # ESLint over the whole repo — must have 0 errors

@@ -1892,3 +1892,16 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   removed. Mode-coloured text goes through readableColor() (color-mix toward ink) so pastels stay readable on light.
 > Supersedes: the original design tokens (--color-action etc.) and the navy #0A0A14 background.
 ---
+
+---
+## D-WISPR — Hold to talk, floating pill, destination-aware prompts — 2026-09-24
+> Goal (product owner): a Wispr Flow-style loop that produces proper prompts instead of dictation.
+> Decisions (asked and answered): output = copy + show the window (no auto-insert into other apps); recording UI = floating
+>   pill; hotkey = hold to talk + tap to toggle; include destination-aware prompts, command mode on selected text,
+>   streaming, dictionary, launch at login, remappable shortcut, spoken mode switching.
+> Decision: a small Swift helper (native/helper) for what Electron can't do: key up events, frontmost app, selected text.
+>   One permission (Accessibility): an active event tap needs it anyway, and so does reading selections. Without it the
+>   app works as before (tap to toggle via globalShortcut, no selection context).
+> Decision: streaming via `claude -p --output-format stream-json --include-partial-messages` (still CLI-only).
+> Not done: undo-insert (nothing is inserted, per the output decision).
+---

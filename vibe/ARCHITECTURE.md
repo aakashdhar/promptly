@@ -180,6 +180,14 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | splash → main | `request-microphone` / `open-microphone-settings` | Mic permission status (prompt only when asked) / open the Privacy pane |
 | splash → main | `claude-status` / `claude-install` / `claude-login` | Claude Code status; open Terminal with the installer or `claude auth login` |
 | renderer → main | `get-theme-setting` / `set-theme-setting` | Appearance: system / light / dark |
+| renderer → main | `get-preferences` / `set-preferences` | Hotkey preset, dictionary, auto-copy, launch at login, Accessibility status |
+| renderer/splash → main | `request-accessibility` / `accessibility-status` / `open-accessibility-settings` | Hold to talk + selected text permission |
+| renderer → main (send) | `audio-level` / `mode-changed` | Mic level for the pill waveform; current mode label for the pill |
+| main → renderer | `hotkey-start` / `hotkey-stop` / `hotkey-cancel` | Hold-to-talk / tap decisions from main |
+| main → renderer | `recording-context` | App + selected text captured when a hotkey recording started |
+| main → renderer | `generation-delta` | Streaming text while Claude writes |
+| main → renderer/splash | `accessibility-changed` | Helper trust/tap status changed |
+| main → pill | `pill-state` / `audio-level` | Pill: recording / thinking / copied / hidden, and waveform |
 | splash → main | `splash-done` | Hide splash, show bar, register shortcut + tray (once) |
 | splash → main | `splash-check-cli` / `splash-check-whisper` | Quick checks (Whisper check honours a custom ffmpeg path) |
 | splash → main | `splash-open-url` | Open an https:// install link |
@@ -187,7 +195,6 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | splash → main | `check-claude` | Version + a real `READY` test through `main/llm.js` |
 | splash → main | `check-whisper` / `check-ffmpeg` | Run the binary to verify it works |
 | splash → main | `check-whisper-model` / `download-whisper-model` | Model presence (same model transcription uses) and download |
-| main → renderer | `shortcut-triggered` | Hotkey pressed (main also shows the bar) |
 | main → renderer | `shortcut-pause` | Option+P while recording |
 | main → renderer | `mode-selected` / `tone-selected` | Native menu choices |
 | main → renderer | `show-shortcuts` / `show-history` / `open-settings` / `toggle-expand` | Menu and tray actions |
@@ -417,3 +424,4 @@ The following are P0 review findings — they block phase gates:
 > 📝 2026-04-18 · Scope change D-004 — frame: false → titleBarStyle: hiddenInset + trafficLightPosition; 30-bar waveform pattern added
 > 📝 2026-09-24 · Foundation pass — main process split into main/, shared mode registry, Claude via stdin, IPC contract + e2e tests, lint over the renderer, dead IPC removed (see DECISIONS.md D-FOUNDATION)
 > 📝 2026-09-24 · Built-in whisper.cpp, in-app Claude Code setup, themes (see DECISIONS.md D-INSTALL, D-THEME)
+> 📝 2026-09-24 · Hold to talk (native/helper), floating pill, destination-aware prompts, streaming (see DECISIONS.md D-WISPR)

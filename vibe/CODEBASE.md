@@ -31,6 +31,13 @@
 | `scripts/fetch-whisper.sh` | Builds whisper.cpp (universal, Metal) and downloads the checksum-pinned model into vendor/whisper/ | — |
 | `scripts/make-dmg-background.js` | Renders build/dmg-background(@2x).png — install + first-open instructions — with Electron | — |
 | `e2e/screenshots.spec.mjs` | Design screenshots of main screens and setup in both themes (SCREENSHOTS=1) | — |
+| `native/helper/main.swift` | promptly-helper: JSON-lines protocol; active event tap for the talk key (down/up/cancel), frontmost app, selected text via AX | — |
+| `main/helper.js` | Spawns the helper, request/response with ids + timeouts, restarts on crash, reports trust/tap status | `createHelper()` → `{ start, stop, isRunning, status, configure, context, requestAccess, refreshStatus }` |
+| `main/hotkey.js` | Hotkey presets and the hold (≥350 ms) vs tap state machine | `HOTKEY_PRESETS`, `getPreset`, `createHoldToTalk` |
+| `main/shortcuts.js` | globalShortcut registration with fallback + notice | `registerRecordingShortcut` |
+| `pill.html` | Floating pill window: recording (waveform, mode, destination), streaming text, copied | — |
+| `src/renderer/utils/spokenMode.js` | "code mode, …" prefix detection | `detectSpokenMode` |
+| `scripts/build-helper.sh` | swiftc → universal vendor/helper/promptly-helper | — |
 | `main/binaries.js` | Binary lookup order (Settings → known paths → nvm → login shell) | `resolveClaudePath`, `resolveWhisperPath`, `resolveFfmpegPath`, `makeClaudeEnv`, `PYTHON_WHISPER` |
 | `main/platform/darwin.js` | Every macOS-specific path and command (binary locations, shell lookup, pyenv shims, Whisper PATH + SSL env, model cache dirs, uninstall paths, tccutil) | see file |
 | `main/platform/index.js` | Picks the platform module (darwin only today) | — |
