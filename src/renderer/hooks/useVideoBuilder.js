@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory } from '../utils/history.js'
+import { parseVideoDefaults } from '../utils/promptUtils.js'
 
 const EMPTY_DEFAULTS = {
   cameraMovement: [],
@@ -147,13 +148,7 @@ Rules:
       return
     }
 
-    let parsed = {}
-    try {
-      parsed = JSON.parse(genResult.prompt.replace(/```json\n?|\n?```/g, '').trim())
-    } catch {}
-
-    const { settingDetail: newSettingDetail = '', ...chipFields } = parsed
-    const newDefaults = { ...deepCopy(EMPTY_DEFAULTS), ...chipFields }
+    const { defaults: newDefaults, settingDetail: newSettingDetail } = parseVideoDefaults(genResult.prompt, EMPTY_DEFAULTS)
 
     if (isReiterate) {
       setVideoDefaults(newDefaults)

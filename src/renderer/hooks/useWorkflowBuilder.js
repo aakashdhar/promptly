@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory, getHistory, bookmarkHistoryItem } from '../utils/history.js'
+import { parseWorkflowAnalysis } from '../utils/promptUtils.js'
 
 const GREEN = 'rgba(34,197,94,0.85)'
 
@@ -78,16 +79,8 @@ Rules:
       return
     }
 
-    let parsed
-    try {
-      const raw = result.prompt.trim().replace(/^```json\s*/, '').replace(/```\s*$/, '')
-      parsed = JSON.parse(raw)
-    } catch {
-      transitionRef.current(STATES.ERROR, { message: 'Workflow mapping failed. Please try again.' })
-      return
-    }
-
-    if (!parsed.nodes || parsed.nodes.length === 0) {
+    const parsed = parseWorkflowAnalysis(result.prompt)
+    if (!parsed) {
       transitionRef.current(STATES.ERROR, { message: 'Workflow mapping failed. Please try again.' })
       return
     }

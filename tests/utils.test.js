@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict } from '../src/renderer/utils/promptUtils.js'
+import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText } from '../src/renderer/utils/promptUtils.js'
 import { formatTime } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 
@@ -289,5 +289,43 @@ describe('evalVerdict', () => {
   it('returns raw was clearer for delta <= -5', () => {
     expect(evalVerdict(-5)).toBe('↓ Raw was clearer')
     expect(evalVerdict(-20)).toBe('↓ Raw was clearer')
+  })
+})
+
+describe('structured output validation', () => {
+  it('rejects emails without a subject or body', () => {
+    expect(() => parseEmailOutput('{"subject":"Hi"}')).toThrow()
+    expect(() => parseEmailOutput('{"subject":"","body":"x"}')).toThrow()
+    expect(() => parseEmailOutput('[1,2]')).toThrow()
+  })
+
+  it('keeps only string tone fields', () => {
+    const r = parseEmailOutput(JSON.stringify({ subject: 'S', body: 'B', toneAnalysis: { tone: 'Friendly', recipient: 5, extra: 'x' } }))
+    expect(r).toEqual({ subject: 'S', body: 'B', toneAnalysis: { tone: 'Friendly' } })
+  })
+
+  it('accepts usable workflow nodes and drops malformed ones', () => {
+    const raw = '```json\n' + JSON.stringify({ name: 'wf', nodes: [{ id: 1, name: 'Webhook', placeholders: ['url', 3] }, 'junk', { id: 2 }] }) + '\n```'
+    const r = parseWorkflowAnalysis(raw)
+    expect(r.nodes).toEqual([{ id: 1, name: 'Webhook', placeholders: ['url'] }])
+  })
+
+  it('returns null for workflows with no usable nodes', () => {
+    expect(parseWorkflowAnalysis('{"nodes":"oops"}')).toBeNull()
+    expect(parseWorkflowAnalysis('{"nodes":[]}')).toBeNull()
+    expect(parseWorkflowAnalysis('not json')).toBeNull()
+  })
+
+  it('keeps video fields with the right types only', () => {
+    const empty = { shotType: [], aspectRatio: '16:9', useFirstFrame: false }
+    const r = parseVideoDefaults(JSON.stringify({ shotType: ['Wide', 7], aspectRatio: 9, useFirstFrame: true, rogue: 'x', settingDetail: 'beach' }), empty)
+    expect(r).toEqual({ defaults: { shotType: ['Wide'], aspectRatio: '16:9', useFirstFrame: true }, settingDetail: 'beach' })
+    expect(parseVideoDefaults('garbage', empty)).toEqual({ defaults: empty, settingDetail: '' })
+  })
+
+  it('builds image prompt text with or without Midjourney flags', () => {
+    expect(buildImagePromptText('{"prompt":"A cat","flags":"--ar 1:1"}')).toBe('A cat\n\n--ar 1:1')
+    expect(buildImagePromptText('{"prompt":"A cat","flags":""}')).toBe('A cat')
+    expect(buildImagePromptText('plain text prompt')).toBe('plain text prompt')
   })
 })

@@ -30,33 +30,76 @@ export function parseSections(text) {
   return sections
 }
 
-export function parseEmailOutput(raw) {
-  // Stage 1: strip leading/trailing fences and try direct parse
-  const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+// Claude often wraps JSON in ```json fences, sometimes with preamble. Strip fences, then
+// fall back to the outermost {...}. Throws if no JSON object can be parsed.
+export function parseJsonObject(raw) {
+  const stripped = (raw || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+  let parsed
   try {
-    return JSON.parse(stripped)
+    parsed = JSON.parse(stripped)
   } catch {
-    // Stage 2: Claude added preamble/postamble — find the outermost {...} and parse that
     const match = stripped.match(/\{[\s\S]*\}/)
-    if (match) return JSON.parse(match[0])
-    throw new Error('No parseable JSON object in email response')
+    if (!match) throw new Error('No parseable JSON object in response')
+    parsed = JSON.parse(match[0])
   }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Response is not a JSON object')
+  return parsed
+}
+
+const isText = (v) => typeof v === 'string' && v.trim().length > 0
+
+// Returns { subject, body, toneAnalysis } or throws if the email is unusable.
+export function parseEmailOutput(raw) {
+  const parsed = parseJsonObject(raw)
+  if (!isText(parsed.subject) || !isText(parsed.body)) throw new Error('Email response is missing a subject or body')
+  const tone = parsed.toneAnalysis && typeof parsed.toneAnalysis === 'object' ? parsed.toneAnalysis : {}
+  const toneAnalysis = {}
+  for (const key of ['recipient', 'tone', 'coreMessage', 'approach', 'whyThisTone']) {
+    if (typeof tone[key] === 'string') toneAnalysis[key] = tone[key]
+  }
+  return { subject: parsed.subject, body: parsed.body, toneAnalysis }
+}
+
+// Returns a workflow analysis whose nodes are safe to render, or null if unusable.
+export function parseWorkflowAnalysis(raw) {
+  let parsed
+  try { parsed = parseJsonObject(raw) } catch { return null }
+  if (!Array.isArray(parsed.nodes)) return null
+  const nodes = parsed.nodes
+    .filter((n) => n && typeof n === 'object' && (typeof n.id === 'number' || isText(n.id)) && isText(n.name))
+    .map((n) => ({ ...n, placeholders: Array.isArray(n.placeholders) ? n.placeholders.filter((p) => typeof p === 'string') : [] }))
+  if (nodes.length === 0) return null
+  return { ...parsed, nodes }
+}
+
+// Keeps only the video builder fields it knows, with the right types; anything else
+// (missing, wrong type, or unparseable response) falls back to the defaults.
+export function parseVideoDefaults(raw, emptyDefaults) {
+  let parsed = {}
+  try { parsed = parseJsonObject(raw) } catch { /* use defaults */ }
+  const result = JSON.parse(JSON.stringify(emptyDefaults))
+  for (const [key, fallback] of Object.entries(emptyDefaults)) {
+    const value = parsed[key]
+    if (Array.isArray(fallback)) {
+      if (Array.isArray(value)) result[key] = value.filter((v) => typeof v === 'string')
+    } else if (typeof value === typeof fallback) {
+      result[key] = value
+    }
+  }
+  return { defaults: result, settingDetail: typeof parsed.settingDetail === 'string' ? parsed.settingDetail : '' }
+}
+
+// Builds the final image prompt text: natural-language prompt, plus Midjourney flags on
+// their own paragraph when present. Falls back to the raw text if it isn't JSON.
+export function buildImagePromptText(raw) {
+  const parsed = parseImageAssemblyOutput(raw)
+  if (!parsed || !isText(parsed.prompt)) return (raw || '').trim()
+  return isText(parsed.flags) ? `${parsed.prompt.trim()}\n\n${parsed.flags.trim()}` : parsed.prompt.trim()
 }
 
 export function parseImageAnalysisOutput(raw) {
   if (!raw) return null
-  try {
-    const stripped = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-    try {
-      return JSON.parse(stripped)
-    } catch {
-      const match = stripped.match(/\{[\s\S]*\}/)
-      if (match) return JSON.parse(match[0])
-      return null
-    }
-  } catch {
-    return null
-  }
+  try { return parseJsonObject(raw) } catch { return null }
 }
 
 export function parseImageAssemblyOutput(raw) {

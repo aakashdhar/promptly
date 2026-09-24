@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory } from '../utils/history.js'
-import { parseImageAnalysisOutput, parseImageAssemblyOutput } from '../utils/promptUtils.js'
+import { parseImageAnalysisOutput, buildImagePromptText } from '../utils/promptUtils.js'
 
 function buildPhase1Prompt(transcript) {
   return `You are an expert image prompt engineer for Nano Banana (Google's Gemini image model),
@@ -180,10 +180,6 @@ function parseVariations(raw, idOffset) {
   }))
 }
 
-function parsePhase2(raw) {
-  return parseImageAssemblyOutput(raw)
-}
-
 export default function useImageBuilder({
   STATES,
   transitionRef,
@@ -305,10 +301,7 @@ export default function useImageBuilder({
       transitionRef.current(STATES.ERROR, { message: 'Could not generate image prompt — try again' })
       return
     }
-    const parsed = parsePhase2(result.prompt)
-    const builtPrompt = parsed?.prompt && parsed?.flags
-      ? `${parsed.prompt}\n\n${parsed.flags}`
-      : result.prompt.trim()
+    const builtPrompt = buildImagePromptText(result.prompt)
     setImageBuiltPrompt(builtPrompt)
     saveToHistory({ transcript: originalTranscript.current, prompt: builtPrompt, mode: 'image' })
     window.electronAPI?.setLastPrompt?.(builtPrompt)
