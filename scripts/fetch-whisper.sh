@@ -8,6 +8,10 @@ WHISPER_TAG="v1.9.4"
 MODEL="ggml-base.en-q5_1.bin"
 MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${MODEL}"
 MODEL_SHA256="4baf70dd0d7c4247ba2b81fafd9c01005ac77c2f9ef064e00dcf195d0e2fdd2f"  # from the repo's Git LFS pointer
+# Voice activity detection (Silero): trims silence so pauses can't make Whisper skip speech.
+VAD_MODEL="ggml-silero-v5.1.2.bin"
+VAD_URL="https://huggingface.co/ggml-org/whisper-vad/resolve/main/${VAD_MODEL}"
+VAD_SHA256="29940d98d42b91fbd05ce489f3ecf7c72f0a42f027e4875919a28fb4c04ea2cf"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CACHE="$ROOT_DIR/.cache/whisper-build"
@@ -77,4 +81,18 @@ else
   mv "$OUT/$MODEL.part" "$OUT/$MODEL"
   check_model || { rm -f "$OUT/$MODEL"; fail "$MODEL checksum mismatch"; }
   ok "$MODEL downloaded and verified"
+fi
+
+# ── Voice activity model ──────────────────────────────────────────────────────
+check_vad() {
+  [ -f "$OUT/$VAD_MODEL" ] && [ "$(shasum -a 256 "$OUT/$VAD_MODEL" | awk '{print $1}')" = "$VAD_SHA256" ]
+}
+if check_vad; then
+  ok "$VAD_MODEL already present"
+else
+  echo "Downloading $VAD_MODEL..."
+  curl -fL --progress-bar -o "$OUT/$VAD_MODEL.part" "$VAD_URL"
+  mv "$OUT/$VAD_MODEL.part" "$OUT/$VAD_MODEL"
+  check_vad || { rm -f "$OUT/$VAD_MODEL"; fail "$VAD_MODEL checksum mismatch"; }
+  ok "$VAD_MODEL downloaded and verified"
 fi

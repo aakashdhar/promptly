@@ -1,7 +1,9 @@
 // End-to-end tests that drive the real Electron app with a fake `claude` CLI.
 // Run with: npm run test:e2e (builds the renderer first).
 import { test, expect, _electron as electron } from '@playwright/test'
+import crypto from 'crypto'
 import fs from 'fs'
+import http from 'http'
 import os from 'os'
 import path from 'path'
 
@@ -98,7 +100,7 @@ rl.on('close', () => process.exit(0))
 
 // mode: most tests below are about prompt modes, so they start in Balanced; pass mode: null to
 // start the way a fresh install does (Dictation).
-async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'balanced' } = {}) {
+async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'balanced', speechModel = null } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -125,6 +127,7 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
       PROMPTLY_HELPER: withHelper ? tools.helper : path.join(dir, 'no-helper'),
       FAKE_DIR: fakeDir,
       TMPDIR: tmpDir,
+      ...(speechModel && { PROMPTLY_SPEECH_MODEL: JSON.stringify(speechModel) }),
     },
   })
   if (!setupComplete) return { app, dir, fakeDir, tmpDir }
@@ -709,3 +712,50 @@ test('on a fresh start the window names double-tap Control and, without Accessib
   await expect(page.getByText('Double-tap Control needs Accessibility: Settings (⌘/) → Allow. Until then, press ⌥ Space to start and stop.')).toBeVisible()
   await expect(page.getByText('Press ⌥ Space or click mic to start')).toBeVisible()
 })
+
+// ── Speech recognition ──
+
+test('"Best accuracy" downloads once, is used for transcription, and takes the language you speak', async () => {
+  const payload = Buffer.from('stand-in speech model '.repeat(5000))
+  const server = http.createServer((req, res) => {
+    if (req.url !== '/model.bin') { res.writeHead(404); res.end(); return }
+    res.writeHead(200, { 'Content-Length': payload.length })
+    res.end(payload)
+  })
+  await new Promise((r) => server.listen(0, '127.0.0.1', r))
+  try {
+    ctx = await launch({
+      mode: null,
+      speechModel: {
+        file: 'accurate.bin',
+        url: `http://127.0.0.1:${server.address().port}/model.bin`,
+        sha256: crypto.createHash('sha256').update(payload).digest('hex'),
+        bytes: payload.length,
+      },
+    })
+    const { app, page, fakeDir } = ctx
+    await page.keyboard.press('Meta+/')
+    await page.getByRole('button', { name: /^Download \(/ }).click()
+    // Downloading switches to it and offers the language.
+    await expect(page.getByRole('radio', { name: /Best accuracy/ })).toHaveAttribute('aria-checked', 'true', { timeout: 10000 })
+    await page.locator('#settings-speechLanguage').selectOption('hi')
+    expect((await page.evaluate(() => window.electronAPI.getPreferences())).speech).toMatchObject({ model: 'accurate', language: 'hi', installed: true })
+    await page.getByRole('button', { name: '← Back' }).click()
+
+    await dictateFromAnotherApp(app, page, fakeDir, 'यार, इस रिपोर्ट को छोटा कर दो')
+    const args = fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8')
+    expect(args).toMatch(/-m \S*accurate\.bin/)
+    expect(args).toContain('-l hi')
+    expect(args).not.toContain('--no-timestamps')
+
+    // Removing it goes back to the built-in model.
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('dist-renderer')).show())
+    await page.keyboard.press('Meta+/')
+    await page.getByRole('button', { name: /Remove the download/ }).click()
+    await expect(page.getByRole('radio', { name: /Standard/ })).toHaveAttribute('aria-checked', 'true')
+    expect((await page.evaluate(() => window.electronAPI.getPreferences())).speech).toMatchObject({ model: 'standard', installed: false })
+  } finally {
+    server.close()
+  }
+})
+

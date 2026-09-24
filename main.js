@@ -12,6 +12,7 @@ const platform = require('./main/platform');
 const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath, makeClaudeEnv } = require('./main/binaries');
 const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/llm');
 const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
+const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
 const claudeSetup = require('./main/claude-setup');
 const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
@@ -131,11 +132,27 @@ const evalClaude = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: () => config.read().claudeModel || DEFAULT_MODEL,
 });
+// "Best accuracy" speech model, downloaded on request into userData/models.
+// Tests serve a small stand-in model locally with PROMPTLY_SPEECH_MODEL.
+const speechModels = createSpeechModels({
+  dir: path.join(app.getPath('userData'), 'models'),
+  model: IS_E2E && process.env.PROMPTLY_SPEECH_MODEL ? JSON.parse(process.env.PROMPTLY_SPEECH_MODEL) : undefined,
+});
+
+// The accurate model is used when it's chosen and downloaded; otherwise the built-in one.
+function accurateSpeech() {
+  const stored = config.read();
+  const file = stored.speechModel === 'accurate' ? speechModels.installedPath() : null;
+  return file ? { path: file, language: SPEECH_LANGUAGES.some((l) => l.value === stored.speechLanguage) ? stored.speechLanguage : 'en' } : null;
+}
+
 const whisper = createWhisperRunner({
   getBundledDir: () => BUNDLED_WHISPER_DIR,
   getWhisperPath: () => whisperPath,
   getFfmpegPath: () => ffmpegPath,
   getPromptHint: () => dictionaryWords().join(', '),
+  getAccurateModel: accurateSpeech,
+  getLanguage: () => accurateSpeech()?.language || 'en',
   onSlow: () => winSend('transcription-slow-warning'),
   children: activeChildren,
 });
@@ -176,11 +193,26 @@ function dictionaryWords() {
   return String(config.read().dictionary || '').split(/[\n,]/).map((w) => w.trim()).filter(Boolean).slice(0, 200);
 }
 
+function speechPrefs() {
+  const stored = config.read();
+  return {
+    builtIn: whisper.engine()?.type === 'bundled',
+    model: stored.speechModel === 'accurate' ? 'accurate' : 'standard',
+    language: accurateSpeech()?.language || (SPEECH_LANGUAGES.some((l) => l.value === stored.speechLanguage) ? stored.speechLanguage : 'en'),
+    languages: SPEECH_LANGUAGES,
+    installed: !!speechModels.installedPath(),
+    downloading: speechModels.isDownloading(),
+    sizeMB: speechModels.sizeMB,
+    // The large model needs Apple Silicon's GPU to be quick.
+    appleSilicon: process.platform === 'darwin' && (process.arch === 'arm64' || /Apple/.test(os.cpus()[0]?.model || '')),
+  };
+}
+
 // ── Dictation: typing into the app you're in ──
 
 function dictationPrefs() {
   const stored = config.read();
-  return { typeIn: stored.dictationTypeIn !== false, removeFillers: stored.dictationRemoveFillers !== false };
+  return { typeIn: stored.dictationTypeIn !== false, removeFillers: stored.dictationRemoveFillers !== false, symbols: stored.dictationSymbols !== false };
 }
 
 // Saves what's on the clipboard (text, rich text, images) so it can be put back afterwards.
@@ -221,7 +253,7 @@ async function typeIntoApp(text) {
 
 async function runDictation(transcript) {
   const prefs = dictationPrefs();
-  const { text, removed } = tidyDictation(transcript, { removeFillers: prefs.removeFillers });
+  const { text, removed } = tidyDictation(transcript, { removeFillers: prefs.removeFillers, symbols: prefs.symbols });
   if (!text) return { success: false, error: "Didn't catch anything", errorType: 'empty' };
   const typed = pillSession && prefs.typeIn ? await typeIntoApp(text) : false;
   if (pillSession) lastDictation = { text, typed };
@@ -232,7 +264,12 @@ async function runGeneratePrompt({ transcript, mode, options = {} }) {
   const modeConf = getMode(mode);
   if (modeConf.kind === 'builder') return { success: true, prompt: transcript };
   if (modeConf.kind === 'dictation') return runDictation(transcript);
-  const context = { ...(options.context || {}), ...profileFor(modeConf, config.read()), dictionary: dictionaryWords() };
+  const context = {
+    ...(options.context || {}),
+    ...profileFor(modeConf, config.read()),
+    dictionary: dictionaryWords(),
+    otherLanguages: (accurateSpeech()?.language || 'en') !== 'en',
+  };
   const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, { ...options, context });
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
   const streams = !options.overrideSystemPrompt && mode !== 'email';
@@ -845,6 +882,8 @@ app.whenReady().then(async () => {
       promptStyles: PROMPT_STYLES.map(({ key, label }) => ({ value: key, label })),
       dictationTypeIn: stored.dictationTypeIn !== false,
       dictationRemoveFillers: stored.dictationRemoveFillers !== false,
+      dictationSymbols: stored.dictationSymbols !== false,
+      speech: speechPrefs(),
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
       accessibility: helper.status(),
       helperAvailable: helper.isRunning(),
@@ -859,12 +898,33 @@ app.whenReady().then(async () => {
     if (typeof prefs.promptStyle === 'string' && PROMPT_STYLES.some((m) => m.key === prefs.promptStyle)) patch.promptStyle = prefs.promptStyle;
     if (typeof prefs.dictationTypeIn === 'boolean') patch.dictationTypeIn = prefs.dictationTypeIn;
     if (typeof prefs.dictationRemoveFillers === 'boolean') patch.dictationRemoveFillers = prefs.dictationRemoveFillers;
+    if (typeof prefs.dictationSymbols === 'boolean') patch.dictationSymbols = prefs.dictationSymbols;
+    if (prefs.speechModel === 'standard' || prefs.speechModel === 'accurate') patch.speechModel = prefs.speechModel;
+    if (SPEECH_LANGUAGES.some((l) => l.value === prefs.speechLanguage)) patch.speechLanguage = prefs.speechLanguage;
     if (typeof prefs.voiceNotes === 'string') patch.voiceNotes = cleanNotes(prefs.voiceNotes);
     if (typeof prefs.aboutMe === 'string') patch.aboutMe = cleanNotes(prefs.aboutMe);
     config.update(patch);
     if (typeof prefs.launchAtLogin === 'boolean' && !IS_E2E) app.setLoginItemSettings({ openAtLogin: prefs.launchAtLogin });
     if (patch.hotkey) applyHotkey();
     return { ok: true };
+  });
+
+  // ── Speech recognition model ──
+
+  ipcMain.handle('download-speech-model', async () => {
+    const result = await speechModels.download((progress) => winSend('speech-model-progress', progress));
+    // Downloading is choosing it: switch over as soon as it's ready.
+    if (result.success) config.update({ speechModel: 'accurate' });
+    else if (!result.cancelled) log.warn('Speech model download failed', result.error);
+    return { ...result, speech: speechPrefs() };
+  });
+
+  ipcMain.handle('cancel-speech-model', () => ({ cancelled: speechModels.cancel() }));
+
+  ipcMain.handle('remove-speech-model', () => {
+    speechModels.remove();
+    config.update({ speechModel: 'standard' });
+    return { speech: speechPrefs() };
   });
 
   // Hold to talk and selected text need Accessibility. Asking shows the macOS prompt, which

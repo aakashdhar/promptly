@@ -12,6 +12,9 @@ const { PYTHON_WHISPER } = require('./binaries');
 // folder to Contents/Resources/whisper/.
 const BUNDLED_CLI = 'whisper-cli';
 const BUNDLED_MODEL = 'ggml-base.en-q5_1.bin';
+// Silero voice-activity model: cuts silence out before transcribing, so pauses can't make the
+// model stop early or invent words. Optional: an older vendor/whisper without it still works.
+const BUNDLED_VAD = 'ggml-silero-v5.1.2.bin';
 
 // ── Python fallback (openai-whisper) ──────────────────────────────────────────
 // Must match the model the Python download step fetches and check-whisper-model looks for.
@@ -25,7 +28,8 @@ function findBundledEngine(dir) {
   try {
     fs.accessSync(cli, fs.constants.X_OK);
     fs.accessSync(model, fs.constants.R_OK);
-    return { cli, model };
+    const vad = path.join(dir, BUNDLED_VAD);
+    try { fs.accessSync(vad, fs.constants.R_OK); return { cli, model, vad }; } catch { return { cli, model }; }
   } catch {
     return null;
   }
@@ -68,6 +72,51 @@ function cleanTranscript(text) {
     .trim();
 }
 
+const TIMESTAMP = /^\s*\[\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\]\s*/;
+
+// whisper-cli prints one "[00:00:01.000 --> 00:00:04.180]   text" line per segment.
+function segmentsToText(stdout) {
+  return cleanTranscript(String(stdout || '').split('\n')
+    .map((line) => line.replace(TIMESTAMP, '').trim())
+    .filter((line) => line && !/^[([][^)\]]*[)\]]$/.test(line))
+    .join(' '));
+}
+
+// Arguments for the built-in engine. Timestamps stay on (no --no-timestamps): without them
+// whisper.cpp jumps to the next 30-second window whenever the model stops early, which after a
+// pause silently dropped everything said in between.
+function bundledArgs({ model, vad, audioFile, language = 'en', useGpu = false, hint = '' }) {
+  const args = ['-m', model, '-f', audioFile, '-l', language, '--no-prints'];
+  if (vad) args.push('--vad', '-vm', vad);
+  if (!useGpu) args.push('--no-gpu');
+  // Biases spelling toward the user's dictionary words (names, jargon).
+  if (hint) args.push('--prompt', hint);
+  return args;
+}
+
+// Length in seconds of a PCM WAV, from its header; 0 when it can't tell.
+function wavSeconds(file) {
+  try {
+    const fd = fs.openSync(file, 'r');
+    const head = Buffer.alloc(44);
+    fs.readSync(fd, head, 0, 44, 0);
+    fs.closeSync(fd);
+    if (head.toString('ascii', 0, 4) !== 'RIFF') return 0;
+    const byteRate = head.readUInt32LE(28);
+    return byteRate ? Math.max(0, fs.statSync(file).size - 44) / byteRate : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// People speak 2–3 words a second; under 0.4 over a long recording means speech went missing
+// (or voice detection cut a quiet speaker), so it's worth a second pass.
+function looksIncomplete(text, seconds) {
+  if (seconds < 20) return false;
+  const words = String(text || '').split(/\s+/).filter(Boolean).length;
+  return words / seconds < 0.4;
+}
+
 // A 16 kHz mono PCM WAV of silence, used to warm up the GPU path.
 function silentWav(seconds = 1, sampleRate = 16000) {
   const samples = seconds * sampleRate;
@@ -84,6 +133,9 @@ function createWhisperRunner({
   getWhisperPath,
   getFfmpegPath,
   getPromptHint = () => '',
+  // The downloaded "Best accuracy" model, when the user chose it: { path } or null.
+  getAccurateModel = () => null,
+  getLanguage = () => 'en',
   onSlow = () => {},
   children = new Set(),
 }) {
@@ -123,14 +175,28 @@ function createWhisperRunner({
     });
   }
 
-  async function transcribeBundled({ cli, model }, audioFile, opts) {
-    const args = ['-m', model, '-f', audioFile, '-l', 'en', '--no-timestamps', '--no-prints'];
-    if (!gpuReady) args.push('--no-gpu');
-    // Biases spelling toward the user's dictionary words (names, jargon).
-    const hint = getPromptHint();
-    if (hint) args.push('--prompt', hint);
-    const stdout = await run(cli, args, { env: process.env, ...opts });
-    return cleanTranscript(stdout);
+  async function transcribeBundled({ cli, model, vad }, audioFile, opts) {
+    const accurate = getAccurateModel();
+    const seconds = wavSeconds(audioFile);
+    const base = {
+      model: accurate ? accurate.path : model,
+      audioFile,
+      // The built-in model only knows English; the accurate one takes the chosen language.
+      language: accurate ? getLanguage() || 'en' : 'en',
+      // The large model is far too slow on the CPU, so it waits for the GPU if it must.
+      useGpu: gpuReady || !!accurate,
+      hint: getPromptHint(),
+    };
+    // Longer recordings (and the larger model) get more time before giving up.
+    const timeoutMs = Math.max(opts.timeoutMs || 60000, 60000 + seconds * (accurate ? 2000 : 500));
+    const slowWarningMs = opts.slowWarningMs && Math.max(opts.slowWarningMs, seconds * (accurate ? 200 : 60));
+    const once = async (withVad) => segmentsToText(await run(cli, bundledArgs({ ...base, vad: withVad ? vad : null }), { env: process.env, ...opts, timeoutMs, slowWarningMs }));
+
+    const text = await once(!!vad);
+    if (!vad || !looksIncomplete(text, seconds)) return text;
+    // Too few words for the length: try again without voice detection and keep the fuller one.
+    const again = await once(false).catch(() => '');
+    return again.split(/\s+/).length > text.split(/\s+/).length ? again : text;
   }
 
   async function transcribePython(whisperPath, audioFile, opts) {
@@ -164,7 +230,7 @@ function createWhisperRunner({
     try {
       fs.mkdirSync(tmpDir, { recursive: true });
       fs.writeFileSync(file, silentWav());
-      await run(e.cli, ['-m', e.model, '-f', file, '-l', 'en', '--no-timestamps', '--no-prints'], { env: process.env, timeoutMs: 120000 });
+      await run(e.cli, bundledArgs({ model: e.model, audioFile: file, useGpu: true }), { env: process.env, timeoutMs: 120000 });
       gpuReady = true;
     } catch {
       // Stay on the CPU path; it's fast enough on its own.
@@ -225,7 +291,12 @@ module.exports = {
   WHISPER_MODEL,
   BUNDLED_CLI,
   BUNDLED_MODEL,
+  BUNDLED_VAD,
   findBundledEngine,
+  segmentsToText,
+  bundledArgs,
+  wavSeconds,
+  looksIncomplete,
   makeWhisperEnv,
   whisperCommand,
   findDownloadedModel,

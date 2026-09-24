@@ -11,11 +11,26 @@ const FILLER = /(^|[\s,.;:!?(]|--)(u+m+|u+h+m*|e+r+m+|e+r+|a+h+|h+m+|m+h*m+)(?=$
 // "new line" / "new paragraph", said on their own, possibly with the punctuation Whisper adds.
 const LINE_COMMAND = /[,;:]?\s*\b(new paragraph|next paragraph|new line|next line)\b[.,!?]?\s*/gi;
 
+// Money and percentages said as words become symbols ("12,450 rupees" → "₹12,450",
+// "25 percent" → "25%"). Pounds stay as said: they're as often weight as money. Only the unit word moves; the number and everything else stay as said.
+const AMOUNT = '(\\d[\\d,]*(?:\\.\\d+)?)';
+const SYMBOLS = [
+  [new RegExp(`\\b(?:rs\\.?|inr)\\s?${AMOUNT}(?![\\d,])`, 'gi'), (_m, n) => `₹${n}`],
+  [new RegExp(`\\b${AMOUNT}\\s(?:rupees?|rs\\b|inr\\b)`, 'gi'), (_m, n) => `₹${n}`],
+  [new RegExp(`\\b${AMOUNT}\\s(?:dollars?|usd\\b)`, 'gi'), (_m, n) => `$${n}`],
+  [new RegExp(`\\b${AMOUNT}\\s(?:euros?)\\b`, 'gi'), (_m, n) => `€${n}`],
+  [new RegExp(`\\b${AMOUNT}\\s?(?:percent|per cent)\\b`, 'gi'), (_m, n) => `${n}%`],
+];
+
+function formatSymbols(text) {
+  return SYMBOLS.reduce((t, [pattern, replace]) => t.replace(pattern, replace), text);
+}
+
 // Marks where a capitalised filler ("Um, so…") started a sentence, so only the word that now
 // starts it gets a capital. Nothing else about the user's casing changes.
 const SENTENCE_START = '\u0001';
 
-function tidyDictation(transcript, { removeFillers = true } = {}) {
+function tidyDictation(transcript, { removeFillers = true, symbols = true } = {}) {
   let text = String(transcript || '').trim();
   const removed = [];
 
@@ -33,6 +48,8 @@ function tidyDictation(transcript, { removeFillers = true } = {}) {
       .replace(/\u0001[\s,;:]*([a-z])/g, (_m, ch) => ch.toUpperCase())
       .replace(/\u0001[\s,;:]*/g, '');
   }
+
+  if (symbols) text = formatSymbols(text);
 
   text = text.replace(LINE_COMMAND, (_m, command) => (/paragraph/i.test(command) ? '\n\n' : '\n'));
 
@@ -53,4 +70,4 @@ function describeRemoved(removed) {
   return [...counts].map(([word, n]) => (n > 1 ? `${word} ×${n}` : word)).join(', ');
 }
 
-module.exports = { tidyDictation, describeRemoved };
+module.exports = { tidyDictation, describeRemoved, formatSymbols };

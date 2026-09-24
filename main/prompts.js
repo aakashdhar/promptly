@@ -79,6 +79,9 @@ function buildContextBlock(mode, context = {}) {
     const where = context.appName ? ` in ${context.appName}` : '';
     parts.push(`The user has selected this text${where} and is talking about it. Treat it as the material to work on:\n<selected_text>\n${context.selectedText}\n</selected_text>`);
   }
+  if (context.otherLanguages) {
+    parts.push('The user may speak in Hindi or another language, or mix it with English, so the transcript can be in any script. Understand it fully and write the result in English unless they ask for a different language.');
+  }
   const words = (context.dictionary || []).filter(Boolean);
   if (words.length) parts.push(`Spell these names and terms exactly as written: ${words.join(', ')}.`);
   return parts.length ? parts.join('\n\n') + '\n\n' : '';

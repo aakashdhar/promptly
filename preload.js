@@ -254,6 +254,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   learnStyle: (samples) =>
     ipcRenderer.invoke('learn-style', { samples }),
 
+  downloadSpeechModel: () =>
+    ipcRenderer.invoke('download-speech-model'),
+
+  cancelSpeechModel: () =>
+    ipcRenderer.invoke('cancel-speech-model'),
+
+  removeSpeechModel: () =>
+    ipcRenderer.invoke('remove-speech-model'),
+
+  onSpeechModelProgress: (callback) => {
+    const cb = (_event, progress) => callback(progress)
+    ipcRenderer.on('speech-model-progress', cb)
+    return () => ipcRenderer.removeListener('speech-model-progress', cb)
+  },
+
   retryGeneration: () =>
     ipcRenderer.invoke('retry-generation'),
 

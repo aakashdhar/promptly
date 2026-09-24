@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
 import YouSection from './YouSection.jsx'
+import SpeechSection from './SpeechSection.jsx'
 
 export default function SettingsPanel({ onClose }) {
   const [claudeVal, setClaudeVal] = useState('')
@@ -199,6 +200,7 @@ export default function SettingsPanel({ onClose }) {
                   ? 'Type into the app I\'m in'
                   : 'Type into the app I\'m in (needs Accessibility, below; until then it\'s copied for ⌘V)'],
                 ['dictationRemoveFillers', 'Remove um, uh and similar (nothing else is changed)'],
+                ['dictationSymbols', 'Write money and percentages as symbols (₹12,450, 25%)'],
               ].map(([key, label]) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(var(--ink),0.85)', lineHeight: 1.45, cursor: 'pointer', WebkitAppRegion: 'no-drag' }}>
                   <input type="checkbox" id={`settings-${key}`} checked={!!prefs[key]} onChange={e => savePrefs({ [key]: e.target.checked })} style={{ marginTop: 2 }} />
@@ -218,6 +220,8 @@ export default function SettingsPanel({ onClose }) {
               {(prefs.promptStyles || []).map(o => <option key={o.value} value={o.value}>{o.label} prompt</option>)}
             </select>
           </div>
+
+          {prefs.speech?.builtIn && <SpeechSection speech={prefs.speech} onSave={savePrefs} />}
 
           <div style={{ marginBottom: 14 }}>
             <div style={sectionLabel}>Hold to talk and selected text</div>

@@ -63,11 +63,16 @@ MODEL_FILE="$WHISPER_DIR/$(grep '^MODEL=' scripts/fetch-whisper.sh | sed -E 's/M
 [ -f "$MODEL_FILE" ] || fail "Speech model missing. Run: bash scripts/fetch-whisper.sh"
 [ "$(shasum -a 256 "$MODEL_FILE" | awk '{print $1}')" = "$MODEL_SHA" ] || fail "Speech model checksum mismatch: $MODEL_FILE"
 ok "CHECK 5: speech model verified ($(basename "$MODEL_FILE"))"
+VAD_SHA=$(grep '^VAD_SHA256=' scripts/fetch-whisper.sh | sed -E 's/VAD_SHA256="([0-9a-f]+)".*/\1/')
+VAD_FILE="$WHISPER_DIR/$(grep '^VAD_MODEL=' scripts/fetch-whisper.sh | sed -E 's/VAD_MODEL="(.+)"/\1/')"
+[ -f "$VAD_FILE" ] || fail "Voice activity model missing. Run: bash scripts/fetch-whisper.sh"
+[ "$(shasum -a 256 "$VAD_FILE" | awk '{print $1}')" = "$VAD_SHA" ] || fail "Voice activity model checksum mismatch: $VAD_FILE"
+ok "CHECK 5b: voice activity model verified ($(basename "$VAD_FILE"))"
 
 # CHECK 6 — the engine actually runs (1 s of silence, CPU only, minimal environment)
 SILENCE=$(mktemp -t promptly-silence).wav
 python3 -c "import wave; w=wave.open('$SILENCE','wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b'\x00\x00'*16000); w.close()"
-env -i HOME="$HOME" "$WHISPER_DIR/whisper-cli" -m "$MODEL_FILE" -f "$SILENCE" -l en --no-timestamps --no-prints --no-gpu >/dev/null 2>&1 \
+env -i HOME="$HOME" "$WHISPER_DIR/whisper-cli" -m "$MODEL_FILE" -f "$SILENCE" -l en --no-prints --no-gpu --vad -vm "$VAD_FILE" >/dev/null 2>&1 \
   || { rm -f "$SILENCE"; fail "whisper-cli failed to transcribe a test file"; }
 rm -f "$SILENCE"
 ok "CHECK 6: whisper-cli transcribes"
