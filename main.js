@@ -13,6 +13,7 @@ const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath
 const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/llm');
 const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
 const claudeSetup = require('./main/claude-setup');
+const { registerRecordingShortcut } = require('./main/shortcuts');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
@@ -27,6 +28,7 @@ if (IS_E2E) {
   globalThis.__promptlyE2E = {
     pressHotkey: () => onPrimaryShortcut(),
     appState: () => currentAppState,
+    trayIconsCreated: () => trayIconsCreated,
   };
 }
 
@@ -163,7 +165,10 @@ function createMicIcon(state, isDark, showDot = true) {
   return img;
 }
 
+let trayIconsCreated = 0;
+
 function createMenuBarIcon() {
+  trayIconsCreated++;
   menuBarTray = new Tray(createMicIcon('idle'));
   menuBarTray.setToolTip('Promptly — ready');
   menuBarTray.on('click', () => {
@@ -297,14 +302,9 @@ function updatePauseShortcut(appState) {
 function registerShortcut() {
   if (shortcutsRegistered || IS_E2E) return;
   shortcutsRegistered = true;
-  if (globalShortcut.register(SHORTCUT_PRIMARY, onPrimaryShortcut)) return;
-  if (globalShortcut.register(SHORTCUT_FALLBACK, onPrimaryShortcut)) {
-    log.warn(`${SHORTCUT_PRIMARY} unavailable, using ${SHORTCUT_FALLBACK}`);
-    notify('Option+Space is used by another app, so Promptly is listening on Control+` instead.');
-  } else {
-    log.warn('No recording shortcut could be registered');
-    notify('Promptly could not register a recording shortcut. Open it from the menu bar icon.');
-  }
+  registerRecordingShortcut({
+    globalShortcut, primary: SHORTCUT_PRIMARY, fallback: SHORTCUT_FALLBACK, onTrigger: onPrimaryShortcut, notify, log,
+  });
 }
 
 // ── Windows ───────────────────────────────────────────────────────────────────
@@ -452,7 +452,19 @@ if (!gotTheLock) {
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
 
-Menu.setApplicationMenu(null);
+// A minimal menu instead of Electron's default (no Reload/DevTools/View clutter). The Edit menu
+// must exist: on macOS it is what makes Cmd+C/V/X/A/Z work in text fields. No "Hide" item,
+// because Cmd+H opens History.
+Menu.setApplicationMenu(Menu.buildFromTemplate([
+  { label: 'Promptly', submenu: [{ role: 'about' }, { type: 'separator' }, { role: 'quit' }] },
+  {
+    label: 'Edit',
+    submenu: [
+      { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+      { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+    ],
+  },
+]));
 
 app.whenReady().then(async () => {
   log.info(`Promptly ${app.getVersion()} starting`);

@@ -124,6 +124,9 @@ body {
 
 #root { height: 100%; }
 
+/* Generated text people may want to copy part of. The rest of the UI stays unselectable. */
+.selectable, .selectable * { user-select: text; cursor: text; }
+
 /* POLISH-006: Global scrollbar refinement */
 *::-webkit-scrollbar { width: 3px; }
 *::-webkit-scrollbar-track { background: transparent; }

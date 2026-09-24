@@ -118,13 +118,10 @@ export default function PromptReadyState({
         if (promptRef.current) promptRef.current.textContent = preEditValue.current
         setIsEditing(false)
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isEditing) {
-        if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPrompt)
-      }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [isEditing, generatedPrompt])
+  }, [isEditing])
 
   useEffect(() => {
     document.addEventListener('export-prompt', handleExport)
@@ -292,7 +289,7 @@ export default function PromptReadyState({
       {/* PROMPT CONTENT */}
       <div
         ref={promptRef}
-        className="overflow-y-auto flex-1 min-h-0"
+        className="overflow-y-auto flex-1 min-h-0 selectable"
         id="prompt-output"
         contentEditable={isEditing}
         suppressContentEditableWarning

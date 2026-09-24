@@ -24,7 +24,7 @@ export default function PromptSections({ prompt, labelColor = 'rgba(100,170,255,
     } else {
       elements.push(
         <div key={`text-${i}`} style={{
-          fontSize: textSize, color: readableColor(textColor),
+          fontSize: textSize, color: readableColor(textColor), userSelect: 'text', cursor: 'text',
           lineHeight: 1.75, marginBottom: '4px',
         }}>
           {line}

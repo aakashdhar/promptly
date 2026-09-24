@@ -361,3 +361,33 @@ describe('Claude Code setup', () => {
     expect(makeClaudeEnv('/x/claude', { PATH: '/usr/bin', USER: 'someone' }).USER).toBe('someone')
   })
 })
+
+describe('recording shortcut', () => {
+  const { registerRecordingShortcut } = require('../main/shortcuts.js')
+  function fakeShortcuts(taken) {
+    const registered = []
+    return { registered, register: (acc) => { if (taken.includes(acc)) return false; registered.push(acc); return true } }
+  }
+
+  it('uses Option+Space when it is free, without a notification', () => {
+    const gs = fakeShortcuts([])
+    const notes = []
+    expect(registerRecordingShortcut({ globalShortcut: gs, primary: 'Alt+Space', fallback: 'Control+`', onTrigger: () => {}, notify: (m) => notes.push(m) })).toBe('Alt+Space')
+    expect(notes).toEqual([])
+  })
+
+  it('falls back and tells the user when another app owns Option+Space', () => {
+    const gs = fakeShortcuts(['Alt+Space'])
+    const notes = []
+    expect(registerRecordingShortcut({ globalShortcut: gs, primary: 'Alt+Space', fallback: 'Control+`', onTrigger: () => {}, notify: (m) => notes.push(m) })).toBe('Control+`')
+    expect(gs.registered).toEqual(['Control+`'])
+    expect(notes).toEqual(['Option+Space is used by another app, so Promptly is listening on Control+` instead.'])
+  })
+
+  it('says so when neither key is available', () => {
+    const gs = fakeShortcuts(['Alt+Space', 'Control+`'])
+    const notes = []
+    expect(registerRecordingShortcut({ globalShortcut: gs, primary: 'Alt+Space', fallback: 'Control+`', onTrigger: () => {}, notify: (m) => notes.push(m) })).toBeNull()
+    expect(notes[0]).toMatch(/could not register a recording shortcut/)
+  })
+})

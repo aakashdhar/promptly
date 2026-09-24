@@ -98,7 +98,7 @@ export default function ExpandedPromptReadyContent({
 
       <div style={{ height: '0.5px', background: 'rgba(var(--ink),0.06)', margin: '0 28px', flexShrink: 0 }} />
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
+      <div className="selectable" style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
         {isEditing ? (
           <div
             ref={promptRef}

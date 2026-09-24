@@ -24,6 +24,20 @@ input=$(cat)
 printf '%s' "$input" > "$FAKE_DIR/call-$n.stdin"
 if [ -f "$FAKE_DIR/fail" ]; then echo "simulated failure" >&2; exit 1; fi
 [ -f "$FAKE_DIR/delay" ] && sleep "$(cat "$FAKE_DIR/delay")"
+# Image builder phases get the JSON they ask for.
+if printf '%s' "$input" | grep -q "Analyse the user's spoken image idea"; then
+  printf '%s' '{"subject":{"subject":"Red fox","setting":"Snowy forest","emotion":"Calm","framing":"Close-up","negativePrompts":[]},"lighting":{"timeOfDay":"Golden hour","lightType":"Directional sun","quality":"Warm amber","lensFlare":"None"},"camera":{"lens":"85mm portrait","aperture":"f/1.4 shallow","aspectRatio":"4:5 portrait","angle":"Eye level","filmSim":"Kodak Portra 400"},"style":{"visualStyle":"Cinematic film still","colorGrade":"Warm teal-orange","filmGrain":"35mm grain","reference":"Emmanuel Lubezki"},"technical":{"resolution":"Ultra HD 4K","renderQuality":"Photorealistic","stylise":750,"chaos":20,"weird":0,"seed":null}}'
+  exit 0
+fi
+if printf '%s' "$input" | grep -q "Generate exactly 3 distinct prompt variations"; then
+  printf '%s' '{"variations":[{"id":1,"prompt":"A red fox in snow","focus":"natural"},{"id":2,"prompt":"A red fox, dramatic","focus":"editorial"},{"id":3,"prompt":"A red fox, cinematic","focus":"cinematic"}]}'
+  exit 0
+fi
+if printf '%s' "$input" | grep -q "Assemble a final"; then
+  [ -f "$FAKE_DIR/assemble-delay" ] && sleep "$(cat "$FAKE_DIR/assemble-delay")"
+  printf '%s' '{"prompt":"A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic","flags":"--ar 4:5 --stylize 750 --chaos 20"}'
+  exit 0
+fi
 last=$(printf '%s' "$input" | tail -n 1 | tr -d '"')
 printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s\\n' "$last"
 touch "$FAKE_DIR/call-$n.done"
@@ -258,4 +272,94 @@ test('a missing Claude Code offers the installer', async () => {
   await expect(setup.getByRole('button', { name: 'Install Claude Code' })).toBeVisible()
   await expect(setup.locator('#install-cmd')).toHaveText('curl -fsSL https://claude.ai/install.sh | bash')
   await expect(setup.locator('#claude-next')).toBeDisabled()
+})
+
+// Reads the system clipboard, runs fn, and restores the user's clipboard afterwards.
+async function withClipboard(app, fn) {
+  const saved = await app.evaluate(({ clipboard }) => clipboard.readText())
+  try { return await fn() } finally { await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), saved) }
+}
+const readClipboard = (app) => app.evaluate(({ clipboard }) => clipboard.readText())
+
+test('fix-06: reopening the setup wizard keeps a single menu bar icon', async () => {
+  ctx = await launch()
+  const { app, page } = ctx
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.trayIconsCreated())).toBe(1)
+  const wizard = app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
+  await page.evaluate(() => window.electronAPI.reopenWizard())
+  const setup = await wizard
+  await setup.getByRole('button', { name: 'Set up Promptly' }).click()
+  await setup.locator('#mic-next').click()
+  await expect(setup.getByText('Claude Code is ready.')).toBeVisible({ timeout: 10000 })
+  await setup.locator('#claude-next').click()
+  await setup.getByRole('button', { name: 'Start using Promptly' }).click()
+  await expect.poll(() => mainWindow(app).then((w) => w.visible), { timeout: 10000 }).toBe(true)
+  expect(await app.evaluate(() => globalThis.__promptlyE2E.trayIconsCreated())).toBe(1)
+})
+
+test('fix-12: Cmd+C copies the selection when there is one, the whole prompt otherwise', async () => {
+  ctx = await launch()
+  const { app, page } = ctx
+  await typeAndSubmit(page, 'make a todo app with dark mode')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  await withClipboard(app, async () => {
+    await page.evaluate(() => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+      let node
+      while ((node = walker.nextNode()) && !node.textContent.includes('You are a test assistant.'));
+      const start = node.textContent.indexOf('test assistant')
+      const range = document.createRange()
+      range.setStart(node, start)
+      range.setEnd(node, start + 4)
+      const sel = window.getSelection()
+      sel.removeAllRanges()
+      sel.addRange(range)
+    })
+    // The generated prompt must be selectable (the rest of the UI is not).
+    expect(await page.evaluate(() => window.getSelection().toString())).toBe('test')
+    await page.keyboard.press('Meta+c')
+    await expect.poll(() => readClipboard(app)).toBe('test')
+
+    await page.evaluate(() => window.getSelection().removeAllRanges())
+    await page.keyboard.press('Meta+c')
+    await expect.poll(() => readClipboard(app)).toContain('Role:\nYou are a test assistant.')
+  })
+})
+
+test('fix-11 + fix-15: image builder shows the assembly labels and copies the prompt without flags', async () => {
+  ctx = await launch()
+  const { app, page, fakeDir } = ctx
+  await page.evaluate(() => localStorage.setItem('mode', 'image'))
+  await page.reload()
+  await expect.poll(() => appState(app), { timeout: 10000 }).toBe('IDLE')
+  await typeAndSubmit(page, 'a calm red fox in a snowy forest')
+
+  const confirm = page.getByText('Confirm & assemble prompt')
+  await expect(confirm).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('button', { name: /Confirm & assemble prompt/ })).toBeEnabled({ timeout: 10000 })
+  fs.writeFileSync(path.join(fakeDir, 'assemble-delay'), '3')
+  await confirm.click()
+
+  // Phase 2 labels (these were never shown before the fix; phase 1 labels appeared instead).
+  await expect(page.getByText('Assembling your prompt...')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText('Analysing your idea...')).toHaveCount(0)
+
+  await expect(page.getByText('Midjourney flags (optional)')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText('--ar 4:5 --stylize 750 --chaos 20')).toBeVisible()
+  await withClipboard(app, async () => {
+    await page.getByRole('button', { name: 'Copy prompt', exact: true }).click()
+    await expect.poll(() => readClipboard(app)).toBe('A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic')
+    await page.getByRole('button', { name: 'Copy prompt with flags for Midjourney' }).click()
+    await expect.poll(() => readClipboard(app)).toBe('A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic\n\n--ar 4:5 --stylize 750 --chaos 20')
+  })
+})
+
+test('the app menu keeps the Edit commands macOS needs for copy and paste', async () => {
+  ctx = await launch()
+  const roles = await ctx.app.evaluate(({ Menu }) =>
+    Menu.getApplicationMenu().items.flatMap((m) => m.submenu ? m.submenu.items.map((i) => i.role).filter(Boolean) : []))
+  for (const role of ['copy', 'paste', 'cut', 'selectall', 'undo']) expect(roles).toContain(role)
+  expect(roles).not.toContain('hide')
+  expect(roles).not.toContain('reload')
+  expect(roles).not.toContain('toggledevtools')
 })
