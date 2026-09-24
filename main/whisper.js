@@ -83,6 +83,7 @@ function createWhisperRunner({
   getBundledDir = () => null,
   getWhisperPath,
   getFfmpegPath,
+  getPromptHint = () => '',
   onSlow = () => {},
   children = new Set(),
 }) {
@@ -125,6 +126,9 @@ function createWhisperRunner({
   async function transcribeBundled({ cli, model }, audioFile, opts) {
     const args = ['-m', model, '-f', audioFile, '-l', 'en', '--no-timestamps', '--no-prints'];
     if (!gpuReady) args.push('--no-gpu');
+    // Biases spelling toward the user's dictionary words (names, jargon).
+    const hint = getPromptHint();
+    if (hint) args.push('--prompt', hint);
     const stdout = await run(cli, args, { env: process.env, ...opts });
     return cleanTranscript(stdout);
   }

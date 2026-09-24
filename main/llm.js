@@ -12,6 +12,34 @@ const SYSTEM_PROMPT = "Follow the user's instructions exactly and output only wh
 // session files written to ~/.claude for every prompt. Older CLIs reject some of these,
 // so a run that fails with "unknown option" is retried once without them.
 const LEAN_FLAGS = ['--tools', '', '--no-session-persistence', '--strict-mcp-config', '--system-prompt', SYSTEM_PROMPT];
+// Streams text as it's written: JSON events on stdout, with partial text deltas.
+const STREAM_FLAGS = ['--output-format', 'stream-json', '--include-partial-messages', '--verbose'];
+
+// Reads stream-json lines: text deltas as they arrive, and the final result event.
+function createStreamParser(onDelta) {
+  let buffer = '';
+  let text = '';
+  let result = null;
+  function feed(chunk) {
+    buffer += chunk;
+    let newline;
+    while ((newline = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (!line) continue;
+      let event;
+      try { event = JSON.parse(line); } catch { continue; }
+      const delta = event.type === 'stream_event' && event.event?.type === 'content_block_delta' && event.event.delta?.type === 'text_delta'
+        ? event.event.delta.text : null;
+      if (delta) {
+        text += delta;
+        onDelta(text);
+      }
+      if (event.type === 'result') result = event;
+    }
+  }
+  return { feed, text: () => text, result: () => result };
+}
 
 function classifyError(stderr, stdout) {
   const combined = `${stderr}${stdout}`.toLowerCase();
@@ -28,14 +56,16 @@ function isUnknownOptionError(stderr) {
 function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onSlow = () => {}, children = new Set(), spawnImpl = spawn }) {
   let leanFlagsSupported = true;
 
-  function runOnce(prompt, { timeoutMs, slowWarningMs, lean }) {
+  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta }) {
+    const streaming = lean && typeof onDelta === 'function';
+    const parser = streaming ? createStreamParser(onDelta) : null;
     return new Promise((resolve) => {
       const claudePath = getClaudePath();
       if (!claudePath) {
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
         return;
       }
-      const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : [])];
+      const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
       const child = spawnImpl(claudePath, args, { env: makeClaudeEnv(claudePath) });
       children.add(child);
       let stdout = '';
@@ -54,7 +84,10 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         child.kill();
         finish({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
       }, timeoutMs);
-      child.stdout.on('data', (d) => { stdout += d.toString(); });
+      child.stdout.on('data', (d) => {
+        const chunk = d.toString();
+        if (parser) parser.feed(chunk); else stdout += chunk;
+      });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.on('error', () => { /* child exited before reading stdin; close handler reports it */ });
       child.stdin.end(prompt);
@@ -64,6 +97,17 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         if (signal) finish({ success: false, error: 'Cancelled', errorType: 'cancelled', cancelled: true });
       });
       child.on('close', (code) => {
+        if (parser) {
+          const result = parser.result();
+          if (result && !result.is_error && code === 0) {
+            const out = String(result.result ?? parser.text()).trim();
+            finish(out ? { success: true, prompt: out } : { success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' });
+            return;
+          }
+          const message = (result && typeof result.result === 'string' && result.result) || stderr.trim() || 'Claude CLI error';
+          finish({ success: false, error: message, errorType: classifyError(`${message} ${stderr}`, ''), stderr });
+          return;
+        }
         if (code !== 0) {
           finish({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: classifyError(stderr, stdout), stderr });
           return;
@@ -76,8 +120,9 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
     });
   }
 
-  async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000 } = {}) {
-    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported });
+  // onDelta(textSoFar) streams the answer as it's written (skipped on CLIs without the flags).
+  async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta } = {}) {
+    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, onDelta });
     if (!result.success && leanFlagsSupported && isUnknownOptionError(result.stderr || '')) {
       leanFlagsSupported = false;
       return strip(await runOnce(prompt, { timeoutMs, slowWarningMs, lean: false }));
@@ -112,4 +157,4 @@ function parseJsonOutput(raw) {
   }
 }
 
-module.exports = { DEFAULT_MODEL, createClaudeRunner, classifyError, parseJsonOutput };
+module.exports = { DEFAULT_MODEL, createClaudeRunner, createStreamParser, classifyError, parseJsonOutput };

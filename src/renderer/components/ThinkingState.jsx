@@ -4,7 +4,7 @@ import { readableColor } from '../utils/promptUtils.js'
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
 // accentColor must be rgba(R,G,B,A) format with no spaces — alpha digit replaced for bg/border variants
-export default function ThinkingState({ transcript, mode, label, accentColor, transcriptionSlow, generationSlow }) {
+export default function ThinkingState({ transcript, mode, label, accentColor, transcriptionSlow, generationSlow, streamText, context }) {
   const pillStyle = accentColor
     ? { padding: '7px 16px', background: `${accentColor.replace(/[\d.]+\)$/, '0.1)')}`, border: `1px solid ${accentColor.replace(/[\d.]+\)$/, '0.2)')}`, color: readableColor(accentColor) }
     : { padding: '7px 16px', color: 'color-mix(in oklab, rgba(100,180,255,0.8) var(--accent-text-strength), rgb(var(--ink)))' }
@@ -24,9 +24,25 @@ export default function ThinkingState({ transcript, mode, label, accentColor, tr
           {label || (mode === 'image' ? 'Assembling prompt…' : 'Building your prompt')}
         </div>
       </div>
-      <div className="pt-[10px] pb-6" style={PAD}>
-        <MorphCanvas />
-      </div>
+      {context && (context.destinationLabel || context.selectedText) && (
+        <div style={{ ...PAD, marginTop: -8, marginBottom: 10, fontSize: 11.5, color: 'rgba(var(--ink),0.6)' }}>
+          {[context.appName && `For ${context.appName}`, context.selectedText && `using your selection (${context.selectedText.length.toLocaleString()} characters)`].filter(Boolean).join(' · ')}
+        </div>
+      )}
+      {streamText ? (
+        // The prompt as Claude writes it (streamed through the CLI).
+        <div
+          className="selectable"
+          style={{ ...PAD, paddingTop: 4, paddingBottom: 16, maxHeight: 150, overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize: 12.5, lineHeight: 1.6, color: 'rgba(var(--ink),0.82)' }}
+          id="think-stream"
+        >
+          {streamText}
+        </div>
+      ) : (
+        <div className="pt-[10px] pb-6" style={PAD}>
+          <MorphCanvas />
+        </div>
+      )}
       <div className="h-px bg-gradient-to-r from-transparent via-[rgba(var(--ink),0.07)] to-transparent" style={{marginLeft:'auto', marginRight:'auto', width:'60%', marginTop:24, marginBottom:24}} />
       {transcriptionSlow && (
         <div style={{ textAlign: 'center', fontSize: '11px', color: 'color-mix(in oklab, rgba(255,189,46,0.7) var(--accent-text-strength), rgb(var(--ink)))', padding: '0 32px', marginBottom: '12px', lineHeight: 1.5 }}>

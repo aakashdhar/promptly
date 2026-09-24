@@ -39,7 +39,17 @@ if printf '%s' "$input" | grep -q "Assemble a final"; then
   exit 0
 fi
 last=$(printf '%s' "$input" | tail -n 1 | tr -d '"')
-printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s\\n' "$last"
+out=$(printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s' "$last")
+if [[ " $* " == *" stream-json "* ]]; then
+  # Stream in two halves so tests can watch text arrive.
+  half=$(( \${#out} / 2 ))
+  node -e 'console.log(JSON.stringify({type:"stream_event",event:{type:"content_block_delta",delta:{type:"text_delta",text:process.argv[1]}}}))' "\${out:0:$half}"
+  [ -f "$FAKE_DIR/stream-pause" ] && sleep "$(cat "$FAKE_DIR/stream-pause")"
+  node -e 'console.log(JSON.stringify({type:"stream_event",event:{type:"content_block_delta",delta:{type:"text_delta",text:process.argv[1]}}}))' "\${out:$half}"
+  node -e 'console.log(JSON.stringify({type:"result",is_error:false,result:process.argv[1]}))' "$out"
+else
+  printf '%s\n' "$out"
+fi
 touch "$FAKE_DIR/call-$n.done"
 `)
   fs.chmodSync(claude, 0o755)
@@ -51,7 +61,8 @@ f=""; prev=""
 for a in "$@"; do [ "$prev" = "-f" ] && f="$a"; prev="$a"; done
 [ "$(head -c 4 "$f")" = "RIFF" ] || { echo "expected WAV input" >&2; exit 1; }
 cp "$f" "$FAKE_DIR/last-audio.wav"
-echo "spoken words from the fake mic"
+printf '%s\n' "$*" > "$FAKE_DIR/whisper-args"
+if [ -f "$FAKE_DIR/transcript" ]; then cat "$FAKE_DIR/transcript"; else echo "spoken words from the fake mic"; fi
 `, { mode: 0o755 })
   fs.writeFileSync(path.join(engineDir, 'ggml-base.en-q5_1.bin'), 'fake model')
   const whisper = path.join(dir, 'whisper')
@@ -59,10 +70,23 @@ echo "spoken words from the fake mic"
   const ffmpeg = path.join(dir, 'ffmpeg')
   fs.writeFileSync(ffmpeg, '#!/bin/bash\nexit 0\n')
   fs.chmodSync(ffmpeg, 0o755)
-  return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir }
+  // Fake promptly-helper: Accessibility granted, Terminal in front with some text selected.
+  const helper = path.join(dir, 'promptly-helper')
+  fs.writeFileSync(helper, `#!/usr/bin/env node
+const rl = require('readline').createInterface({ input: process.stdin })
+const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
+out({ type: 'ready', trusted: true, tap: true })
+rl.on('line', (line) => {
+  const m = JSON.parse(line)
+  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal', pid: 1 }, selectedText: 'TypeError: cannot read properties of undefined' })
+  else out({ type: 'status', id: m.id, trusted: true, tap: true })
+})
+rl.on('close', () => process.exit(0))
+`, { mode: 0o755 })
+  return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir, helper }
 }
 
-async function launch({ setupComplete = true, signedOut = false } = {}) {
+async function launch({ setupComplete = true, signedOut = false, withHelper = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -81,7 +105,15 @@ async function launch({ setupComplete = true, signedOut = false } = {}) {
   const app = await electron.launch({
     args: [ROOT],
     cwd: ROOT,
-    env: { ...process.env, PROMPTLY_USER_DATA: userData, PROMPTLY_WHISPER_DIR: tools.engineDir, FAKE_DIR: fakeDir, TMPDIR: tmpDir },
+    env: {
+      ...process.env,
+      PROMPTLY_USER_DATA: userData,
+      PROMPTLY_WHISPER_DIR: tools.engineDir,
+      // No helper unless a test asks for one, so the real frontmost app never leaks into tests.
+      PROMPTLY_HELPER: withHelper ? tools.helper : path.join(dir, 'no-helper'),
+      FAKE_DIR: fakeDir,
+      TMPDIR: tmpDir,
+    },
   })
   if (!setupComplete) return { app, dir, fakeDir, tmpDir }
   // Setup is complete, so the bar opens directly (no splash).
@@ -97,6 +129,13 @@ const mainWindow = (app) => app.evaluate(({ BrowserWindow }) => {
   return { visible: w.isVisible() }
 })
 const appState = (app) => app.evaluate(() => globalThis.__promptlyE2E.appState())
+
+// Reads the system clipboard, runs fn, and restores the user's clipboard afterwards.
+async function withClipboard(app, fn) {
+  const saved = await app.evaluate(({ clipboard }) => clipboard.readText())
+  try { return await fn() } finally { await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), saved) }
+}
+const readClipboard = (app) => app.evaluate(({ clipboard }) => clipboard.readText())
 
 function calls(fakeDir) {
   return fs.readdirSync(fakeDir).filter((f) => f.endsWith('.args')).sort()
@@ -162,7 +201,7 @@ test('the mode dropdown lists every mode from the shared registry', async () => 
   for (const m of modes) await expect(page.getByText(m.desc)).toBeVisible()
 })
 
-test('hotkey brings a hidden bar back and records from the prompt screen', async () => {
+test('hotkey from another app records in the pill, then shows the prompt and copies it', async () => {
   ctx = await launch()
   const { app, page, fakeDir, tmpDir } = ctx
   await typeAndSubmit(page, 'first prompt')
@@ -171,16 +210,23 @@ test('hotkey brings a hidden bar back and records from the prompt screen', async
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
   expect((await mainWindow(app)).visible).toBe(false)
 
-  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
-  await expect.poll(() => appState(app)).toBe('RECORDING')
-  expect((await mainWindow(app)).visible).toBe(true)
-  // Option+P is claimed only while recording.
-  expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Alt+P'))).toBe(true)
+  await withClipboard(app, async () => {
+    // Tap to start (from the prompt screen): the bar stays hidden and the pill shows instead.
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    expect((await mainWindow(app)).visible).toBe(false)
+    await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.pillState()?.state)).toBe('recording')
+    // Option+P is claimed only while recording.
+    expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Alt+P'))).toBe(true)
 
-  await page.waitForTimeout(1200)
-  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
-  await expect(page.getByText('spoken words from the fake mic').first()).toBeVisible({ timeout: 15000 })
-  await expect.poll(() => appState(app)).toBe('PROMPT_READY')
+    await page.waitForTimeout(1200)
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+    // The result opens the window, the pill says it was copied, and the clipboard has the prompt.
+    await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
+    expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState()?.state)).toBe('copied')
+    await expect.poll(() => readClipboard(app)).toContain('spoken words from the fake mic')
+  })
   expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Alt+P'))).toBe(false)
 
   // The recording reached the engine as 16 kHz mono WAV (converted in the renderer, no ffmpeg).
@@ -190,8 +236,6 @@ test('hotkey brings a hidden bar back and records from the prompt screen', async
   expect(wav.readUInt16LE(22)).toBe(1)
   // The recording is deleted once it has been transcribed.
   expect(fs.readdirSync(path.join(tmpDir, 'promptly-audio'))).toEqual([])
-  const last = calls(fakeDir).at(-1)
-  expect(fs.readFileSync(path.join(fakeDir, last.replace('.args', '.stdin')), 'utf8')).toContain('spoken words from the fake mic')
 })
 
 test('the bar stays up while typing and hides from the prompt screen', async () => {
@@ -274,12 +318,6 @@ test('a missing Claude Code offers the installer', async () => {
   await expect(setup.locator('#claude-next')).toBeDisabled()
 })
 
-// Reads the system clipboard, runs fn, and restores the user's clipboard afterwards.
-async function withClipboard(app, fn) {
-  const saved = await app.evaluate(({ clipboard }) => clipboard.readText())
-  try { return await fn() } finally { await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), saved) }
-}
-const readClipboard = (app) => app.evaluate(({ clipboard }) => clipboard.readText())
 
 test('fix-06: reopening the setup wizard keeps a single menu bar icon', async () => {
   ctx = await launch()
@@ -362,4 +400,95 @@ test('the app menu keeps the Edit commands macOS needs for copy and paste', asyn
   expect(roles).not.toContain('hide')
   expect(roles).not.toContain('reload')
   expect(roles).not.toContain('toggledevtools')
+})
+
+test('hold to talk from Terminal: destination, selection and dictionary shape the prompt', async () => {
+  ctx = await launch({ withHelper: true })
+  const { app, page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ dictionary: 'Supabase, Promptly' }))
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), 'fix this error in the upload job')
+
+  await withClipboard(app, async () => {
+    await app.evaluate(() => globalThis.__promptlyE2E.hotkey('down'))
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.pillState()?.context?.appName)).toBe('Terminal')
+    await page.waitForTimeout(1000)
+    await app.evaluate(() => globalThis.__promptlyE2E.hotkey('up'))
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+  })
+
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('AI coding agent')
+  expect(stdin).toContain('<selected_text>\nTypeError: cannot read properties of undefined\n</selected_text>')
+  expect(stdin).toContain('Spell these names and terms exactly as written: Supabase, Promptly.')
+  expect(stdin).toContain('"fix this error in the upload job"')
+  // The dictionary also biases transcription.
+  expect(fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8')).toContain('--prompt Supabase, Promptly')
+})
+
+test('a quick tap then another tap works as toggle with the helper too', async () => {
+  ctx = await launch({ withHelper: true })
+  const { app } = ctx
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+  await withClipboard(app, async () => {
+    await app.evaluate(() => { globalThis.__promptlyE2E.hotkey('down'); globalThis.__promptlyE2E.hotkey('up') })
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    await ctx.page.waitForTimeout(800)
+    expect(await appState(app)).toBe('RECORDING')
+    await app.evaluate(() => { globalThis.__promptlyE2E.hotkey('down'); globalThis.__promptlyE2E.hotkey('up') })
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+  })
+})
+
+test('saying a mode first switches to it', async () => {
+  ctx = await launch()
+  const { app, page, fakeDir } = ctx
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), 'Code mode, add retries to the upload job')
+  await withClipboard(app, async () => {
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    await page.waitForTimeout(800)
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+  })
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('Mode: Code')
+  expect(stdin).toContain('"Add retries to the upload job"')
+  expect(await page.evaluate(() => localStorage.getItem('mode'))).toBe('code')
+})
+
+test('the prompt streams in while Claude writes it', async () => {
+  ctx = await launch()
+  const { page, fakeDir } = ctx
+  fs.writeFileSync(path.join(fakeDir, 'stream-pause'), '2')
+  await typeAndSubmit(page, 'stream this please')
+  // First half is on screen before the answer is complete.
+  await expect(page.locator('#think-stream')).toContainText('Role:', { timeout: 10000 })
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+})
+
+test('preferences are saved', async () => {
+  ctx = await launch()
+  const { page } = ctx
+  const before = await page.evaluate(() => window.electronAPI.getPreferences())
+  expect(before).toMatchObject({ hotkey: 'option-space', autoCopy: true, dictionary: '' })
+  expect(before.hotkeyOptions.map((o) => o.value)).toContain('fn')
+  await page.evaluate(() => window.electronAPI.setPreferences({ hotkey: 'right-option', autoCopy: false, dictionary: 'Kubernetes' }))
+  const after = await page.evaluate(() => window.electronAPI.getPreferences())
+  expect(after).toMatchObject({ hotkey: 'right-option', autoCopy: false, dictionary: 'Kubernetes' })
+})
+
+test('setup offers hold to talk when the helper is available, and notices when it is allowed', async () => {
+  ctx = await launch({ setupComplete: false, withHelper: true })
+  const { app } = ctx
+  const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
+  await setup.getByRole('button', { name: 'Set up Promptly' }).click()
+  await setup.locator('#mic-next').click()
+  await expect(setup.getByText('Claude Code is ready.')).toBeVisible({ timeout: 10000 })
+  await setup.locator('#claude-next').click()
+  // The fake helper reports Accessibility as granted.
+  await expect(setup.getByText('Hold to talk is on.')).toBeVisible({ timeout: 5000 })
+  await setup.locator('#hold-next').click()
+  await expect(setup.getByText('Hold this anywhere on your Mac and talk.', { exact: false })).toBeVisible({ timeout: 5000 })
 })

@@ -24,5 +24,5 @@ Constraints:
 8. If the user was vague, make the best specific inference you can and flag it with "(inferred — verify)" at the end of that line.
 9. Do not add a Role section. Do not add a Task section. The four sections above are the complete output.
 
-The user said:
+{CONTEXT}The user said:
 "{TRANSCRIPT}"

@@ -14,6 +14,9 @@ const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/l
 const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
 const claudeSetup = require('./main/claude-setup');
 const { registerRecordingShortcut } = require('./main/shortcuts');
+const { createHelper } = require('./main/helper');
+const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, createHoldToTalk } = require('./main/hotkey');
+const { destinationFor } = require('./main/prompts');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
@@ -27,6 +30,9 @@ if (IS_E2E) {
   // Lets tests fire the global hotkey and read state without registering real shortcuts.
   globalThis.__promptlyE2E = {
     pressHotkey: () => onPrimaryShortcut(),
+    // Simulates the helper's hold-to-talk events.
+    hotkey: (phase) => onHelperHotkey(phase),
+    pillState: () => lastPillState,
     appState: () => currentAppState,
     trayIconsCreated: () => trayIconsCreated,
   };
@@ -67,6 +73,10 @@ const MENU_BAR_ICON_STATE = {
 const BUNDLED_WHISPER_DIR = (IS_E2E && process.env.PROMPTLY_WHISPER_DIR)
   || (app.isPackaged ? path.join(process.resourcesPath, 'whisper') : path.join(__dirname, 'vendor', 'whisper'));
 
+// Hold-to-talk / context helper (native/helper), built by scripts/build-helper.sh.
+const HELPER_PATH = (IS_E2E && process.env.PROMPTLY_HELPER)
+  || (app.isPackaged ? path.join(process.resourcesPath, 'helper', 'promptly-helper') : path.join(__dirname, 'vendor', 'helper', 'promptly-helper'));
+
 // Window backgrounds per theme; must match --bg in src/renderer/index.css and splash.html.
 const WINDOW_BG = { dark: '#1C1C1F', light: '#F4F4F6' };
 const THEMES = ['system', 'light', 'dark'];
@@ -98,6 +108,11 @@ let lastTempAudioPath = null;
 let lastGenerateRequest = null;
 let currentAppState = 'IDLE';
 let shortcutsRegistered = false;
+let registeredAccelerator = null;
+let pillWin = null;
+let pillSession = false;        // this recording is shown in the floating pill, not the bar
+let lastPillState = null;
+let recordRequestedAt = 0;
 
 function winSend(channel, payload) {
   if (!win || win.isDestroyed()) return;
@@ -121,6 +136,7 @@ const whisper = createWhisperRunner({
   getBundledDir: () => BUNDLED_WHISPER_DIR,
   getWhisperPath: () => whisperPath,
   getFfmpegPath: () => ffmpegPath,
+  getPromptHint: () => dictionaryWords().join(', '),
   onSlow: () => winSend('transcription-slow-warning'),
   children: activeChildren,
 });
@@ -151,10 +167,26 @@ function resetAudioTmpDir() {
 
 // ── Generation ────────────────────────────────────────────────────────────────
 
+function dictionaryWords() {
+  return String(config.read().dictionary || '').split(/[\n,]/).map((w) => w.trim()).filter(Boolean).slice(0, 200);
+}
+
 async function runGeneratePrompt({ transcript, mode, options = {} }) {
-  if (getMode(mode).kind === 'builder') return { success: true, prompt: transcript };
-  const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, options);
-  return claude.run(prompt);
+  const modeConf = getMode(mode);
+  if (modeConf.kind === 'builder') return { success: true, prompt: transcript };
+  const context = { ...(options.context || {}), dictionary: dictionaryWords() };
+  const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, { ...options, context });
+  // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
+  const streams = !options.overrideSystemPrompt && mode !== 'email';
+  let lastSent = 0;
+  const onDelta = streams ? (text) => {
+    const now = Date.now();
+    if (now - lastSent < 80) return;
+    lastSent = now;
+    winSend('generation-delta', { text });
+    pillSend({ state: 'thinking', text });
+  } : undefined;
+  return claude.run(prompt, { onDelta });
 }
 
 // ── Menu bar ──────────────────────────────────────────────────────────────────
@@ -276,10 +308,149 @@ function showWindow() {
   win.focus();
 }
 
+// ── Hotkey: hold to talk, tap to toggle ──
+// The helper reports key down/up (hold to talk). Without Accessibility, Electron's
+// globalShortcut only sees presses, which act as taps.
+
+function isRecordingState() {
+  return currentAppState === 'RECORDING' || currentAppState === 'PAUSED' || Date.now() - recordRequestedAt < 1500;
+}
+
+async function startFromHotkey() {
+  recordRequestedAt = Date.now();
+  // With the bar hidden, recording shows in the floating pill and the bar stays out of the way.
+  pillSession = !win || win.isDestroyed() || !win.isVisible();
+  if (pillSession) pillSend({ state: 'recording', mode: currentModeLabel });
+  winSend('hotkey-start');
+  // Capture where the user is and what they've selected, for destination-aware prompts.
+  const ctx = helper.isRunning() ? await helper.context() : null;
+  if (ctx && ctx.app && ctx.app.bundleId !== BUNDLE_ID && !String(ctx.app.bundleId || '').startsWith('com.github.Electron')) {
+    const destination = destinationFor(ctx.app.bundleId);
+    const context = {
+      appName: ctx.app.name || '',
+      bundleId: ctx.app.bundleId || '',
+      destinationLabel: destination ? destination.label : null,
+      selectedText: ctx.selectedText || null,
+    };
+    winSend('recording-context', context);
+    if (pillSession) pillSend({ state: 'recording', mode: currentModeLabel, context });
+  }
+}
+
+function stopFromHotkey() {
+  recordRequestedAt = 0;
+  winSend('hotkey-stop');
+}
+
+function cancelFromHotkey() {
+  recordRequestedAt = 0;
+  winSend('hotkey-cancel');
+}
+
+const holdToTalk = createHoldToTalk({
+  isRecording: isRecordingState,
+  onStart: () => { startFromHotkey(); },
+  onStop: stopFromHotkey,
+  onCancel: cancelFromHotkey,
+});
+
+function onHelperHotkey(phase) {
+  if (phase === 'down') holdToTalk.down();
+  else if (phase === 'up') holdToTalk.up();
+  else if (phase === 'cancel') holdToTalk.cancel();
+}
+
+// globalShortcut fallback: a press is a tap (start, or stop if already recording).
 function onPrimaryShortcut() {
-  // Bring the bar forward so the user can see what the hotkey started or stopped.
-  showWindow();
-  winSend('shortcut-triggered');
+  holdToTalk.down();
+  holdToTalk.up();
+}
+
+const helper = createHelper({
+  binaryPath: HELPER_PATH,
+  onHotkey: onHelperHotkey,
+  onStatus: (status) => {
+    log.info('Helper status', status);
+    applyHotkey();
+    winSend('accessibility-changed', status);
+    if (splashWin && !splashWin.isDestroyed()) splashWin.webContents.send('accessibility-changed', status);
+  },
+  log,
+});
+
+let currentModeLabel = '';
+
+// ── Floating pill ──
+
+function createPillWindow() {
+  pillWin = new BrowserWindow({
+    width: 380,
+    height: 76,
+    show: false,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    focusable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    fullscreenable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+  pillWin.setAlwaysOnTop(true, 'screen-saver');
+  pillWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  pillWin.setIgnoreMouseEvents(true);
+  pillWin.loadFile(path.join(__dirname, 'pill.html'));
+}
+
+function positionPill() {
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const { x, y, width, height } = display.workArea;
+  const [w, h] = pillWin.getSize();
+  pillWin.setPosition(Math.round(x + (width - w) / 2), Math.round(y + height - h - 36));
+}
+
+function pillSend(payload) {
+  lastPillState = payload;
+  if (!pillWin || pillWin.isDestroyed()) return;
+  pillWin.webContents.send('pill-state', payload);
+  if (payload.state === 'hidden') {
+    pillWin.hide();
+    return;
+  }
+  if (!pillWin.isVisible()) {
+    positionPill();
+    pillWin.showInactive();
+  }
+}
+
+// Moves a pill session along as the app state changes: recording → writing → done.
+function updatePill(appState) {
+  if (!pillSession) return;
+  if (appState === 'RECORDING' || appState === 'PAUSED') {
+    pillSend({ ...(lastPillState || {}), state: 'recording', paused: appState === 'PAUSED' });
+  } else if (appState === 'THINKING' || appState === 'ITERATING') {
+    pillSend({ ...(lastPillState || {}), state: 'thinking', text: '' });
+  } else if (appState === 'IDLE') {
+    pillSession = false;
+    pillSend({ state: 'hidden' });
+  } else {
+    // A result or an error: show it in the window, like any other prompt.
+    pillSession = false;
+    const copied = appState === 'PROMPT_READY' || appState === 'EMAIL_READY';
+    if (copied && config.read().autoCopy !== false) {
+      pillSend({ state: 'copied' });
+      setTimeout(() => { if (!pillSession) pillSend({ state: 'hidden' }); }, 1400);
+    } else {
+      pillSend({ state: 'hidden' });
+    }
+    showWindow();
+  }
 }
 
 function notify(body) {
@@ -300,10 +471,30 @@ function updatePauseShortcut(appState) {
 }
 
 function registerShortcut() {
-  if (shortcutsRegistered || IS_E2E) return;
+  if (shortcutsRegistered) return;
   shortcutsRegistered = true;
-  registerRecordingShortcut({
-    globalShortcut, primary: SHORTCUT_PRIMARY, fallback: SHORTCUT_FALLBACK, onTrigger: onPrimaryShortcut, notify, log,
+  applyHotkey();
+}
+
+// Hold-to-talk via the helper when it can watch the keyboard; otherwise tap-to-toggle via
+// globalShortcut (modifier-only presets fall back to Option+Space).
+function applyHotkey() {
+  if (!shortcutsRegistered) return;
+  const preset = getPreset(config.read().hotkey);
+  const helperActive = helper.status().tap;
+  if (helperActive) helper.configure(preset.helper);
+  if (registeredAccelerator) {
+    globalShortcut.unregister(registeredAccelerator);
+    registeredAccelerator = null;
+  }
+  if (helperActive || IS_E2E) return;
+  registeredAccelerator = registerRecordingShortcut({
+    globalShortcut,
+    primary: preset.accelerator || SHORTCUT_PRIMARY,
+    fallback: SHORTCUT_FALLBACK,
+    onTrigger: onPrimaryShortcut,
+    notify,
+    log,
   });
 }
 
@@ -435,7 +626,10 @@ function finishSetup() {
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 
-app.on('before-quit', () => { isQuitting = true; });
+app.on('before-quit', () => {
+  isQuitting = true;
+  helper.stop();
+});
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -485,6 +679,8 @@ app.whenReady().then(async () => {
   await resolveAllPaths();
 
   createWindow();
+  createPillWindow();
+  helper.start();
   // Returning users go straight to the bar; setup only appears when something is missing.
   if (await needsSetup()) {
     createSplashWindow();
@@ -535,6 +731,55 @@ app.whenReady().then(async () => {
     const script = claudeSetup.loginScript(claudeSetup.defaultScriptDir(), claudePath);
     const error = await shell.openPath(script);
     return { ok: !error, error: error || null };
+  });
+
+  // ── Hold to talk, pill, preferences ──
+
+  ipcMain.on('audio-level', (_event, level) => {
+    if (pillSession && pillWin && !pillWin.isDestroyed()) pillWin.webContents.send('audio-level', level);
+  });
+
+  ipcMain.on('mode-changed', (_event, label) => { currentModeLabel = String(label || ''); });
+
+  ipcMain.handle('get-preferences', () => {
+    const stored = config.read();
+    return {
+      hotkey: HOTKEY_PRESETS[stored.hotkey] ? stored.hotkey : DEFAULT_HOTKEY,
+      hotkeyOptions: Object.entries(HOTKEY_PRESETS).map(([value, p]) => ({ value, label: p.label, holdOnly: !p.accelerator })),
+      dictionary: stored.dictionary || '',
+      autoCopy: stored.autoCopy !== false,
+      launchAtLogin: app.getLoginItemSettings().openAtLogin,
+      accessibility: helper.status(),
+      helperAvailable: helper.isRunning(),
+    };
+  });
+
+  ipcMain.handle('set-preferences', (_event, prefs = {}) => {
+    const patch = {};
+    if (typeof prefs.hotkey === 'string' && HOTKEY_PRESETS[prefs.hotkey]) patch.hotkey = prefs.hotkey;
+    if (typeof prefs.dictionary === 'string') patch.dictionary = prefs.dictionary.slice(0, 5000);
+    if (typeof prefs.autoCopy === 'boolean') patch.autoCopy = prefs.autoCopy;
+    config.update(patch);
+    if (typeof prefs.launchAtLogin === 'boolean' && !IS_E2E) app.setLoginItemSettings({ openAtLogin: prefs.launchAtLogin });
+    if (patch.hotkey) applyHotkey();
+    return { ok: true };
+  });
+
+  // Hold to talk and selected text need Accessibility. Asking shows the macOS prompt, which
+  // links to System Settings; the helper notices within 2 s once it's granted.
+  ipcMain.handle('request-accessibility', async () => {
+    if (process.platform === 'darwin' && !IS_E2E) systemPreferences.isTrustedAccessibilityClient(true);
+    const status = await helper.refreshStatus();
+    return status ? { trusted: !!status.trusted, tap: !!status.tap } : helper.status();
+  });
+
+  ipcMain.handle('accessibility-status', async () => {
+    const status = await helper.refreshStatus();
+    return { available: helper.isRunning(), ...(status ? { trusted: !!status.trusted, tap: !!status.tap } : helper.status()) };
+  });
+
+  ipcMain.handle('open-accessibility-settings', () => {
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
   });
 
   // ── Theme ──
@@ -934,12 +1179,16 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('update-menubar-state', (_event, appState) => {
     currentAppState = appState;
+    // The renderer has reported where it is, so the "recording is starting" grace period is over.
+    recordRequestedAt = 0;
+    updatePill(appState);
     updatePauseShortcut(appState);
     updateMenuBarIcon(MENU_BAR_ICON_STATE[appState] || 'idle');
   });
 
   ipcMain.handle('set-last-prompt', (_event, prompt) => {
     lastGeneratedPrompt = prompt || null;
+    if (prompt && config.read().autoCopy !== false) clipboard.writeText(prompt);
   });
 });
 

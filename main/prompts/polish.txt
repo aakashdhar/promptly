@@ -28,5 +28,5 @@ Rules:
 6. If the input is already clean, say so in CHANGES: "· Text was already well-formed"
 7. Output ONLY the two sections above — no preamble, no sign-off
 
-The user said:
+{CONTEXT}The user said:
 "{TRANSCRIPT}"

@@ -11,6 +11,8 @@ export default function SettingsPanel({ onClose }) {
   const [saveMsg, setSaveMsg] = useState('')
   const [saveMsgColor, setSaveMsgColor] = useState('rgba(var(--ink),0.35)')
   const [themeVal, setThemeVal] = useState('system')
+  const [prefs, setPrefs] = useState(null)
+  const [dictionaryDraft, setDictionaryDraft] = useState('')
   const [speechBuiltIn, setSpeechBuiltIn] = useState(false)
   const [modelVal, setModelVal] = useState('')
   const [modelOptions, setModelOptions] = useState([])
@@ -18,6 +20,8 @@ export default function SettingsPanel({ onClose }) {
   useEffect(() => {
     if (!window.electronAPI) return
     window.electronAPI.getThemeSetting?.().then(({ theme }) => setThemeVal(theme))
+    window.electronAPI.getPreferences?.().then((p) => { setPrefs(p); setDictionaryDraft(p.dictionary || '') })
+    const unsubAccess = window.electronAPI.onAccessibilityChanged?.((accessibility) => setPrefs((p) => p && { ...p, accessibility }))
     window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath, claudeModel, modelOptions: options, speechBuiltIn: builtIn }) => {
       setSpeechBuiltIn(!!builtIn)
       setModelVal(claudeModel || '')
@@ -29,6 +33,7 @@ export default function SettingsPanel({ onClose }) {
       setWhisperStatus(whisperPath ? { ok: true, path: whisperPath } : { ok: false, path: '' })
       setFfmpegStatus(ffmpegPath ? { ok: true, path: ffmpegPath } : { ok: false, path: '' })
     })
+    return () => unsubAccess?.()
   }, [])
 
   async function handleBrowseClaude() {
@@ -53,6 +58,16 @@ export default function SettingsPanel({ onClose }) {
       setFfmpegVal(result.path)
       setFfmpegStatus({ ok: true, path: result.path })
     }
+  }
+
+  async function savePrefs(patch) {
+    setPrefs((p) => ({ ...p, ...patch }))
+    await window.electronAPI.setPreferences(patch)
+  }
+
+  async function handleAllowAccessibility() {
+    const accessibility = await window.electronAPI.requestAccessibility()
+    setPrefs((p) => ({ ...p, accessibility }))
   }
 
   async function handleThemeChange(value) {
@@ -117,7 +132,7 @@ export default function SettingsPanel({ onClose }) {
   const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(var(--ink),0.56)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
 
   return (
-    <div style={{ padding: '16px 20px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+    <div style={{ padding: '16px 20px 18px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflowY: 'auto' }}>
       {/* header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(var(--ink),0.86)', fontFamily: 'inherit' }}>Settings</span>
@@ -148,6 +163,68 @@ export default function SettingsPanel({ onClose }) {
           ))}
         </div>
       </div>
+
+      {prefs && (
+        <>
+          {/* Hotkey + hold to talk */}
+          <div style={{ marginBottom: 14 }}>
+            <label htmlFor="settings-hotkey" style={{ ...sectionLabel, display: 'block' }}>Talk shortcut</label>
+            <select
+              id="settings-hotkey"
+              value={prefs.hotkey}
+              onChange={e => savePrefs({ hotkey: e.target.value })}
+              style={{ ...inputStyle(null), fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              {prefs.hotkeyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <div style={{ fontSize: 10.5, color: 'rgba(var(--ink),0.6)', marginTop: 5, lineHeight: 1.5 }}>
+              {prefs.accessibility?.tap
+                ? 'Hold it while you talk and let go to finish, or tap it to start and stop.'
+                : 'Tap to start and stop. Allow Accessibility below to hold it while you talk.'}
+              {prefs.hotkey === 'fn' && ' Set System Settings → Keyboard → "Press 🌐 key to" to "Do Nothing" first.'}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={sectionLabel}>Hold to talk and selected text</div>
+            {prefs.accessibility?.trusted ? (
+              <div style={{ fontSize: 11.5, color: readableColor('rgba(48,209,88,0.9)') }}>✓ Allowed — Promptly can use your selection as context.</div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, fontSize: 11.5, color: 'rgba(var(--ink),0.7)', lineHeight: 1.5 }}>
+                  Needs Accessibility permission. Promptly only watches your talk shortcut and reads selected text when you start recording.
+                </div>
+                <button onClick={handleAllowAccessibility} style={{ ...browseBtn, color: 'rgba(var(--ink),0.85)' }}>Allow</button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label htmlFor="settings-dictionary" style={{ ...sectionLabel, display: 'block' }}>Dictionary</label>
+            <textarea
+              id="settings-dictionary"
+              value={dictionaryDraft}
+              onChange={e => setDictionaryDraft(e.target.value)}
+              onBlur={() => dictionaryDraft !== prefs.dictionary && savePrefs({ dictionary: dictionaryDraft })}
+              placeholder="Names and terms to spell right, e.g. Supabase, Kubernetes, Aakash"
+              rows={2}
+              style={{ ...inputStyle(null), height: 'auto', padding: '7px 10px', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.5, userSelect: 'text' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+            {[
+              ['autoCopy', 'Copy prompts to the clipboard automatically'],
+              ['launchAtLogin', 'Open Promptly when I log in'],
+            ].map(([key, label]) => (
+              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(var(--ink),0.85)', cursor: 'pointer', WebkitAppRegion: 'no-drag' }}>
+                <input type="checkbox" id={`settings-${key}`} checked={!!prefs[key]} onChange={e => savePrefs({ [key]: e.target.checked })} />
+                {label}
+              </label>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Claude CLI */}
       <div style={{ marginBottom: 12 }}>

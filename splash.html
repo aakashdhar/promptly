@@ -130,7 +130,8 @@ details.manual summary { cursor: pointer; width: fit-content; }
     <ol>
       <li data-step="mic"><span class="n">1</span>Microphone</li>
       <li data-step="claude"><span class="n">2</span>Claude Code</li>
-      <li data-step="done"><span class="n">3</span>Ready</li>
+      <li data-step="hold"><span class="n">3</span>Hold to talk</li>
+      <li data-step="done"><span class="n">4</span>Ready</li>
     </ol>
   </nav>
 
@@ -238,10 +239,30 @@ details.manual summary { cursor: pointer; width: fit-content; }
     </div>
   </section>
 
-  <!-- Step 3: Ready -->
+  <!-- Step 3: Hold to talk (optional) -->
+  <section class="screen" id="screen-hold" aria-labelledby="hold-title">
+    <h1 id="hold-title">Hold to talk</h1>
+    <p class="lede">Hold ⌥ Space while you talk and let go when you're done. Promptly can also use text you've selected as context — "turn this into a spec". Both need Accessibility permission.</p>
+
+    <div class="state visible" id="hold-ask">
+      <div class="actions"><button class="btn" id="hold-allow">Allow Accessibility</button></div>
+      <p class="hint">macOS opens System Settings. Turn on Promptly in the list, then come back — Promptly notices on its own. Without it, tap ⌥ Space to start and stop instead.</p>
+    </div>
+    <div class="state" id="hold-ok">
+      <div class="status ok"><span class="dot"></span><div>Hold to talk is on.<div class="detail">Promptly only watches your talk shortcut, and reads selected text when you start recording.</div></div></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="btn" id="hold-next">Continue</button>
+      <button class="btn link" id="hold-skip">Skip for now</button>
+    </div>
+  </section>
+
+  <!-- Step 4: Ready -->
   <section class="screen" id="screen-done" aria-labelledby="done-title">
     <h1 id="done-title">You're set</h1>
-    <p class="lede">Press this anywhere on your Mac to start talking. Press it again when you're done.</p>
+    <p class="lede" id="done-lede">Press this anywhere on your Mac to start talking. Press it again when you're done.</p>
     <div class="keys" aria-label="Option plus Space">
       <div class="key" id="key-opt">⌥</div>
       <div class="key wide" id="key-space">space</div>
@@ -257,7 +278,8 @@ details.manual summary { cursor: pointer; width: fit-content; }
 
 <script>
 const api = window.electronAPI;
-const STEPS = ['mic', 'claude', 'done'];
+const STEPS = ['mic', 'claude', 'hold', 'done'];
+let holdPoll = null;
 let claudePoll = null;
 let speechBuiltIn = true;
 
@@ -271,6 +293,7 @@ function show(id) {
     if (i === index) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
   });
   if (id !== 'claude') stopClaudePoll();
+  if (id !== 'hold') { clearInterval(holdPoll); holdPoll = null; }
 }
 
 function showState(screen, stateId) {
@@ -376,7 +399,30 @@ document.getElementById('copy-install').addEventListener('click', () => {
   document.getElementById('copy-install').textContent = 'Copied';
 });
 document.getElementById('claude-next').addEventListener('click', () => {
-  if (speechBuiltIn) { show('done'); animateKeys(); } else { show('speech'); runScreen2(); }
+  if (speechBuiltIn) showHold(); else { show('speech'); runScreen2(); }
+});
+
+// ── Hold to talk (Accessibility) ─────────────────────────────────────────────
+function setHold(status) {
+  const on = !!(status && status.trusted);
+  showState('hold', on ? 'hold-ok' : 'hold-ask');
+  document.getElementById('hold-skip').hidden = on;
+  document.getElementById('hold-next').textContent = on ? 'Continue' : 'Continue without it';
+  if (on) { clearInterval(holdPoll); holdPoll = null; }
+}
+async function showHold() {
+  show('hold');
+  const status = await api.accessibilityStatus();
+  if (status && status.available === false) { finishToDone(); return; }   // no helper in this build
+  setHold(status);
+  if (!status || !status.trusted) holdPoll = setInterval(async () => setHold(await api.accessibilityStatus()), 2000);
+}
+function finishToDone() { show('done'); animateKeys(); }
+document.getElementById('hold-allow').addEventListener('click', async () => setHold(await api.requestAccessibility()));
+document.getElementById('hold-next').addEventListener('click', finishToDone);
+document.getElementById('hold-skip').addEventListener('click', finishToDone);
+api.onAccessibilityChanged && api.onAccessibilityChanged((status) => {
+  if (document.getElementById('screen-hold').classList.contains('visible')) setHold(status);
 });
 
 // ── Speech fallback ──────────────────────────────────────────────────────────
@@ -384,16 +430,18 @@ async function runScreen2() {
   const result = await api.splashCheckWhisper();
   speechBuiltIn = !!result.builtIn;
   if (result.ok) {
-    show('done');
-    animateKeys();
+    showHold();
     return;
   }
   document.getElementById('speech-detail').textContent = 'No speech engine found.';
 }
-document.getElementById('speech-skip').addEventListener('click', () => { show('done'); animateKeys(); });
+document.getElementById('speech-skip').addEventListener('click', () => showHold());
 
 // ── Ready ────────────────────────────────────────────────────────────────────
 function animateKeys() {
+  api.accessibilityStatus().then((s) => {
+    if (s && s.tap) document.getElementById('done-lede').textContent = "Hold this anywhere on your Mac and talk. Let go when you're done — your prompt is copied and ready.";
+  });
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const keys = [document.getElementById('key-opt'), document.getElementById('key-space')];
   setTimeout(() => keys.forEach((k) => k.classList.add('pressed')), 500);

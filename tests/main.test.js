@@ -391,3 +391,157 @@ describe('recording shortcut', () => {
     expect(notes[0]).toMatch(/could not register a recording shortcut/)
   })
 })
+
+describe('hold to talk', () => {
+  const { createHoldToTalk, getPreset, HOTKEY_PRESETS } = require('../main/hotkey.js')
+  function setup() {
+    let t = 0
+    let recording = false
+    const events = []
+    const h = createHoldToTalk({
+      isRecording: () => recording,
+      onStart: () => { events.push('start'); recording = true },
+      onStop: () => { events.push('stop'); recording = false },
+      onCancel: () => { events.push('cancel'); recording = false },
+      now: () => t,
+    })
+    return { h, events, advance: (ms) => { t += ms } }
+  }
+
+  it('records while held and stops on release', () => {
+    const { h, events, advance } = setup()
+    h.down(); advance(1200); h.up()
+    expect(events).toEqual(['start', 'stop'])
+  })
+
+  it('treats a quick tap as start, and the next press as stop', () => {
+    const { h, events, advance } = setup()
+    h.down(); advance(120); h.up()
+    expect(events).toEqual(['start'])
+    advance(3000); h.down(); advance(100); h.up()
+    expect(events).toEqual(['start', 'stop'])
+  })
+
+  it('cancels when a modifier-only key was part of another shortcut', () => {
+    const { h, events } = setup()
+    h.down(); h.cancel()
+    expect(events).toEqual(['start', 'cancel'])
+  })
+
+  it('has presets, falling back to Option+Space', () => {
+    expect(getPreset('nope')).toBe(HOTKEY_PRESETS['option-space'])
+    expect(HOTKEY_PRESETS.fn.accelerator).toBeNull()
+    expect(HOTKEY_PRESETS['right-option'].helper).toEqual({ keyCode: 61, modifiers: [], modifierOnly: true })
+  })
+})
+
+describe('helper process', () => {
+  const { createHelper } = require('../main/helper.js')
+  let fake
+  beforeAll(() => {
+    fake = path.join(tmp, 'fake-helper')
+    fs.writeFileSync(fake, `#!/usr/bin/env node
+const rl = require('readline').createInterface({ input: process.stdin })
+const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
+out({ type: 'ready', trusted: true, tap: true })
+rl.on('line', (line) => {
+  const m = JSON.parse(line)
+  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal' }, selectedText: 'npm ERR! missing script' })
+  else if (m.cmd === 'status' || m.cmd === 'configure') { out({ type: 'status', id: m.id, trusted: true, tap: true }); if (m.cmd === 'configure') out({ type: 'hotkey', phase: 'down' }) }
+})
+rl.on('close', () => process.exit(0))
+`, { mode: 0o755 })
+  })
+
+  it('reports status, answers context requests and forwards hotkey events', async () => {
+    const statuses = []
+    const phases = []
+    const h = createHelper({ binaryPath: fake, onStatus: (s) => statuses.push(s), onHotkey: (p) => phases.push(p) })
+    expect(h.start()).toBe(true)
+    await expect.poll(() => statuses.length).toBe(1)
+    expect(h.status()).toEqual({ trusted: true, tap: true })
+    const ctx = await h.context()
+    expect(ctx).toMatchObject({ app: { bundleId: 'com.apple.Terminal' }, selectedText: 'npm ERR! missing script' })
+    await h.configure({ keyCode: 49, modifiers: ['option'] })
+    await expect.poll(() => phases).toEqual(['down'])
+    h.stop()
+  })
+
+  it('resolves null when there is no helper binary', async () => {
+    const h = createHelper({ binaryPath: path.join(tmp, 'no-helper') })
+    h.start()
+    expect(await h.context()).toBeNull()
+    h.stop()
+  })
+})
+
+describe('destination and selection context', () => {
+  const { destinationFor, buildContextBlock } = require('../main/prompts.js')
+
+  it('maps apps to destinations', () => {
+    expect(destinationFor('com.apple.Terminal').key).toBe('agent')
+    expect(destinationFor('com.todesktop.230313mzl4w4u92').key).toBe('agent') // Cursor
+    expect(destinationFor('com.microsoft.VSCode').key).toBe('agent')
+    expect(destinationFor('com.google.Chrome').key).toBe('chat')
+    expect(destinationFor('com.anthropic.claudefordesktop').key).toBe('chat')
+    expect(destinationFor('com.figma.Desktop').key).toBe('design')
+    expect(destinationFor('com.apple.finder')).toBeNull()
+  })
+
+  it('adds destination guidance to template modes only', () => {
+    const prompt = buildModePrompt('fix the flaky test', 'balanced', { context: { bundleId: 'com.apple.Terminal', appName: 'Terminal' } })
+    expect(prompt).toContain('AI coding agent')
+    expect(prompt.indexOf('AI coding agent')).toBeLessThan(prompt.indexOf('The user said:'))
+    expect(buildModePrompt('x', 'polish', { context: { bundleId: 'com.apple.Terminal' } })).not.toContain('AI coding agent')
+  })
+
+  it('includes selected text and dictionary words, and nothing when there is no context', () => {
+    const prompt = buildModePrompt('tighten this', 'polish', { context: { selectedText: 'We are going to be doing a launch', appName: 'Notes', dictionary: ['Promptly'] } })
+    expect(prompt).toContain('<selected_text>\nWe are going to be doing a launch\n</selected_text>')
+    expect(prompt).toContain('selected this text in Notes')
+    expect(prompt).toContain('Spell these names and terms exactly as written: Promptly.')
+    expect(buildContextBlock({ kind: 'template' }, {})).toBe('')
+    expect(buildModePrompt('x', 'balanced')).toBe(buildModePrompt('x', 'balanced', { context: {} }))
+  })
+})
+
+describe('streaming', () => {
+  const { createStreamParser } = require('../main/llm.js')
+
+  it('collects text deltas and the final result', () => {
+    const seen = []
+    const p = createStreamParser((t) => seen.push(t))
+    const ev = (o) => JSON.stringify(o) + '\n'
+    p.feed(ev({ type: 'system' }) + ev({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Role:' } } }).slice(0, 20))
+    p.feed(ev({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Role:' } } }).slice(20))
+    p.feed(ev({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: ' You are' } } }))
+    p.feed(ev({ type: 'result', is_error: false, result: 'Role: You are' }))
+    expect(seen).toEqual(['Role:', 'Role: You are'])
+    expect(p.result().result).toBe('Role: You are')
+  })
+
+  it('streams through the runner and falls back on CLIs without stream flags', async () => {
+    const bin = path.join(tmp, 'claude-stream')
+    fs.writeFileSync(bin, `#!/bin/bash
+cat > /dev/null
+if [[ " $* " == *" stream-json "* ]]; then
+  echo '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Hello"}}}'
+  echo '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":" there"}}}'
+  echo '{"type":"result","is_error":false,"result":"Hello there"}'
+else
+  echo "Hello there"
+fi
+`, { mode: 0o755 })
+    const deltas = []
+    const r = await createClaudeRunner({ getClaudePath: () => bin }).run('hi', { onDelta: (t) => deltas.push(t) })
+    expect(r).toEqual({ success: true, prompt: 'Hello there' })
+    expect(deltas).toEqual(['Hello', 'Hello there'])
+  })
+
+  it('reports errors from the result event', async () => {
+    const bin = path.join(tmp, 'claude-stream-err')
+    fs.writeFileSync(bin, `#!/bin/bash\ncat > /dev/null\necho '{"type":"result","is_error":true,"result":"Not logged in · Please run /login"}'\nexit 1\n`, { mode: 0o755 })
+    const r = await createClaudeRunner({ getClaudePath: () => bin }).run('hi', { onDelta: () => {} })
+    expect(r).toMatchObject({ success: false, errorType: 'auth' })
+  })
+})

@@ -67,6 +67,10 @@ step "Preparing built-in speech-to-text (whisper.cpp)"
 bash scripts/fetch-whisper.sh || fail "Could not build or download the speech engine"
 ok "Speech engine ready"
 
+step "Building the hold-to-talk helper"
+bash scripts/build-helper.sh || fail "Could not build promptly-helper"
+ok "Helper ready"
+
 # ── 3. Build renderer ─────────────────────────────────────────────────────────
 step "Building renderer (Vite)"
 npm run build:renderer > /tmp/promptly-renderer.log 2>&1 \
@@ -96,6 +100,12 @@ WHISPER_CLI="$APP_PATH/Contents/Resources/whisper/whisper-cli"
 [ -f "$WHISPER_CLI" ] || fail "Speech engine missing from the app bundle"
 codesign --force --sign "$CERT_NAME" --timestamp=none --options runtime "$WHISPER_CLI" \
   || fail "codesign failed for whisper-cli"
+
+# Hold-to-talk helper (same identity, so the Accessibility grant stays valid across updates)
+HELPER_BIN="$APP_PATH/Contents/Resources/helper/promptly-helper"
+[ -f "$HELPER_BIN" ] || fail "promptly-helper missing from the app bundle"
+codesign --force --sign "$CERT_NAME" --timestamp=none --options runtime "$HELPER_BIN" \
+  || fail "codesign failed for promptly-helper"
 
 # Helper .app bundles
 find "$APP_PATH/Contents" -name "*.app" \

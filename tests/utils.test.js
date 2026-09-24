@@ -345,3 +345,20 @@ describe('encodeWav', () => {
     expect([view.getInt16(44, true), view.getInt16(46, true), view.getInt16(48, true), view.getInt16(50, true)]).toEqual([0, 32767, -32768, 32767])
   })
 })
+
+describe('detectSpokenMode', () => {
+  it('switches mode from a spoken prefix', async () => {
+    const { detectSpokenMode } = await import('../src/renderer/utils/spokenMode.js')
+    expect(detectSpokenMode('Code mode, add retries to the upload job')).toEqual({ mode: 'code', text: 'Add retries to the upload job' })
+    expect(detectSpokenMode('email mode: tell the team the release moved')).toEqual({ mode: 'email', text: 'Tell the team the release moved' })
+    expect(detectSpokenMode('Chain of thought mode. Why is the build slow?')).toEqual({ mode: 'chain', text: 'Why is the build slow?' })
+    expect(detectSpokenMode('switch to polish mode we are going to ship friday')).toEqual({ mode: 'polish', text: 'We are going to ship friday' })
+  })
+
+  it('leaves ordinary sentences alone', async () => {
+    const { detectSpokenMode } = await import('../src/renderer/utils/spokenMode.js')
+    expect(detectSpokenMode('the code mode of the app is broken')).toBeNull()
+    expect(detectSpokenMode('Design a landing page')).toBeNull()
+    expect(detectSpokenMode('code mode')).toBeNull()
+  })
+})

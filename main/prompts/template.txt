@@ -36,5 +36,5 @@ Visual style:
 9. Write the prompt in second person: "You are...", "Your task is...", "Write..."
 10. Section labels must be plain text — no markdown bold, no asterisks, no hashtags.
 
-The user said:
+{CONTEXT}The user said:
 "{TRANSCRIPT}"

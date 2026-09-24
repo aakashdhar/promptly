@@ -37,5 +37,5 @@ Output format:
 8. Under Reference points — list every app, brand, website, or aesthetic the designer mentioned. If they said "like Notion but warmer" — write that exactly.
 9. The prompt must be specific enough that two different designers reading it would produce similar work.
 
-The user said:
+{CONTEXT}The user said:
 "{TRANSCRIPT}"

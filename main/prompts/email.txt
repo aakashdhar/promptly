@@ -25,5 +25,5 @@ Rules:
 9. The body field must use actual newline characters (\n) for line breaks, not literal backslash-n
 10. Ensure the JSON is valid and parseable
 
-User's description:
+{CONTEXT}User's description:
 {TRANSCRIPT}

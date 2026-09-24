@@ -64,7 +64,7 @@ const STATE_HEIGHTS = {
   HISTORY: 720,
   ITERATING: 200,
   TYPING: 244,
-  SETTINGS: 460,
+  SETTINGS: 600,
   EXPANDED: 860,
   IMAGE_BUILDER: 520,
   IMAGE_BUILDER_DONE: 380,
@@ -105,6 +105,10 @@ export default function App() {
   // Bumped on every new generation and on abort; a result whose id is stale is ignored.
   const opIdRef = useRef(0)
   const emailHistoryIdRef = useRef(null)
+  // App + selected text captured when a hotkey recording started (destination-aware prompts).
+  const contextRef = useRef(null)
+  const [recordingContext, setRecordingContext] = useState(null)
+  const [streamText, setStreamText] = useState('')
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
@@ -172,6 +176,8 @@ export default function App() {
       setThinkingPhase(builderStates.includes(fromState) ? 2 : 1)
     }
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
+    if (newState === STATES.THINKING || newState === STATES.RECORDING || newState === STATES.TYPING) setStreamText('')
+    if (newState === STATES.RECORDING || newState === STATES.TYPING) setRecordingContext(null)
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -186,7 +192,7 @@ export default function App() {
 
   transitionRef.current = transition
 
-  const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef })
+  const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef })
 
   const handleGenerateResultRef = useRef(null)
 
@@ -203,6 +209,7 @@ export default function App() {
     resumeRecordingRef,
     startTimer,
     stopTimer,
+    requestStop,
   } = useRecording({
     STATES,
     transitionRef,
@@ -217,6 +224,8 @@ export default function App() {
     originalTranscript,
     isExpandedRef,
     setTranscriptionError,
+    contextRef,
+    setMode,
   })
 
   const {
@@ -269,6 +278,8 @@ export default function App() {
 
   const handleGenerateResult = useCallback((genResult, transcript, opId) => {
     if (opId !== undefined && opId !== opIdRef.current) return
+    // Read the live mode: a spoken "code mode, …" may have switched it moments ago.
+    const mode = modeRef.current
     if (!genResult.success) {
       if (isExpandedRef.current) {
         setGenerationError({
@@ -317,6 +328,7 @@ export default function App() {
         setEmailOutput(parsed)
         setEmailSaved(false)
         emailHistoryIdRef.current = saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email' })
+        window.electronAPI?.setLastPrompt?.(parsed.subject + '\n\n' + parsed.body)
         transitionRef.current(STATES.EMAIL_READY)
       } catch {
         setGenerationError({ errorType: 'unknown', error: 'Failed to parse email response', canRetry: true })
@@ -430,6 +442,7 @@ Return ONLY valid JSON:
     setEmailOutput,
     setTranscriptionSlow,
     setGenerationSlow,
+    contextRef,
   })
 
   const { handleTypingSubmit, handleRegenerate } = useTextInput({
@@ -442,6 +455,7 @@ Return ONLY valid JSON:
     polishToneRef,
     handleGenerateResultRef,
     opIdRef,
+    contextRef,
   })
 
   const { elapsed: thinkingElapsed, currentLabel: thinkingCurrentLabel, labelOpacity: thinkingLabelOpacity } = useThinkingProgress({
@@ -480,7 +494,21 @@ Return ONLY valid JSON:
     closeSettings,
     handleExpand,
     isExpandedRef,
+    requestStop,
+    dismissRecording: handleDismiss,
   })
+
+  useEffect(() => {
+    if (!window.electronAPI?.onRecordingContext) return
+    const unsubContext = window.electronAPI.onRecordingContext((ctx) => {
+      contextRef.current = ctx
+      setRecordingContext(ctx)
+    })
+    const unsubDelta = window.electronAPI.onGenerationDelta((data) => {
+      if (stateRef.current === STATES.THINKING) setStreamText(data?.text || '')
+    })
+    return () => { unsubContext?.(); unsubDelta?.() }
+  }, [])
 
   const recM = Math.floor(recSecs / 60)
   const recS = recSecs % 60
@@ -604,7 +632,7 @@ Return ONLY valid JSON:
               </>
             )}
             {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} transcriptionSlow={transcriptionSlow} generationSlow={generationSlow} />
+              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} transcriptionSlow={transcriptionSlow} generationSlow={generationSlow} streamText={streamText} context={recordingContext} />
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState

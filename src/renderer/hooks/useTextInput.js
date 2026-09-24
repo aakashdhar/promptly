@@ -10,9 +10,12 @@ export default function useTextInput({
   polishToneRef,
   handleGenerateResultRef,
   opIdRef,
+  contextRef,
 }) {
   const handleTypingSubmit = useCallback(async (typedText) => {
     isIterated.current = false
+    // Typed input has no captured app or selection.
+    if (contextRef) contextRef.current = null
     originalTranscript.current = typedText
     setThinkTranscript(typedText)
     transitionRef.current(STATES.THINKING)
@@ -39,7 +42,10 @@ export default function useTextInput({
     }
 
     const mode = modeRef.current
-    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
+    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode, {
+      ...(mode === 'polish' && { tone: polishToneRef.current }),
+      ...(contextRef?.current && { context: contextRef.current }),
+    })
     handleGenerateResultRef.current(genResult, originalTranscript.current, opId)
   }, [])
 

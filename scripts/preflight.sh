@@ -72,6 +72,12 @@ env -i HOME="$HOME" "$WHISPER_DIR/whisper-cli" -m "$MODEL_FILE" -f "$SILENCE" -l
 rm -f "$SILENCE"
 ok "CHECK 6: whisper-cli transcribes"
 
+# CHECK 6b — hold-to-talk helper builds and answers
+bash scripts/build-helper.sh >/dev/null || fail "promptly-helper failed to build"
+REPLY=$( (printf '{"cmd":"status","id":1}\n'; sleep 0.5) | vendor/helper/promptly-helper | grep -c '"type":"status"' || true)
+[ "$REPLY" -ge 1 ] || fail "promptly-helper did not answer a status request"
+ok "CHECK 6b: promptly-helper built ($(lipo -archs vendor/helper/promptly-helper)) and answers"
+
 # CHECK 7 — every Claude process (main.js + main/) uses makeClaudeEnv
 python3 - <<'PYEOF'
 import sys, glob

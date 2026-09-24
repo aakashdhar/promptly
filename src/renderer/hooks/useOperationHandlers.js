@@ -18,6 +18,7 @@ export default function useOperationHandlers({
   setEmailOutput,
   setTranscriptionSlow,
   setGenerationSlow,
+  contextRef,
 }) {
 
   function handleAbort() {
@@ -54,10 +55,10 @@ export default function useOperationHandlers({
     setTranscriptionSlow(false)
     transitionRef.current(STATES.THINKING)
 
-    const genResult = await window.electronAPI.generatePrompt(
-      text, modeRef.current,
-      modeRef.current === 'polish' ? { tone: polishToneRef.current } : undefined
-    )
+    const genResult = await window.electronAPI.generatePrompt(text, modeRef.current, {
+      ...(modeRef.current === 'polish' && { tone: polishToneRef.current }),
+      ...(contextRef?.current && { context: contextRef.current }),
+    })
     handleGenerateResultRef.current(genResult, text, opId)
   }, [])
 

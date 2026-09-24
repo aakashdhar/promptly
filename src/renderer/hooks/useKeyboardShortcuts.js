@@ -23,19 +23,24 @@ export default function useKeyboardShortcuts({
   closeSettings,
   handleExpand,
   isExpandedRef,
+  requestStop,
+  dismissRecording,
 }) {
   useEffect(() => {
     if (!window.electronAPI) return
 
     const unsubs = [
-      window.electronAPI.onShortcutTriggered(() => {
-        if (modeRef.current === 'email' && isExpandedRef && !isExpandedRef.current) {
-          handleExpand?.()
-          return
-        }
+      // Hold to talk / tap to toggle: main decides start vs stop.
+      window.electronAPI.onHotkeyStart?.(() => {
+        if (RESTARTABLE_STATES.includes(stateRef.current)) startRecordingRef.current()
+      }),
+      window.electronAPI.onHotkeyStop?.(() => {
         const s = stateRef.current
-        if (s === STATES.RECORDING || s === STATES.PAUSED) stopRecordingRef.current()
-        else if (RESTARTABLE_STATES.includes(s)) startRecordingRef.current()
+        if (s === STATES.RECORDING || s === STATES.PAUSED || RESTARTABLE_STATES.includes(s)) requestStop?.()
+      }),
+      window.electronAPI.onHotkeyCancel?.(() => {
+        const s = stateRef.current
+        if (s === STATES.RECORDING || s === STATES.PAUSED) dismissRecording?.()
       }),
 
       window.electronAPI.onModeSelected((key) => {

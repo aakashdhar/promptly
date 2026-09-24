@@ -96,11 +96,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // main → renderer (on: event listener registration)
-  onShortcutTriggered: (callback) => {
-    ipcRenderer.on('shortcut-triggered', callback)
-    return () => ipcRenderer.removeListener('shortcut-triggered', callback)
-  },
-
   onShowShortcuts: (callback) => {
     const cb = () => callback()
     ipcRenderer.on('show-shortcuts', cb)
@@ -181,6 +176,74 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   setThemeSetting: (theme) =>
     ipcRenderer.invoke('set-theme-setting', { theme }),
+
+  // Hold to talk, pill and preferences
+  onHotkeyStart: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('hotkey-start', cb)
+    return () => ipcRenderer.removeListener('hotkey-start', cb)
+  },
+
+  onHotkeyStop: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('hotkey-stop', cb)
+    return () => ipcRenderer.removeListener('hotkey-stop', cb)
+  },
+
+  onHotkeyCancel: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('hotkey-cancel', cb)
+    return () => ipcRenderer.removeListener('hotkey-cancel', cb)
+  },
+
+  onRecordingContext: (callback) => {
+    const cb = (_event, context) => callback(context)
+    ipcRenderer.on('recording-context', cb)
+    return () => ipcRenderer.removeListener('recording-context', cb)
+  },
+
+  onGenerationDelta: (callback) => {
+    const cb = (_event, data) => callback(data)
+    ipcRenderer.on('generation-delta', cb)
+    return () => ipcRenderer.removeListener('generation-delta', cb)
+  },
+
+  onAccessibilityChanged: (callback) => {
+    const cb = (_event, status) => callback(status)
+    ipcRenderer.on('accessibility-changed', cb)
+    return () => ipcRenderer.removeListener('accessibility-changed', cb)
+  },
+
+  onPillState: (callback) => {
+    const cb = (_event, state) => callback(state)
+    ipcRenderer.on('pill-state', cb)
+    return () => ipcRenderer.removeListener('pill-state', cb)
+  },
+
+  onAudioLevel: (callback) => {
+    const cb = (_event, level) => callback(level)
+    ipcRenderer.on('audio-level', cb)
+    return () => ipcRenderer.removeListener('audio-level', cb)
+  },
+
+  sendAudioLevel: (level) => ipcRenderer.send('audio-level', level),
+
+  reportMode: (label) => ipcRenderer.send('mode-changed', label),
+
+  getPreferences: () =>
+    ipcRenderer.invoke('get-preferences'),
+
+  setPreferences: (prefs) =>
+    ipcRenderer.invoke('set-preferences', prefs),
+
+  requestAccessibility: () =>
+    ipcRenderer.invoke('request-accessibility'),
+
+  accessibilityStatus: () =>
+    ipcRenderer.invoke('accessibility-status'),
+
+  openAccessibilitySettings: () =>
+    ipcRenderer.invoke('open-accessibility-settings'),
 
   retryGeneration: () =>
     ipcRenderer.invoke('retry-generation'),

@@ -12,9 +12,9 @@
     "dev": "vite",
     "build:renderer": "vite build",
     "start:react": "npm run build:renderer && electron .",
-    "dist": "npm run fetch-whisper && npm run build:renderer && electron-builder --universal",
+    "dist": "npm run fetch-whisper && npm run build-helper && npm run build:renderer && electron-builder --universal",
     "lint": "eslint .",
-    "dist:unsigned": "npm run fetch-whisper && npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
+    "dist:unsigned": "npm run fetch-whisper && npm run build-helper && npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
     "create-cert": "bash scripts/create-cert.sh",
     "sign-app": "bash scripts/sign-app.sh",
     "dist:signed": "bash scripts/build-signed.sh",
@@ -26,7 +26,8 @@
     "test": "vitest run",
     "test:e2e": "npm run build:renderer && playwright test",
     "fetch-whisper": "bash scripts/fetch-whisper.sh",
-    "dmg-background": "electron scripts/make-dmg-background.js"
+    "dmg-background": "electron scripts/make-dmg-background.js",
+    "build-helper": "bash scripts/build-helper.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -74,7 +75,7 @@
       "signIgnore": [
         "uninstall\\.sh$"
       ],
-      "x64ArchFiles": "Contents/Resources/whisper/whisper-cli"
+      "x64ArchFiles": "Contents/Resources/{whisper/whisper-cli,helper/promptly-helper}"
     },
     "dmg": {
       "title": "Promptly",
@@ -110,6 +111,7 @@
       "shared/**",
       "main/**",
       "splash.html",
+      "pill.html",
       "dist-renderer/**",
       "package.json"
     ],
@@ -120,6 +122,13 @@
         "filter": [
           "whisper-cli",
           "*.bin"
+        ]
+      },
+      {
+        "from": "vendor/helper",
+        "to": "helper",
+        "filter": [
+          "promptly-helper"
         ]
       }
     ]

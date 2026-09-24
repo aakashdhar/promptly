@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { recordingToWav } from '../utils/audio.js'
+import { detectSpokenMode } from '../utils/spokenMode.js'
 
 export default function useRecording({
   STATES,
@@ -15,6 +16,8 @@ export default function useRecording({
   originalTranscript,
   isExpandedRef,
   setTranscriptionError,
+  contextRef,
+  setMode,
 }) {
   const [recSecs, setRecSecs] = useState(0)
   const mediaRecorderRef = useRef(null)
@@ -22,6 +25,33 @@ export default function useRecording({
   const isProcessingRef = useRef(false)
   const isPausedRef = useRef(false)
   const recTimerRef = useRef(null)
+  const levelMeterRef = useRef(null)
+  const stopRequestedRef = useRef(false)
+
+  // Sends the microphone level ~16x a second, for the floating pill's waveform.
+  function startLevelMeter(stream) {
+    try {
+      const ctx = new AudioContext()
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 512
+      ctx.createMediaStreamSource(stream).connect(analyser)
+      const samples = new Float32Array(analyser.fftSize)
+      const timer = setInterval(() => {
+        analyser.getFloatTimeDomainData(samples)
+        let sum = 0
+        for (let i = 0; i < samples.length; i++) sum += samples[i] * samples[i]
+        window.electronAPI?.sendAudioLevel?.(Math.min(1, Math.sqrt(sum / samples.length) * 5))
+      }, 60)
+      levelMeterRef.current = { ctx, timer }
+    } catch { /* the waveform is decoration; recording works without it */ }
+  }
+  function stopLevelMeter() {
+    const meter = levelMeterRef.current
+    if (!meter) return
+    clearInterval(meter.timer)
+    meter.ctx.close().catch(() => {})
+    levelMeterRef.current = null
+  }
 
   function startTimer() {
     recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
@@ -37,6 +67,9 @@ export default function useRecording({
   }
 
   const startRecording = useCallback(async () => {
+    // Context (app + selection) for this recording arrives from main just after it starts.
+    if (contextRef) contextRef.current = null
+    stopRequestedRef.current = false
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       const recorder = new MediaRecorder(stream)
@@ -46,6 +79,12 @@ export default function useRecording({
       recorder.start()
       transitionRef.current(STATES.RECORDING)
       startTimer()
+      startLevelMeter(stream)
+      // Hold-to-talk released before the microphone was ready: stop right away.
+      if (stopRequestedRef.current) {
+        stopRequestedRef.current = false
+        stopRecordingRef.current()
+      }
     } catch {
       transitionRef.current(STATES.ERROR, { message: 'Microphone access denied' })
     }
@@ -57,6 +96,7 @@ export default function useRecording({
     isProcessingRef.current = true
 
     stopTimer()
+    stopLevelMeter()
     isPausedRef.current = false
     recorder.stop()
     recorder.stream.getTracks().forEach((t) => t.stop())
@@ -98,26 +138,41 @@ export default function useRecording({
         return
       }
 
-      const text = transcribeResult.transcript.trim()
+      let text = transcribeResult.transcript.trim()
       if (!text) {
         transitionRef.current(STATES.IDLE)
         return
+      }
+      // "Code mode, …" / "Email mode: …" switches mode for this and later recordings.
+      const spoken = detectSpokenMode(text)
+      if (spoken) {
+        modeRef.current = spoken.mode
+        setMode?.(spoken.mode)
+        text = spoken.text
       }
 
       originalTranscript.current = text
       setThinkTranscript(text)
 
       const mode = modeRef.current
-      const genResult = await window.electronAPI.generatePrompt(
-        text,
-        mode,
-        mode === 'polish' ? { tone: polishToneRef.current } : undefined
-      )
+      const genResult = await window.electronAPI.generatePrompt(text, mode, {
+        ...(mode === 'polish' && { tone: polishToneRef.current }),
+        ...(contextRef?.current && { context: contextRef.current }),
+      })
       onGenerateResult.current(genResult, text, opId)
     }
   }, [])
 
+  // Stop now, or as soon as recording has actually started (hold-to-talk released early).
+  const requestStop = useCallback(() => {
+    const recorder = mediaRecorderRef.current
+    if (recorder && (recorder.state === 'recording' || recorder.state === 'paused')) stopRecordingRef.current()
+    else stopRequestedRef.current = true
+  }, [])
+
   const handleDismiss = useCallback(() => {
+    stopLevelMeter()
+    stopRequestedRef.current = false
     const recorder = mediaRecorderRef.current
     if (recorder) {
       recorder.stream.getTracks().forEach((t) => t.stop())
@@ -172,5 +227,6 @@ export default function useRecording({
     resumeRecordingRef,
     startTimer,
     stopTimer,
+    requestStop,
   }
 }
