@@ -22,11 +22,12 @@ promptly/
 ├── main.js              ← Electron wiring: windows, tray, shortcuts, IPC handlers
 ├── main/                ← main-process logic, no Electron imports, unit-tested
 │   ├── llm.js           ←   every Claude CLI call (stdin prompt, --model, cancel, timeouts)
-│   ├── whisper.js       ←   transcription: built-in whisper.cpp (default), Python Whisper fallback
+│   ├── whisper.js       ←   transcription: built-in whisper.cpp + voice detection (default), Python Whisper fallback
+│   ├── speech-models.js ←   the optional "Best accuracy" model download (large-v3-turbo)
 │   ├── claude-setup.js  ←   Claude Code status, install/sign-in via Terminal
 │   ├── helper.js        ←   runs native/helper (hold to talk, frontmost app, selected text)
 │   ├── hotkey.js        ←   hotkey presets + hold-vs-tap state machine
-│   ├── dictation.js     ←   Dictation tidy (um/uh, spoken line breaks), never rewrites
+│   ├── dictation.js     ←   Dictation tidy (um/uh, ₹/%, spoken line breaks), never rewrites
 │   ├── profile.js       ←   It writes like you: your notes + the log of your edits
 │   ├── shortcuts.js     ←   globalShortcut fallback registration
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv
@@ -53,7 +54,7 @@ promptly/
 ## Commands
 
 ```bash
-npm run fetch-whisper # build whisper.cpp + download the model into vendor/ (once)
+npm run fetch-whisper # build whisper.cpp + download the models into vendor/ (once)
 npm run build-helper  # build native/helper into vendor/helper (swiftc, universal)
 npm run start:react   # build the renderer and run the app
 npm run dev           # Vite dev server for the renderer only

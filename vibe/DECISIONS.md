@@ -1989,3 +1989,24 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Also: the prompt score (a second Claude call) now runs only when opened ("Score this prompt"), not on every prompt;
 >   the pause button in the window now resumes too; the mode button is a real <button>.
 ---
+
+---
+## D-SPEECH — No lost speech, Best accuracy model, symbols — 2026-09-24
+> Trigger: a 10-phrase test read into Promptly and Wispr Flow. Promptly dropped phrases 2–4 entirely, misheard
+>   launch→lawns and refund→reference, and garbled Hinglish; Wispr got nearly all of it (but changed meaning twice:
+>   dropped "rather", added "free trial").
+> Cause of the lost phrases (reproduced): `--no-timestamps`. whisper.cpp then advances a full 30 s window whenever the
+>   model stops early, which a pause triggers. Fix: timestamps on, plus Silero voice detection (885 KB, shipped in
+>   vendor/whisper) to cut silence; a second pass without voice detection if a recording over 20 s gives < 0.4 words/s.
+> Accuracy: benchmarked on an M1 8 GB with a 90 s recording — base.en 3.0 s (Postbergs, Figmo, goating), small.en 5.2 s
+>   (dropped a sentence start), large-v3-turbo q5_0 8.4 s (all right). Short clips: 0.6 s vs 3.1 s (the large model loads
+>   each time). Decision: keep base.en built in as Standard; large-v3-turbo is an optional 547 MB "Best accuracy"
+>   download (checksum-pinned, userData/models), always on the GPU. Not shipped in the DMG to keep it small.
+>   Rejected for now: a resident whisper-server (sub-second, but ~1 GB of RAM held all day on 8 GB Macs).
+> Languages: with Best accuracy, "I speak" English / Hindi / Detect automatically. large-v3-turbo transcribed a Hindi
+>   test in Devanagari almost perfectly. Dictation types that script; prompt modes get an instruction to understand any
+>   language and write in English.
+> Symbols: Dictation writes spoken money and percentages as symbols (₹, $, €, %), on by default, switchable. Pounds are
+>   left alone (weight vs money). Nothing else is reworded — still the difference from Wispr.
+---
+

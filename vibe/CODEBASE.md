@@ -25,21 +25,23 @@
 | `vite.config.mjs` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
 | `main.js` | Electron wiring only: main window + splash lifecycle, menu bar tray, global hotkey (shows the bar), Option+P while recording, hide-on-blur rules (`KEEP_VISIBLE_ON_BLUR`), and every `ipcMain.handle`. Logic lives in `main/`. `PROMPTLY_USER_DATA` switches to a throwaway profile for e2e tests | `claude` / `evalClaude` runners, `whisper` runner, `activeChildren` (cancel), `lastGenerateRequest` (retry), `currentAppState` |
 | `main/llm.js` | Claude CLI runner: prompt on stdin, `--model`, lean flags (`--tools ""`, `--no-session-persistence`, `--strict-mcp-config`, minimal `--system-prompt`) with fallback for older CLIs; timeouts, slow warning, cancel on process exit | `createClaudeRunner()` → `{ run, cancelAll }`, `parseJsonOutput`, `classifyError`, `DEFAULT_MODEL` |
-| `main/whisper.js` | Transcription: built-in whisper.cpp from vendor/ or Resources/whisper (CPU until the background GPU warm-up finishes), Python Whisper fallback | `createWhisperRunner()` → `{ engine, transcribe, warmUp, downloadModel }`, `findBundledEngine`, `cleanTranscript` |
+| `main/whisper.js` | Transcription: built-in whisper.cpp from vendor/ or Resources/whisper with Silero voice detection and timestamps on (never `--no-timestamps`, see Gotchas); the downloaded "Best accuracy" model and its language when chosen; a second pass without voice detection when a long recording comes back with too few words. CPU until the GPU warm-up finishes (the large model always uses the GPU). Python Whisper fallback | `createWhisperRunner({ getAccurateModel, getLanguage, … })` → `{ engine, transcribe, warmUp, downloadModel }`, `findBundledEngine`, `bundledArgs`, `segmentsToText`, `wavSeconds`, `looksIncomplete` |
+| `main/speech-models.js` | "Best accuracy" model (Whisper large-v3-turbo q5_0, 547 MB): download to userData/models with redirects, progress, cancel, SHA-256 check; remove. The Settings language list | `createSpeechModels({ dir, model })` → `{ installedPath, download, cancel, remove, isDownloading, sizeMB }`, `ACCURATE_MODEL`, `SPEECH_LANGUAGES` |
 | `main/claude-setup.js` | Claude Code status (`--version` + `auth status --json`), and Terminal .command scripts for the official installer and `claude auth login` | `getClaudeStatus`, `installScript`, `loginScript`, `INSTALL_COMMAND` |
 | `src/renderer/utils/audio.js` | Converts recordings to 16 kHz mono WAV for the built-in engine | `recordingToWav`, `blobToWav`, `encodeWav` |
-| `scripts/fetch-whisper.sh` | Builds whisper.cpp (universal, Metal) and downloads the checksum-pinned model into vendor/whisper/ | — |
+| `scripts/fetch-whisper.sh` | Builds whisper.cpp (universal, Metal) and downloads the checksum-pinned model and Silero voice-activity model into vendor/whisper/ | — |
 | `scripts/make-dmg-background.js` | Renders build/dmg-background(@2x).png — install + first-open instructions — with Electron | — |
 | `e2e/ui.spec.mjs` | Walks every screen (setup, idle, typing, thinking, prompt, polish, email, image/video/workflow builders, history, settings, expanded, pill) in light and dark; screenshots to test-results/ui/ and fails on any layout-audit finding | — |
 | `e2e/layout-audit.mjs` | In-page checks: clipped or cut-off text, off-window/edge-hugging content (<12 px), overlapping controls, sideways-scrolling text, text under 11 px, contrast under 4.5:1 (3:1 large) | `auditLayout`, `formatIssues` |
 | `native/helper/main.swift` | promptly-helper: JSON-lines protocol; active event tap for the talk key (down/up/cancel), frontmost app, selected text via AX | — |
 | `main/helper.js` | Spawns the helper, request/response with ids + timeouts, restarts on crash, reports trust/tap status | `createHelper()` → `{ start, stop, isRunning, status, configure, context, requestAccess, refreshStatus }` |
 | `main/hotkey.js` | Hotkey presets and the hold (≥350 ms) vs tap state machine | `HOTKEY_PRESETS`, `getPreset`, `createHoldToTalk` |
-| `main/dictation.js` | Dictation tidy: drops only hesitation sounds (um, uh, er, hmm), turns "new line"/"new paragraph" into breaks, reports what it removed; never rewrites | `tidyDictation(text, { removeFillers })` → `{ text, removed }`, `describeRemoved` |
+| `main/dictation.js` | Dictation tidy: drops only hesitation sounds (um, uh, er, hmm), writes spoken money and percentages as symbols (12,450 rupees → ₹12,450, 25 percent → 25%), turns "new line"/"new paragraph" into breaks, reports what it removed; never rewrites | `tidyDictation(text, { removeFillers, symbols })` → `{ text, removed }`, `describeRemoved`, `formatSymbols` |
 | `src/renderer/hooks/useHotkeyWords.js` | Names the talk shortcut that works right now for hints ("Double-tap ⌃ and talk"), refreshed on focus and when Accessibility changes | `useHotkeyWords()` → `{ short, action }` |
 | `src/renderer/hooks/useDictation.js` | Dictation results and "Make it a prompt": keeps both versions (as said / as a prompt in the chosen style) and switches without a second Claude call; typed text in Dictation mode goes straight to a prompt | `useDictation()` → `{ dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation }` |
 | `main/profile.js` | It writes like you: which notes a mode gets (`profile` in modes.json: voice → "How you write", about → "About you"), and the local log of the last 20 edits (userData/style-edits.json) | `createEditLog()` → `{ add, list, count, clear }`, `profileFor`, `cleanNotes`, `formatEdits` |
 | `main/prompts/learn-style.txt` | Drafts "How you write" notes from pasted samples or logged edits (5–10 bullets, habits only, no personal facts) | — |
+| `src/renderer/components/SpeechSection.jsx` | Settings → Speech recognition: Standard (built in) or Best accuracy (download with progress/cancel, then "I speak" language picker, Remove) | props: `{ speech, onSave }` |
 | `src/renderer/components/YouSection.jsx` | Settings → You: the two notes, Learn from my writing, Suggest from my edits, Forget my edits. Drafts are suggestions until "Use these" | props: `{ prefs, onSave, onEditCount }` |
 | `main/shortcuts.js` | globalShortcut registration with fallback + notice | `registerRecordingShortcut` |
 | `pill.html` | Floating pill window: recording (waveform, mode, destination), streaming text, copied | — |
@@ -178,6 +180,11 @@ See the IPC surface table in `vibe/ARCHITECTURE.md` (kept complete; `tests/ipc-c
 ---
 
 ## Gotchas (learned the hard way)
+
+- **Never pass `--no-timestamps` to whisper-cli.** Without timestamps whisper.cpp moves on a whole 30-second window
+  whenever the model stops early, so after a pause everything else said in that window vanished (seen live: phrases
+  2–4 of a 10-phrase test missing). With timestamps it resumes from the last segment. Voice detection (`--vad`) is the
+  second guard. `tests/speech.test.js` pins both.
 
 Carried over from the project-memory notes (July 2026) that are still true and not enforced by code or tests.
 
