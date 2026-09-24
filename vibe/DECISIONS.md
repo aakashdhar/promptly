@@ -1826,3 +1826,34 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > This is an architectural reality of the single-state-machine pattern, not an SRP violation.
 > BL-EMAIL-003 downgraded from P1 to P3 (monitor-only).
 ---
+
+---
+## D-DEFECTS-1 — Defect batch from the 2026-09-24 codebase review — 2026-09-24
+> 15 confirmed defects fixed on branch fix/defects-batch-1 (commits 379fd40, d14cea2).
+> Highlights: the hotkey now shows the bar and restarts from finished states; Cmd+/, Cmd+Shift+/, Cmd+Option+I are no longer
+>   registered system-wide and Option+P only while recording; transcription uses the same Whisper model onboarding downloads
+>   (base, was tiny); abort uses operation ids + kills the child process (a stale abort flag used to swallow the next prompt);
+>   retry replays the last request with its tone/override; Whisper runs via execFile; temp audio is cleaned up; the bar no
+>   longer hides on blur mid-task; image builder labels Midjourney flags as Midjourney-only.
+> Trade-off: the base model is slower than tiny on CPU, so the transcription timeout went from 30 s to 60 s.
+---
+
+---
+## D-FOUNDATION — Main process modules, shared mode registry, Claude via stdin, tests — 2026-09-24
+> Supersedes: D-APP-ORCHESTRATOR's view of main.js as the place for logic; the "manual smoke test is the test suite" and
+>   "vanilla JS, zero build step" statements in the original ARCHITECTURE.md (already untrue after the React migration).
+> Decision: main.js keeps only Electron wiring. Logic moves to Electron-free modules under main/ (llm, whisper, binaries,
+>   platform/darwin, prompts, config, log, tray-icon) so it can be unit-tested and so a Windows port only adds platform/win32.js.
+> Decision: shared/modes.json is the single mode list for main and renderer. Prompt text moved to main/prompts/*.txt,
+>   verified byte-identical to the previous inline strings for all 12 modes and the eval prompt.
+> Decision: Claude runs as `claude -p --model M --tools "" --no-session-persistence --strict-mcp-config --system-prompt <minimal>`
+>   with the prompt on stdin. Measured on the same prompt: 12 s vs 14 s, and the output followed the plain-text label rule
+>   the old invocation broke (it added **bold**). Falls back to plain flags once if the CLI rejects an option.
+>   `--bare` was rejected: it disables OAuth/keychain auth, which is how users log in.
+> Decision: model is a setting (config.json `claudeModel`, default unchanged: claude-sonnet-4-6).
+> Decision: testing = Vitest unit tests (85) + Playwright e2e (7 flows) driving the real app with fake claude/whisper and
+>   Chromium's fake mic. PROMPTLY_USER_DATA isolates e2e runs from the real profile and shortcuts.
+> Deferred: App.jsx reducer/state-machine refactor until e2e covers the expanded view and builders.
+> Removed IPC (unused): check-claude-path, resize-window-width, reset-setup-complete, uninstall-promptly, request-mic,
+>   check-mic-status, shortcut-conflict. Added: cancel-operations.
+---

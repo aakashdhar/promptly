@@ -1,14 +1,14 @@
 # CODEBASE.md — Promptly
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
-> Last updated: 2026-05-19 (feat: FEATURE-PREFLIGHT-HEALTH-CHECKS — scripts/preflight.sh, scripts/assert-splash.js, .github/workflows/preflight.yml)
+> Last updated: 2026-09-24 (Foundation pass — main/ modules, shared/modes.json, tests + e2e, defect fixes)
 
 ---
 
 ## Current state
 
 **Phase:** All features complete — React migration mainlined, deploy gate unlocked (2026-04-24). SRP refactor + tests added 2026-04-28.
-**Files written:** 7 source files + eslint.config.js + 27 React renderer files + 1 test file + vitest.config.js
+**Files written:** main.js + 10 main/ modules + shared/modes.json + preload + splash + ~45 React renderer files + 3 unit test files + 1 e2e suite
 
 ---
 
@@ -19,19 +19,29 @@
 | `package.json` | Electron + electron-builder config, npm scripts (start, dev, build:renderer, start:react, dist, lint, preflight, assert, prerelease), devDeps only | — |
 | `scripts/preflight.sh` | Pre-release environment checks (CHECKs 1-10): non-login shell reachability for node/claude/ffmpeg/whisper, makeClaudeEnv coverage scan, SettingsPanel path field presence, IPC handler ffmpegPath wiring | — |
 | `scripts/assert-splash.js` | Structural assertions on splash.html escape hatches: s1-notfound path input, s1-notresponding path input, submit buttons, check-again triggers | — |
-| `.github/workflows/preflight.yml` | CI: runs splash assertions + makeClaudeEnv CHECK 7 on push/PR to main | — |
+| `.github/workflows/preflight.yml` | CI: npm ci, lint, unit tests, renderer build, splash assertions, CHECK 7 | — |
 | `entitlements.plist` | Mic + JIT + hardened runtime entitlements for macOS distribution | — |
-| `eslint.config.js` | ESLint 9 flat config for main.js and preload.js | — |
-| `vite.config.js` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
-| `main.js` | Electron main: window + splashWin lifecycle, IPC handlers, PATH resolution, global shortcut, menu bar icon. Loads React build (NODE_ENV=development → localhost:5173, else dist-renderer/index.html). Both BrowserWindows use `transparent:false, backgroundColor:'#0A0A14'` — no vibrancy. MODE_CONFIG has 11 modes total (adds workflow: passthrough:true, instruction:'' and email: standalone:true with full email drafting system prompt). | `createWindow()`, `resolveClaudePath()`, `resolveWhisperPath()`, `resolveFfmpegPath()`, `registerShortcut()`, `buildTrayMenu()`, `updateTrayMenu()`, `handleUninstall()`, `crc32()`, `pngEncode()`, `createMicIcon()`, `createMenuBarIcon()`, `claudePath`, `whisperPath`, `win`, `splashWin`, `tray`, `menuBarTray`, `pulseInterval`, `lastGeneratedPrompt`, `SHORTCUT_PRIMARY`, `SHORTCUT_FALLBACK`, `PROMPT_TEMPLATE`, `MODE_CONFIG` |
-| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash | `window.electronAPI` — includes `generatePrompt(transcript, mode, options?)`, `generateRaw`, `evaluatePrompt`, `copyToClipboard`, `checkClaudePath`, `resizeWindow`, `transcribeAudio`, `showModeMenu`, `setWindowButtonsVisible`, `saveFile`, `resizeWindowWidth`, `setWindowSize`, `onShortcutTriggered`, `onModeSelected`, `getTheme`, `onThemeChanged`, `onShowShortcuts`, `onShowHistory`, `onShortcutPause`, `updateMenuBarState(state)`, `setLastPrompt(prompt)`, `retryTranscription()`, `onTranscriptionSlowWarning(cb)`, `retryGeneration()`, `onGenerationSlowWarning(cb)`, `reopenWizard()` |
+| `eslint.config.js` | ESLint 9 flat config over the whole repo; React + react-hooks plugins for src/ | — |
+| `vite.config.mjs` | Vite build config — root: src/renderer, outDir: dist-renderer/, base: './', plugins: react() + tailwindcss() | — |
+| `main.js` | Electron wiring only: main window + splash lifecycle, menu bar tray, global hotkey (shows the bar), Option+P while recording, hide-on-blur rules (`KEEP_VISIBLE_ON_BLUR`), and every `ipcMain.handle`. Logic lives in `main/`. `PROMPTLY_USER_DATA` switches to a throwaway profile for e2e tests | `claude` / `evalClaude` runners, `whisper` runner, `activeChildren` (cancel), `lastGenerateRequest` (retry), `currentAppState` |
+| `main/llm.js` | Claude CLI runner: prompt on stdin, `--model`, lean flags (`--tools ""`, `--no-session-persistence`, `--strict-mcp-config`, minimal `--system-prompt`) with fallback for older CLIs; timeouts, slow warning, cancel on process exit | `createClaudeRunner()` → `{ run, cancelAll }`, `parseJsonOutput`, `classifyError`, `DEFAULT_MODEL` |
+| `main/whisper.js` | Whisper transcription (execFile, arg array) and model download with tqdm progress | `WHISPER_MODEL` ('base'), `createWhisperRunner()` → `{ transcribe, downloadModel }`, `findDownloadedModel`, `makeWhisperEnv` |
+| `main/binaries.js` | Binary lookup order (Settings → known paths → nvm → login shell) | `resolveClaudePath`, `resolveWhisperPath`, `resolveFfmpegPath`, `makeClaudeEnv`, `PYTHON_WHISPER` |
+| `main/platform/darwin.js` | Every macOS-specific path and command (binary locations, shell lookup, pyenv shims, Whisper PATH + SSL env, model cache dirs, uninstall paths, tccutil) | see file |
+| `main/platform/index.js` | Picks the platform module (darwin only today) | — |
+| `main/prompts.js` | Builds prompts from main/prompts/*.txt and shared/modes.json; single-pass placeholder fill | `buildModePrompt`, `buildEvalPrompt`, `fillTemplate`, `getMode`, `MODES` |
+| `main/prompts/*.txt` | Prompt text: template.txt (template modes), design/refine/email/polish.txt (standalone), eval.txt (scorecard) | — |
+| `main/config.js` | config.json store with atomic writes | `createConfigStore(path)` → `{ read, write, update }` |
+| `main/log.js` | File logger: ~/Library/Logs/Promptly/main.log, rotates at 1 MB | `createLogger(dir)` |
+| `main/tray-icon.js` | Draws the menu bar mic icon as a PNG buffer | `drawMicIconPng`, `isTemplateState` |
+| `shared/modes.json` | The single mode registry: key, label, group, kind (template/standalone/builder), description, dot colour, promptName + instruction for template modes | — |
+| `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash. Kept in step with main by tests/ipc-contract.test.js | `window.electronAPI` — see ARCHITECTURE.md IPC surface |
 | `splash.html` | 4-screen onboarding wizard + legacy quick-check for returning users — separate splashWin BrowserWindow (vanilla HTML, independent of React). Window: 560×620. Background: `linear-gradient(135deg, #0A0A14 → #0D0A18 → #0A0A14)` + blue/purple ambient glow divs. All screens scrollable (overflow-y: auto). Screens 1/2/3 do NOT auto-advance — each shows "Continue →"; "Check again ↺" is secondary. Screen 0: on repeat launches calls `runChecks()`. Screen 1 (s1-notfound) and Screen 2 (s2-whisper-notfound) each show an "Already installed?" section with `which claude`/`which whisper` copy command + pasteable path input + "Use path →" button for nvm/custom-path users. s1-notresponding also has a "Not the right path?" card with `#s1-notresponding-path` input pre-populated with the found-but-failing path. Screen 4 now runs mic check via `getUserMedia` — Launch button gated on grant, denied state shows System Settings deep-link + retry. pathPanel inputs have `-webkit-app-region: no-drag`. | `runChecks()`, `setCheck()`, `showReady()`, `showScreen(n)`, `runScreen4()`, `s1ShowError(stateId, showHelp)`, `s1UseManualPath()`, `s1NotrespondingUseManualPath()`, `s2UseManualPath()` |
-| `index.html` | Legacy vanilla JS renderer — stays on main branch; replaced by React build on feat/react-migration | (see pre-migration codebase) |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
 | `src/renderer/index.css` | Tailwind v4 entry — `@import "tailwindcss"`, @theme (color/font/animation tokens), @keyframes, body reset (`background: #0A0A14`), scrollbar utilities | — |
 | `src/renderer/main.jsx` | React root — imports index.css, `ReactDOM.createRoot().render(<App />)` | — |
 | `src/renderer/App.jsx` | State machine root — all states, IPC wiring, theme, iteration flow, history, polish mode. Recording, keyboard, image-builder, video-builder, workflow-builder, and email flows delegated to hooks/handlers. Bar container: `linear-gradient(135deg, #0A0A14 → #0D0A18)`. STATES includes VIDEO_BUILDER + VIDEO_BUILDER_DONE + WORKFLOW_BUILDER + WORKFLOW_BUILDER_DONE + TRANSCRIPTION_ERROR + GENERATION_ERROR + EMAIL_READY; STATE_HEIGHTS: all expanded-only states = 860 (including EMAIL_READY: 860). thinkingAccentColor state controls colored accent for video/workflow/email THINKING. handleGenerateResult has video + workflow + email branches; email branch parses raw JSON → emailOutput → EMAIL_READY; also handles all generation failures (expanded → GENERATION_ERROR; collapsed → ERROR). imageBuilderProps, videoBuilderProps, workflowBuilderProps bundles returned from hooks and forwarded to ExpandedView. emailOutput + emailSaved forwarded to ExpandedView → ExpandedDetailPanel. `abortRef` guards stale THINKING result. `handleAbort()` routes to correct cancel handler per state. `handleRetryTranscription()` retries whisper on lastTempAudioPath then re-runs generation. `handleRetryGeneration()` calls retryGeneration IPC then delegates result to handleGenerateResultRef. Auto-expand: mode-selected IPC listener auto-expands when new mode is 'email'. `thinkingPhase` (1 or 2) set in transition() — 2 when entering THINKING from IMAGE_BUILDER/VIDEO_BUILDER/WORKFLOW_BUILDER. `useThinkingProgress` called with mode + thinkingPhase + isActive; result forwarded to ExpandedView. | `STATES`, `STATE_HEIGHTS`, `transition()`, `handleGenerateResult()`, `handleRegenerate()`, `handleAbort()`, `handleRetryTranscription()`, `handleRetryGeneration()`, `handleEmailSave()`, `handleEmailIterate()`, `openHistory()` / `closeHistory()`. Refs: `transitionRef`, `handleGenerateResultRef`, `isIterated`, `generatedPromptRef`, `modeRef`, `abortRef`. State vars: `thinkingAccentColor`, `thinkingPhase`, `transcriptionError`, `transcriptionSlow`, `generationError`, `generationSlow`, `emailOutput`, `emailSaved`. |
-| `src/renderer/hooks/useMode.js` | Mode localStorage wrapper hook. MODE_LABELS includes `video: 'Video'`, `workflow: 'Workflow'`, and `email: 'Email'`. | `useMode()` → `{ mode, setMode, modeLabel }` |
+| `src/renderer/hooks/useMode.js` | Mode localStorage wrapper; labels and default come from shared/modes.json | `useMode()` → `{ mode, setMode, modeLabel }` |
 | `src/renderer/hooks/useTone.js` | Polish tone localStorage wrapper — `promptly_polish_tone` key, default `'formal'` | `getPolishTone()`, `setPolishTone()`, `usePolishTone()` → `{ tone, setTone }` |
 | `src/renderer/hooks/usePolishMode.js` | Polish flow hook — owns polishResult, copied, tone state, polishToneRef, handlePolishToneChange | `parsePolishOutput(raw)` (named export), `usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES })` → `{ polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }` |
 | `src/renderer/hooks/useWindowResize.js` | resizeWindow IPC wrapper hook | `useWindowResize()` → `{ resizeWindow }` |
@@ -71,8 +81,12 @@
 | `src/renderer/utils/history.js` | History localStorage utilities — all history access goes through this module | `saveToHistory`, `getHistory`, `deleteHistoryItem`, `clearHistory`, `searchHistory`, `formatTime`, `bookmarkHistoryItem`, `rateHistoryItem` |
 | `src/renderer/utils/promptUtils.js` | Shared prompt-rendering utilities (84 lines). getModeTagStyle includes workflow (green) and email (teal) cases. parseImageAnalysisOutput + parseImageAssemblyOutput: fence-strip + JSON.parse with outermost-brace fallback (same pattern as parseEmailOutput). | `parseSections(text)` → `[{label, body}]`; `getModeTagStyle(mode)` → `{background, color}`; `parseEmailOutput(raw)`, `parseImageAnalysisOutput(raw)`, `parseImageAssemblyOutput(raw)` |
 | `src/renderer/utils/thinkingLabels.js` | Pure utility for THINKING state progress UX — mode-specific label sequences and accent colours. No React, no side effects. | `getLabelSequence(mode, phase)` → `string[]`; `getModeAccent(mode)` → RGBA string |
-| `vitest.config.js` | Vitest test runner config — environment: node, include: tests/**/*.test.js | — |
-| `tests/utils.test.js` | Unit tests for pure utility functions — 35 tests across 6 modules (246 lines) | `parseSections` (5), `getModeTagStyle` (9), `formatTime` (4), `parsePolishOutput` (5), `parseImageAnalysisOutput` (6), `parseImageAssemblyOutput` (6) |
+| `vitest.config.mjs` | Vitest config — environment: node, include: tests/**/*.test.js | — |
+| `tests/utils.test.js` | Renderer utility tests, including structured-output validation (email, workflow, video, image) | — |
+| `tests/main.test.js` | main/ module tests: prompt building, Claude runner against a fake CLI (stdin, --model, fallback, errors, timeout, cancel), config, logger, binaries, Whisper helpers, tray icon | — |
+| `tests/ipc-contract.test.js` | Fails if preload and main IPC drift apart, or the renderer/splash calls a method preload doesn't expose | — |
+| `e2e/app.spec.mjs` | Playwright tests that drive the real app with fake claude/whisper scripts and Chromium's fake mic | 7 flows (typing, abort, dropdown, hotkey + voice, hide-on-blur, retry tone, ffmpeg path) |
+| `playwright.config.mjs` | Playwright config — testDir e2e, 1 worker | — |
 | `src/renderer/components/VideoBuilderState.jsx` | VIDEO_BUILDER state — Veo 3.1 video prompt review screen. 9 chip rows (cameraMovement, aspectRatio[API], resolution[API], audio[Veo], cinematicStyle, lighting, colourGrade, pacing, shotType[advanced]). AI pre-filled chips show orange dot; user chips no dot. Special rows: Setting text input, Dialogue toggle+input, First frame toggle, Ref images toggle. 4K cost warning. Advanced toggle. Footer: Reiterate, Copy now, Confirm & generate. Always expanded-only. | props: `transcript`, `videoDefaults`, `videoAnswers`, `showAdvanced`, `activePickerParam`, `dialogueText`, `settingDetail`, `onChipRemove`, `onChipAdd`, `onParamChange`, `onToggleAdvanced`, `onOpenPicker`, `onClosePicker`, `onDialogueChange`, `onSettingChange`, `onConfirm`, `onCopyNow`, `onReiterate` |
 | `src/renderer/components/VideoBuilderDoneState.jsx` | VIDEO_BUILDER_DONE state — assembled Veo 3.1 prompt output. Two-column: assembled prompt + param breakdown. Header: green dot + "Video prompt ready" + ← Edit + Start over. "Optimised for veo-3.1-generate-preview" orange chip. Save + Copy prompt actions. | props: `prompt`, `videoAnswers`, `transcript`, `onCopy`, `onEdit`, `onStartOver`, `isSaved`, `onSave` |
 | `src/renderer/components/WorkflowBuilderState.jsx` | WORKFLOW_BUILDER state — n8n node cards review screen. Node cards with green (trigger) / blue (action) number badges, parameter rows, amber placeholder chips (tappable → inline input → green filled value). × delete button per card (hidden when ≤1 node). Connector arrows between cards. Add-another-node dashed button. Action row: placeholder warning (with click instruction) + Start over + Confirm & generate JSON (disabled until all filled). Always expanded-only. | props: `transcript`, `workflowAnalysis`, `filledPlaceholders`, `onFillPlaceholder`, `onAddNode`, `onDeleteNode`, `onConfirm`, `onReiterate`, `onStartOver`, `isExpanded` |
@@ -93,95 +107,9 @@
 
 ---
 
-## IPC channels (registered in main.js)
+## IPC channels
 
-| Channel | Direction | Status |
-|---------|-----------|--------|
-| `generate-prompt` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), transcript embedded in system prompt via PROMPT_TEMPLATE, returns { success, prompt, error }. Accepts optional `options.tone` for polish mode — used to replace `{TONE}` placeholder in polish system prompt. For mode `image`: returns `{ success: true, prompt: transcript }` immediately (passthrough — no Claude call; App.jsx routes to IMAGE_BUILDER). |
-| `generate-raw` | renderer → main | ✅ registered — spawn(claudePath, ['-p', systemPrompt]), full system prompt passed from renderer (no MODE_CONFIG); used by iteration flow. Returns { success, prompt, error } |
-| `evaluate-prompt` | renderer → main | ✅ registered — spawn claudePath with dual-scoring eval prompt; 30s timeout; fence-strips before JSON.parse; returns `{ success: true, data: { rawScore, promptlyScore, rawReasons, promptlyReasons, critique, dimensions, gap, intentDrift, intentDriftLabel } }` or `{ success: false }` |
-| `copy-to-clipboard` | renderer → main | ✅ registered — clipboard.writeText({ text }) → { success: true } |
-| `check-claude-path` | renderer → main | ✅ registered — returns { found, path } or { found: false, error } |
-| `resize-window` | renderer → main | ✅ registered — win.setSize(520, height, true) |
-| `transcribe-audio` | renderer → main | ✅ registered — writes audio to tmpdir, runs Whisper CLI, returns { success, transcript, error } |
-| `show-mode-menu` | renderer → main | ✅ registered — builds native Electron radio menu from MODE_CONFIG keys |
-| `set-window-buttons-visible` | renderer → main | ✅ registered — win.setWindowButtonVisibility(visible); hidden during RECORDING |
-| `splash-done` | renderer → main | ✅ registered — hides splashWin, shows win, calls registerShortcut() |
-| `splash-check-cli` | renderer → main | ✅ registered — returns { ok: !!claudePath, path: claudePath } |
-| `splash-check-whisper` | renderer → main | ✅ registered — returns { ok: !!whisperPath, path: whisperPath } — used by splash screen Whisper check |
-| `check-mic-status` | renderer → main | ✅ registered — calls systemPreferences.askForMediaAccess('microphone'), returns { granted: boolean } |
-| `splash-open-url` | renderer → main | ✅ registered — shell.openExternal(url) if url starts with https:// |
-| `request-mic` | renderer → main | ✅ registered — returns { ok: true } (no-op; mic checked in splash renderer) |
-| `shortcut-triggered` | main → renderer | ✅ registered — fires on ⌥Space (or fallback) |
-| `shortcut-conflict` | main → renderer | ✅ registered — fires if fallback used, sends { fallback } |
-| `mode-selected` | main → renderer | ✅ registered — sent from show-mode-menu click handler with mode key |
-| `get-theme` | renderer → main | ✅ registered — returns { dark: boolean } for current macOS appearance |
-| `theme-changed` | main → renderer | ✅ registered — sent by nativeTheme.on('updated') with { dark: boolean } |
-| `show-shortcuts` | main → renderer | ✅ registered — sent by CommandOrControl+Shift+/ global shortcut or "Keyboard shortcuts ⌘?" context menu item |
-| `shortcut-pause` | main → renderer | ✅ registered — sent by Alt+P global shortcut; wired in App.jsx via onShortcutPause — toggles pause/resume |
-| `save-file` | renderer → main | ✅ registered — dialog.showSaveDialog + fs.writeFileSync; returns `{ ok, filePath }` or `{ ok: false }` |
-| `resize-window-width` | renderer → main | ✅ registered — win.setSize(width, h, true) with setResizable guards |
-| `set-window-size` | renderer → main | ✅ registered — win.setMinimumSize + setMaximumSize + setSize(width, height) atomically; used by openHistory/closeHistory to avoid race condition between separate width/height calls |
-| `show-history` | main → renderer | ✅ registered — sent by "History ⌘H" context menu item |
-| `uninstall-promptly` | renderer → main | ✅ registered — shows native confirmation dialog, removes all data dirs + TCC, quits app; also called from tray menu via handleUninstall() |
-| `get-stored-paths` | renderer → main | ✅ registered — returns { claudePath, whisperPath, ffmpegPath } from config.json (userData) |
-| `save-paths` | renderer → main | ✅ registered — saves { claudePath, whisperPath, ffmpegPath } to config.json and updates runtime vars |
-| `browse-for-binary` | renderer → main | ✅ registered — opens macOS file picker (openFile), returns { path } or { path: null } |
-| `recheck-paths` | renderer → main | ✅ registered — reruns resolveClaudePath + resolveWhisperPath + resolveFfmpegPath, returns { claude: { ok, path }, whisper: { ok, path }, ffmpeg: { ok, path } } |
-| `open-settings` | main → renderer | ✅ registered — sent by tray "Path configuration..." item and ⌘, shortcut; triggers SETTINGS state via onOpenSettings IPC listener in useKeyboardShortcuts.js |
-| `update-menubar-state` | renderer → main | ✅ registered — maps STATES enum string → icon state (idle/recording/thinking/ready); calls `updateMenuBarIcon()` which sets tooltip + pulse interval (600ms) for recording/thinking, steady image for idle/ready |
-| `set-last-prompt` | renderer → main | ✅ registered — stores prompt string in `lastGeneratedPrompt` module var; called after every successful generation; used by "Copy last prompt" tray menu item (FEATURE-018) |
-| `check-claude` | renderer → main | ✅ registered — 3-step verification: resolveClaudePath + execFile --version + spawn test generation ('respond with only the word READY', 15s timeout). Returns `{ found, path, version, working, error, authError }`. Auth error detected if stdout/stderr contains 'not authenticated' \| 'login' \| 'unauthorized'. (ONBD-001) |
-| `check-whisper` | renderer → main | ✅ registered — resolves whisperPath then runs --help to verify (exec fallback for 'python3 -m whisper' compound path). Returns `{ found, path, error }`. (ONBD-002) |
-| `check-ffmpeg` | renderer → main | ✅ registered — runs resolveFfmpegPath() then execFile -version to verify. Returns `{ found, path, error }`. (ONBD-002) |
-| `check-whisper-model` | renderer → main | ✅ registered — checks ~/.cache/whisper/base.pt and ~/Library/Caches/whisper/base.pt via fs.statSync. Downloaded = file exists AND size > 100MB. Returns `{ downloaded, path, sizeMB }`. (ONBD-003) |
-| `download-whisper-model` | renderer → main | ✅ registered — spawns `whisper /dev/null --model base` (python3 -m whisper handled). Parses tqdm stderr via regex on \r\n splits; pushes `whisper-download-progress` events. Returns `{ success: true }` or `{ success: false, error }`. (ONBD-004) |
-| `whisper-download-progress` | main → renderer | ✅ push — sent during model download; payload `{ percent, mbDone, mbTotal, secondsLeft }`. (ONBD-004) |
-| `retry-transcription` | renderer → main | ✅ registered — reuses `lastTempAudioPath` if file still exists, reruns Whisper CLI; returns same shape as `transcribe-audio`. Error if no audio available. (ONBD-005) |
-| `retry-generation` | renderer → main | ✅ registered — reuses `lastTranscript` + `currentMode`, reruns same spawn logic as `generate-prompt`; returns same shape. Error if no transcript available. (ONBD-005) |
-| `transcription-slow-warning` | main → renderer | ✅ push — fired after 20s of transcription with no result; renderer sets `transcriptionSlow=true` → amber warning in ThinkingState. (ONBD-006) |
-| `generation-slow-warning` | main → renderer | ✅ push — fired after 30s of generation with no result; renderer sets `generationSlow=true` → amber warning in ThinkingState. (ONBD-007) |
-| `check-setup-complete` | renderer → main | ✅ registered — reads `setupComplete` from config.json; returns `{ complete: bool }`. Used by splash.html on load to skip wizard if already done. (ONBD-008) |
-| `set-setup-complete` | renderer → main | ✅ registered — writes `{ ...readConfig(), setupComplete: true }` to config.json. Called on wizard completion or skip confirm. (ONBD-008) |
-| `reset-setup-complete` | renderer → main | ✅ registered — writes `setupComplete: false` to config.json. (ONBD-008) |
-| `reopen-wizard` | renderer → main | ✅ registered — resets `setupComplete: false`, recreates splashWin, loads splash.html, shows splashWin, hides main win. Called from SettingsPanel "Recheck setup ↺" button. (ONBD-013) |
-| `toggle-expand` | main → renderer | ✅ push — sent by `win.on('maximize')` handler (intercepts native zoom button press, calls `win.unmaximize()` first). Renderer listens via `onToggleExpand` in `useKeyboardShortcuts.js` and calls `handleExpand()`. NOTE: with `resizable: false`, macOS greys out the zoom button regardless of `maximizable: true` — this channel currently fires only if the window were made resizable. The custom expand button in IdleState is the active expand path. |
-
----
-
-## State machine (in index.html)
-
-**Function:** `setState(newState, payload = {})`
-- Calls `stopMorphAnim()` at entry — cancels any live morph RAF loop
-- Hides all panels, shows active panel by ID
-- Handles payload: `ERROR` → sets `error-message` textContent; `PROMPT_READY` → calls `renderPromptOutput(generatedPrompt)`
-- Calls `window.electronAPI.resizeWindow(STATE_HEIGHTS[newState])` wrapped in `requestAnimationFrame`
-
-| State | Panel ID | Height | Notes |
-|-------|----------|--------|-------|
-| `IDLE` | `panel-idle` | 134px | Mode pill, shortcut hint, ⌘? hint; expand button top-right (POLISH-TOGGLE) |
-| `EXPANDED` | `ExpandedView` | 860px | isExpanded=true layout mode; window 1100×860; three-zone: top bar / left history / right state-content (BUG-TOGGLE-005) |
-| `RECORDING` | `panel-recording` | 89px | Waveform canvas, timer, dismiss/pause/stop buttons; traffic lights hidden |
-| `PAUSED` | PausedState | 89px | Flat amber line, amber timer, resume+stop buttons; traffic lights hidden; status "Paused — tap resume to continue" |
-| `ITERATING` | IteratingState | 200px | Blue context banner + blue waveform + timer + blue stop; traffic lights hidden; separate iter MediaRecorder from main recording |
-| `TYPING` | TypingState | 244–320px | h-[28px] traffic light spacer; textarea + submit button; dynamic height: 244 + floor(lines/4)×40, max 320; traffic lights visible |
-| `THINKING` | `panel-thinking` | 220–320px | Morph wave canvas, YOU SAID transcript; height clamped to transcript length |
-| `PROMPT_READY` | `panel-ready` | 560px | Prompt output + action buttons (Edit, Copy prompt). Export button in top row → direct .md save |
-| `ERROR` | `panel-error` | 101px | Error icon, message, tap-to-dismiss |
-| `HISTORY` | HistoryPanel | 720px | Split-panel history; window width 746px; setWindowSize(746,720) + updateMenuBarState(HISTORY) called in openHistory; closeHistory → setWindowSize(520, IDLE height) + updateMenuBarState(IDLE) → IDLE |
-| `SHORTCUTS` | ShortcutsPanel | 380px | 8 shortcuts with key chips; Done → previous state; triggered via ⌘? or context menu |
-| `SETTINGS` | SettingsPanel | 322px | Path configuration panel — Claude + Whisper binary paths, browse + recheck; triggered via ⌘, or tray "Path configuration..." |
-| `IMAGE_BUILDER` | ImageBuilderState | 520px (expanded only) | v2: five category tabs + VariationsPanel Zone B; enters after THINKING (phase 1) when mode=image; always expanded; purple THINKING accent for both phases |
-| `IMAGE_BUILDER_DONE` | ImageBuilderDoneState | 860px (expanded only) | v2: assembled prompt + Nano Banana flags displayed separately; flattenAnswers param summary; ← Edit answers / Start over / Copy prompt |
-| `VIDEO_BUILDER` | VideoBuilderState | 860px (expanded only) | Veo 3.1 video prompt builder — 9 chip rows, dialogue input, advanced params; orange accent; enters after THINKING when mode=video |
-| `VIDEO_BUILDER_DONE` | VideoBuilderDoneState | 860px (expanded only) | Final assembled Veo 3.1 prompt; two-column layout; Save + Copy actions; Claude assembly via generate-raw |
-| `WORKFLOW_BUILDER` | WorkflowBuilderState | 860px (expanded only) | n8n workflow node cards review; amber placeholder chips; green trigger / blue action badges; enters after THINKING when mode=workflow |
-| `WORKFLOW_BUILDER_DONE` | WorkflowBuilderDoneState | 860px (expanded only) | HOW IT WORKS + N8N JSON two-column layout; syntax-highlighted JSON; Save + Copy JSON actions |
-| `TRANSCRIPTION_ERROR` | OperationErrorPanel (via ExpandedDetailPanel) | 860px (expanded only) | Whisper failure — red error icon, details box, fix command (amber) derived from error string via `getTranscriptionFix`, Open settings + Try again ↺. Collapsed path uses ERROR state instead. (ONBD-014) |
-| `GENERATION_ERROR` | OperationErrorPanel (via ExpandedDetailPanel) | 860px (expanded only) | Claude failure — 4 error types: auth (amber lock icon), timeout (amber clock), empty (amber warning), unknown (red warning). Each type has distinct title/body/fix command. Collapsed path uses ERROR state with inline message. (ONBD-015) |
-| `EMAIL_READY` | EmailReadyState (via ExpandedDetailPanel) | 860px (expanded only) | Email draft output — two-column layout. Always expanded. Teal accent. Direct email output (no prompt intermediary). Left: transcript + tone analysis + why-this-tone box. Right: subject line + email body. |
-
-> Note: FIRST_RUN state removed from index.html — replaced by splash.html (D-007, FEATURE-001)
+See the IPC surface table in `vibe/ARCHITECTURE.md` (kept complete; `tests/ipc-contract.test.js` checks preload ↔ main).
 
 ---
 
@@ -209,76 +137,12 @@
 | `polishTone` | hook (usePolishMode→useTone) string | usePolishMode() | IdleState, PolishReadyState, generate calls |
 | `polishToneRef` | useRef (in usePolishMode) string | mirrors polishTone — stale-closure-safe for generate calls | stopRecording, handleTypingSubmit, handleRegenerate |
 | `transitionRef` | useRef (in App.jsx) function | updated every render: `transitionRef.current = transition` | usePolishMode.handlePolishToneChange — calls transitionRef.current() to avoid stale closure |
-| `abortRef` | useRef boolean | `handleAbort()` sets true when aborting from THINKING | `handleGenerateResult` guard — discards stale async result if true, resets to false |
+| `opIdRef` | useRef number | Bumped at the start of every generation and by `handleAbort()` (which also calls `cancelOperations()`) | `handleGenerateResult(result, transcript, opId)` and the recording/typing/retry/polish/tone paths ignore results whose id is stale |
 | `copied` | useState (in usePolishMode) boolean | onCopy in PolishReadyState render | PolishReadyState copied prop |
 | `transcriptionError` | useState `{error,timedOut,canRetry}\|null` | `setTranscriptionError` in useRecording.js on whisper failure | `transcriptionErrorProps` bundle forwarded to ExpandedDetailPanel |
 | `transcriptionSlow` | useState boolean | `onTranscriptionSlowWarning` IPC listener; cleared in `transition()` | ThinkingState `transcriptionSlow` prop + ExpandedDetailPanel |
 | `generationError` | useState `{error,errorType,canRetry}\|null` | `handleGenerateResult` on Claude failure (errorType: 'auth'\|'timeout'\|'empty'\|'unknown') | `generationErrorProps` bundle forwarded to ExpandedDetailPanel |
 | `generationSlow` | useState boolean | `onGenerationSlowWarning` IPC listener; cleared in `transition()` | ThinkingState `generationSlow` prop + ExpandedDetailPanel |
-
-## Module-scope variables (in index.html — legacy, main branch only)
-
-| Variable | Type | Set by | Read by |
-|----------|------|--------|---------|
-| `state` | string | `setState()` | all features |
-| `originalTranscript` | string | `stopRecording()` onstop handler — captured once, never mutated | `setState(THINKING)`, `setState(PROMPT_READY)`, Regenerate, Copy, Edit |
-| `generatedPrompt` | string | `generate-prompt` IPC result; Edit Done handler | `renderPromptOutput()`, Copy, Regenerate display |
-| `mediaRecorder` | MediaRecorder\|null | `startRecording()` | `stopRecording()`, dismiss handler |
-| `audioChunks` | Blob[] | `startRecording()`, `ondataavailable` | `stopRecording()` onstop handler |
-| `isProcessing` | boolean | `stopRecording()` start/end guard | `stopRecording()` early-exit guard |
-| `morphAnimFrame` | number\|null | `setState(THINKING)` inline animMorph | `stopMorphAnim()` — cancelled at every setState() |
-| `recSecs` | number | `startRecTimer()` / `stopRecTimer()` | timer display |
-| `recTimer` | interval | `startRecTimer()` | `stopRecTimer()` |
-| `waveT` | number | `startRecTimer()` animateWave | wave animation |
-| `waveRAF` | number | `startRecTimer()` animateWave | `stopRecTimer()` |
-| `LANGUAGES` | array constant | module top | `getLanguageLabel()`, language pill |
-| `LANGUAGE_KEY` | string constant | module top | `getLanguage()`, `setLanguage()` |
-
----
-
-## Module-scope variables (in main.js)
-
-| Variable | Set when | Value |
-|----------|----------|-------|
-| `claudePath` | app-ready — `resolveClaudePath()` Promise | resolved binary path or null |
-| `whisperPath` | app-ready — `resolveWhisperPath()` Promise (awaited) | resolved binary path, `'python3 -m whisper'`, or null |
-| `win` | `createWindow()` called after `resolveClaudePath()` resolves | BrowserWindow instance |
-| `splashWin` | `app.whenReady()` — created before `win` (560×620); destroyed after `splash-done`; recreated by `reopen-wizard` at same 560×620 dimensions | BrowserWindow instance (null after splash) |
-| `PROMPT_TEMPLATE` | module constant | Multi-line template string with `{MODE_NAME}`, `{MODE_INSTRUCTION}`, `{TRANSCRIPT}` placeholders — bypassed for standalone modes |
-| `MODE_CONFIG` | module constant | `{ balanced, detailed, concise, chain, code, refine, design, polish }` — 8 modes total; each `{ name, instruction }`; `refine`, `design`, and `polish` have `standalone: true` which causes generate-prompt to use instruction directly instead of wrapping in PROMPT_TEMPLATE |
-| `tray` | `updateTrayMenu()` reference — null after FEATURE-017 removed `createTray()` | null (menuBarTray is the sole Tray instance) |
-| `menuBarTray` | `createMenuBarIcon()` called from splash-done (FEATURE-017) | Tray instance — 44×44 PNG @2x mic icon; click=show/hide, right-click=context menu |
-| `pulseInterval` | MBAR-002 IPC handler (interval ID) or null | interval handle for dot-pulse animation; cleared on every state change and win hide/show |
-| `lastGeneratedPrompt` | `set-last-prompt` IPC handler | Last successfully generated prompt string — session memory only, null until first generation; used by "Copy last prompt" tray menu item (FEATURE-018) |
-| `lastTempAudioPath` | `transcribe-audio` handler — set after file write, reset to null at start of each new call | Path to last recorded audio temp file; kept on error for retry-transcription; null after reset (ONBD-005) |
-| `lastTranscript` | `transcribe-audio` and `retry-transcription` handlers — set on success | Last successfully transcribed text; used by retry-generation (ONBD-005) |
-| `currentMode` | `generate-prompt` handler — set at start of each call | Last mode used for generation; used by retry-generation; default 'balanced' (ONBD-005) |
-| `configPath` | module constant | `path.join(app.getPath('userData'), 'config.json')` — path to persisted path config file |
-| `readConfig()` | called on-demand | reads + parses config.json; returns `{}` on any error |
-| `writeConfig(data)` | called on-demand | JSON.stringify(data, null, 2) → config.json |
-
----
-
-## CSS design tokens (in index.html)
-
-```css
-:root {
-  --blue: #0A84FF;           /* action / interactive elements */
-  --red: #FF3B30;            /* recording / stop */
-  --green: #30D158;          /* success / copy flash */
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  --bar-radius: 18px;
-  --bar-backdrop: blur(40px) saturate(180%);
-  --bar-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
-  /* border tokens: --border-top, --border-left, --border-right, --border-bottom */
-  /* gradient tokens: --highlight-top, --accent-bottom, --divider */
-}
-```
-
-> `body.light` override block applies the light-mode palette when macOS is in Light Mode.
-> Applied via `classList.toggle('light', !dark)` — orthogonal to app state, never routed through `setState()`.
-
----
 
 ## localStorage keys
 
@@ -291,44 +155,6 @@
 > `firstRunComplete` key removed — splash screen replaced in-bar first-run flow (D-007)
 > `promptHistory` (old key, 20-entry cap) — replaced by `promptly_history` (100-entry cap) in FEATURE-004
 > `promptLanguage` removed — F-LANGUAGE removed (D-LANGUAGE-REMOVE)
-
----
-
-## DOM element IDs (in index.html)
-
-| Element ID | Panel | Used by |
-|------------|-------|---------|
-| `bar` | root | `setState()` show/hide |
-| `panel-idle` | IDLE | `setState()` |
-| `panel-recording` | RECORDING | `setState()` |
-| `panel-thinking` | THINKING | `setState()` |
-| `panel-ready` | PROMPT_READY | `setState()` |
-| `panel-error` | ERROR | `setState()` |
-| `idle-area` | IDLE | click → `startRecording()` |
-| `mode-pill` | IDLE | mode label display; click → `showModeMenu` |
-| `recCanvas` | RECORDING | `drawRecordingWave()` |
-| `recDur` | RECORDING | `startRecTimer()` |
-| `dismissBtn` | RECORDING | click → cancel recording → IDLE |
-| `stopBtn` | RECORDING | click → `stopRecording()` |
-| `transcriptWrap` | RECORDING | `setRecordingTranscript()` |
-| `transcriptText` | RECORDING | `setRecordingTranscript()` |
-| `morph-canvas` | THINKING | `drawMorphWave()` RAF loop |
-| `think-transcript` | THINKING | set in `stopRecording()` onstop + regenerate handler |
-| `panel-thinking` | THINKING | `scrollHeight` measured for dynamic resize |
-| `you-said-text` | PROMPT_READY | `setState(PROMPT_READY)` — sets `originalTranscript` |
-| `prompt-output` | PROMPT_READY | `renderPromptOutput()`, Edit mode contenteditable |
-| `btn-edit` | PROMPT_READY | Edit/Done toggle |
-| `btn-copy` | PROMPT_READY | Copy + green flash |
-| `btn-regenerate` | PROMPT_READY | → THINKING → PROMPT_READY |
-| `btn-reset` | PROMPT_READY | → IDLE |
-| `error-area` | ERROR | click → IDLE |
-| `error-message` | ERROR | `setState(ERROR, { message })` |
-| `panel-history` | HISTORY | `setState()` |
-| `history-list` | HISTORY | `renderHistoryList()` |
-| `btn-history-close` | HISTORY | click → IDLE |
-| `btn-history-clear` | HISTORY | click → `clearHistory()` + re-render |
-| `history-btn` | IDLE | click → HISTORY state |
-| `btn-history` | PROMPT_READY | click → HISTORY state |
 
 ---
 
@@ -346,6 +172,7 @@
 
 ## Known issues / watch items
 
-- `eslint main.js preload.js` — 0 errors, 0 warnings (the intentional `console.error` in uncaughtException has `// eslint-disable-next-line no-console`)
-- `npm audit` — 1 moderate devDep vuln in `vitest@2.1.9` (BL-074) — devDep only, not in .dmg; fix: `npm install --save-dev vitest@latest` (upgrades to v4.x)
-- `src/renderer/index.html` is not included in the lint script (ESLint 9 cannot parse HTML without a plugin — inline JS reviewed manually; see D-001)
+- `npm run lint` — 0 errors; 27 `react-hooks/exhaustive-deps` warnings from the ref-based state design (tracked: state-machine refactor)
+- `npm audit` — 0 vulnerabilities (2026-09-24)
+- `opIdRef` in App.jsx tags each generation; `handleAbort` bumps it and calls `cancelOperations()`
+- `main.log` in ~/Library/Logs/Promptly is the first place to look when something fails in a packaged build

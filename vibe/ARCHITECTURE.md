@@ -1,5 +1,5 @@
 # ARCHITECTURE.md — Promptly
-> Created: 2026-04-18 via architect: | Last updated: 2026-04-18
+> Created: 2026-04-18 via architect: | Last updated: 2026-09-24
 > Source: BRIEF.md + architect: conversation decisions
 > ⚠️ This is the agent's constitution. Every code decision is measured against it.
 
@@ -8,22 +8,21 @@
 ## Project type
 
 **Type:** Desktop app (Electron)
-**Platform:** macOS only — always-on-top floating bar
-**Stack (as-built — FEATURE-004 migrated renderer to React + Vite):**
-  Shell:    Electron v31+, universal binary (arm64 + x64)
-  Frontend: React 18 + Vite — `src/renderer/` → built to `dist-renderer/` (devDeps only)
+**Platform:** macOS only today — always-on-top floating bar. Windows is planned; all OS-specific main-process code lives in `main/platform/darwin.js` so a `win32.js` can slot in.
+**Stack (as-built):**
+  Shell:    Electron 41, universal binary (arm64 + x64)
+  Frontend: React 19 + Vite 8 — `src/renderer/` → built to `dist-renderer/` (devDeps only)
   Styling:  Tailwind v4 for static classes; inline styles for dynamic/stateful layout
-  Speech:   getUserMedia + MediaRecorder (renderer) → transcribe-audio IPC → Whisper CLI (main)
-  CLI:      `claude -p` via child_process — PATH resolved via login shell at startup
-  IPC:      Electron ipcMain + preload.js contextBridge
-  Storage:  localStorage — mode + history, nothing sensitive
+  Speech:   getUserMedia + MediaRecorder (renderer) → `transcribe-audio` IPC → Whisper CLI (`main/whisper.js`)
+  LLM:      Claude Code CLI `claude -p` through `main/llm.js` — prompt on stdin, `--model` always passed
+  IPC:      Electron ipcMain + preload.js contextBridge; contract enforced by `tests/ipc-contract.test.js`
+  Storage:  `config.json` in userData (paths, model, window bounds) + localStorage (mode, tone, history)
   Dist:     electron-builder → .dmg (arm64 + x64)
   Backend:  None — Claude CLI is the AI layer
-  Database: None — no persistence beyond localStorage
 
-> Runtime npm dependencies: zero — React/Vite/Tailwind are devDeps only, not in .dmg.
+> Runtime npm dependencies: zero — React/Vite/Tailwind are devDeps compiled into dist-renderer/.
 > Any new runtime dependency requires a DECISIONS.md entry.
-> 📝 2026-04-19 · Stack updated — FEATURE-004 React migration (see D-FCR in DECISIONS.md)
+> 📝 2026-09-24 · Stack updated — main process split into main/ modules; shared mode registry; tests + e2e (see D-FOUNDATION in DECISIONS.md)
 
 ---
 
@@ -31,32 +30,34 @@
 
 ```
 promptly/
-├── main.js             # Window config, global shortcut, IPC handlers, PATH resolution
-├── preload.js          # contextBridge — exposes electronAPI to renderer (sandboxed)
-├── splash.html         # Splash screen BrowserWindow — CLI + mic check, vanilla HTML
-├── package.json        # Electron + electron-builder config, devDeps only
-├── entitlements.plist  # Mic permission for hardened runtime (required for notarisation)
-├── vite.config.js      # Vite build config — root: src/renderer, outDir: dist-renderer/
-├── eslint.config.js    # ESLint 9 flat config for main.js + preload.js
-└── src/
-    └── renderer/
-        ├── index.html  # Vite HTML entry point — <div id="root">
-        ├── index.css   # Tailwind v4 entry — @theme tokens, @keyframes, body reset
-        ├── main.jsx    # React root — ReactDOM.createRoot().render(<App />)
-        ├── App.jsx     # State machine root — transition(), all states, IPC wiring
-        ├── hooks/      # useMode, useRecording, useKeyboardShortcuts, usePolishMode, useWindowResize, useTone
-        ├── components/ # One per state: IdleState, RecordingState, ThinkingState, PromptReadyState, …
-        └── utils/      # history.js — all localStorage history access
+├── main.js             # Electron wiring only: windows, tray, shortcuts, IPC handlers
+├── main/               # Main-process logic, no Electron imports (unit-testable)
+│   ├── llm.js          #   Claude CLI runner — stdin prompt, --model, lean flags, cancel, timeouts
+│   ├── whisper.js      #   Whisper transcription + model download
+│   ├── binaries.js     #   claude/whisper/ffmpeg path resolution, makeClaudeEnv
+│   ├── platform/       #   darwin.js — every macOS path/command; index.js picks the platform
+│   ├── prompts.js      #   Builds mode + eval prompts from prompts/*.txt and shared/modes.json
+│   ├── prompts/        #   Prompt text, one file per standalone mode + template.txt + eval.txt
+│   ├── config.js       #   config.json store with atomic writes
+│   ├── log.js          #   ~/Library/Logs/Promptly/main.log with rotation
+│   └── tray-icon.js    #   Menu bar microphone icon drawing
+├── shared/modes.json   # Single mode registry, read by main and renderer
+├── preload.js          # contextBridge — exposes window.electronAPI (sandboxed)
+├── splash.html         # Setup wizard / quick-check splash, vanilla HTML/JS
+├── src/renderer/       # React app (App.jsx state machine, hooks/, components/, utils/)
+├── tests/              # Vitest unit tests (npm test)
+├── e2e/                # Playwright tests that drive the real app with a fake Claude CLI (npm run test:e2e)
+├── scripts/            # release, signing, preflight checks
+├── package.json        # electron-builder config; devDeps only
+└── entitlements.plist  # Mic permission for hardened runtime
 ```
 
 **Rules:**
-- All UI lives in `src/renderer/`. One component per file. Components are functional React components.
-- `main.js` handles only: window creation, IPC, PATH resolution, global shortcut registration.
-- `preload.js` is the only bridge between renderer and main. It exposes `window.electronAPI` exclusively.
-- No new top-level files without a DECISIONS.md entry explaining why.
-- React/Vite/Tailwind are devDeps only — not bundled into the packaged .app.
-
-> 📝 2026-04-19 · Folder structure updated — FEATURE-004 React migration mainlined (see D-FCR in DECISIONS.md)
+- All UI lives in `src/renderer/`. One component per file. Functional React components only.
+- `main.js` wires Electron (windows, tray, shortcuts, IPC). Logic goes in a `main/` module that does not import Electron, with a unit test.
+- macOS-specific paths and commands go in `main/platform/darwin.js`, never inline.
+- `preload.js` is the only bridge between renderer and main.
+- New files under `main/` or `shared/` are packaged via `build.files` in package.json — check it when adding a top-level folder.
 
 ---
 
@@ -149,117 +150,67 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 
 ## IPC surface (complete list)
 
+`tests/ipc-contract.test.js` fails if preload and main drift apart (a channel without a handler, a handler not exposed, an event nobody listens for, or a renderer call to a method preload doesn't expose).
+
 | Direction | Channel | Purpose |
 |-----------|---------|---------|
-| renderer → main | `generate-prompt` | Send transcript + mode + optional `options` (e.g. `{ tone }` for polish), returns Claude output |
-| renderer → main | `generate-raw` | Full custom system prompt passthrough → Claude; returns { success, prompt, error } — added FEATURE-012 |
-| renderer → main | `copy-to-clipboard` | Write string to system clipboard |
-| renderer → main | `check-claude-path` | Returns resolved claude binary path or error |
-| renderer → main | `resize-window` | Resize BrowserWindow height per state (STATE_HEIGHTS) |
-| renderer → main | `transcribe-audio` | Send audio ArrayBuffer → Whisper CLI → return transcript string |
-| renderer → main | `show-mode-menu` | Open native Electron radio menu for mode selection (BUG-002-D) |
-| renderer → main | `set-window-buttons-visible` | Show/hide native traffic light buttons — hidden during RECORDING |
-| renderer → main | `splash-done` | Splash complete — hide splashWin, show main win, register shortcut |
-| renderer → main | `splash-check-cli` | Check if claudePath resolved — returns `{ ok, path }` |
-| renderer → main | `splash-check-whisper` | Check if whisperPath resolved — returns `{ ok, path }` |
-| renderer → main | `splash-open-url` | Open install URL in system browser (https:// only) |
-| renderer → main | `request-mic` | Reserved for future mic permission IPC (currently no-op) |
-| main → renderer | `shortcut-triggered` | Global ⌥Space / ⌃\` fired from outside app |
-| main → renderer | `shortcut-conflict` | Primary shortcut taken, fallback active |
-| main → renderer | `mode-selected` | Mode key chosen from native menu — sent after show-mode-menu (BUG-002-D) |
-| renderer → main | `get-theme` | Returns `{ dark: boolean }` — current macOS appearance |
-| main → renderer | `theme-changed` | Sent when macOS appearance changes; payload `{ dark: boolean }` |
-| renderer → main | `show-tone-menu` | Open native Electron radio menu for Formal/Casual tone selection in polish mode; sends `tone-selected` to renderer on click |
-| main → renderer | `tone-selected` | Sent from show-tone-menu click handler with selected tone key |
-| renderer → main | `check-mic-status` | Check microphone permission via systemPreferences.askForMediaAccess; returns { granted: boolean } |
-| main → renderer | `open-settings` | Sent by tray "Path configuration..." item and ⌘, shortcut; triggers SETTINGS state in renderer |
-| renderer → main | `save-file` | Show native save dialog + write file; returns `{ ok, filePath }` — added FEATURE-007 |
-| renderer → main | `resize-window-width` | Resize BrowserWindow width only, preserving height — added FEATURE-009 |
-| main → renderer | `show-history` | Sent by "History ⌘H" context menu item — added FEATURE-009 |
-| renderer → main | `set-window-size` | Set both width and height atomically; updates setMinimumSize/setMaximumSize first — added BUG-011 |
-| main → renderer | `show-shortcuts` | Sent by ⌘? global shortcut or "Keyboard shortcuts ⌘?" context menu item — triggers SHORTCUTS state |
-| main → renderer | `shortcut-pause` | Sent by Alt+P global shortcut — toggles pause/resume in RECORDING/PAUSED states |
-| renderer → main | `update-menubar-state` | Maps STATES enum string → icon state (idle/recording/thinking/ready); drives menubar dot-pulse animation |
-| renderer → main | `uninstall-promptly` | Shows native confirmation dialog, removes all data dirs + TCC entry, quits app |
-| renderer → main | `get-stored-paths` | Returns `{ claudePath, whisperPath }` from `config.json` in userData — used by SettingsPanel |
-| renderer → main | `save-paths` | Saves `{ claudePath, whisperPath }` to `config.json` and updates runtime vars — used by SettingsPanel |
-| renderer → main | `browse-for-binary` | Opens macOS file picker (openFile); returns `{ path }` or `{ path: null }` — used by SettingsPanel |
-| renderer → main | `recheck-paths` | Reruns `resolveClaudePath` + `resolveWhisperPath`; returns `{ claude: { ok, path }, whisper: { ok, path } }` |
-| renderer → main | `set-last-prompt` | Stores last generated prompt string for Quick Copy tray menu — added FEATURE-018 |
-| renderer → main | `evaluate-prompt` | Fires parallel Claude CLI call to score raw transcript vs. Promptly output; returns JSON `{ rawScore, promptlyScore, rawReason, promptlyReason, dimensions, gap, intentDrift, intentDriftLabel }` — added FEATURE-EVAL-SCORECARD |
-| renderer → main | `retry-transcription` | Retries Whisper transcription on `lastTempAudioPath`; returns `{ success, transcript, error }` — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `retry-generation` | Retries Claude generation on `lastTranscript` for current mode; returns `{ success, prompt, error }` — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `reopen-wizard` | Re-opens splash.html setup wizard (splashWin) from SettingsPanel — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `check-claude` | Runs `claude -p "respond with OK"` test; returns `{ ok, path, error }` — splash wizard step 1 — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `check-ffmpeg` | Checks `ffmpegPath` resolution; returns `{ ok, path }` — splash wizard step 2 — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `check-whisper` | Checks `whisperPath` resolution; returns `{ ok, path }` — splash wizard step 2 — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `check-whisper-model` | Checks for downloaded Whisper model file in `~/.cache/whisper`; returns `{ ok, model }` — splash wizard step 3 — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `download-whisper-model` | Downloads Whisper base.en model via Python; streams `whisper-download-progress` events; returns `{ ok }` — splash wizard step 3 — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `check-setup-complete` | Returns `{ complete: boolean }` from `config.json` — used by splash.html to decide welcome vs full wizard — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `set-setup-complete` | Sets `setupComplete: true` in `config.json` — called on splash done — added FEATURE-ONBOARDING-WIZARD |
-| renderer → main | `reset-setup-complete` | Clears `setupComplete` in `config.json` — for wizard rerun — added FEATURE-ONBOARDING-WIZARD |
-| main → renderer | `whisper-download-progress` | Streams model download progress `{ percent }` to splash.html — added FEATURE-ONBOARDING-WIZARD |
-| main → renderer | `transcription-slow-warning` | Sent after 30s timeout during transcription; triggers amber slow-warning banner in ThinkingState — added FEATURE-ONBOARDING-WIZARD |
-| main → renderer | `generation-slow-warning` | Sent after 30s timeout during generation; triggers amber slow-warning banner in ThinkingState — added FEATURE-ONBOARDING-WIZARD |
+| renderer → main | `generate-prompt` | Transcript + mode + options (`tone`, `overrideSystemPrompt`) → Claude. Builder modes pass the transcript through. Stored as the last request for retry |
+| renderer → main | `generate-raw` | Full custom prompt → Claude (builders, iteration) |
+| renderer → main | `retry-generation` | Replays the last `generate-prompt` request with the same mode and options |
+| renderer → main | `cancel-operations` | Kills the Claude/Whisper processes behind the current operation (abort) |
+| renderer → main | `evaluate-prompt` | Eval scorecard: raw vs Promptly output → JSON scores. Runs on its own process set, not cancelled by abort |
+| renderer → main | `transcribe-audio` | Audio ArrayBuffer → Whisper → transcript. Audio kept only until success or the next recording |
+| renderer → main | `retry-transcription` | Re-runs Whisper on the kept audio |
+| renderer → main | `copy-to-clipboard` | Write text to the clipboard |
+| renderer → main | `save-file` | Native save dialog + write |
+| renderer → main | `resize-window` | Height change for compact states |
+| renderer → main | `set-window-size` | Width + height atomically; handles expand/collapse bounds |
+| renderer → main | `set-window-buttons-visible` | Show/hide traffic lights |
+| renderer → main | `show-mode-menu` | Native mode menu (right-click / ⌘,) built from shared/modes.json |
+| renderer → main | `show-tone-menu` | Native Formal/Casual menu for Polish |
+| renderer → main | `update-menubar-state` | App state → menu bar icon, hide-on-blur rules, Option+P registration |
+| renderer → main | `set-last-prompt` | Last prompt for the tray "Copy last prompt" item |
+| renderer → main | `get-theme` | `{ dark }` |
+| renderer → main | `get-stored-paths` | Paths, `claudeModel` and `modelOptions` for Settings |
+| renderer → main | `save-paths` | Save any of `claudePath`, `whisperPath`, `ffmpegPath`, `claudeModel` |
+| renderer → main | `browse-for-binary` | Native file picker |
+| renderer → main | `recheck-paths` | Re-resolve all three binaries |
+| renderer → main | `reopen-wizard` | Show the setup wizard again |
+| splash → main | `splash-done` | Hide splash, show bar, register shortcut + tray (once) |
+| splash → main | `splash-check-cli` / `splash-check-whisper` | Quick checks (Whisper check honours a custom ffmpeg path) |
+| splash → main | `splash-open-url` | Open an https:// install link |
+| splash → main | `check-setup-complete` / `set-setup-complete` | `setupComplete` in config.json |
+| splash → main | `check-claude` | Version + a real `READY` test through `main/llm.js` |
+| splash → main | `check-whisper` / `check-ffmpeg` | Run the binary to verify it works |
+| splash → main | `check-whisper-model` / `download-whisper-model` | Model presence (same model transcription uses) and download |
+| main → renderer | `shortcut-triggered` | Hotkey pressed (main also shows the bar) |
+| main → renderer | `shortcut-pause` | Option+P while recording |
+| main → renderer | `mode-selected` / `tone-selected` | Native menu choices |
+| main → renderer | `show-shortcuts` / `show-history` / `open-settings` / `toggle-expand` | Menu and tray actions |
+| main → renderer | `theme-changed` | macOS appearance changed |
+| main → renderer | `transcription-slow-warning` / `generation-slow-warning` | Slow-operation banners |
+| main → splash | `whisper-download-progress` | Model download progress |
 
-> 📝 2026-05-19 · 16 IPC channels added to table — backfill from FEATURE-ONBOARDING-WIZARD (12), FEATURE-EVAL-SCORECARD (1), FEATURE-018 Quick Copy (1), FEATURE-EMAIL-MODE push channels (2). Detected in final-review-2026-05-19.
+> 📝 2026-09-24 · Removed unused channels: check-claude-path, resize-window-width, reset-setup-complete, uninstall-promptly (tray calls it directly), request-mic, check-mic-status, shortcut-conflict (now a macOS notification). Added cancel-operations.
 
 ---
 
 ## PATH resolution (critical — most common failure point)
 
-**Rule:** Both `claude` and `whisper` binaries MUST be resolved via expanded search at startup, then cached. In packaged `.app` / `.dmg` builds the process environment does not load the user's shell PATH, so a direct `which` call is unreliable.
+**Rule:** `claude`, `whisper` and `ffmpeg` are resolved at startup and cached, because a packaged `.app` does not inherit the user's shell PATH.
 
-**Shell scripts rule (BUG-RELEASE-NODE-PATH — 2026-04-28):** `scripts/release.sh` (and any future dev scripts that call `node`/`npx`/`npm`) MUST source nvm at the top before any node calls. Running `bash <script>` skips `.zshrc`/`.bashrc`, so nvm's shim directory is not in PATH. Pattern:
+**Where:** `main/binaries.js` (order of lookup) + `main/platform/darwin.js` (the actual locations and shell commands).
+
+**Order:** path saved in Settings → well-known locations → every `~/.nvm/versions/node/*/bin` → login shell (`zsh -lc`, then `bash -lc`, with nvm sourced). Whisper additionally falls back to `python3 -m whisper` and resolves pyenv shims to the real binary.
+
+**Running Claude:** always through `main/llm.js`, which passes `makeClaudeEnv(claudePath)` (adds the binary's own dir and its symlink target dir to PATH so `node` is found for nvm installs) and `--model`. Preflight CHECK 7 fails any Claude spawn/execFile in `main.js` or `main/` without `makeClaudeEnv`.
+
+**Shell scripts rule (BUG-RELEASE-NODE-PATH — 2026-04-28):** `scripts/release.sh` and any script calling `node`/`npx`/`npm` must source nvm first:
 ```bash
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 command -v node >/dev/null 2>&1 || fail "node not found"
 ```
-
-**Pattern (BUG-012 + BUG-017 — 2026-04-23):**
-```js
-// 1. Check static common paths (fs.existsSync — no shell needed)
-//    Includes: /usr/local/bin, /opt/homebrew/bin, ~/.local/bin, ~/.npm-global/bin,
-//              ~/.volta/bin, ~/n/bin (node version managers)
-// 2. Dynamic nvm scan — enumerate ~/.nvm/versions/node/*/bin/{binary}
-//    Required because nvm installs under a version-keyed path not in any static list
-// 3. Shell fallback with explicit NVM_DIR initialization
-//    Plain `zsh -lc "which X"` silently fails for nvm users in packaged apps;
-//    must source nvm.sh explicitly so nvm's PATH entries are present
-// 4. For whisper only: fall back to python3 -m whisper
-async function resolveXPath() {
-  const home = os.homedir();
-  for (const p of commonPaths) {
-    try { if (fs.existsSync(p)) return p; } catch {}
-  }
-  const nvmDir = path.join(home, '.nvm', 'versions', 'node');
-  try {
-    if (fs.existsSync(nvmDir)) {
-      for (const version of fs.readdirSync(nvmDir)) {
-        const bin = path.join(nvmDir, version, 'bin', 'X');
-        try { if (fs.existsSync(bin)) return bin; } catch {}
-      }
-    }
-  } catch {}
-  return new Promise((resolve) => {
-    const nvmInit = `export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; which X`;
-    exec(`zsh -lc '${nvmInit}'`, (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec(`bash -lc '${nvmInit}'`, (err2, stdout2) => {
-        resolve(stdout2?.trim() || null);
-      });
-    });
-  });
-}
-```
-
-- Both `resolveClaudePath()` and `resolveWhisperPath()` are `async` functions — `await`ed in `app.whenReady()` before any window is created.
-- `whisperPath` may be the string `'python3 -m whisper'` — `transcribe-audio` constructs the exec command accordingly.
-- Never use bare `exec('claude ...')` — it will fail for most users.
-- If resolution fails → send `check-claude-path` error to renderer → transition to ERROR state.
-- All subsequent `claude -p` calls use the cached `claudePath`.
-- If `claudePath` is null at call time → ERROR state, message: "Claude CLI not found."
 
 ---
 
@@ -289,10 +240,7 @@ async function resolveXPath() {
    app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus() } })
    ```
 
-4. **`win.on('blur')` auto-hide** — hides the floating bar when user clicks outside it:
-   ```js
-   win.on('blur', () => { if (!isQuitting && win && !win.isDestroyed()) win.hide() })
-   ```
+4. **`win.on('blur')` auto-hide** — hides the floating bar when the user clicks into another app, except in the expanded window and in the states listed in `KEEP_VISIBLE_ON_BLUR` (recording, thinking, typing, settings, builders, email, error screens). `PROMPT_READY` hides on purpose so the user can go and paste. The renderer reports its state through `update-menubar-state`.
 
 **Tray quit:** Tray "Quit" item must call `app.quit()` (not `win.destroy()`). `before-quit` sets `isQuitting=true` before the `close` event fires, allowing the window to close normally.
 
@@ -303,9 +251,8 @@ async function resolveXPath() {
 **Rule:** Microphone access in Electron on macOS goes through TWO independent layers. Both must be configured. Missing either one causes repeated permission dialogs.
 
 ### Layer 1 — macOS TCC (system level)
-`systemPreferences.askForMediaAccess('microphone')` — native macOS API. Creates a persistent TCC entry for the app. Returns `true` immediately if already granted (safe to call before every recording).
-- Called in **splash** (`check-mic-status` IPC) — user sees the dialog once at a controlled time.
-- Called in **`request-mic` IPC** — `startRecording()` and `handleIterate()` in App.jsx call this before every `getUserMedia` to ensure TCC is current.
+macOS shows its microphone prompt the first time `getUserMedia` runs (the `NSMicrophoneUsageDescription` string in package.json is what it displays). The TCC entry then persists for the signed app.
+> 📝 2026-09-24 · The `request-mic` / `check-mic-status` IPC described here earlier were never called and have been removed.
 
 ### Layer 2 — Electron/Chromium (renderer level)
 `getUserMedia` in the renderer goes through Chromium's own permission system before reaching macOS. Two handlers must BOTH be set in `app.whenReady()`:
@@ -347,54 +294,41 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 | Workflow | `workflow` | Two-phase flow: Phase 1 generate-raw (Claude maps spoken idea to n8n nodes as JSON → workflowAnalysis) → WORKFLOW_BUILDER review/fill screen → Phase 2 generate-raw (Claude outputs complete n8n workflow JSON) → WORKFLOW_BUILDER_DONE; green accent in UI |
 | Email | `email` | Standalone — speak email situation → Claude drafts ready-to-send email (subject + body + tone analysis) as JSON → EMAIL_READY two-column output; always auto-expands (mode-selected IPC triggers handleExpand); output IS the email, no prompt intermediary; teal accent `rgba(20,184,166)` in UI; added FEATURE-EMAIL-MODE |
 
-- Mode is selected via right-click context menu on the bar.
-- Active mode persisted in localStorage via `getMode()` / `setMode()`.
-- Mode label visible in IDLE state next to shortcut hint — never hidden.
-- Mode drives the system prompt prefix sent to `claude -p`.
-
+- The mode list (keys, labels, descriptions, colours, kind) lives in `shared/modes.json` and is read by main (prompt building, native menu) and the renderer (`useMode`, `ModeDropdown`). Add or change a mode there.
+- Prompt text lives in `main/prompts/`: `template.txt` for template modes (filled with the registry's `promptName` + `instruction`), `<key>.txt` for standalone modes, `eval.txt` for the scorecard. Placeholders are filled in a single pass (`fillTemplate`).
+- Mode is chosen from the mode pill dropdown or right-click / ⌘, (native menu). Persisted in localStorage via `useMode()`.
+- Renderer-side prompts (image/video/workflow builders, iteration, email tone adjust) still live in their hooks.
 ---
 
 ## Testing philosophy
 
-**Context:** Vanilla JS Electron app, no test framework in dependencies for v1.
-
-**What gets tested:**
-
-| Type | Scope | Method | When |
-|------|-------|--------|------|
-| Manual smoke test | All 6 states, all 5 modes | Run app, exercise each flow | Before every commit |
-| Manual regression | Global shortcut, PATH resolution, edit mode | Checklist in TASKS.md | Before every release |
-| Unit (if added) | Pure functions — mode system, state transitions | Vitest (add as devDep if needed) | If logic grows complex |
-| E2E | Full flow — speak → generate → copy | Playwright + Electron driver | v2 if distribution expands |
+| Type | Scope | Command | When |
+|------|-------|---------|------|
+| Unit | `main/` modules, prompt building, output parsing, renderer utils, IPC contract | `npm test` (Vitest) | Every change; CI |
+| End-to-end | The real app driven by Playwright with fake `claude`/`whisper` scripts and Chromium's fake mic: typing, voice, abort, hotkey, hide-on-blur, retry, settings checks | `npm run test:e2e` | Before merging changes to flows or main.js |
+| Preflight | Local tool reachability + codebase assertions | `npm run preflight` | Before release (release.sh runs it) |
+| Manual smoke | Anything the e2e suite doesn't cover yet (expanded view, builders, history) | Run the app | Before release |
 
 **Rules:**
-- For v1: manual smoke test checklist is the test suite. Honour it before every commit.
-- No test skipping — if a flow is broken, fix it before the commit goes in.
-- If unit tests are added, they go in `tests/` at root. Vitest as devDep only.
+- New logic in `main/` gets a unit test. New IPC channels are covered automatically by the contract test.
+- A flow change gets an e2e test when it can be driven with the fake CLI.
+- E2E runs use `PROMPTLY_USER_DATA` (a throwaway profile), never your real config or shortcuts.
 
 ---
 
 ## Code quality
 
-**Linter:** ESLint — configured for vanilla JS (no TypeScript plugin needed)
-- `no-unused-vars` — no dead code
-- `no-console` (warn) — `console.log` allowed during dev, clean before release
-- No TypeScript — this is intentional. Do not add JSDoc types as a workaround for `any`.
-
-**Formatter:** Prettier
-- Single quotes, semicolons, 2-space indent, 100 char line length
+**Linter:** ESLint 9 flat config over the whole repo (`npm run lint`): main process, preload, `main/`, scripts, tests and the React renderer (eslint-plugin-react + react-hooks: `rules-of-hooks` is an error, `exhaustive-deps` a warning because of the ref-based state design).
+- Lint errors block commits; CI runs lint, unit tests and the renderer build.
 
 **Git conventions:**
-- Conventional commits: `feat(scope)`, `fix(scope)`, `docs(scope)`, `design(scope)`
-- Branch naming: `feature/[TASK-ID]-slug`, `fix/[TASK-ID]-slug` — always branched off `main`
-- Doc commits always separate from code commits
-- Pre-commit: linter must pass before commit
+- Conventional commits: `feat(scope)`, `fix(scope)`, `refactor(scope)`, `test(scope)`, `chore(scope)`, `docs(scope)`
+- Branches off `main`: `feature/…`, `fix/…`
+- Doc commits separate from code commits
 
 **Dependencies:**
-- Zero runtime npm dependencies — this is a hard constraint from BRIEF.md.
-- Only devDependencies: `electron`, `electron-builder`. Nothing else without DECISIONS.md entry.
-- `npm audit` before every commit — high/critical = block commit.
-- Pin exact versions in package.json.
+- Zero runtime npm dependencies in the packaged app.
+- `npm audit` must show no high/critical issues. Electron and electron-builder are pinned to exact versions.
 
 ---
 
@@ -412,10 +346,11 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 The following are required on every task — no exceptions:
 
 - Use `contextBridge` for all renderer↔main communication — never expose node APIs directly
-- Use the cached `claudePath` for all `exec` calls involving the Claude binary
-- Call `setState(newState, payload)` for all DOM state changes — never mutate DOM directly
-- Use `getMode()` / `setMode()` for all localStorage mode access
-- Use `textContent` for all user-provided or Claude-generated text rendered to DOM
+- Run Claude only through `main/llm.js` (cached `claudePath`, `makeClaudeEnv`, `--model`, prompt on stdin)
+- Run external binaries with `execFile`/`spawn` and an argument array — never a shell string with a path in it
+- All renderer state changes go through `transition()` in App.jsx
+- Mode data comes from `shared/modes.json`; prompt text from `main/prompts/`
+- Render user-provided or Claude-generated text as JSX text nodes
 
 ---
 
@@ -461,6 +396,9 @@ The following are P0 review findings — they block phase gates:
 | IPC pattern | contextBridge + preload.js | Electron security best practice; sandboxed renderer | 2026-04-18 |
 | PATH resolution | zsh login shell at startup, cached | Most common failure mode in Electron+CLI; spec'd in BRIEF.md as high-risk | 2026-04-18 |
 | CSS approach | Inline in index.html, CSS custom properties | Single-file constraint; tokens prevent hardcoded colours | 2026-04-18 |
+| Main process layout | `main.js` wiring + Electron-free `main/` modules | Testable logic; OS code isolated for a Windows port | 2026-09-24 |
+| Claude invocation | stdin prompt, `--tools ""`, `--no-session-persistence`, `--strict-mcp-config`, minimal `--system-prompt` | No argv limits, no agent session per prompt, cleaner plain-text output; falls back on older CLIs | 2026-09-24 |
+| Testing | Vitest unit + Playwright e2e with a fake CLI | Flows can be verified without a person or real Claude calls | 2026-09-24 |
 | Window title bar | `titleBarStyle: 'hiddenInset'` + `trafficLightPosition` (not `frame: false`) | Traffic lights required per BRIEF.md; hiddenInset hides title bar while preserving traffic lights | 2026-04-18 |
 | Waveform animation | `setInterval` + sine wave + noise in renderer | Visual only — Whisper is post-processing, no real-time audio stream available; no Web Audio API needed | 2026-04-18 |
 
@@ -472,3 +410,4 @@ The following are P0 review findings — they block phase gates:
 > 2026-04-18 — Initial ARCHITECTURE.md created via architect: from BRIEF.md
 > 📝 2026-04-18 · Scope change D-003 — speech engine changed from webkitSpeechRecognition to MediaRecorder + Whisper CLI; transcribe-audio IPC channel added
 > 📝 2026-04-18 · Scope change D-004 — frame: false → titleBarStyle: hiddenInset + trafficLightPosition; 30-bar waveform pattern added
+> 📝 2026-09-24 · Foundation pass — main process split into main/, shared mode registry, Claude via stdin, IPC contract + e2e tests, lint over the renderer, dead IPC removed (see DECISIONS.md D-FOUNDATION)
