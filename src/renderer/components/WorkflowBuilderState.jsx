@@ -34,8 +34,6 @@ export default function WorkflowBuilderState({
     return sum + paramsFilled + blankFilled
   }, 0)
 
-  const allFilled = totalPlaceholders === 0 || filledCount >= totalPlaceholders
-
   function handleChipClick(nodeId, paramKey) {
     const key = `${nodeId}-${paramKey}`
     setActiveInput(key)

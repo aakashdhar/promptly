@@ -1,47 +1,64 @@
 'use strict';
 
+const globals = require('globals');
+const react = require('eslint-plugin-react');
+const reactHooks = require('eslint-plugin-react-hooks');
+
+const baseRules = {
+  'no-unused-vars': ['error', { args: 'none', caughtErrors: 'none', varsIgnorePattern: '^_' }],
+  'no-console': 'warn',
+  'no-undef': 'error',
+};
+
 module.exports = [
   {
-    files: ['main.js', 'preload.js'],
+    ignores: ['node_modules/**', 'dist/**', 'dist-renderer/**', 'vibe/**', 'memory/**', 'build/**'],
+  },
+  {
+    // Electron main process, preload, and Node scripts (CommonJS)
+    files: ['main.js', 'preload.js', 'main/**/*.js', 'scripts/**/*.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
-      globals: {
-        require: 'readonly',
-        module: 'readonly',
-        __dirname: 'readonly',
-        process: 'readonly',
-        console: 'readonly',
-        Buffer: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-      },
+      globals: { ...globals.node },
     },
-    rules: {
-      'no-unused-vars': 'error',
-      'no-console': 'warn',
-      'no-undef': 'error',
-    },
+    rules: baseRules,
   },
   {
-    files: ['index.html'],
+    // CLI scripts print their results
+    files: ['scripts/**/*.js'],
+    rules: { 'no-console': 'off' },
+  },
+  {
+    // Build config and tests (ES modules on Node)
+    files: ['vite.config.js', 'vitest.config.mjs', 'tests/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'script',
-      globals: {
-        document: 'readonly',
-        window: 'readonly',
-        console: 'readonly',
-        localStorage: 'readonly',
-        WebkitSpeechRecognition: 'readonly',
-      },
+      sourceType: 'module',
+      globals: { ...globals.node },
     },
+    rules: baseRules,
+  },
+  {
+    // React renderer
+    files: ['src/**/*.{js,jsx}'],
+    plugins: { react, 'react-hooks': reactHooks },
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: { ...globals.browser },
+    },
+    settings: { react: { version: 'detect' } },
     rules: {
-      'no-unused-vars': 'error',
-      'no-console': 'warn',
-      'no-undef': 'error',
+      ...baseRules,
+      'react/jsx-uses-vars': 'error',
+      'react/jsx-key': 'error',
+      'react/no-danger': 'error',
+      'react-hooks/rules-of-hooks': 'error',
+      // The app deliberately reads live values through refs inside mount-only effects;
+      // keep this visible as a warning rather than forcing churn across every hook.
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
 ];

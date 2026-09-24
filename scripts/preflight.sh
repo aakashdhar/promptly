@@ -86,20 +86,25 @@ fi
   fail "whisper found but failed to execute. Check Python PATH and SSL certificate environment variables."
 ok "CHECK 6: whisper --help exits 0"
 
-# CHECK 7 — all spawn(claudePath calls use makeClaudeEnv
+# CHECK 7 — every Claude process (main.js + main/) uses makeClaudeEnv
 python3 - <<'PYEOF'
-import sys
-with open('main.js') as f:
-    lines = f.readlines()
-for i, line in enumerate(lines):
-    if 'spawn(claudePath' in line and not line.strip().startswith('//'):
-        window = ''.join(lines[max(0,i-2):min(len(lines),i+4)])
-        if 'makeClaudeEnv' not in window:
-            print(f"FAIL: spawn call at line {i+1} in main.js does not use makeClaudeEnv(). This will break on nvm/non-standard installs.")
-            sys.exit(1)
+import sys, glob
+files = ['main.js'] + sorted(glob.glob('main/**/*.js', recursive=True))
+for path in files:
+    with open(path) as f:
+        lines = f.readlines()
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith('//'):
+            continue
+        if ('spawn' in s or 'execFile' in s) and '(claudePath' in s.replace(' ', ''):
+            window = ''.join(lines[max(0,i-2):min(len(lines),i+4)])
+            if 'makeClaudeEnv' not in window:
+                print(f"FAIL: Claude process at {path}:{i+1} does not use makeClaudeEnv(). This will break on nvm/non-standard installs.")
+                sys.exit(1)
 PYEOF
 [ $? -ne 0 ] && exit 1
-ok "CHECK 7: all spawn(claudePath calls use makeClaudeEnv"
+ok "CHECK 7: every Claude process uses makeClaudeEnv"
 
 # CHECK 8 — settings button present in ExpandedTransportBar
 count=$(grep -c "onOpenSettings" src/renderer/components/ExpandedTransportBar.jsx 2>/dev/null || echo 0)

@@ -13,22 +13,35 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: npm
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Build renderer
+        run: npm run build:renderer
       - name: Run splash screen assertions
         run: node scripts/assert-splash.js
+      # CHECK 7 only: the other preflight checks need a logged-in claude CLI and local tools.
       - name: Check makeClaudeEnv coverage (CHECK 7)
         run: |
           python3 - <<'EOF'
-          import sys
-          with open('main.js') as f:
-              lines = f.readlines()
-          for i, line in enumerate(lines):
-              if 'spawn(claudePath' in line and not line.strip().startswith('//'):
-                  window = ''.join(lines[max(0,i-2):min(len(lines),i+4)])
-                  if 'makeClaudeEnv' not in window:
-                      print(f"FAIL: spawn call at line {i+1} does not use makeClaudeEnv()")
-                      sys.exit(1)
-          print("OK: all spawn(claudePath calls use makeClaudeEnv")
+          import sys, glob
+          files = ['main.js'] + sorted(glob.glob('main/**/*.js', recursive=True))
+          for path in files:
+              with open(path) as f:
+                  lines = f.readlines()
+              for i, line in enumerate(lines):
+                  s = line.strip()
+                  if s.startswith('//'):
+                      continue
+                  if ('spawn' in s or 'execFile' in s) and '(claudePath' in s.replace(' ', ''):
+                      window = ''.join(lines[max(0,i-2):min(len(lines),i+4)])
+                      if 'makeClaudeEnv' not in window:
+                          print(f"FAIL: Claude process at {path}:{i+1} does not use makeClaudeEnv()")
+                          sys.exit(1)
+          print("OK: every Claude process uses makeClaudeEnv")
           EOF
