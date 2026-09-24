@@ -15,7 +15,7 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
             <path d="M1 1L9 9M9 1L1 9" stroke="rgba(var(--ink),0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
-        <div className="flex-1 flex items-center h-9 [-webkit-app-region:no-drag]">
+        <div className="flex-1 min-w-0 overflow-hidden flex items-center h-9 [-webkit-app-region:no-drag]">
           <div style={{
             width: '100%', height: '1.5px',
             background: 'linear-gradient(90deg, transparent, rgba(255,189,46,0.45) 20%, rgba(255,189,46,0.45) 80%, transparent)',
@@ -25,7 +25,7 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
         {/* POLISH-003: timer fontWeight 400, letterSpacing 0.08em */}
         <span
           className="text-[11px] flex-shrink-0 min-w-[28px] text-right tabular-nums [-webkit-app-region:no-drag]"
-          style={{ color: 'color-mix(in oklab, rgba(255,189,46,0.7) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 400, letterSpacing: '0.08em' }}
+          style={{ color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 400, letterSpacing: '0.08em' }}
         >
           {duration}
         </span>
@@ -55,7 +55,7 @@ export default function PausedState({ duration, onResume, onStop, onDismiss }) {
       <div className="h-px bg-gradient-to-r from-transparent via-[rgba(var(--ink),0.07)] to-transparent" style={{ marginLeft: 32, marginRight: 32 }} />
       <div style={{ padding: '10px 18px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FFBD2E', flexShrink: 0 }} />
-        <span style={{ fontSize: '12px', color: 'color-mix(in oklab, rgba(255,189,46,0.75) var(--accent-text-strength), rgb(var(--ink)))', letterSpacing: '.02em' }}>
+        <span style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', letterSpacing: '.02em' }}>
           Paused — tap resume to continue
         </span>
       </div>

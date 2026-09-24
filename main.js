@@ -384,7 +384,7 @@ let currentModeLabel = '';
 
 function createPillWindow() {
   pillWin = new BrowserWindow({
-    width: 380,
+    width: 480,
     height: 76,
     show: false,
     frame: false,
@@ -528,7 +528,7 @@ function createSplashWindow() {
 function createWindow() {
   win = new BrowserWindow({
     width: 520,
-    height: 89,
+    height: 134, // the idle bar; the renderer resizes per state
     minWidth: 520,
     maxWidth: 520, // overridden at runtime by set-window-size IPC (calls setMinimumSize/setMaximumSize before setSize)
     show: false,

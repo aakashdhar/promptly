@@ -10,13 +10,13 @@ export default function VariationsPanel({ variations, selectedVariation, isLoadi
         padding: '12px 16px 10px', borderBottom: '0.5px solid rgba(var(--ink),0.05)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
       }}>
-        <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(var(--ink),0.38)' }}>
+        <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-tertiary)' }}>
           {isLoading ? 'Generating variations…' : `${variations.length} variation${variations.length !== 1 ? 's' : ''} · tap to select`}
         </span>
         <button type="button" onClick={onGenerateMore} disabled={isLoading} style={{
           background: 'none', border: 'none', padding: 0,
           cursor: isLoading ? 'default' : 'pointer',
-          fontSize: '11px', color: isLoading ? 'color-mix(in oklab, rgba(139,92,246,0.3) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(139,92,246,0.7) var(--accent-text-strength), rgb(var(--ink)))',
+          fontSize: '11px', color: isLoading ? 'color-mix(in oklab, rgb(139,92,246) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgb(139,92,246) var(--accent-text-strength), rgb(var(--ink)))',
         }}>
           All different →
         </button>
@@ -32,7 +32,7 @@ export default function VariationsPanel({ variations, selectedVariation, isLoadi
           </div>
         ))}
         {!isLoading && variations.length === 0 && (
-          <div style={{ padding: '24px 16px', textAlign: 'center', color: 'rgba(var(--ink),0.38)', fontSize: '12px', lineHeight: 1.6 }}>
+          <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '12px', lineHeight: 1.6 }}>
             Variation generation failed.<br />Use the button below to retry.
           </div>
         )}
@@ -52,16 +52,16 @@ export default function VariationsPanel({ variations, selectedVariation, isLoadi
               }}
             >
               <div style={{
-                fontSize: '9px', fontWeight: 700, letterSpacing: '.06em',
-                textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(139,92,246,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '5px',
+                fontSize: '11px', fontWeight: 700, letterSpacing: '.06em',
+                textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(139,92,246) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '5px',
               }}>
                 Variation {v.id}{isSelected ? ' · selected' : ''}
               </div>
-              <div style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.74)', lineHeight: 1.55 }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                 {isSelected ? v.prompt : (v.prompt.length > 120 ? v.prompt.slice(0, 120) + '…' : v.prompt)}
               </div>
               {v.focus && (
-                <div style={{ fontSize: '9.5px', color: 'rgba(var(--ink),0.42)', marginTop: '3px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '3px' }}>
                   {v.focus}
                 </div>
               )}
@@ -79,7 +79,7 @@ export default function VariationsPanel({ variations, selectedVariation, isLoadi
             width: '100%', height: '34px',
             background: 'rgba(139,92,246,0.08)',
             border: '0.5px solid rgba(139,92,246,0.2)', borderRadius: '8px',
-            fontSize: '12px', color: 'color-mix(in oklab, rgba(196,168,255,0.7) var(--accent-text-strength), rgb(var(--ink)))',
+            fontSize: '12px', color: 'color-mix(in oklab, rgb(196,168,255) var(--accent-text-strength), rgb(var(--ink)))',
             cursor: isLoading ? 'default' : 'pointer',
             opacity: isLoading ? 0.4 : 1,
           }}

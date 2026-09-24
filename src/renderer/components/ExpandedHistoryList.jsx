@@ -104,15 +104,15 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
               }}
             />
             <button onClick={handleClearSearch} style={{
-              fontSize: '10px', color: 'rgba(var(--ink),0.68)',
+              fontSize: '11px', color: 'var(--text-secondary)',
               background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             }}>✕</button>
           </div>
         ) : (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{
-              fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
-              color: 'rgba(var(--ink),0.38)', textTransform: 'uppercase',
+              fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em',
+              color: 'var(--text-tertiary)', textTransform: 'uppercase',
             }}>
               Session History
             </span>
@@ -136,7 +136,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       </div>
 
       {/* All / Saved tabs */}
-      <div style={{ display: 'flex', padding: '8px 10px 0', gap: '4px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', padding: '8px 18px 0', gap: '6px', flexShrink: 0 }}>
         {['all', 'saved'].map(tab => {
           const isActive = activeTab === tab
           const isSaved = tab === 'saved'
@@ -165,11 +165,11 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 </svg>
               )}
               <span style={{
-                fontSize: '10px',
+                fontSize: '11px',
                 fontWeight: isActive ? 500 : 400,
                 color: readableColor(isActive
                   ? (isSaved ? 'rgba(255,189,46,0.9)' : 'rgba(100,180,255,0.9)')
-                  : 'rgba(var(--ink),0.35)'),
+                  : 'var(--text-tertiary)'),
               }}>
                 {tab === 'all' ? 'All' : 'Saved'}
               </span>
@@ -179,7 +179,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       </div>
 
       {/* Filter chips */}
-      <div style={{ display: 'flex', gap: '4px', padding: '7px 10px 6px', flexWrap: 'wrap', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '6px', padding: '10px 18px 8px', flexWrap: 'wrap', flexShrink: 0 }}>
         {[
           { id: 'all', label: 'All' },
           { id: 'up', label: '👍' },
@@ -197,7 +197,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
           const c = isActive ? activeColors[f.id] : inactiveColor
           return (
             <span key={f.id} onClick={() => setActiveFilter(f.id)} style={{
-              padding: '2px 7px', borderRadius: '20px', fontSize: '9px',
+              padding: '2px 7px', borderRadius: '20px', fontSize: '11px',
               fontWeight: 600, cursor: 'pointer',
               background: c.bg, border: `0.5px solid ${c.border}`, color: readableColor(c.text),
               transition: 'all 120ms',
@@ -211,21 +211,21 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       {/* Stats bar */}
       {activeTab === 'all' && history.length > 0 && (
         <div style={{
-          margin: '0 10px 8px', padding: '6px 10px',
+          margin: '0 18px 10px', padding: '6px 10px',
           background: 'rgba(var(--ink),0.03)',
           border: '0.5px solid rgba(var(--ink),0.06)',
           borderRadius: '7px', display: 'flex',
           justifyContent: 'space-between', alignItems: 'center',
           flexShrink: 0,
         }}>
-          <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.44)' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
             {history.length} prompt{history.length !== 1 ? 's' : ''}
           </span>
           {statsRated.total > 0 && (
             <div style={{ display: 'flex', gap: '7px', alignItems: 'center' }}>
-              <span style={{ fontSize: '10px', color: 'color-mix(in oklab, rgba(100,220,130,0.7) var(--accent-text-strength), rgb(var(--ink)))' }}>👍 {upPct}%</span>
+              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }}>👍 {upPct}%</span>
               <div style={{ width: '0.5px', height: '9px', background: 'rgba(var(--ink),0.1)' }} />
-              <span style={{ fontSize: '10px', color: 'color-mix(in oklab, rgba(255,100,90,0.65) var(--accent-text-strength), rgb(var(--ink)))' }}>👎 {downPct}%</span>
+              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(255,100,90) var(--accent-text-strength), rgb(var(--ink)))' }}>👎 {downPct}%</span>
             </div>
           )}
         </div>
@@ -235,7 +235,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {filteredEntries.length === 0 ? (
           <div style={{
-            fontSize: '11px', color: 'rgba(var(--ink),0.38)',
+            fontSize: '11px', color: 'var(--text-tertiary)',
             textAlign: 'center', padding: '24px 16px',
           }}>
             {activeFilter !== 'all' ? 'No prompts match this filter'
@@ -254,12 +254,13 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
             const ratingTagIsPositive = entry.ratingTag && POSITIVE_TAGS.includes(entry.ratingTag)
             const ratingTagStyle = entry.ratingTag
               ? ratingTagIsPositive
-                ? { bg: 'rgba(48,209,88,0.10)', border: 'rgba(48,209,88,0.25)', color: 'color-mix(in oklab, rgba(100,220,130,0.9) var(--accent-text-strength), rgb(var(--ink)))' }
-                : { bg: 'rgba(255,59,48,0.09)', border: 'rgba(255,59,48,0.25)', color: 'color-mix(in oklab, rgba(255,100,90,0.9) var(--accent-text-strength), rgb(var(--ink)))' }
+                ? { bg: 'rgba(48,209,88,0.10)', border: 'rgba(48,209,88,0.25)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
+                : { bg: 'rgba(255,59,48,0.09)', border: 'rgba(255,59,48,0.25)', color: 'color-mix(in oklab, rgb(255,100,90) var(--accent-text-strength), rgb(var(--ink)))' }
               : null
             return (
               <div
                 key={entry.id}
+                data-history-entry
                 onClick={() => onSelect(entry)}
                 onMouseEnter={() => setHoveredId(entry.id)}
                 onMouseLeave={() => setHoveredId(null)}
@@ -279,17 +280,17 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 {/* Row 1: timestamp + mode pill + rating tag */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(var(--ink),0.34)' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-tertiary)' }}>
                       {ts}
                     </span>
                     {entry.isIteration && (
-                      <span style={{ fontSize: '9px', color: 'color-mix(in oklab, rgba(10,132,255,0.6) var(--accent-text-strength), rgb(var(--ink)))' }}>↻</span>
+                      <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))' }}>↻</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     {ratingTagStyle && (
                       <span style={{
-                        fontSize: '9px', fontWeight: 500, padding: '1px 6px', borderRadius: '3px',
+                        fontSize: '11px', fontWeight: 500, padding: '1px 6px', borderRadius: '3px',
                         background: ratingTagStyle.bg,
                         border: `0.5px solid ${ratingTagStyle.border}`,
                         color: readableColor(ratingTagStyle.color),
@@ -298,7 +299,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                       </span>
                     )}
                     <span style={{
-                      fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em',
+                      fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em',
                       textTransform: 'uppercase', padding: '2px 7px', borderRadius: '3px',
                       background: tagStyle.background, color: readableColor(tagStyle.color),
                     }}>
@@ -314,7 +315,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                 }}>
                   <span style={{
                     fontSize: '13px',
-                    color: isActive ? 'rgba(var(--ink),0.82)' : 'rgba(var(--ink),0.48)',
+                    color: isActive ? 'rgba(var(--ink),0.82)' : 'var(--text-tertiary)',
                     fontWeight: isActive ? 500 : 400,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     flex: 1, minWidth: 0,
@@ -327,7 +328,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                     </svg>
                   )}
                   {entry.rating && (
-                    <span style={{ fontSize: '9px', flexShrink: 0 }}>{entry.rating === 'up' ? '👍' : '👎'}</span>
+                    <span style={{ fontSize: '11px', flexShrink: 0 }}>{entry.rating === 'up' ? '👍' : '👎'}</span>
                   )}
                 </div>
 
@@ -336,7 +337,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                   onClick={(e) => handleEntryDelete(entry.id, e)}
                   style={{
                     position: 'absolute', top: '10px', right: '10px',
-                    fontSize: '10px', color: 'rgba(var(--ink),0.56)',
+                    fontSize: '11px', color: 'var(--text-secondary)',
                     background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                     opacity: hoveredId === entry.id ? 1 : 0,
                     transition: 'opacity 120ms',
@@ -353,17 +354,17 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
       {/* Footer */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '9px 14px',
+        padding: '12px 18px',
         borderTop: '0.5px solid rgba(var(--ink),0.06)',
         flexShrink: 0,
       }}>
-        <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.44)' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
           {activeTab === 'saved' ? `${tabFiltered.length} saved` : footerText}
         </span>
         <button
           onClick={handleClearAll}
           style={{
-            fontSize: '10px', color: 'color-mix(in oklab, rgba(255,59,48,0.5) var(--accent-text-strength), rgb(var(--ink)))',
+            fontSize: '11px', color: 'color-mix(in oklab, rgb(255,59,48) var(--accent-text-strength), rgb(var(--ink)))',
             background: 'none', border: 'none', cursor: 'pointer',
             fontFamily: 'inherit', padding: 0,
             transition: 'color 120ms',

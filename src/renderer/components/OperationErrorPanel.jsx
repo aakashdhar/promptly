@@ -62,43 +62,43 @@ export default function OperationErrorPanel({
       {/* Title + body */}
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(var(--ink),0.95)', marginBottom: '6px' }}>{title}</div>
-        {body && <div style={{ fontSize: '12.5px', color: 'rgba(var(--ink),0.54)', lineHeight: 1.7 }}>{body}</div>}
+        {body && <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{body}</div>}
       </div>
 
       {/* Slow warning */}
       {slowWarning && (
-        <div style={{ fontSize: '11px', color: 'color-mix(in oklab, rgba(255,189,46,0.7) var(--accent-text-strength), rgb(var(--ink)))', textAlign: 'center' }}>{slowWarning}</div>
+        <div style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', textAlign: 'center' }}>{slowWarning}</div>
       )}
 
       {/* Error details */}
       {errorDetails && (
         <div style={{ width: '100%', background: 'rgba(var(--ink),0.03)', border: '0.5px solid rgba(var(--ink),0.07)', borderRadius: '9px', padding: '10px 14px' }}>
-          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.32)', marginBottom: '6px' }}>Error details</div>
-          <div style={{ fontFamily: 'monospace', fontSize: '10.5px', color: 'color-mix(in oklab, rgba(255,100,90,0.55) var(--accent-text-strength), rgb(var(--ink)))', maxHeight: '80px', overflowY: 'auto', lineHeight: 1.5 }}>{errorDetails}</div>
+          <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '6px' }}>Error details</div>
+          <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'color-mix(in oklab, rgb(255,100,90) var(--accent-text-strength), rgb(var(--ink)))', maxHeight: '80px', overflowY: 'auto', lineHeight: 1.5 }}>{errorDetails}</div>
         </div>
       )}
 
       {/* Fix box */}
       {fixCode ? (
         <div style={{ width: '100%', background: 'rgba(255,189,46,0.04)', border: '0.5px solid rgba(255,189,46,0.12)', borderRadius: '9px', padding: '10px 14px' }}>
-          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(255,189,46,0.55) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '8px' }}>Fix</div>
-          {fixPreNote && <div style={{ fontSize: '11px', color: 'rgba(var(--ink),0.62)', marginBottom: '8px' }}>{fixPreNote}</div>}
-          {fixLabel && <div style={{ fontSize: '11px', color: 'rgba(var(--ink),0.62)', marginBottom: '4px' }}>{fixLabel}</div>}
+          <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '8px' }}>Fix</div>
+          {fixPreNote && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px' }}>{fixPreNote}</div>}
+          {fixLabel && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>{fixLabel}</div>}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <code style={{ flex: 1, fontFamily: 'monospace', fontSize: '11px', color: 'color-mix(in oklab, rgba(255,189,46,0.75) var(--accent-text-strength), rgb(var(--ink)))', background: 'rgba(var(--ink),0.04)', padding: '4px 8px', borderRadius: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fixCode}</code>
+            <code style={{ flex: 1, fontFamily: 'monospace', fontSize: '11px', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', background: 'rgba(var(--ink),0.04)', padding: '4px 8px', borderRadius: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fixCode}</code>
             <button
               onClick={handleCopy}
-              style={{ padding: '4px 10px', borderRadius: '5px', fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer', background: copied ? 'rgba(48,209,88,0.1)' : 'rgba(var(--ink),0.05)', border: `0.5px solid ${copied ? 'rgba(48,209,88,0.25)' : 'rgba(var(--ink),0.1)'}`, color: copied ? 'color-mix(in oklab, rgba(48,209,88,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)', transition: 'all 150ms', flexShrink: 0 }}
+              style={{ padding: '4px 10px', borderRadius: '5px', fontSize: '11px', fontFamily: 'inherit', cursor: 'pointer', background: copied ? 'rgba(48,209,88,0.1)' : 'rgba(var(--ink),0.05)', border: `0.5px solid ${copied ? 'rgba(48,209,88,0.25)' : 'rgba(var(--ink),0.1)'}`, color: copied ? 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)', transition: 'all 150ms', flexShrink: 0 }}
             >
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-          {fixNote && <div style={{ fontSize: '10px', color: 'rgba(var(--ink),0.42)', marginTop: '4px' }}>{fixNote}</div>}
+          {fixNote && <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>{fixNote}</div>}
         </div>
       ) : onOpenSettings ? (
         <div style={{ width: '100%', background: 'rgba(255,189,46,0.04)', border: '0.5px solid rgba(255,189,46,0.12)', borderRadius: '9px', padding: '10px 14px' }}>
-          <div style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(255,189,46,0.55) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Fix</div>
-          <div style={{ fontSize: '11px', color: 'rgba(var(--ink),0.62)' }}>Open settings to verify your Whisper and ffmpeg paths.</div>
+          <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Fix</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Open settings to verify your Whisper and ffmpeg paths.</div>
         </div>
       ) : null}
 

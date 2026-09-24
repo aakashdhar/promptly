@@ -93,9 +93,9 @@ export default function WorkflowBuilderState({
   }
 
   const placeholderBadgeStyle = {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 600,
-    color: 'color-mix(in oklab, rgba(255,189,46,0.85) var(--accent-text-strength), rgb(var(--ink)))',
+    color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))',
     background: 'rgba(255,189,46,0.12)',
     border: '0.5px solid rgba(255,189,46,0.25)',
     borderRadius: 5,
@@ -105,7 +105,7 @@ export default function WorkflowBuilderState({
 
   const reiterateStyle = {
     fontSize: 11,
-    color: 'rgba(var(--ink),0.5)',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
     WebkitAppRegion: 'no-drag',
     background: 'none',
@@ -119,17 +119,17 @@ export default function WorkflowBuilderState({
   }
 
   const youSaidLabelStyle = {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 700,
     letterSpacing: '0.12em',
-    color: 'rgba(var(--ink),0.32)',
+    color: 'var(--text-tertiary)',
     marginBottom: 3,
   }
 
   const transcriptStyle = {
     fontSize: 11,
     fontStyle: 'italic',
-    color: 'rgba(var(--ink),0.54)',
+    color: 'var(--text-secondary)',
     lineHeight: 1.4,
   }
 
@@ -183,7 +183,7 @@ export default function WorkflowBuilderState({
     background: 'none',
     width: '100%',
     fontSize: 12,
-    color: 'rgba(var(--ink),0.38)',
+    color: 'var(--text-tertiary)',
   }
 
   const actionRowStyle = {
@@ -243,20 +243,20 @@ export default function WorkflowBuilderState({
                     width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                     background: badgeColor.bg, border: `0.5px solid ${badgeColor.border}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 700, color: readableColor(badgeColor.text),
+                    fontSize: 11, fontWeight: 700, color: readableColor(badgeColor.text),
                   }}>
                     {idx + 1}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {node.name ? (
-                      <div style={{ fontSize: 12.5, fontWeight: 500, color: 'rgba(var(--ink),0.95)', marginBottom: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(var(--ink),0.95)', marginBottom: 1 }}>
                         {node.name}
                       </div>
                     ) : (
                       <input
                         placeholder="Node name"
                         style={{
-                          fontSize: 12.5, fontWeight: 500,
+                          fontSize: 13, fontWeight: 500,
                           color: 'rgba(var(--ink),0.95)',
                           background: 'rgba(var(--ink),0.06)',
                           border: '0.5px solid rgba(var(--ink),0.15)',
@@ -268,15 +268,15 @@ export default function WorkflowBuilderState({
                       />
                     )}
                     {node.type ? (
-                      <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(var(--ink),0.42)' }}>
+                      <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
                         {node.type}
                       </div>
                     ) : (
                       <input
                         placeholder="n8n-nodes-base.nodetype"
                         style={{
-                          fontSize: 10, fontFamily: 'monospace',
-                          color: 'rgba(var(--ink),0.68)',
+                          fontSize: 11, fontFamily: 'monospace',
+                          color: 'var(--text-secondary)',
                           background: 'rgba(var(--ink),0.06)',
                           border: '0.5px solid rgba(var(--ink),0.15)',
                           borderRadius: 5, padding: '2px 6px', width: '100%',
@@ -289,10 +289,10 @@ export default function WorkflowBuilderState({
                   </div>
                   {(node.name || node.type) && (
                     <div style={{
-                      fontSize: 9, fontWeight: 600, letterSpacing: '0.05em',
+                      fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
                       padding: '2px 6px', borderRadius: 4,
                       background: isTrigger ? 'rgba(34,197,94,0.12)' : 'rgba(10,132,255,0.12)',
-                      color: isTrigger ? 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(100,170,255,0.8) var(--accent-text-strength), rgb(var(--ink)))',
+                      color: isTrigger ? 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))',
                       flexShrink: 0,
                     }}>
                       {isTrigger ? 'Trigger' : 'Action'}
@@ -305,7 +305,7 @@ export default function WorkflowBuilderState({
                       onMouseLeave={e => { e.currentTarget.style.color = 'rgba(var(--ink),0.2)' }}
                       style={{
                         fontSize: 14, lineHeight: 1,
-                        color: 'rgba(var(--ink),0.32)',
+                        color: 'var(--text-tertiary)',
                         background: 'none', border: 'none',
                         cursor: 'pointer',
                         WebkitAppRegion: 'no-drag',
@@ -321,7 +321,7 @@ export default function WorkflowBuilderState({
 
                 {/* Purpose */}
                 {node.purpose && (
-                  <div style={{ fontSize: 11, color: 'rgba(var(--ink),0.62)', marginBottom: 6, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, lineHeight: 1.4 }}>
                     {node.purpose}
                   </div>
                 )}
@@ -335,7 +335,7 @@ export default function WorkflowBuilderState({
 
                   return (
                     <div key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 10, color: 'rgba(var(--ink),0.44)', minWidth: 80, paddingTop: 1 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 80, paddingTop: 1 }}>
                         {key}
                       </span>
                       {isPlaceholder && !filledVal ? (
@@ -360,7 +360,7 @@ export default function WorkflowBuilderState({
                             onClick={() => handleChipClick(node.id, key)}
                             style={{
                               fontSize: 11,
-                              color: 'color-mix(in oklab, rgba(255,189,46,0.7) var(--accent-text-strength), rgb(var(--ink)))',
+                              color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))',
                               background: 'rgba(255,189,46,0.06)',
                               border: '0.5px solid rgba(255,189,46,0.18)',
                               borderRadius: 5, padding: '2px 7px',
@@ -375,7 +375,7 @@ export default function WorkflowBuilderState({
                         <span
                           onClick={() => handleChipClick(node.id, key)}
                           style={{
-                            fontSize: 11, color: 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))',
+                            fontSize: 11, color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))',
                             background: 'rgba(34,197,94,0.06)',
                             border: '0.5px solid rgba(34,197,94,0.18)',
                             borderRadius: 5, padding: '2px 7px',
@@ -385,7 +385,7 @@ export default function WorkflowBuilderState({
                           {filledVal}
                         </span>
                       ) : isExpression(val) ? (
-                        <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: 'color-mix(in oklab, rgba(74,222,128,0.65) var(--accent-text-strength), rgb(var(--ink)))' }}>
+                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }}>
                           {String(val)}
                         </span>
                       ) : (
@@ -400,8 +400,8 @@ export default function WorkflowBuilderState({
                 {/* Credentials */}
                 {node.credentialType && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <span style={{ fontSize: 10, color: 'rgba(var(--ink),0.44)', minWidth: 80 }}>Credentials</span>
-                    <span style={{ fontSize: 11, color: 'rgba(var(--ink),0.42)', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 80 }}>Credentials</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
                       {node.credentialType} — map in n8n after import
                     </span>
                   </div>
@@ -412,7 +412,7 @@ export default function WorkflowBuilderState({
               {idx < nodes.length - 1 && (
                 <div style={connectorStyle}>
                   <div style={{ width: 1, height: 12, background: 'rgba(var(--ink),0.1)', marginLeft: 9, flexShrink: 0 }} />
-                  <span style={{ fontSize: 10.5, color: 'rgba(var(--ink),0.32)' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
                     {nodes.length === 2 ? '↓' : (idx === 0 ? connections || '↓' : '↓')}
                   </span>
                 </div>
@@ -431,7 +431,7 @@ export default function WorkflowBuilderState({
       <div style={actionRowStyle}>
         <div>
           {unfilled > 0 && (
-            <span style={{ fontSize: 11, color: 'color-mix(in oklab, rgba(255,189,46,0.5) var(--accent-text-strength), rgb(var(--ink)))' }}>
+            <span style={{ fontSize: 11, color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))' }}>
               {unfilled} placeholder{unfilled !== 1 ? 's' : ''} unfilled — fill here or in n8n after import
             </span>
           )}
@@ -440,7 +440,7 @@ export default function WorkflowBuilderState({
           <button
             onClick={onStartOver}
             style={{
-              fontSize: 12, color: 'rgba(var(--ink),0.56)',
+              fontSize: 12, color: 'var(--text-secondary)',
               background: 'none', border: '0.5px solid rgba(var(--ink),0.12)',
               borderRadius: 7, padding: '6px 12px', cursor: 'pointer',
               WebkitAppRegion: 'no-drag',

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import MODE_REGISTRY from '../../../shared/modes.json'
 
@@ -9,11 +9,11 @@ const SPECIALIST_MODES = MODES.filter(m => m.group === 'specialist')
 
 const SECTION_LABEL_STYLE = {
   fontFamily: '"DM Mono", monospace',
-  fontSize: '8.5px',
+  fontSize: '11px',
   fontWeight: 500,
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  color: 'rgba(var(--ink),0.32)',
+  color: 'var(--text-tertiary)',
   padding: '8px 10px 4px',
   display: 'block',
 }
@@ -24,8 +24,13 @@ const DIVIDER_STYLE = {
   margin: '4px 0',
 }
 
-export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef }) {
+export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef, fitWindow = false }) {
   const ref = useRef(null)
+
+  // In the compact bar the window is only as tall as the bar: grow it to fit the whole menu.
+  useLayoutEffect(() => {
+    if (fitWindow && ref.current) window.electronAPI?.resizeWindow(Math.ceil(top + ref.current.offsetHeight + 16))
+  }, [fitWindow, top])
 
   useEffect(() => {
     function handlePointerDown(e) {
@@ -52,7 +57,7 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
         onPointerDown={e => { e.stopPropagation(); handleSelect(m.key) }}
         style={{
           display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '5px 10px',
+          padding: '6px 10px',
           cursor: 'pointer',
           borderRadius: '6px',
           margin: '0 4px',
@@ -68,9 +73,8 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
             {m.label}
           </span>
           <span style={{
-            display: 'block', fontSize: '10.5px', fontWeight: 300,
-            color: 'rgba(var(--ink),0.42)', lineHeight: 1.4,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            display: 'block', fontSize: '11px', fontWeight: 400,
+            color: 'var(--text-secondary)', lineHeight: 1.4,
           }}>
             {m.desc}
           </span>
@@ -91,7 +95,7 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
         position: 'fixed',
         top: `${top}px`,
         right: `${right}px`,
-        width: '340px',
+        width: '380px',
         background: 'var(--surface-raised)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
@@ -121,8 +125,8 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.04)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
         >
-          <span style={{ fontSize: '12px', fontWeight: 400, color: 'rgba(var(--ink),0.56)' }}>Keyboard shortcuts</span>
-          <span style={{ fontSize: '11px', color: 'rgba(var(--ink),0.32)', fontFamily: 'system-ui' }}>⌘?</span>
+          <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>Keyboard shortcuts</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'system-ui' }}>⌘?</span>
         </div>
         <div
           onPointerDown={e => { e.stopPropagation(); onShowHistory(); onClose() }}
@@ -130,8 +134,8 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.04)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
         >
-          <span style={{ fontSize: '12px', fontWeight: 400, color: 'rgba(var(--ink),0.56)' }}>History</span>
-          <span style={{ fontSize: '11px', color: 'rgba(var(--ink),0.32)', fontFamily: 'system-ui' }}>⌘H</span>
+          <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>History</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'system-ui' }}>⌘H</span>
         </div>
       </div>
     </div>

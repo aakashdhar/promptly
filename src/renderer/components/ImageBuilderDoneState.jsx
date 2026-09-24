@@ -54,7 +54,7 @@ export default function ImageBuilderDoneState({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
         {/* Left column: prompt + flags */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-          <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.44)', margin: 0, fontWeight: 600 }}>Assembled prompt</p>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>Assembled prompt</p>
           <div style={{
             background: 'rgba(var(--ink),0.03)', border: '1px solid rgba(var(--ink),0.07)',
             borderRadius: '10px', padding: '12px', flex: 1, overflowY: 'auto', minHeight: 0,
@@ -66,21 +66,21 @@ export default function ImageBuilderDoneState({
               background: 'rgba(139,92,246,0.06)', border: '0.5px solid rgba(139,92,246,0.2)',
               borderRadius: '8px', padding: '9px 12px', flexShrink: 0,
             }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'color-mix(in oklab, rgba(139,92,246,0.5) var(--accent-text-strength), rgb(var(--ink)))', margin: '0 0 5px 0', fontWeight: 600 }}>Midjourney flags (optional)</p>
-              <code style={{ fontSize: '12px', color: 'color-mix(in oklab, rgba(196,168,255,0.8) var(--accent-text-strength), rgb(var(--ink)))', fontFamily: 'monospace', lineHeight: 1.5 }}>{flags}</code>
+              <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'color-mix(in oklab, rgb(139,92,246) var(--accent-text-strength), rgb(var(--ink)))', margin: '0 0 5px 0', fontWeight: 600 }}>Midjourney flags (optional)</p>
+              <code style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(196,168,255) var(--accent-text-strength), rgb(var(--ink)))', fontFamily: 'monospace', lineHeight: 1.5 }}>{flags}</code>
               <button
                 onClick={() => handleCopy(prompt)}
-                style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: '11px', color: 'color-mix(in oklab, rgba(196,168,255,0.6) var(--accent-text-strength), rgb(var(--ink)))', WebkitAppRegion: 'no-drag' }}
+                style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: '11px', color: 'color-mix(in oklab, rgb(196,168,255) var(--accent-text-strength), rgb(var(--ink)))', WebkitAppRegion: 'no-drag' }}
               >
                 Copy prompt with flags for Midjourney
               </button>
             </div>
           )}
           <div style={{ flexShrink: 0 }}>
-            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.38)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
+            <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {['Nano Banana', 'ChatGPT image gen'].map((tool) => (
-                <span key={tool} style={{ background: 'rgba(var(--ink),0.05)', border: '1px solid rgba(var(--ink),0.1)', borderRadius: '6px', padding: '3px 9px', fontSize: '11px', color: 'rgba(var(--ink),0.62)' }}>{tool}</span>
+                <span key={tool} style={{ background: 'rgba(var(--ink),0.05)', border: '1px solid rgba(var(--ink),0.1)', borderRadius: '6px', padding: '3px 9px', fontSize: '11px', color: 'var(--text-secondary)' }}>{tool}</span>
               ))}
             </div>
           </div>
@@ -88,14 +88,14 @@ export default function ImageBuilderDoneState({
 
         {/* Right column: param summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflowY: 'auto' }}>
-          <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.44)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
           {answeredEntries.length === 0 && (
-            <p style={{ fontSize: '12px', color: 'rgba(var(--ink),0.32)', fontStyle: 'italic' }}>No parameters selected</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No parameters selected</p>
           )}
           {answeredEntries.map(([label, value]) => (
             <div key={label} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgba(196,168,255,0.6) var(--accent-text-strength), rgb(var(--ink)))', minWidth: '90px', flexShrink: 0 }}>{label}</span>
-              <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.74)' }}>{value}</span>
+              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(196,168,255) var(--accent-text-strength), rgb(var(--ink)))', minWidth: '90px', flexShrink: 0 }}>{label}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{value}</span>
             </div>
           ))}
         </div>
@@ -106,19 +106,19 @@ export default function ImageBuilderDoneState({
         {onEditAnswers && (
           <button
             onClick={onEditAnswers}
-            style={{ fontSize: '12px', color: 'rgba(var(--ink),0.56)', background: 'rgba(var(--ink),0.05)', border: '1px solid rgba(var(--ink),0.1)', borderRadius: '7px', padding: '6px 13px', cursor: 'pointer' }}
+            style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'rgba(var(--ink),0.05)', border: '1px solid rgba(var(--ink),0.1)', borderRadius: '7px', padding: '6px 13px', cursor: 'pointer' }}
           >← Edit answers</button>
         )}
         <button
           onClick={onStartOver}
-          style={{ fontSize: '12px', color: 'rgba(var(--ink),0.44)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px' }}
+          style={{ fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px' }}
         >Start over</button>
         <div style={{ flex: 1 }} />
         <button
           onClick={() => handleCopy()}
           style={{
-            padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
-            background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(139,92,246,0.75)',
+            padding: '7px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+            background: copied ? '#1B7F3F' : '#7440E0',
             border: 'none', color: 'white', cursor: 'pointer', transition: 'background 200ms ease',
           }}
         >{copied ? 'Copied ✓' : 'Copy prompt'}</button>

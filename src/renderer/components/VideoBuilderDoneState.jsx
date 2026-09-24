@@ -3,7 +3,7 @@ import { useState } from 'react'
 const ORANGE_CHIP = {
   background: 'rgba(251,146,60,0.08)',
   border: '1px solid rgba(251,146,60,0.15)',
-  color: 'color-mix(in oklab, rgba(251,146,60,0.65) var(--accent-text-strength), rgb(var(--ink)))',
+  color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))',
 }
 
 function formatParamValue(value) {
@@ -70,11 +70,11 @@ export default function VideoBuilderDoneState({
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             onClick={onEdit}
-            style={{ fontSize: '11.5px', color: 'color-mix(in oklab, rgba(251,146,60,0.55) var(--accent-text-strength), rgb(var(--ink)))', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+            style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
           >← Edit</button>
           <button
             onClick={onStartOver}
-            style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.38)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+            style={{ fontSize: '12px', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
           >Start over</button>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function VideoBuilderDoneState({
 
         {/* Left column: prompt + optimised for */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-          <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.44)', margin: 0, fontWeight: 600 }}>Assembled prompt</p>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>Assembled prompt</p>
           <div style={{
             background: 'rgba(var(--ink),0.03)', border: '1px solid rgba(var(--ink),0.07)',
             borderRadius: '9px', padding: '10px 12px', flex: 1, overflowY: 'auto',
@@ -95,7 +95,7 @@ export default function VideoBuilderDoneState({
           </div>
 
           <div>
-            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.38)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
+            <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
             <span style={{ ...ORANGE_CHIP, display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px' }}>
               veo-3.1-generate-preview
             </span>
@@ -104,14 +104,14 @@ export default function VideoBuilderDoneState({
 
         {/* Right column: param breakdown */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflowY: 'auto' }}>
-          <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.44)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
+          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
           {answeredEntries.length === 0 && (
-            <p style={{ fontSize: '12px', color: 'rgba(var(--ink),0.32)', fontStyle: 'italic' }}>No parameters selected</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No parameters selected</p>
           )}
           {answeredEntries.map(([key, value]) => (
             <div key={key} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgba(251,146,60,0.6) var(--accent-text-strength), rgb(var(--ink)))', minWidth: '90px', textTransform: 'capitalize', flexShrink: 0 }}>{paramLabel(key)}</span>
-              <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.74)' }}>{formatParamValue(value)}</span>
+              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))', minWidth: '90px', textTransform: 'capitalize', flexShrink: 0 }}>{paramLabel(key)}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatParamValue(value)}</span>
             </div>
           ))}
         </div>
@@ -125,7 +125,7 @@ export default function VideoBuilderDoneState({
             fontSize: '12px', cursor: isSaved || savedFlash ? 'default' : 'pointer',
             background: isSaved || savedFlash ? 'rgba(52,199,89,0.12)' : 'rgba(var(--ink),0.05)',
             border: `1px solid ${isSaved || savedFlash ? 'rgba(52,199,89,0.25)' : 'rgba(var(--ink),0.1)'}`,
-            color: isSaved || savedFlash ? 'color-mix(in oklab, rgba(52,199,89,0.75) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)',
+            color: isSaved || savedFlash ? 'color-mix(in oklab, rgb(52,199,89) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)',
             borderRadius: '7px', padding: '6px 13px', transition: 'all 200ms ease',
             fontFamily: 'inherit',
           }}
@@ -134,7 +134,7 @@ export default function VideoBuilderDoneState({
         <button
           onClick={handleCopy}
           style={{
-            padding: '7px 20px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 600,
+            padding: '7px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
             background: copied
               ? 'rgba(52,199,89,0.7)'
               : 'linear-gradient(135deg, rgba(251,146,60,0.85) 0%, rgba(234,88,12,0.8) 100%)',

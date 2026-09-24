@@ -68,11 +68,11 @@ export default function IteratingState({ contextText, duration, onStop, onDismis
       }}>
         {/* POLISH-009 blue: 0.55 → 0.80 */}
         <div style={{
-          fontSize: '9px',
+          fontSize: '11px',
           fontWeight: 700,
           letterSpacing: '.10em',
           textTransform: 'uppercase',
-          color: 'color-mix(in oklab, rgba(100,180,255,0.80) var(--accent-text-strength), rgb(var(--ink)))',
+          color: 'color-mix(in oklab, rgb(100,180,255) var(--accent-text-strength), rgb(var(--ink)))',
           marginBottom: '4px',
         }}>
           ITERATING ON

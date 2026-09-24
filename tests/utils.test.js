@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText } from '../src/renderer/utils/promptUtils.js'
+import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
 import { formatTime } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
@@ -360,5 +360,16 @@ describe('detectSpokenMode', () => {
     expect(detectSpokenMode('the code mode of the app is broken')).toBeNull()
     expect(detectSpokenMode('Design a landing page')).toBeNull()
     expect(detectSpokenMode('code mode')).toBeNull()
+  })
+})
+
+describe('readableColor', () => {
+  it('mixes a mode colour toward ink and drops its alpha so it stays readable', () => {
+    expect(readableColor('rgba(139,92,246,0.5)')).toBe('color-mix(in oklab, rgb(139,92,246) var(--accent-text-strength), rgb(var(--ink)))')
+    expect(readableColor('rgb(48,209,88)')).toBe('color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))')
+  })
+  it('leaves tokens and keywords alone', () => {
+    expect(readableColor('var(--text-secondary)')).toBe('var(--text-secondary)')
+    expect(readableColor('inherit')).toBe('inherit')
   })
 })

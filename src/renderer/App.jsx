@@ -59,11 +59,11 @@ const STATE_HEIGHTS = {
   PAUSED: 89,
   THINKING: 320,
   PROMPT_READY: 560,
-  ERROR: 101,
+  ERROR: 112,
   SHORTCUTS: 380,
   HISTORY: 720,
   ITERATING: 200,
-  TYPING: 244,
+  TYPING: 290,
   SETTINGS: 600,
   EXPANDED: 860,
   IMAGE_BUILDER: 520,
@@ -150,8 +150,10 @@ export default function App() {
   useEffect(() => {
     // Skip IDLE resize when mode auto-expands on mount — handleExpand fires directly
     // (no RAF), so the RAF-wrapped resizeWindow would race and win, collapsing the window.
+    // Called directly, not through the rAF-wrapped resizeWindow: the window is still hidden on
+    // mount and hidden windows get no animation frames, which left the bar at its old height.
     if (mode !== 'image' && mode !== 'video' && mode !== 'workflow' && mode !== 'email') {
-      resizeWindow(STATE_HEIGHTS.IDLE)
+      window.electronAPI?.resizeWindow(STATE_HEIGHTS.IDLE)
     }
     return () => {
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
@@ -290,8 +292,8 @@ export default function App() {
         transitionRef.current(STATES.GENERATION_ERROR)
       } else {
         const msg = genResult.errorType === 'auth'
-          ? 'Claude not logged in — expand to fix'
-          : 'Generation failed — expand to retry'
+          ? 'Claude Code is signed out. Sign in from Settings (⌘/)'
+          : "Couldn't write the prompt"
         transitionRef.current(STATES.ERROR, { message: msg })
       }
       return
@@ -669,13 +671,13 @@ Return ONLY valid JSON:
             )}
             {displayState === STATES.SHORTCUTS && (
               <>
-                <div className="h-[44px] w-full" style={{WebkitAppRegion:'drag'}} />
+                <div className="h-[36px] w-full flex-shrink-0" style={{WebkitAppRegion:'drag'}} />
                 <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
               </>
             )}
             {displayState === STATES.SETTINGS && (
               <>
-                <div className="h-[70px] w-full" style={{WebkitAppRegion:'drag'}} />
+                <div className="h-[36px] w-full flex-shrink-0" style={{WebkitAppRegion:'drag'}} />
                 <SettingsPanel onClose={closeSettings} />
               </>
             )}
@@ -719,7 +721,9 @@ Return ONLY valid JSON:
 
       {!isExpanded && displayState !== STATES.IDLE &&
        displayState !== STATES.HISTORY && displayState !== STATES.SETTINGS &&
-       displayState !== STATES.SHORTCUTS && displayState !== STATES.ERROR && (
+       displayState !== STATES.SHORTCUTS && displayState !== STATES.ERROR &&
+       // The recording bars have their own ✕; a second button there crowds the stop button.
+       displayState !== STATES.RECORDING && displayState !== STATES.PAUSED && displayState !== STATES.ITERATING && (
         <button
           onClick={handleAbort}
           title="Reset to start"

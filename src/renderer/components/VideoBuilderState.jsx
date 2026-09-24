@@ -51,12 +51,12 @@ const ADVANCED_CHIP_KEYS = new Set(['shotType'])
 const ORANGE = {
   chipAiBg: 'rgba(251,146,60,0.14)',
   chipAiBorder: 'rgba(251,146,60,0.38)',
-  chipAiColor: 'rgba(251,146,60,0.95)',
+  chipAiColor: readableColor('rgb(251,146,60)'),
   chipAiDot: 'rgba(251,146,60,0.9)',
   chipUserBg: 'rgba(251,146,60,0.22)',
   chipUserBorder: 'rgba(251,146,60,0.55)',
-  chipUserColor: 'rgba(255,200,150,1)',
-  btnConfirm: 'rgba(251,146,60,0.78)',
+  chipUserColor: readableColor('rgb(251,146,60)'),
+  btnConfirm: '#C2560C',
   advancedToggle: 'rgba(251,146,60,0.45)',
   sparkle: 'rgba(251,146,60,0.6)',
 }
@@ -64,10 +64,10 @@ const ORANGE = {
 function ApiBadge() {
   return (
     <span style={{
-      padding: '2px 6px', borderRadius: '4px', fontSize: '8.5px', fontWeight: 700,
+      padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700,
       textTransform: 'uppercase', letterSpacing: '0.06em',
       background: 'rgba(48,209,88,0.1)', border: '0.5px solid rgba(48,209,88,0.25)',
-      color: 'color-mix(in oklab, rgba(48,209,88,0.7) var(--accent-text-strength), rgb(var(--ink)))', flexShrink: 0,
+      color: 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))', flexShrink: 0,
     }}>API</span>
   )
 }
@@ -75,10 +75,10 @@ function ApiBadge() {
 function VeoBadge() {
   return (
     <span style={{
-      padding: '2px 6px', borderRadius: '4px', fontSize: '8.5px', fontWeight: 700,
+      padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700,
       textTransform: 'uppercase', letterSpacing: '0.06em',
       background: 'rgba(251,146,60,0.1)', border: '0.5px solid rgba(251,146,60,0.25)',
-      color: 'color-mix(in oklab, rgba(251,146,60,0.7) var(--accent-text-strength), rgb(var(--ink)))', flexShrink: 0,
+      color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))', flexShrink: 0,
     }}>Veo 3.1</span>
   )
 }
@@ -137,8 +137,8 @@ export default function VideoBuilderState({
       <div key={key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span style={{
-            fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.08em', color: 'rgba(var(--ink),0.34)',
+            fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
+            letterSpacing: '0.08em', color: 'var(--text-tertiary)',
             minWidth: labelW, flexShrink: 0, lineHeight: 1,
           }}>{label}</span>
           {badge === 'api' && <ApiBadge />}
@@ -169,7 +169,7 @@ export default function VideoBuilderState({
 
           {/* 4K cost warning inline */}
           {key === 'resolution' && videoAnswers?.resolution === '4K ✦' && (
-            <span style={{ fontSize: '10px', color: 'color-mix(in oklab, rgba(255,189,46,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginLeft: '2px' }}>
+            <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', marginLeft: '2px' }}>
               4K incurs higher API costs and longer generation time
             </span>
           )}
@@ -180,7 +180,7 @@ export default function VideoBuilderState({
               padding: '4px 10px', borderRadius: '8px', fontSize: '11px',
               cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
               border: '0.5px dashed rgba(var(--ink),0.15)',
-              background: 'transparent', color: 'rgba(var(--ink),0.38)',
+              background: 'transparent', color: 'var(--text-tertiary)',
             }}
           >+ add</button>
         </div>
@@ -219,7 +219,7 @@ export default function VideoBuilderState({
                 >{opt}</button>
               ))}
               {pickerOptions.length === 0 && (
-                <span style={{ fontSize: '11px', color: 'rgba(var(--ink),0.38)', padding: '2px 4px' }}>All selected</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', padding: '2px 4px' }}>All selected</span>
               )}
             </div>
           </>
@@ -248,14 +248,14 @@ export default function VideoBuilderState({
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 1L7 4.5L10.5 5.5L7 6.5L6 10L5 6.5L1.5 5.5L5 4.5L6 1Z" fill={ORANGE.sparkle}/>
           </svg>
-          <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgba(251,146,60,0.5) var(--accent-text-strength), rgb(var(--ink)))' }}>Claude filled these · tap to change</span>
+          <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))' }}>Claude filled these · tap to change</span>
         </div>
       </div>
 
       {/* YOU SAID */}
       <div style={{ flexShrink: 0, marginBottom: '8px' }}>
-        <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(var(--ink),0.32)', marginBottom: '3px' }}>YOU SAID</div>
-        <p style={{ fontSize: '12px', color: 'rgba(var(--ink),0.56)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>{transcript}</p>
+        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: '3px' }}>YOU SAID</div>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>{transcript}</p>
       </div>
 
       <div style={{ height: '1px', background: 'rgba(var(--ink),0.06)', flexShrink: 0, marginBottom: '8px' }} />
@@ -277,7 +277,7 @@ export default function VideoBuilderState({
             <line x1="6" y1="5" x2="6" y2="8" stroke="rgba(var(--ink),0.2)" strokeWidth="1.2" strokeLinecap="round"/>
             <circle cx="6" cy="3.5" r="0.6" fill="rgba(var(--ink),0.2)"/>
           </svg>
-          <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.32)' }}>Veo 3.1 generates 8-second clips — duration is fixed</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Veo 3.1 generates 8-second clips — duration is fixed</span>
         </div>
 
         {/* Important params */}
@@ -287,7 +287,7 @@ export default function VideoBuilderState({
         <button
           onClick={onToggleAdvanced}
           style={{
-            fontSize: '10.5px', color: readableColor(ORANGE.advancedToggle), background: 'none',
+            fontSize: '11px', color: readableColor(ORANGE.advancedToggle), background: 'none',
             border: 'none', cursor: 'pointer', padding: '2px 0',
             textAlign: 'left', alignSelf: 'flex-start', fontFamily: 'inherit',
           }}
@@ -302,7 +302,7 @@ export default function VideoBuilderState({
 
             {/* Row 10: Setting detail — text input */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(var(--ink),0.34)' }}>Setting</span>
+              <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Setting</span>
               <input
                 type="text"
                 value={settingDetail}
@@ -315,7 +315,7 @@ export default function VideoBuilderState({
             {/* Row 11: Dialogue — toggle + text input */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(var(--ink),0.34)', minWidth: '80px', flexShrink: 0 }}>Dialogue</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', minWidth: '80px', flexShrink: 0 }}>Dialogue</span>
                 <VeoBadge />
                 <button
                   onClick={() => setShowDialogueInput(false)}
@@ -324,7 +324,7 @@ export default function VideoBuilderState({
                     cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
                     background: !showDialogueInput ? ORANGE.chipAiBg : 'rgba(var(--ink),0.04)',
                     border: `0.5px solid ${!showDialogueInput ? ORANGE.chipAiBorder : 'rgba(var(--ink),0.1)'}`,
-                    color: !showDialogueInput ? ORANGE.chipAiColor : 'rgba(var(--ink),0.3)',
+                    color: !showDialogueInput ? ORANGE.chipAiColor : 'var(--text-tertiary)',
                     fontWeight: !showDialogueInput ? 500 : 400,
                   }}
                 >No dialogue</button>
@@ -335,7 +335,7 @@ export default function VideoBuilderState({
                     cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
                     background: showDialogueInput ? ORANGE.chipAiBg : 'rgba(var(--ink),0.04)',
                     border: `0.5px solid ${showDialogueInput ? ORANGE.chipAiBorder : 'rgba(var(--ink),0.1)'}`,
-                    color: showDialogueInput ? ORANGE.chipAiColor : 'rgba(var(--ink),0.3)',
+                    color: showDialogueInput ? ORANGE.chipAiColor : 'var(--text-tertiary)',
                     fontWeight: showDialogueInput ? 500 : 400,
                   }}
                 >Add spoken lines</button>
@@ -350,7 +350,7 @@ export default function VideoBuilderState({
                     placeholder='Type exact dialogue in quotes — Veo will speak it'
                     style={INPUT_STYLE}
                   />
-                  <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.32)', paddingLeft: '2px' }}>Veo 3.1 generates native speech from dialogue</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', paddingLeft: '2px' }}>Veo 3.1 generates native speech from dialogue</span>
                 </>
               )}
             </div>
@@ -358,7 +358,7 @@ export default function VideoBuilderState({
             {/* Row 12: First frame */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(var(--ink),0.34)', minWidth: '80px', flexShrink: 0 }}>First frame</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', minWidth: '80px', flexShrink: 0 }}>First frame</span>
                 <VeoBadge />
                 {['Text only', 'Use image as first frame'].map(opt => {
                   const active = opt === 'Text only' ? !videoAnswers?.useFirstFrame : !!videoAnswers?.useFirstFrame
@@ -371,7 +371,7 @@ export default function VideoBuilderState({
                         cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
                         background: active ? ORANGE.chipAiBg : 'rgba(var(--ink),0.04)',
                         border: `0.5px solid ${active ? ORANGE.chipAiBorder : 'rgba(var(--ink),0.1)'}`,
-                        color: active ? ORANGE.chipAiColor : 'rgba(var(--ink),0.3)',
+                        color: active ? ORANGE.chipAiColor : 'var(--text-tertiary)',
                         fontWeight: active ? 500 : 400,
                       }}
                     >{opt}</button>
@@ -380,9 +380,9 @@ export default function VideoBuilderState({
               </div>
               {videoAnswers?.useFirstFrame && (
                 <div style={{ paddingLeft: '2px' }}>
-                  <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.44)' }}>Provide an image to start video from a specific frame</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Provide an image to start video from a specific frame</span>
                   <div style={{ marginTop: '3px' }}>
-                    <span style={{ fontSize: '10px', color: 'color-mix(in oklab, rgba(251,146,60,0.4) var(--accent-text-strength), rgb(var(--ink)))' }}>Generate with Nano Banana first →</span>
+                    <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))' }}>Generate with Nano Banana first →</span>
                   </div>
                 </div>
               )}
@@ -391,7 +391,7 @@ export default function VideoBuilderState({
             {/* Row 13: Reference images */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(var(--ink),0.34)', minWidth: '80px', flexShrink: 0 }}>Ref images</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', minWidth: '80px', flexShrink: 0 }}>Ref images</span>
                 <VeoBadge />
                 {['None', 'Add reference images'].map(opt => {
                   const active = opt === 'None' ? !videoAnswers?.referenceImages : !!videoAnswers?.referenceImages
@@ -404,7 +404,7 @@ export default function VideoBuilderState({
                         cursor: 'pointer', lineHeight: 1.2, fontFamily: 'inherit',
                         background: active ? ORANGE.chipAiBg : 'rgba(var(--ink),0.04)',
                         border: `0.5px solid ${active ? ORANGE.chipAiBorder : 'rgba(var(--ink),0.1)'}`,
-                        color: active ? ORANGE.chipAiColor : 'rgba(var(--ink),0.3)',
+                        color: active ? ORANGE.chipAiColor : 'var(--text-tertiary)',
                         fontWeight: active ? 500 : 400,
                       }}
                     >{opt}</button>
@@ -421,14 +421,14 @@ export default function VideoBuilderState({
                           width: '32px', height: '32px', borderRadius: '6px',
                           border: '1px dashed rgba(251,146,60,0.3)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: 'color-mix(in oklab, rgba(251,146,60,0.4) var(--accent-text-strength), rgb(var(--ink)))', fontSize: '16px', cursor: 'pointer',
+                          color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))', fontSize: '16px', cursor: 'pointer',
                         }}
                       >+</div>
                     ))}
                   </div>
-                  <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.32)' }}>Up to 3 images — preserves subject appearance (face, outfit, product)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Up to 3 images — preserves subject appearance (face, outfit, product)</span>
                   <div style={{ marginTop: '2px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.26)' }}>Image reference upload coming in v2</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Image reference upload coming in v2</span>
                   </div>
                 </div>
               )}
@@ -445,17 +445,17 @@ export default function VideoBuilderState({
       }}>
         <button
           onClick={onReiterate}
-          style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+          style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
         >↺ Reiterate</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={onCopyNow}
-            style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+            style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
           >Copy now →</button>
           <button
             onClick={onConfirm}
             style={{
-              padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px',
+              padding: '7px 18px', borderRadius: '8px', fontSize: '13px',
               fontWeight: 600, background: ORANGE.btnConfirm,
               border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit',
             }}

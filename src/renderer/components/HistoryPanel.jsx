@@ -161,7 +161,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             ) : (
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 {/* 0.55 stays above threshold */}
-                <span style={{fontSize:'12px', fontWeight:500, color:'rgba(var(--ink),0.74)'}}>
+                <span style={{fontSize:'12px', fontWeight:500, color:'var(--text-secondary)'}}>
                   Recent
                 </span>
                 <button
@@ -215,7 +215,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
                     fontWeight: isActive ? 500 : 400,
                     color: readableColor(isActive
                       ? (isSaved ? 'rgba(255,189,46,0.9)' : 'rgba(100,180,255,0.9)')
-                      : 'rgba(var(--ink),0.35)')
+                      : 'var(--text-tertiary)')
                   }}>
                     {tab === 'all' ? 'All' : 'Saved'}
                   </span>
@@ -236,7 +236,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
               const c = isActive ? FILTER_CHIP_COLORS[f.id] : FILTER_CHIP_INACTIVE
               return (
                 <span key={f.id} onClick={() => setActiveFilter(f.id)} style={{
-                  padding:'2px 8px', borderRadius:'20px', fontSize:'9px',
+                  padding:'2px 8px', borderRadius:'20px', fontSize:'11px',
                   fontWeight:600, cursor:'pointer',
                   background:c.bg, border:`0.5px solid ${c.border}`, color: readableColor(c.text)
                 }}>
@@ -255,14 +255,14 @@ export default function HistoryPanel({ onClose, onReuse }) {
               borderRadius:'8px', display:'flex',
               justifyContent:'space-between', alignItems:'center'
             }}>
-              <span style={{fontSize:'10px', color:'rgba(var(--ink),0.44)'}}>
+              <span style={{fontSize:'11px', color:'var(--text-tertiary)'}}>
                 {allHistory.length} prompt{allHistory.length !== 1 ? 's' : ''}
               </span>
               {statsRated.total > 0 && (
                 <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                  <span style={{fontSize:'10px', color:'color-mix(in oklab, rgba(100,220,130,0.7) var(--accent-text-strength), rgb(var(--ink)))'}}>👍 {upPct}%</span>
+                  <span style={{fontSize:'11px', color:'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))'}}>👍 {upPct}%</span>
                   <div style={{width:'0.5px', height:'10px', background:'rgba(var(--ink),0.1)'}}/>
-                  <span style={{fontSize:'10px', color:'color-mix(in oklab, rgba(255,100,90,0.65) var(--accent-text-strength), rgb(var(--ink)))'}}>👎 {downPct}%</span>
+                  <span style={{fontSize:'11px', color:'color-mix(in oklab, rgb(255,100,90) var(--accent-text-strength), rgb(var(--ink)))'}}>👎 {downPct}%</span>
                 </div>
               )}
             </div>
@@ -273,7 +273,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             {filteredEntries.length === 0 && (
               <div style={{
                 padding:'40px 20px', textAlign:'center',
-                fontSize:'12px', color:'rgba(var(--ink),0.74)'
+                fontSize:'12px', color:'var(--text-secondary)'
               }}>
                 {activeFilter !== 'all' ? 'No prompts match this filter' : activeTab === 'saved' ? 'No saved prompts yet' : (query ? 'No results found' : 'No history yet')}
               </div>
@@ -298,7 +298,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
             borderTop:'0.5px solid rgba(var(--ink),0.06)',
             flexShrink:0
           }}>
-            <span style={{fontSize:'10px', color:'rgba(var(--ink),0.62)'}}>
+            <span style={{fontSize:'11px', color:'var(--text-secondary)'}}>
               {activeTab === 'saved'
                 ? `${tabFiltered.length} saved prompt${tabFiltered.length !== 1 ? 's' : ''}`
                 : footerText}
@@ -336,7 +336,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
           onMouseLeave={() => setClearHovered(false)}
           style={{
             fontSize:'12px',
-            color: clearHovered ? 'color-mix(in oklab, rgba(255,59,48,0.75) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(255,59,48,0.55) var(--accent-text-strength), rgb(var(--ink)))',
+            color: clearHovered ? 'color-mix(in oklab, rgb(255,59,48) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgb(255,59,48) var(--accent-text-strength), rgb(var(--ink)))',
             background:'none', border:'none', cursor:'pointer', fontFamily:'inherit',
             transition: 'color 120ms ease',
           }}
@@ -350,7 +350,7 @@ export default function HistoryPanel({ onClose, onReuse }) {
           onMouseLeave={() => setDoneHovered(false)}
           style={{
             fontSize:'12px',
-            color: doneHovered ? 'rgba(var(--ink),0.9)' : 'rgba(var(--ink),0.7)',
+            color: doneHovered ? 'rgba(var(--ink),0.9)' : 'var(--text-secondary)',
             background:'none', border:'none', cursor:'pointer', fontFamily:'inherit',
             transition: 'color 120ms ease',
           }}

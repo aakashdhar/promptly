@@ -17,7 +17,7 @@ export default function ErrorState({ message, onDismiss }) {
             {message || 'Something went wrong'}
           </div>
           {/* POLISH-009: 0.18 → 0.48 */}
-          <div className="text-[11px] tracking-[0.01em]" style={{color:'rgba(var(--ink),0.66)'}}>Tap to retry</div>
+          <div className="text-[11px] tracking-[0.01em]" style={{color:'var(--text-secondary)'}}>Click to go back and try again</div>
         </div>
       </div>
     </div>

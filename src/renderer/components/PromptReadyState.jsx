@@ -32,7 +32,7 @@ function renderPromptOutput(text, labelColor = 'rgba(100,170,255,0.70)') {
       result.push(
         <span
           key={key++}
-          className="block text-[8.5px] font-bold uppercase mb-[6px]"
+          className="block text-[11px] font-bold uppercase mb-[6px]"
           style={{ color: readableColor(labelColor), letterSpacing: '0.12em' }}
         >
           {m[1].trim()}
@@ -140,47 +140,24 @@ export default function PromptReadyState({
       onClick={(e) => { if (e.target === e.currentTarget && !isEditing) onReset() }}
     >
       {/* Traffic light breathing room — drag region */}
-      <div className="flex-shrink-0" style={{ height: '36px', WebkitAppRegion: 'drag' }} />
-
-      {/* Collapse button — absolute top-right, does not affect flex layout */}
-      <button
-        onClick={onCollapse}
-        title="Collapse"
-        style={{
-          position: 'absolute', top: '14px', right: '16px',
-          width: '26px', height: '26px', borderRadius: '7px',
-          background: 'rgba(var(--ink),0.05)',
-          border: '0.5px solid rgba(var(--ink),0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', zIndex: 10,
-          WebkitAppRegion: 'no-drag', padding: 0,
-          transition: 'background 150ms',
-        }}
-        onMouseEnter={e => e.currentTarget.style.background='rgba(var(--ink),0.12)'}
-        onMouseLeave={e => e.currentTarget.style.background='rgba(var(--ink),0.05)'}
-      >
-        <svg width="12" height="10" viewBox="0 0 14 10" fill="none">
-          <rect x="0" y="1" width="14" height="2" rx="1" fill="rgba(var(--ink),0.45)"/>
-          <rect x="0" y="7" width="14" height="2" rx="1" fill="rgba(var(--ink),0.45)"/>
-        </svg>
-      </button>
+      <div className="flex-shrink-0" style={{ height: '40px', WebkitAppRegion: 'drag' }} />
 
       {/* TOP ROW */}
       <div
         className="flex justify-between items-center flex-shrink-0"
-        style={{ padding: '20px 22px 16px' }}
+        style={{ padding: '6px 22px 14px' }}
       >
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}
         <div
           className="flex items-center text-[13px] font-medium"
           style={{ gap: '8px', color: 'rgba(var(--ink),0.95)', letterSpacing: '-0.01em', WebkitAppRegion: 'no-drag' }}
         >
-          <span style={{ color: 'var(--color-green)', fontSize: '15px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
+          <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '15px' }}>✓</span>
           <span>{isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
           {isIterated && (
             <span style={{
-              fontSize: '10px',
-              color: 'color-mix(in oklab, rgba(10,132,255,0.72) var(--accent-text-strength), rgb(var(--ink)))',
+              fontSize: '11px',
+              color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
               background: 'rgba(10,132,255,0.08)',
               border: '0.5px solid rgba(10,132,255,0.2)',
               borderRadius: '20px',
@@ -199,7 +176,7 @@ export default function PromptReadyState({
             onMouseLeave={() => setIterateHovered(false)}
             style={{
               fontSize: '11px',
-              color: iterateHovered ? 'color-mix(in oklab, rgba(10,132,255,1) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(10,132,255,0.85) var(--accent-text-strength), rgb(var(--ink)))',
+              color: iterateHovered ? 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
               textShadow: iterateHovered ? '0 0 8px rgba(10,132,255,0.4)' : 'none',
               fontWeight: 500,
               background: 'none',
@@ -216,7 +193,7 @@ export default function PromptReadyState({
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
-              color: regenerateHovered ? 'rgba(var(--ink),0.8)' : 'rgba(var(--ink),0.58)',
+              color: regenerateHovered ? 'rgba(var(--ink),0.8)' : 'var(--text-secondary)',
               transition: 'color 120ms ease',
             }}
             onMouseEnter={() => setRegenerateHovered(true)}
@@ -229,7 +206,7 @@ export default function PromptReadyState({
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
-              color: exportHovered ? 'rgba(var(--ink),0.8)' : 'rgba(var(--ink),0.58)',
+              color: exportHovered ? 'rgba(var(--ink),0.8)' : 'var(--text-secondary)',
               transition: 'color 120ms ease',
             }}
             onMouseEnter={() => setExportHovered(true)}
@@ -242,7 +219,7 @@ export default function PromptReadyState({
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
-              color: resetHovered ? 'rgba(var(--ink),0.8)' : 'rgba(var(--ink),0.58)',
+              color: resetHovered ? 'rgba(var(--ink),0.8)' : 'var(--text-secondary)',
               transition: 'color 120ms ease',
             }}
             onMouseEnter={() => setResetHovered(true)}
@@ -261,21 +238,20 @@ export default function PromptReadyState({
       <div className="flex-shrink-0" style={{ padding: '20px 22px' }}>
         {/* POLISH-003: section label tracking 0.12em; POLISH-009: 0.16 → 0.45 */}
         <div
-          className="text-[9px] font-bold uppercase"
-          style={{ letterSpacing: '0.12em', color: 'rgba(var(--ink),0.62)', marginBottom: '10px' }}
+          className="text-[11px] font-bold uppercase"
+          style={{ letterSpacing: '0.12em', color: 'var(--text-secondary)', marginBottom: '10px' }}
         >
           YOU SAID
         </div>
         {/* POLISH-009: 0.26 → 0.58; POLISH-003: letterSpacing -0.01em */}
         <div
-          className="text-[13px] overflow-hidden"
+          className="text-[13px] overflow-y-auto selectable"
           style={{
             color: 'rgba(var(--ink),0.78)',
             lineHeight: '1.65',
             letterSpacing: '-0.01em',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
+            // Four lines, then it scrolls: long transcripts stay whole without crowding the prompt.
+            maxHeight: '86px',
             WebkitAppRegion: 'no-drag',
           }}
           id="you-said-text"
@@ -295,7 +271,7 @@ export default function PromptReadyState({
         suppressContentEditableWarning
         style={isEditing ? {
           padding: '20px 22px',
-          fontSize: '13.5px',
+          fontSize: '14px',
           lineHeight: '1.85',
           color: 'rgba(var(--ink),0.95)',
           letterSpacing: '-0.01em',
@@ -306,7 +282,7 @@ export default function PromptReadyState({
           WebkitAppRegion: 'no-drag',
         } : {
           padding: '20px 22px',
-          fontSize: '13.5px',
+          fontSize: '14px',
           lineHeight: '1.85',
           color: 'rgba(var(--ink),0.95)',
           letterSpacing: '-0.01em',

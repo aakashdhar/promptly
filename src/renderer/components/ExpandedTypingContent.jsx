@@ -33,7 +33,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             <line x1="3" y1="6" x2="8" y2="6" stroke="rgba(var(--ink),0.35)" strokeWidth="1" strokeLinecap="round"/>
             <line x1="3" y1="8.5" x2="11" y2="8.5" stroke="rgba(var(--ink),0.35)" strokeWidth="1" strokeLinecap="round"/>
           </svg>
-          <span style={{ fontSize: '13px', color: 'rgba(var(--ink),0.68)' }}>Type your prompt</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Type your prompt</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
@@ -50,9 +50,9 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
               <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(var(--ink),0.4)" strokeWidth="1"/>
               <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(var(--ink),0.4)" strokeWidth="1" strokeLinecap="round"/>
             </svg>
-            <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.54)' }}>Switch to voice</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Switch to voice</span>
           </div>
-          <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.3)' }}>⌘↵ to generate</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>⌘↵ to generate</span>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           />
           <span style={{
             position: 'absolute', bottom: '14px', right: '16px',
-            fontSize: '11px', color: 'rgba(var(--ink),0.26)', fontFamily: 'monospace',
+            fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'monospace',
             pointerEvents: 'none',
           }}>
             {typingText.length} chars
@@ -102,7 +102,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           flexShrink: 0,
         }}>
           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(10,132,255,0.7)', flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.5)' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
             {MODE_DESCRIPTIONS[mode] || `Output will be structured for ${mode} mode`}
           </span>
         </div>
@@ -121,7 +121,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             border: '0.5px solid rgba(var(--ink),0.1)',
             borderRadius: '10px',
             background: 'rgba(var(--ink),0.04)',
-            fontSize: '13px', color: 'rgba(var(--ink),0.54)',
+            fontSize: '13px', color: 'var(--text-secondary)',
             cursor: 'pointer', fontFamily: 'inherit',
             WebkitAppRegion: 'no-drag',
           }}
@@ -129,7 +129,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           Clear
         </button>
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.3)' }}>or press ⌘↵</span>
+        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>or press ⌘↵</span>
         <button
           onClick={() => typingText.trim() && onTypingSubmit(typingText.trim())}
           disabled={!typingText.trim()}

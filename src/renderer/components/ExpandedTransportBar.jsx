@@ -200,7 +200,7 @@ export default function ExpandedTransportBar({
           {/* Timer */}
           <span style={{
             fontFamily: 'monospace', fontSize: '13px',
-            color: 'rgba(var(--ink),0.5)', minWidth: '28px', textAlign: 'right',
+            color: 'var(--text-secondary)', minWidth: '28px', textAlign: 'right',
             letterSpacing: '0.06em',
             opacity: isTyping || isIterating ? 0.2 : 1,
             transition: 'opacity 200ms',
@@ -396,7 +396,7 @@ export default function ExpandedTransportBar({
                 </div>
                 <div style={{
                   fontFamily: 'monospace', fontSize: '11px',
-                  color: 'rgba(var(--ink),0.32)',
+                  color: 'var(--text-tertiary)',
                   paddingLeft: '19px',
                 }}>
                   {`${Math.floor(thinkingElapsed / 60)}:${(thinkingElapsed % 60).toString().padStart(2, '0')}`}
@@ -421,7 +421,7 @@ export default function ExpandedTransportBar({
                   </span>
                 </div>
                 {textLine2 && (
-                  <span style={{ fontSize: '11px', color: 'rgba(var(--ink),0.42)', paddingLeft: textDot ? '11px' : '0' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', paddingLeft: textDot ? '11px' : '0' }}>
                     {textLine2}
                   </span>
                 )}

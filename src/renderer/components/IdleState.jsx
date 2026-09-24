@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import ModeDropdown from './ModeDropdown.jsx'
 
 const IDLE_HEIGHT = 134
-const DROPDOWN_WINDOW_HEIGHT = 480
 
 export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, polishTone, onPolishToneChange, onExpand, onModeSelect, onShowShortcuts, onShowHistory }) {
   const isRefine = mode === 'refine'
@@ -24,10 +23,10 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
       return
     }
     const rect = pillRef.current?.getBoundingClientRect()
-    const top = rect ? rect.bottom + 6 : 90
+    // Below the whole status block, so the menu never covers the hint lines.
+    const top = Math.max(rect ? rect.bottom + 6 : 0, 108)
     const right = rect ? window.innerWidth - rect.right : 20
     setDropdownPos({ top, right })
-    window.electronAPI?.resizeWindow(DROPDOWN_WINDOW_HEIGHT)
     setShowModeDropdown(true)
   }
 
@@ -41,7 +40,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
   const micStrokeFaded = isRefine ? 'rgba(200,160,255,0.8)' : isImage ? 'rgba(252,211,77,0.8)' : isVideo ? 'rgba(251,146,60,0.8)' : isWorkflow ? 'rgba(74,222,128,0.8)' : isEmail ? 'rgba(45,212,191,0.8)' : 'rgba(100,180,255,0.85)'
 
   return (
-    <div id="panel-idle" className="relative z-[1]" style={{height:'134px'}}>
+    <div id="panel-idle" className="relative z-[1]" style={{height:`${IDLE_HEIGHT}px`}}>
       <div style={{ height: '28px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', WebkitAppRegion: 'drag' }}>
         <button
           onClick={(e) => { e.stopPropagation(); onExpand() }}
@@ -67,14 +66,14 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
         </button>
       </div>
       <div
-        className="relative flex items-center justify-center h-[90px]"
+        className="flex items-center h-[96px]"
         id="idle-area"
-        style={{WebkitAppRegion:'drag'}}
+        style={{WebkitAppRegion:'drag', padding:'0 20px 0 24px', gap:'14px'}}
         onClick={onStart}
       >
         {/* Mic pulse ring — anchored left */}
         <div
-          className="absolute left-[28px] w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center"
+          className="relative w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center"
           style={{
             WebkitAppRegion: 'no-drag',
             background: `${ringColor}0.12)`,
@@ -125,24 +124,20 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           )}
         </div>
 
-        {/* Text — left-anchored near mic */}
-        <div style={{position:'absolute', left:'78px', textAlign:'left', WebkitAppRegion:'no-drag'}}>
-          {/* POLISH-003: status text */}
+        <div style={{flex:1, minWidth:0, WebkitAppRegion:'no-drag'}}>
           <div
             className="text-[13px] font-medium mb-[3px]"
             style={{ color:'rgba(var(--ink),0.95)', letterSpacing:'-0.01em' }}
           >
             Promptly is ready
           </div>
-          {/* POLISH-009: subtitle from 0.18 → 0.48 */}
           <div
             className="text-[11px]"
-            style={{ color:'rgba(var(--ink),0.66)', letterSpacing:'-0.01em' }}
+            style={{ color:'var(--text-secondary)', letterSpacing:'-0.01em' }}
           >
-            {isPolish ? "Speak it rough — get it polished" : isRefine ? "Describe what exists, what's wrong, and what you want" : isImage ? 'Speak your image idea' : isVideo ? 'Speak your video idea' : isWorkflow ? 'Describe your automation' : isEmail ? 'Describe your email situation naturally' : '⌥ Space to speak · ⌘T to type'}
+            {isPolish ? 'Speak it rough, get it polished' : isRefine ? "Describe what's there and what should change" : isImage ? 'Speak your image idea' : isVideo ? 'Speak your video idea' : isWorkflow ? 'Describe your automation' : isEmail ? 'Describe the email you need' : '⌥ Space to speak · ⌘T to type'}
           </div>
-          {/* POLISH-009: hint from 0.10 → 0.40 */}
-          <span className="text-[9px] mt-[4px] block" style={{color:'rgba(var(--ink),0.56)'}}>⌘? for shortcuts</span>
+          <span className="text-[11px] mt-[3px] block" style={{color:'var(--text-tertiary)'}}>⌘? for shortcuts</span>
         </div>
 
         {/* Keyboard icon — type prompt */}
@@ -150,7 +145,6 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           onClick={(e) => { e.stopPropagation(); onTypePrompt(); }}
           title="Type prompt (⌘T)"
           style={{
-            position:'absolute', right: isPolish ? '156px' : '108px',
             width:'32px', height:'32px', borderRadius:'9px',
             background:'rgba(var(--ink),0.05)',
             border:'0.5px solid rgba(var(--ink),0.1)',
@@ -172,7 +166,6 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
         {/* Mode pill / tone toggle — anchored right */}
         {isPolish ? (
           <div style={{
-            position:'absolute', right:'20px',
             display:'flex', flexDirection:'row', alignItems:'center', gap:'6px',
             flexShrink:0, WebkitAppRegion:'no-drag'
           }}>
@@ -180,11 +173,11 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
             <span
               onClick={(e) => { e.stopPropagation(); if (window.electronAPI) window.electronAPI.showToneMenu(polishTone) }}
               style={{
-                padding:'4px 12px', borderRadius:'20px', fontSize:'10px',
+                padding:'4px 12px', borderRadius:'20px', fontSize:'11px',
                 fontWeight:500, cursor:'pointer', textAlign:'center',
                 background:'rgba(48,209,88,0.08)',
                 border:'0.5px solid rgba(48,209,88,0.2)',
-                color:'color-mix(in oklab, rgba(100,220,130,0.75) var(--accent-text-strength), rgb(var(--ink)))', whiteSpace:'nowrap'
+                color:'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))', whiteSpace:'nowrap'
               }}
             >
               {polishTone === 'formal' ? 'Formal' : 'Casual'}
@@ -194,11 +187,11 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
               ref={pillRef}
               id="mode-pill"
               style={{
-                padding:'4px 12px', borderRadius:'20px', fontSize:'10px',
+                padding:'4px 12px', borderRadius:'20px', fontSize:'11px',
                 fontWeight:500, cursor:'pointer', textAlign:'center',
                 background:'rgba(48,209,88,0.12)',
                 border:'0.5px solid rgba(48,209,88,0.3)',
-                color:'color-mix(in oklab, rgba(100,220,130,0.9) var(--accent-text-strength), rgb(var(--ink)))', whiteSpace:'nowrap'
+                color:'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))', whiteSpace:'nowrap'
               }}
               onClick={handleModePillClick}
             >
@@ -208,38 +201,23 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
         ) : (
           <span
             ref={pillRef}
-            className="absolute right-[20px] rounded-full text-[10px] font-medium tracking-[0.03em]"
+            className="rounded-full text-[11px] font-medium tracking-[0.03em] flex-shrink-0"
             id="mode-pill"
             style={{
               WebkitAppRegion: 'no-drag',
               padding: '7px 16px',
+              cursor: 'pointer',
               minWidth: '80px',
               textAlign: 'center',
               background: isRefine ? 'rgba(139,92,246,0.12)' : isImage ? 'rgba(245,158,11,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : isWorkflow ? 'rgba(34,197,94,0.12)' : isEmail ? 'rgba(20,184,166,0.12)' : 'rgba(10,132,255,0.12)',
               border: isRefine ? '0.5px solid rgba(139,92,246,0.3)' : isImage ? '0.5px solid rgba(245,158,11,0.3)' : isVideo ? '0.5px solid rgba(251,146,60,0.3)' : isWorkflow ? '0.5px solid rgba(34,197,94,0.3)' : isEmail ? '0.5px solid rgba(20,184,166,0.3)' : '0.5px solid rgba(10,132,255,0.25)',
-              color: isRefine ? 'color-mix(in oklab, rgba(200,160,255,1.0) var(--accent-text-strength), rgb(var(--ink)))' : isImage ? 'color-mix(in oklab, rgba(252,211,77,0.9) var(--accent-text-strength), rgb(var(--ink)))' : isVideo ? 'color-mix(in oklab, rgba(251,146,60,0.85) var(--accent-text-strength), rgb(var(--ink)))' : isWorkflow ? 'color-mix(in oklab, rgba(74,222,128,0.9) var(--accent-text-strength), rgb(var(--ink)))' : isEmail ? 'color-mix(in oklab, rgba(45,212,191,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(100,180,255,0.85) var(--accent-text-strength), rgb(var(--ink)))',
+              color: isRefine ? 'color-mix(in oklab, rgb(200,160,255) var(--accent-text-strength), rgb(var(--ink)))' : isImage ? 'color-mix(in oklab, rgb(252,211,77) var(--accent-text-strength), rgb(var(--ink)))' : isVideo ? 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))' : isWorkflow ? 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' : isEmail ? 'color-mix(in oklab, rgb(45,212,191) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgb(100,180,255) var(--accent-text-strength), rgb(var(--ink)))',
             }}
             onClick={handleModePillClick}
           >
             {modeLabel}
           </span>
         )}
-      </div>
-      <div style={{
-        position: 'absolute',
-        bottom: '10px',
-        left: 0,
-        right: 0,
-        textAlign: 'center',
-        fontSize: '9px',
-        letterSpacing: '0.08em',
-        color: 'rgba(var(--ink),0.22)',
-        fontWeight: 400,
-        pointerEvents: 'none',
-        userSelect: 'none',
-        zIndex: 2
-      }}>
-        built using vibe-* skills
       </div>
 
       {showModeDropdown && (
@@ -252,6 +230,7 @@ export default function IdleState({ mode, modeLabel, onStart, onTypePrompt, poli
           onShowHistory={onShowHistory}
           onClose={handleDropdownClose}
           anchorRef={pillRef}
+          fitWindow
         />
       )}
     </div>

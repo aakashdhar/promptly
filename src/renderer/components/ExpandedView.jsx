@@ -1,8 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ExpandedTransportBar from './ExpandedTransportBar.jsx'
 import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
+
+// Builders lay out two columns of their own; below this width the history list would squeeze
+// them, so it steps aside (⌘H still opens history).
+const BUILDER_STATES = new Set(['IMAGE_BUILDER', 'VIDEO_BUILDER', 'WORKFLOW_BUILDER', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'EMAIL_READY'])
+const ROOMY_WIDTH = 1180
+
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth)
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  return width
+}
 
 export default function ExpandedView({
   currentState,
@@ -67,6 +82,8 @@ export default function ExpandedView({
     else setIsViewingHistory(false)
   }
 
+  const windowWidth = useWindowWidth()
+
   function handleEntryChange(updatedEntry) {
     setSelected(updatedEntry)
   }
@@ -106,11 +123,13 @@ export default function ExpandedView({
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
-        <ExpandedHistoryList
-          currentState={currentState}
-          selected={selected}
-          onSelect={handleSelect}
-        />
+        {(windowWidth >= ROOMY_WIDTH || !BUILDER_STATES.has(currentState)) && (
+          <ExpandedHistoryList
+            currentState={currentState}
+            selected={selected}
+            onSelect={handleSelect}
+          />
+        )}
         <ExpandedDetailPanel
           selected={selected}
           isViewingHistory={isViewingHistory}

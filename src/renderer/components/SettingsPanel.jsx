@@ -127,16 +127,16 @@ export default function SettingsPanel({ onClose }) {
     status === null ? 'rgba(var(--ink),0.2)'
     : status.ok ? 'rgba(48,209,88,0.6)' : 'rgba(255,59,48,0.5)'
 
-  const sectionLabel = { fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.42)', marginBottom: 5, fontFamily: 'inherit' }
+  const sectionLabel = { fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 5, fontFamily: 'inherit' }
   const inputStyle = (status) => ({ width: '100%', height: 32, background: 'rgba(var(--ink),0.05)', border: `0.5px solid ${inputBorder(status)}`, borderRadius: 8, padding: '0 10px', fontSize: 11, color: 'rgba(var(--ink),0.95)', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', WebkitAppRegion: 'no-drag' })
-  const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, color: 'rgba(var(--ink),0.56)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
+  const browseBtn = { height: 32, padding: '0 11px', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0, outline: 'none' }
 
   return (
     <div style={{ padding: '16px 20px 18px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflowY: 'auto' }}>
       {/* header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(var(--ink),0.86)', fontFamily: 'inherit' }}>Settings</span>
-        <button onClick={onClose} style={{ fontSize: 11, color: 'rgba(var(--ink),0.5)', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' }}>← Back</button>
+        <button onClick={onClose} style={{ fontSize: 11, color: 'var(--text-secondary)', background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' }}>← Back</button>
       </div>
 
       {/* Appearance */}
@@ -150,11 +150,11 @@ export default function SettingsPanel({ onClose }) {
               aria-checked={themeVal === value}
               onClick={() => handleThemeChange(value)}
               style={{
-                flex: 1, height: 26, borderRadius: 7, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5,
+                flex: 1, height: 26, borderRadius: 7, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12,
                 fontWeight: themeVal === value ? 600 : 400,
                 background: themeVal === value ? 'var(--surface-raised)' : 'transparent',
                 boxShadow: themeVal === value ? '0 1px 2px rgba(0,0,0,0.12), inset 0 0 0 0.5px rgba(var(--ink),0.18)' : 'none',
-                color: themeVal === value ? 'rgb(var(--ink))' : 'rgba(var(--ink),0.6)',
+                color: themeVal === value ? 'rgb(var(--ink))' : 'var(--text-secondary)',
                 WebkitAppRegion: 'no-drag',
               }}
             >
@@ -177,7 +177,7 @@ export default function SettingsPanel({ onClose }) {
             >
               {prefs.hotkeyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            <div style={{ fontSize: 10.5, color: 'rgba(var(--ink),0.6)', marginTop: 5, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 5, lineHeight: 1.5 }}>
               {prefs.accessibility?.tap
                 ? 'Hold it while you talk and let go to finish, or tap it to start and stop.'
                 : 'Tap to start and stop. Allow Accessibility below to hold it while you talk.'}
@@ -188,10 +188,10 @@ export default function SettingsPanel({ onClose }) {
           <div style={{ marginBottom: 14 }}>
             <div style={sectionLabel}>Hold to talk and selected text</div>
             {prefs.accessibility?.trusted ? (
-              <div style={{ fontSize: 11.5, color: readableColor('rgba(48,209,88,0.9)') }}>✓ Allowed — Promptly can use your selection as context.</div>
+              <div style={{ fontSize: 12, color: readableColor('rgba(48,209,88,0.9)') }}>✓ Allowed — Promptly can use your selection as context.</div>
             ) : (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ flex: 1, fontSize: 11.5, color: 'rgba(var(--ink),0.7)', lineHeight: 1.5 }}>
+                <div style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                   Needs Accessibility permission. Promptly only watches your talk shortcut and reads selected text when you start recording.
                 </div>
                 <button onClick={handleAllowAccessibility} style={{ ...browseBtn, color: 'rgba(var(--ink),0.85)' }}>Allow</button>
@@ -236,13 +236,13 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseClaude} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: readableColor(hintColor(claudeStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(claudeStatus, claudeVal)}</div>
+        <div style={{ fontSize: 11, color: readableColor(hintColor(claudeStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(claudeStatus, claudeVal)}</div>
       </div>
 
       {speechBuiltIn ? (
         <div style={{ marginBottom: 14 }}>
           <div style={sectionLabel}>Speech-to-text</div>
-          <div style={{ fontSize: 11.5, color: 'rgba(var(--ink),0.7)', fontFamily: 'inherit' }}>Built in — runs on this Mac, nothing to install.</div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Built in — runs on this Mac, nothing to install.</div>
         </div>
       ) : (<>
       {/* Whisper */}
@@ -255,7 +255,7 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseWhisper} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: readableColor(hintColor(whisperStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
+        <div style={{ fontSize: 11, color: readableColor(hintColor(whisperStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(whisperStatus, whisperVal)}</div>
       </div>
 
       {/* ffmpeg */}
@@ -268,7 +268,7 @@ export default function SettingsPanel({ onClose }) {
           </div>
           <button onClick={handleBrowseFfmpeg} style={browseBtn}>Browse</button>
         </div>
-        <div style={{ fontSize: 10, color: readableColor(hintColor(ffmpegStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(ffmpegStatus, ffmpegVal)}</div>
+        <div style={{ fontSize: 11, color: readableColor(hintColor(ffmpegStatus)), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(ffmpegStatus, ffmpegVal)}</div>
       </div>
 
       </>)}
@@ -299,7 +299,7 @@ export default function SettingsPanel({ onClose }) {
         Save &amp; Recheck
       </button>
 
-      <div style={{ fontSize: 10.5, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: 'inherit', color: readableColor(saveMsgColor) }}>{saveMsg}</div>
+      <div style={{ fontSize: 11, textAlign: 'center', marginTop: 8, minHeight: 14, fontFamily: 'inherit', color: readableColor(saveMsgColor) }}>{saveMsg}</div>
 
       {/* divider */}
       <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(var(--ink),0.07),transparent)', margin: '12px 0' }} />
@@ -307,7 +307,7 @@ export default function SettingsPanel({ onClose }) {
       {/* recheck setup */}
       <button
         onClick={() => window.electronAPI?.reopenWizard?.()}
-        style={{ width: '100%', height: 30, background: 'rgba(var(--ink),0.04)', color: 'rgba(var(--ink),0.56)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
+        style={{ width: '100%', height: 30, background: 'rgba(var(--ink),0.04)', color: 'var(--text-secondary)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 8, fontSize: 11, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
       >
         Recheck setup ↺
       </button>

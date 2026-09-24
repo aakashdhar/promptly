@@ -83,16 +83,16 @@ export default function ExpandedPromptReadyContent({
           <span>Prompt ready</span>
           {isIterated && (
             <span style={{
-              fontSize: '10px', color: 'color-mix(in oklab, rgba(10,132,255,0.72) var(--accent-text-strength), rgb(var(--ink)))',
+              fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
               background: 'rgba(10,132,255,0.08)', border: '0.5px solid rgba(10,132,255,0.2)',
               borderRadius: '20px', padding: '1px 8px', letterSpacing: '.04em',
             }}>↻ iterated</span>
           )}
         </div>
         <div style={{ display: 'flex', gap: '18px' }}>
-          <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgba(10,132,255,0.85) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>
-          <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'rgba(var(--ink),0.68)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>
-          <button onClick={onReset} style={{ fontSize: '12px', color: 'rgba(var(--ink),0.68)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
+          <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>
+          <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>
+          <button onClick={onReset} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
         </div>
       </div>
 
@@ -118,7 +118,7 @@ export default function ExpandedPromptReadyContent({
               {leftSections.map((s, i) => (
                 <div key={i} style={{ marginBottom: i < leftSections.length - 1 ? '18px' : 0 }}>
                   {s.label && (
-                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
                       {s.label}
                     </div>
                   )}
@@ -130,7 +130,7 @@ export default function ExpandedPromptReadyContent({
               {rightSections.map((s, i) => (
                 <div key={i} style={{ marginBottom: i < rightSections.length - 1 ? '18px' : 0 }}>
                   {s.label && (
-                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
                       {s.label}
                     </div>
                   )}

@@ -28,7 +28,7 @@ export default function WorkflowBuilderDoneState({
       if (keyMatch) {
         const [, indent, k, colon, valueStr] = keyMatch
         parts.push(<span key="indent">{indent}</span>)
-        parts.push(<span key="key" style={{ color: 'color-mix(in oklab, rgba(100,170,255,0.8) var(--accent-text-strength), rgb(var(--ink)))' }}>{k}</span>)
+        parts.push(<span key="key" style={{ color: 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))' }}>{k}</span>)
         parts.push(<span key="colon">{colon}</span>)
         if (valueStr !== undefined) {
           parts.push(renderValue(valueStr, 'val'))
@@ -48,13 +48,13 @@ export default function WorkflowBuilderDoneState({
   function renderValue(str, k) {
     const trimmed = str.trim()
     if (trimmed.startsWith('"') && (trimmed.endsWith('"') || trimmed.endsWith('",') || trimmed.endsWith('"}'))) {
-      return <span key={k} style={{ color: 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))' }}>{str}</span>
+      return <span key={k} style={{ color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }}>{str}</span>
     }
     if (/^-?\d+[\d.,]*[,}]?$/.test(trimmed) || /^-?\d+$/.test(trimmed)) {
-      return <span key={k} style={{ color: 'color-mix(in oklab, rgba(251,146,60,0.8) var(--accent-text-strength), rgb(var(--ink)))' }}>{str}</span>
+      return <span key={k} style={{ color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))' }}>{str}</span>
     }
     if (/^(true|false|null)[,}]?$/.test(trimmed)) {
-      return <span key={k} style={{ color: 'rgba(var(--ink),0.56)' }}>{str}</span>
+      return <span key={k} style={{ color: 'var(--text-secondary)' }}>{str}</span>
     }
     return <span key={k}>{str}</span>
   }
@@ -90,7 +90,7 @@ export default function WorkflowBuilderDoneState({
 
   const linkBtnStyle = {
     fontSize: 11,
-    color: 'rgba(var(--ink),0.5)',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
     background: 'none',
     border: 'none',
@@ -114,10 +114,10 @@ export default function WorkflowBuilderDoneState({
   }
 
   const colLabelStyle = {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 700,
     letterSpacing: '0.12em',
-    color: 'rgba(var(--ink),0.32)',
+    color: 'var(--text-tertiary)',
     marginBottom: 10,
     flexShrink: 0,
   }
@@ -145,12 +145,12 @@ export default function WorkflowBuilderDoneState({
             width: 8, height: 8, borderRadius: '50%',
             background: 'rgba(34,197,94,0.9)', flexShrink: 0,
           }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-accent)' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(var(--ink),0.92)' }}>
             {workflowName}
           </span>
           <span style={{
-            fontSize: 10, fontWeight: 600,
-            color: 'color-mix(in oklab, rgba(100,170,255,0.7) var(--accent-text-strength), rgb(var(--ink)))',
+            fontSize: 11, fontWeight: 600,
+            color: 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))',
             background: 'rgba(10,132,255,0.12)',
             border: '0.5px solid rgba(10,132,255,0.25)',
             borderRadius: 5, padding: '2px 7px',
@@ -180,17 +180,17 @@ export default function WorkflowBuilderDoneState({
                       background: isTrigger ? 'rgba(34,197,94,0.15)' : 'rgba(10,132,255,0.15)',
                       border: `0.5px solid ${isTrigger ? 'rgba(34,197,94,0.3)' : 'rgba(10,132,255,0.3)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 700,
-                      color: isTrigger ? 'color-mix(in oklab, rgba(74,222,128,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgba(100,170,255,0.9) var(--accent-text-strength), rgb(var(--ink)))',
+                      fontSize: 11, fontWeight: 700,
+                      color: isTrigger ? 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' : 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))',
                     }}>
                       {idx + 1}
                     </div>
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-accent)', marginBottom: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(var(--ink),0.92)', marginBottom: 1 }}>
                         {node.name || node.type}
                       </div>
                       {node.purpose && (
-                        <div style={{ fontSize: 11, color: 'rgba(var(--ink),0.56)', lineHeight: 1.4 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                           {node.purpose}
                         </div>
                       )}
@@ -211,8 +211,8 @@ export default function WorkflowBuilderDoneState({
               borderRadius: 9, padding: '10px 12px',
             }}>
               <div style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
-                color: 'color-mix(in oklab, rgba(34,197,94,0.6) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: 8,
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+                color: 'color-mix(in oklab, rgb(34,197,94) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: 8,
               }}>
                 HOW TO IMPORT
               </div>
@@ -226,10 +226,10 @@ export default function WorkflowBuilderDoneState({
                 'Activate workflow ✓',
               ].map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 10, color: 'color-mix(in oklab, rgba(34,197,94,0.5) var(--accent-text-strength), rgb(var(--ink)))', minWidth: 14, fontWeight: 600 }}>
+                  <span style={{ fontSize: 11, color: 'color-mix(in oklab, rgb(34,197,94) var(--accent-text-strength), rgb(var(--ink)))', minWidth: 14, fontWeight: 600 }}>
                     {i + 1}.
                   </span>
-                  <span style={{ fontSize: 11, color: 'rgba(var(--ink),0.62)', lineHeight: 1.4 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     {step}
                   </span>
                 </div>
@@ -243,15 +243,15 @@ export default function WorkflowBuilderDoneState({
           <div style={colLabelStyle}>N8N WORKFLOW JSON</div>
           <div style={{
             ...scrollStyle,
-            background: 'rgba(0,0,0,0.2)',
+            background: 'rgba(var(--ink),0.05)',
             borderRadius: 8, padding: '10px 12px',
           }}>
             <pre style={{
               margin: 0,
               fontFamily: 'monospace',
-              fontSize: 10.5,
+              fontSize: 11,
               lineHeight: 1.6,
-              color: 'var(--on-accent)',
+              color: 'rgba(var(--ink),0.92)',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
             }}>
@@ -267,7 +267,7 @@ export default function WorkflowBuilderDoneState({
           onClick={onSave}
           style={{
             fontSize: 12,
-            color: isSaved ? 'color-mix(in oklab, rgba(74,222,128,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.45)',
+            color: isSaved ? 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)',
             background: 'none',
             border: '0.5px solid rgba(var(--ink),0.12)',
             borderRadius: 7, padding: '6px 14px',
@@ -281,7 +281,7 @@ export default function WorkflowBuilderDoneState({
           onClick={onCopy}
           style={{
             fontSize: 12, fontWeight: 600,
-            color: isCopied ? 'color-mix(in oklab, rgba(74,222,128,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.9)',
+            color: isCopied ? 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.9)',
             background: isCopied
               ? 'rgba(34,197,94,0.15)'
               : 'linear-gradient(135deg, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.25) 100%)',

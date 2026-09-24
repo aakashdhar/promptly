@@ -19,7 +19,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: '13px',
-        color: 'rgba(var(--ink),0.74)',
+        color: 'var(--text-secondary)',
       }}>
         Select a prompt to view
       </div>
@@ -34,7 +34,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
           marginBottom: '8px',
         }}>
           <div style={{
-            fontSize: '10px', fontWeight: 700, letterSpacing: '.12em',
+            fontSize: '11px', fontWeight: 700, letterSpacing: '.12em',
             textTransform: 'uppercase', color: 'rgba(var(--ink),0.8)',
           }}>
             You said
@@ -53,8 +53,8 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
                 strokeWidth="1.2" strokeLinejoin="round"/>
             </svg>
             <span style={{
-              fontSize: '10px', fontWeight: selected.bookmarked ? 500 : 400,
-              color: selected.bookmarked ? 'color-mix(in oklab, rgba(255,189,46,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.35)',
+              fontSize: '11px', fontWeight: selected.bookmarked ? 500 : 400,
+              color: selected.bookmarked ? 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)',
             }}>
               {selected.bookmarked ? 'Saved' : 'Save'}
             </span>
@@ -75,9 +75,9 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
         <PromptSections prompt={selected.prompt} textSize="13.5px" textColor="rgba(var(--ink),0.88)" />
         {selected.polishChanges && selected.polishChanges.length > 0 && (
           <div style={{ margin: '12px 0 20px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '10px' }}>
-            <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(48,209,88,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
             {selected.polishChanges.map((note, i) => (
-              <div key={i} style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.62)', lineHeight: 1.5 }}>{note}</div>
+              <div key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{note}</div>
             ))}
           </div>
         )}
@@ -85,7 +85,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
 
       <div style={{ borderTop: '0.5px solid rgba(var(--ink),0.06)', padding: '12px 22px', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.34)' }}>Rate this prompt</span>
+          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Rate this prompt</span>
           <div style={{ display: 'flex', gap: '6px' }}>
             {['up', 'down'].map(r => (
               <button key={r} onClick={() => onRate(r)} style={{
@@ -119,7 +119,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
               return (
                 <span key={tag} onClick={() => onTag(tag)} style={{
                   padding: '3px 10px', borderRadius: '6px',
-                  fontSize: '10px', fontWeight: isActive ? 500 : 400,
+                  fontSize: '11px', fontWeight: isActive ? 500 : 400,
                   cursor: 'pointer', transition: 'all 150ms',
                   background: s.bg, border: `0.5px solid ${s.border}`, color: readableColor(s.text),
                 }}>
@@ -144,7 +144,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
             fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer',
             background: copied ? 'rgba(48,209,88,0.12)' : 'rgba(var(--ink),0.06)',
             border: copied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(var(--ink),0.12)',
-            color: copied ? 'color-mix(in oklab, rgba(48,209,88,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.72)',
+            color: copied ? 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-secondary)',
             transition: 'all 200ms',
           }}
         >

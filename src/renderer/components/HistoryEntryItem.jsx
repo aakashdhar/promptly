@@ -26,9 +26,10 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
       <div style={{
         fontSize: '12px',
         fontWeight: isSelected ? 500 : 400,
-        color: isSelected ? 'rgba(var(--ink),0.9)' : 'rgba(var(--ink),0.72)',
+        color: isSelected ? 'rgba(var(--ink),0.9)' : 'var(--text-secondary)',
         marginBottom: '6px',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        lineHeight: 1.4,
+        overflowWrap: 'anywhere',
         paddingRight: '20px',
       }}>
         {entry.title || entry.transcript?.split(' ').slice(0, 6).join(' ')}
@@ -36,7 +37,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <span style={{
-          fontSize: '10px', fontWeight: 600, letterSpacing: '.06em',
+          fontSize: '11px', fontWeight: 600, letterSpacing: '.06em',
           textTransform: 'uppercase', padding: '2px 7px',
           borderRadius: '20px',
           background: isSelected
@@ -44,32 +45,32 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
             : 'rgba(var(--ink),0.07)',
           color: readableColor(isSelected
             ? isPolish ? 'rgba(100,220,130,0.85)' : 'rgba(100,180,255,0.85)'
-            : 'rgba(var(--ink),0.7)'),
+            : 'var(--text-secondary)'),
         }}>
           {entry.mode}
         </span>
         {entry.isIteration && (
-          <span style={{ fontSize: '9px', color: 'color-mix(in oklab, rgba(10,132,255,0.72) var(--accent-text-strength), rgb(var(--ink)))', marginLeft: '4px' }}>↻</span>
+          <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', marginLeft: '4px' }}>↻</span>
         )}
-        <span style={{ fontSize: '10px', color: 'rgba(var(--ink),0.78)' }}>
+        <span style={{ fontSize: '11px', color: 'rgba(var(--ink),0.78)' }}>
           {formatTime(entry.timestamp)}
         </span>
         {entry.rating === 'down' && entry.ratingTag && (
           <span style={{
-            fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
+            fontSize: '11px', padding: '1px 5px', borderRadius: '4px',
             background: 'rgba(255,59,48,0.08)',
             border: '0.5px solid rgba(255,59,48,0.2)',
-            color: 'color-mix(in oklab, rgba(255,100,90,0.7) var(--accent-text-strength), rgb(var(--ink)))',
+            color: 'color-mix(in oklab, rgb(255,100,90) var(--accent-text-strength), rgb(var(--ink)))',
           }}>
             {entry.ratingTag}
           </span>
         )}
         {entry.rating === 'up' && entry.ratingTag && (
           <span style={{
-            fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
+            fontSize: '11px', padding: '1px 5px', borderRadius: '4px',
             background: 'rgba(48,209,88,0.08)',
             border: '0.5px solid rgba(48,209,88,0.2)',
-            color: 'color-mix(in oklab, rgba(100,220,130,0.7) var(--accent-text-strength), rgb(var(--ink)))',
+            color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))',
           }}>
             {entry.ratingTag}
           </span>
@@ -80,7 +81,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
         onClick={(e) => { e.stopPropagation(); onDelete(entry.id) }}
         style={{
           position: 'absolute', top: '12px', right: '12px',
-          fontSize: '11px', color: 'rgba(var(--ink),0.68)',
+          fontSize: '11px', color: 'var(--text-secondary)',
           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
           lineHeight: 1,
           opacity: isHovered ? 1 : 0,
@@ -101,7 +102,7 @@ export default function HistoryEntryItem({ entry, isSelected, isHovered, onSelec
             </svg>
           )}
           {entry.rating && (
-            <span style={{ fontSize: '10px' }}>
+            <span style={{ fontSize: '11px' }}>
               {entry.rating === 'up' ? '👍' : '👎'}
             </span>
           )}

@@ -123,11 +123,11 @@ export function evalVerdict(delta) {
 }
 
 export function getModeTagStyle(mode) {
-  if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgba(100,220,130,0.6) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgba(167,139,250,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgba(74,222,128,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'color-mix(in oklab, rgba(45,212,191,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
-  return { background: 'rgba(10,132,255,0.1)', color: 'color-mix(in oklab, rgba(100,170,255,0.65) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgb(167,139,250) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'color-mix(in oklab, rgb(45,212,191) var(--accent-text-strength), rgb(var(--ink)))' }
+  return { background: 'rgba(10,132,255,0.1)', color: 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))' }
 }
 
 // Coloured text (mode colours are tuned for dark) mixed toward the ink colour by the theme's
@@ -135,5 +135,7 @@ export function getModeTagStyle(mode) {
 // through unchanged, so it's safe to wrap any text colour.
 export function readableColor(color) {
   if (!color || typeof color !== 'string' || color.startsWith('var(') || color === 'inherit' || color === 'transparent') return color
-  return `color-mix(in oklab, ${color} var(--accent-text-strength), rgb(var(--ink)))`
+  // Alpha is dropped: a translucent mode colour mixed toward ink still comes out too faint to read.
+  const opaque = color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[0-9.]+\)/, 'rgb($1,$2,$3)')
+  return `color-mix(in oklab, ${opaque} var(--accent-text-strength), rgb(var(--ink)))`
 }

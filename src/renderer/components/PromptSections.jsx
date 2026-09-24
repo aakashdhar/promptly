@@ -12,7 +12,7 @@ export default function PromptSections({ prompt, labelColor = 'rgba(100,170,255,
     if (isLabel) {
       elements.push(
         <div key={`label-${i}`} style={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em',
+          fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em',
           textTransform: 'uppercase',
           color: readableColor(labelColor),
           marginBottom: '6px', marginTop: elements.length ? '18px' : 0,

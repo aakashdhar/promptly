@@ -20,7 +20,7 @@ export default function RecordingState({ onStop, onDismiss, onPause, duration })
             <path d="M1 1L9 9M9 1L1 9" stroke="rgba(var(--ink),0.75)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
-        <div className="flex-1 flex items-center h-9 [-webkit-app-region:no-drag]">
+        <div className="flex-1 min-w-0 overflow-hidden flex items-center h-9 [-webkit-app-region:no-drag]">
           <WaveformCanvas />
         </div>
         {/* POLISH-003: timer fontWeight 400, letterSpacing 0.08em; POLISH-009: 0.30 → 0.60 */}

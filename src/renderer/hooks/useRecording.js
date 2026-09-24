@@ -133,7 +133,7 @@ export default function useRecording({
           })
           transitionRef.current(STATES.TRANSCRIPTION_ERROR)
         } else {
-          transitionRef.current(STATES.ERROR, { message: 'Transcription failed — expand to retry' })
+          transitionRef.current(STATES.ERROR, { message: "Couldn't transcribe that" })
         }
         return
       }

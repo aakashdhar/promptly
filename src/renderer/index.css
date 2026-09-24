@@ -10,8 +10,12 @@
   --bg: #F4F4F6;                   /* window */
   --surface: #FFFFFF;              /* panels, inputs */
   --surface-raised: #FFFFFF;       /* dropdowns, popovers */
+  /* Readable secondary text: both clear 4.5:1 on --bg, --surface and --surface-raised. Use these
+     rather than a low ink alpha for anything a person needs to read. */
+  --text-secondary: rgba(var(--ink), 0.76);
+  --text-tertiary: rgba(var(--ink), 0.66);
   --on-accent: #FFFFFF;            /* text on coloured buttons */
-  --accent-text-strength: 58%;     /* coloured text is mixed toward ink so pastels stay readable */
+  --accent-text-strength: 46%;     /* coloured text is mixed toward ink so pastels stay readable */
   --window-edge: rgba(0, 0, 0, 0.12);
   --window-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.12);
   --popover-shadow: 0 8px 28px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
@@ -24,7 +28,9 @@
     --bg: #1C1C1F;
     --surface: #242428;
     --surface-raised: #3A3A40;
-    --accent-text-strength: 100%;
+    --text-secondary: rgba(var(--ink), 0.72);
+    --text-tertiary: rgba(var(--ink), 0.63);
+    --accent-text-strength: 64%;     /* a little ink lifts darker mode colours off the dark background */
     --window-edge: rgba(255, 255, 255, 0.10);
     --window-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 40px rgba(0, 0, 0, 0.45);
     --popover-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
@@ -113,6 +119,8 @@ html { height: 100%; }
 body {
   margin: 0;
   padding: 0;
+  /* Long URLs and paths in prompts wrap instead of pushing the panel sideways. */
+  overflow-wrap: break-word;
   height: 100%;
   background: var(--bg);
   color: rgb(var(--ink));

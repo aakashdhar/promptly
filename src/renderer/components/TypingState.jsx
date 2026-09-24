@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 
+// Matches STATE_HEIGHTS.TYPING in App.jsx: drag strip + header + four-line box + button.
+const TYPING_HEIGHT = 290
+
 export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
   const [text, setText] = useState('')
   const textareaRef = useRef(null)
@@ -12,7 +15,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
     const val = e.target.value
     setText(val)
     const lines = val.split('\n').length
-    const newH = Math.min(244 + Math.floor(lines / 4) * 40, 344)
+    const newH = Math.min(TYPING_HEIGHT + Math.floor(lines / 4) * 40, TYPING_HEIGHT + 100)
     resizeWindow(newH)
   }
 
@@ -27,10 +30,9 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
 
   return (
     <div style={{position:'relative', zIndex:1}}>
-      {/* Traffic light breathing room */}
-      <div style={{height:'36px', WebkitAppRegion:'drag'}} />
       {/* Top row */}
-      <div style={{height:'36px', display:'flex', alignItems:'center', padding:'0 18px', gap:'10px', WebkitAppRegion:'drag'}}>
+      {/* Right padding leaves room for the reset button App.jsx pins to the top-right corner. */}
+      <div style={{height:'36px', display:'flex', alignItems:'center', padding:'0 52px 0 18px', gap:'10px', WebkitAppRegion:'drag'}}>
         <div
           onClick={onDismiss}
           style={{width:'28px', height:'28px', borderRadius:'50%', background:'rgba(var(--ink),0.06)', border:'0.5px solid rgba(var(--ink),0.1)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, WebkitAppRegion:'no-drag'}}
@@ -39,7 +41,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
             <path d="M1 1L9 9M9 1L1 9" stroke="rgba(var(--ink),0.5)" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
-        <span style={{flex:1, fontSize:'12px', color:'rgba(var(--ink),0.68)', fontWeight:500, WebkitAppRegion:'no-drag'}}>
+        <span style={{flex:1, fontSize:'12px', color:'var(--text-secondary)', fontWeight:500, WebkitAppRegion:'no-drag'}}>
           Type your prompt
         </span>
         <div
@@ -50,7 +52,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
             <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(var(--ink),0.4)" strokeWidth="1"/>
             <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(var(--ink),0.4)" strokeWidth="1" strokeLinecap="round"/>
           </svg>
-          <span style={{fontSize:'10px', color:'rgba(var(--ink),0.56)'}}>Switch to voice</span>
+          <span style={{fontSize:'11px', color:'var(--text-secondary)'}}>Switch to voice</span>
         </div>
       </div>
 
@@ -77,7 +79,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
             transition:'border-color 150ms'
           }}
         />
-        <div style={{fontSize:'10px', color:'rgba(var(--ink),0.32)', marginTop:'5px', textAlign:'right'}}>
+        <div style={{fontSize:'11px', color:'var(--text-tertiary)', marginTop:'5px', textAlign:'right'}}>
           ⌘↵ to submit · Esc to cancel
         </div>
       </div>
@@ -86,7 +88,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
       <div style={{height:'0.5px', background:'linear-gradient(90deg,transparent,rgba(var(--ink),0.07),transparent)', margin:'0 18px'}}/>
 
       {/* Submit row */}
-      <div style={{padding:'12px 18px 22px'}}>
+      <div style={{padding:'12px 18px 18px'}}>
         <button
           onClick={() => hasText && onSubmit(text.trim())}
           disabled={!hasText}
@@ -95,7 +97,7 @@ export default function TypingState({ onDismiss, onSubmit, resizeWindow }) {
             background: hasText
               ? 'linear-gradient(135deg,rgba(10,132,255,0.92),rgba(10,100,220,0.92))'
               : 'rgba(var(--ink),0.06)',
-            color: hasText ? 'white' : 'rgba(var(--ink),0.25)',
+            color: hasText ? 'white' : 'var(--text-tertiary)',
             border:'none', borderRadius:'10px',
             fontSize:'13px', fontWeight:600, fontFamily:'inherit',
             cursor: hasText ? 'pointer' : 'default',

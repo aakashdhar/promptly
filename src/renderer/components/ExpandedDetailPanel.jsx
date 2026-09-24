@@ -130,7 +130,7 @@ export default function ExpandedDetailPanel({
           gap: '10px',
         }}>
           <span style={{
-            fontSize: '12px', color: 'rgba(var(--ink),0.5)',
+            fontSize: '12px', color: 'var(--text-secondary)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
             letterSpacing: '0.01em',
           }}>
@@ -145,10 +145,10 @@ export default function ExpandedDetailPanel({
                 title="Copy prompt"
                 style={{
                   height: '24px', padding: '0 8px', borderRadius: '5px',
-                  fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer',
+                  fontSize: '11px', fontFamily: 'inherit', cursor: 'pointer',
                   background: entryCopied ? 'rgba(48,209,88,0.1)' : 'rgba(var(--ink),0.05)',
                   border: entryCopied ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(var(--ink),0.1)',
-                  color: entryCopied ? 'color-mix(in oklab, rgba(48,209,88,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)',
+                  color: entryCopied ? 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)',
                   transition: 'all 150ms',
                 }}
               >
@@ -159,10 +159,10 @@ export default function ExpandedDetailPanel({
                 title="Export as text"
                 style={{
                   height: '24px', padding: '0 8px', borderRadius: '5px',
-                  fontSize: '10px', fontFamily: 'inherit', cursor: 'pointer',
+                  fontSize: '11px', fontFamily: 'inherit', cursor: 'pointer',
                   background: entryExported ? 'rgba(48,209,88,0.1)' : 'rgba(var(--ink),0.05)',
                   border: entryExported ? '0.5px solid rgba(48,209,88,0.25)' : '0.5px solid rgba(var(--ink),0.1)',
-                  color: entryExported ? 'color-mix(in oklab, rgba(48,209,88,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.4)',
+                  color: entryExported ? 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)',
                   transition: 'all 150ms',
                 }}
               >
@@ -184,10 +184,10 @@ export default function ExpandedDetailPanel({
             <circle cx="12" cy="12" r="9" stroke="rgba(var(--ink),0.18)" strokeWidth="1.2"/>
             <path d="M12 7v5l3 3" stroke="rgba(var(--ink),0.18)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: '16px', fontWeight: 400, color: 'rgba(var(--ink),0.44)', letterSpacing: '-0.01em' }}>
+          <span style={{ fontSize: '16px', fontWeight: 400, color: 'var(--text-tertiary)', letterSpacing: '-0.01em' }}>
             Select a session to view details
           </span>
-          <span style={{ fontSize: '13px', color: 'rgba(var(--ink),0.27)' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
             Your generated prompts appear here
           </span>
         </div>
@@ -199,8 +199,8 @@ export default function ExpandedDetailPanel({
           <div style={{ padding: '16px 28px 14px', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{
-                fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
-                textTransform: 'uppercase', color: 'rgba(var(--ink),0.5)',
+                fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em',
+                textTransform: 'uppercase', color: 'var(--text-secondary)',
               }}>
                 You said · {formatTime(selected.timestamp)}
               </div>
@@ -221,9 +221,9 @@ export default function ExpandedDetailPanel({
                     strokeWidth="1.2" strokeLinejoin="round" />
                 </svg>
                 <span style={{
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontWeight: selected.bookmarked ? 500 : 400,
-                  color: selected.bookmarked ? 'color-mix(in oklab, rgba(255,189,46,0.8) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.35)',
+                  color: selected.bookmarked ? 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-tertiary)',
                 }}>
                   {selected.bookmarked ? 'Saved' : 'Save'}
                 </span>
@@ -240,9 +240,9 @@ export default function ExpandedDetailPanel({
             <PromptSections prompt={selected.prompt} labelColor={labelColor} textSize="14px" textColor="rgba(var(--ink),0.82)" />
             {selected.polishChanges && selected.polishChanges.length > 0 && (
               <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgba(48,209,88,0.5) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
                 {selected.polishChanges.map((note, i) => (
-                  <div key={i} style={{ fontSize: '11.5px', color: 'rgba(var(--ink),0.62)', lineHeight: 1.5 }}>{note}</div>
+                  <div key={i} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{note}</div>
                 ))}
               </div>
             )}
@@ -251,7 +251,7 @@ export default function ExpandedDetailPanel({
           {/* Rating section */}
           <div style={{ borderTop: '0.5px solid rgba(var(--ink),0.06)', padding: '12px 28px', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: selected.rating ? '10px' : 0 }}>
-              <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(var(--ink),0.34)' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>
                 Rate this prompt
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
@@ -286,7 +286,7 @@ export default function ExpandedDetailPanel({
                   return (
                     <span key={tag} onClick={() => handleTag(tag)} style={{
                       padding: '3px 10px', borderRadius: '6px',
-                      fontSize: '10px', fontWeight: isActiveTag ? 500 : 400,
+                      fontSize: '11px', fontWeight: isActiveTag ? 500 : 400,
                       cursor: 'pointer', transition: 'all 150ms',
                       background: s.bg, border: `0.5px solid ${s.border}`, color: readableColor(s.text),
                     }}>
@@ -320,7 +320,7 @@ export default function ExpandedDetailPanel({
                 fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer',
                 background: entryCopied ? 'rgba(48,209,88,0.12)' : 'rgba(var(--ink),0.06)',
                 border: entryCopied ? '0.5px solid rgba(48,209,88,0.3)' : '0.5px solid rgba(var(--ink),0.12)',
-                color: entryCopied ? 'color-mix(in oklab, rgba(48,209,88,0.9) var(--accent-text-strength), rgb(var(--ink)))' : 'rgba(var(--ink),0.72)',
+                color: entryCopied ? 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))' : 'var(--text-secondary)',
                 transition: 'all 200ms',
               }}
             >
@@ -465,10 +465,10 @@ export default function ExpandedDetailPanel({
           minHeight: '200px',
         }}>
           <span style={{ fontSize: '40px', lineHeight: 1 }}>✉</span>
-          <span style={{ fontSize: '14px', color: 'rgba(var(--ink),0.68)', letterSpacing: '-0.01em', textAlign: 'center' }}>
+          <span style={{ fontSize: '14px', color: 'var(--text-secondary)', letterSpacing: '-0.01em', textAlign: 'center' }}>
             Describe your email situation naturally
           </span>
-          <span style={{ fontSize: '12px', color: 'rgba(var(--ink),0.5)', textAlign: 'center' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
             Claude will draft a ready-to-send email
           </span>
         </div>

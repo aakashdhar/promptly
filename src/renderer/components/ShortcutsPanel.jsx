@@ -5,7 +5,7 @@ export default function ShortcutsPanel({ onClose }) {
   const groups = [
     {
       label: 'Recording',
-      color: 'color-mix(in oklab, rgba(10,132,255,0.55) var(--accent-text-strength), rgb(var(--ink)))',
+      color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Start / stop recording', keys: ['⌥', 'Space'] },
         { desc: 'Pause / resume recording', keys: ['⌥', 'P'] },
@@ -13,7 +13,7 @@ export default function ShortcutsPanel({ onClose }) {
     },
     {
       label: 'Prompt',
-      color: 'color-mix(in oklab, rgba(10,132,255,0.55) var(--accent-text-strength), rgb(var(--ink)))',
+      color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Type prompt', keys: ['⌘', 'T'] },
         { desc: 'Copy last prompt', keys: ['⌘', 'C'] },
@@ -23,7 +23,7 @@ export default function ShortcutsPanel({ onClose }) {
     },
     {
       label: 'Navigation',
-      color: 'color-mix(in oklab, rgba(10,132,255,0.55) var(--accent-text-strength), rgb(var(--ink)))',
+      color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Open history', keys: ['⌘', 'H'] },
         { desc: 'Open path settings', keys: ['⌘', '/'] },
@@ -56,7 +56,7 @@ export default function ShortcutsPanel({ onClose }) {
           fontWeight: 700,
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
-          color: 'rgba(var(--ink),0.42)'
+          color: 'var(--text-tertiary)'
         }}>
           Keyboard shortcuts
         </span>
@@ -64,7 +64,7 @@ export default function ShortcutsPanel({ onClose }) {
           onClick={onClose}
           style={{
             fontSize: '12px',
-            color: 'rgba(var(--ink),0.62)',
+            color: 'var(--text-secondary)',
             background: 'rgba(var(--ink),0.05)',
             border: '0.5px solid rgba(var(--ink),0.1)',
             borderRadius: '7px',
@@ -92,7 +92,7 @@ export default function ShortcutsPanel({ onClose }) {
 
           {/* Group label */}
           <div style={{
-            fontSize: '9px',
+            fontSize: '11px',
             fontWeight: 700,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
@@ -122,7 +122,7 @@ export default function ShortcutsPanel({ onClose }) {
             >
               {/* Description */}
               <span style={{
-                fontSize: '12.5px',
+                fontSize: '13px',
                 color: 'rgba(var(--ink),0.8)',
                 letterSpacing: '0.01em'
               }}>
@@ -140,8 +140,8 @@ export default function ShortcutsPanel({ onClose }) {
                   <span key={ki} style={{display:'flex',alignItems:'center',gap:'3px'}}>
                     {ki > 0 && (
                       <span style={{
-                        fontSize: '10px',
-                        color: 'rgba(var(--ink),0.32)',
+                        fontSize: '11px',
+                        color: 'var(--text-tertiary)',
                         margin: '0 1px'
                       }}>+</span>
                     )}
@@ -157,7 +157,7 @@ export default function ShortcutsPanel({ onClose }) {
                       borderBottom: '1.5px solid rgba(0,0,0,0.35)',
                       borderRadius: '5px',
                       fontSize: '11px',
-                      color: 'rgba(var(--ink),0.74)',
+                      color: 'var(--text-secondary)',
                       fontFamily: 'inherit',
                       letterSpacing: '0.01em',
                       boxShadow: '0 1px 0 rgba(var(--ink),0.04) inset'
