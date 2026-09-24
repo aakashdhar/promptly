@@ -1905,3 +1905,20 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Decision: streaming via `claude -p --output-format stream-json --include-partial-messages` (still CLI-only).
 > Not done: undo-insert (nothing is inserted, per the output decision).
 ---
+
+---
+## D-UI-AUDIT — Every screen checked for legibility and layout — 2026-09-24
+> Problem (product owner): text cut off, things pressed against the window edges, uneven spacing; wanted a coherent,
+>   readable UI throughout.
+> Decision: e2e/ui.spec.mjs walks every screen in both themes and e2e/layout-audit.mjs fails the run on clipped text,
+>   content outside the window or within 12 px of its edge, overlapping controls, sideways-scrolling text, text under
+>   11 px, and WCAG AA contrast failures. It runs as part of `npm run test:e2e`.
+> Decision: two text tokens (--text-secondary, --text-tertiary) tuned per theme to clear 4.5:1 on every surface replace
+>   the old low ink alphas; a single type scale (11/12/13/14/15/17); mode colours are mixed opaque (no alpha) toward ink
+>   in both themes.
+> Fixed on the way: the idle bar opened at 89 px and cut its last line; the typing screen's Generate button sat below the
+>   window; the Email result was white-on-white in light mode; the mode menu was taller than its window; duplicate
+>   collapse/close buttons overlapping the reset button; the pill cut off its detail line; builders squeezed by the
+>   history column on smaller windows (history now steps aside below 1180 px); long URLs scrolled sideways.
+> Removed: the "built using vibe-* skills" line on the idle bar (it crowded the bottom edge).
+---

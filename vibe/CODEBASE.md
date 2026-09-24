@@ -30,7 +30,8 @@
 | `src/renderer/utils/audio.js` | Converts recordings to 16 kHz mono WAV for the built-in engine | `recordingToWav`, `blobToWav`, `encodeWav` |
 | `scripts/fetch-whisper.sh` | Builds whisper.cpp (universal, Metal) and downloads the checksum-pinned model into vendor/whisper/ | — |
 | `scripts/make-dmg-background.js` | Renders build/dmg-background(@2x).png — install + first-open instructions — with Electron | — |
-| `e2e/screenshots.spec.mjs` | Design screenshots of main screens and setup in both themes (SCREENSHOTS=1) | — |
+| `e2e/ui.spec.mjs` | Walks every screen (setup, idle, typing, thinking, prompt, polish, email, image/video/workflow builders, history, settings, expanded, pill) in light and dark; screenshots to test-results/ui/ and fails on any layout-audit finding | — |
+| `e2e/layout-audit.mjs` | In-page checks: clipped or cut-off text, off-window/edge-hugging content (<12 px), overlapping controls, sideways-scrolling text, text under 11 px, contrast under 4.5:1 (3:1 large) | `auditLayout`, `formatIssues` |
 | `native/helper/main.swift` | promptly-helper: JSON-lines protocol; active event tap for the talk key (down/up/cancel), frontmost app, selected text via AX | — |
 | `main/helper.js` | Spawns the helper, request/response with ids + timeouts, restarts on crash, reports trust/tap status | `createHelper()` → `{ start, stop, isRunning, status, configure, context, requestAccess, refreshStatus }` |
 | `main/hotkey.js` | Hotkey presets and the hold (≥350 ms) vs tap state machine | `HOTKEY_PRESETS`, `getPreset`, `createHoldToTalk` |

@@ -57,6 +57,7 @@ npm run dev           # Vite dev server for the renderer only
 npm run lint          # ESLint over the whole repo — must have 0 errors
 npm test              # Vitest unit tests
 npm run test:e2e      # build + Playwright end-to-end tests (fake Claude/Whisper, throwaway profile)
+                      #   includes e2e/ui.spec.mjs: screenshots of every screen in both themes + layout audit
 npm run preflight     # local tool + codebase checks (release.sh runs this)
 npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh)
 ```
@@ -72,7 +73,7 @@ npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh)
 5. **IPC**: renderer talks to main only through `window.electronAPI` from `preload.js`. Adding a channel means a preload method + an `ipcMain.handle`; `tests/ipc-contract.test.js` fails if they drift.
 6. **State**: all renderer state changes go through `transition()` in App.jsx. Use `stateRef.current` (not `currentState`) inside event handlers. Async work tags itself with `opIdRef` so aborted or superseded results are ignored.
 7. **Security**: `contextIsolation: true`, `nodeIntegration: false`. No `dangerouslySetInnerHTML` with user or Claude text.
-8. **Colours**: use theme tokens from `src/renderer/index.css` — `rgba(var(--ink), a)` for text/lines/fills, `var(--bg)`/`var(--surface)` for backgrounds, `var(--on-accent)` for text on coloured buttons, and `readableColor()` for mode-coloured text. Never hardcode white-on-dark.
+8. **Colours and type**: use theme tokens from `src/renderer/index.css` — `rgba(var(--ink), a)` for lines/fills and primary text (a ≥ 0.75), `var(--text-secondary)`/`var(--text-tertiary)` for quieter text (never a lower ink alpha), `var(--bg)`/`var(--surface)` for backgrounds, `var(--on-accent)` for text on coloured buttons, and `readableColor()` for mode-coloured text. Never hardcode white-on-dark. Type scale 11/12/13/14/15/17 px; nothing under 11 px. `npm run test:e2e` fails if a screen has cut-off text, cramped edges, overlaps or low contrast.
 9. **Storage**: localStorage only via `useMode()`, `useTone()`, `utils/history.js`. App settings (paths, model, window bounds) live in `config.json` via `main/config.js`.
 10. **Dependencies**: zero runtime npm dependencies in the packaged app. Dev dependencies are fine; new runtime ones need a DECISIONS.md entry.
 11. **Packaging**: a new top-level folder the app needs at runtime must be added to `build.files` in package.json.
