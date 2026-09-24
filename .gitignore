@@ -12,3 +12,4 @@ test-results/
 playwright-report/
 vendor/
 .cache/
+dist-archive/

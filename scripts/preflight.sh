@@ -74,8 +74,24 @@ ok "CHECK 6: whisper-cli transcribes"
 
 # CHECK 6b — hold-to-talk helper builds and answers
 bash scripts/build-helper.sh >/dev/null || fail "promptly-helper failed to build"
-REPLY=$( (printf '{"cmd":"status","id":1}\n'; sleep 0.5) | vendor/helper/promptly-helper | grep -c '"type":"status"' || true)
-[ "$REPLY" -ge 1 ] || fail "promptly-helper did not answer a status request"
+# Waits up to 5 s for the reply: a freshly built binary can be slow to launch the first time.
+python3 - <<'PYHELPER' || fail "promptly-helper did not answer a status request"
+import json, subprocess, sys, threading, time
+p = subprocess.Popen(['vendor/helper/promptly-helper'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+threading.Timer(5, p.kill).start()   # a silent helper can't hang the check
+p.stdin.write(json.dumps({'cmd': 'status', 'id': 1}) + '\n'); p.stdin.flush()
+deadline = time.time() + 5
+ok = False
+while time.time() < deadline:
+    line = p.stdout.readline()
+    if not line:
+        break
+    if json.loads(line).get('type') == 'status':
+        ok = True
+        break
+p.stdin.close(); p.kill()
+sys.exit(0 if ok else 1)
+PYHELPER
 ok "CHECK 6b: promptly-helper built ($(lipo -archs vendor/helper/promptly-helper)) and answers"
 
 # CHECK 7 — every Claude process (main.js + main/) uses makeClaudeEnv
