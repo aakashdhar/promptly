@@ -19,6 +19,7 @@ const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, createHoldToTalk } = require(
 const { destinationFor } = require('./main/prompts');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt, buildLearnStylePrompt } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
+const { tidyDictation } = require('./main/dictation');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
 // End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
@@ -112,6 +113,8 @@ let shortcutsRegistered = false;
 let registeredAccelerator = null;
 let pillWin = null;
 let pillSession = false;        // this recording is shown in the floating pill, not the bar
+let lastDictation = null;       // { text, typed } for the dictation just finished from another app
+let lastTypedText = null;       // text Promptly typed for you: not copied again, clipboard restored
 let lastPillState = null;
 let recordRequestedAt = 0;
 
@@ -168,6 +171,9 @@ function resetAudioTmpDir() {
 
 // ── Generation ────────────────────────────────────────────────────────────────
 
+// The prompt styles "Make it a prompt" can use: every mode that turns speech into a prompt.
+const PROMPT_STYLES = MODES.modes.filter((m) => m.kind === 'template' || m.key === 'design' || m.key === 'refine');
+
 // Edits the user makes to results, for "Suggest updates from your edits" in Settings.
 const editLog = createEditLog(path.join(app.getPath('userData'), 'style-edits.json'));
 
@@ -175,9 +181,62 @@ function dictionaryWords() {
   return String(config.read().dictionary || '').split(/[\n,]/).map((w) => w.trim()).filter(Boolean).slice(0, 200);
 }
 
+// ── Dictation: typing into the app you're in ──
+
+function dictationPrefs() {
+  const stored = config.read();
+  return { typeIn: stored.dictationTypeIn !== false, removeFillers: stored.dictationRemoveFillers !== false };
+}
+
+// Saves what's on the clipboard (text, rich text, images) so it can be put back afterwards.
+function snapshotClipboard() {
+  const formats = clipboard.availableFormats();
+  return {
+    text: clipboard.readText(),
+    html: formats.includes('text/html') ? clipboard.readHTML() : '',
+    rtf: formats.includes('text/rtf') ? clipboard.readRTF() : '',
+    image: formats.some((f) => f.startsWith('image/')) ? clipboard.readImage() : null,
+  };
+}
+
+function restoreClipboard(saved) {
+  const data = {};
+  if (saved.text) data.text = saved.text;
+  if (saved.html) data.html = saved.html;
+  if (saved.rtf) data.rtf = saved.rtf;
+  if (saved.image && !saved.image.isEmpty()) data.image = saved.image;
+  if (Object.keys(data).length) clipboard.write(data); else clipboard.clear();
+}
+
+// Puts the text where the cursor is: on the clipboard, ⌘V via the helper, then the user's own
+// clipboard comes back. Needs the helper with Accessibility; otherwise the caller falls back
+// to leaving the text on the clipboard.
+async function typeIntoApp(text) {
+  const status = helper.status();
+  if (!helper.isRunning() || !status || !status.trusted) return false;
+  const saved = snapshotClipboard();
+  clipboard.writeText(text);
+  const reply = await helper.paste();
+  if (!reply || !reply.ok) { restoreClipboard(saved); return false; }
+  lastTypedText = text;
+  // The target app reads the clipboard when it handles ⌘V; give it a moment first.
+  setTimeout(() => { if (clipboard.readText() === text) restoreClipboard(saved); }, 700);
+  return true;
+}
+
+async function runDictation(transcript) {
+  const prefs = dictationPrefs();
+  const { text, removed } = tidyDictation(transcript, { removeFillers: prefs.removeFillers });
+  if (!text) return { success: false, error: "Didn't catch anything", errorType: 'empty' };
+  const typed = pillSession && prefs.typeIn ? await typeIntoApp(text) : false;
+  if (pillSession) lastDictation = { text, typed };
+  return { success: true, prompt: text, dictation: { removed, typed } };
+}
+
 async function runGeneratePrompt({ transcript, mode, options = {} }) {
   const modeConf = getMode(mode);
   if (modeConf.kind === 'builder') return { success: true, prompt: transcript };
+  if (modeConf.kind === 'dictation') return runDictation(transcript);
   const context = { ...(options.context || {}), ...profileFor(modeConf, config.read()), dictionary: dictionaryWords() };
   const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, { ...options, context });
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
@@ -322,6 +381,8 @@ function isRecordingState() {
 
 async function startFromHotkey() {
   recordRequestedAt = Date.now();
+  lastDictation = null;
+  hidePillSoon(0);
   // With the bar hidden, recording shows in the floating pill and the bar stays out of the way.
   pillSession = !win || win.isDestroyed() || !win.isVisible();
   if (pillSession) pillSend({ state: 'recording', mode: currentModeLabel });
@@ -396,6 +457,8 @@ function createPillWindow() {
     resizable: false,
     movable: false,
     focusable: false,
+    // The pill never takes focus from your app, but its "Make it a prompt" must answer the first click.
+    acceptFirstMouse: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     hasShadow: false,
@@ -443,6 +506,13 @@ function updatePill(appState) {
   } else if (appState === 'IDLE') {
     pillSession = false;
     pillSend({ state: 'hidden' });
+  } else if (appState === 'PROMPT_READY' && lastDictation) {
+    // Dictation from another app stays there: the words are typed (or copied), and the pill
+    // offers to turn them into a prompt instead. The window doesn't open.
+    pillSession = false;
+    pillSend({ state: 'dictated', typed: lastDictation.typed });
+    if (pillWin && !pillWin.isDestroyed()) pillWin.setIgnoreMouseEvents(false);
+    hidePillSoon(6000);
   } else {
     // A result or an error: show it in the window, like any other prompt.
     pillSession = false;
@@ -455,6 +525,16 @@ function updatePill(appState) {
     }
     showWindow();
   }
+}
+
+let pillHideTimer = null;
+function hidePillSoon(ms) {
+  clearTimeout(pillHideTimer);
+  pillHideTimer = setTimeout(() => {
+    if (pillSession) return;
+    if (pillWin && !pillWin.isDestroyed()) pillWin.setIgnoreMouseEvents(true);
+    if (lastPillState && lastPillState.state === 'dictated') pillSend({ state: 'hidden' });
+  }, ms);
 }
 
 function notify(body) {
@@ -755,6 +835,10 @@ app.whenReady().then(async () => {
       aboutMe: stored.aboutMe || '',
       editCount: editLog.count(),
       autoCopy: stored.autoCopy !== false,
+      promptStyle: PROMPT_STYLES.some((m) => m.key === stored.promptStyle) ? stored.promptStyle : 'balanced',
+      promptStyles: PROMPT_STYLES.map(({ key, label }) => ({ value: key, label })),
+      dictationTypeIn: stored.dictationTypeIn !== false,
+      dictationRemoveFillers: stored.dictationRemoveFillers !== false,
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
       accessibility: helper.status(),
       helperAvailable: helper.isRunning(),
@@ -766,6 +850,9 @@ app.whenReady().then(async () => {
     if (typeof prefs.hotkey === 'string' && HOTKEY_PRESETS[prefs.hotkey]) patch.hotkey = prefs.hotkey;
     if (typeof prefs.dictionary === 'string') patch.dictionary = prefs.dictionary.slice(0, 5000);
     if (typeof prefs.autoCopy === 'boolean') patch.autoCopy = prefs.autoCopy;
+    if (typeof prefs.promptStyle === 'string' && PROMPT_STYLES.some((m) => m.key === prefs.promptStyle)) patch.promptStyle = prefs.promptStyle;
+    if (typeof prefs.dictationTypeIn === 'boolean') patch.dictationTypeIn = prefs.dictationTypeIn;
+    if (typeof prefs.dictationRemoveFillers === 'boolean') patch.dictationRemoveFillers = prefs.dictationRemoveFillers;
     if (typeof prefs.voiceNotes === 'string') patch.voiceNotes = cleanNotes(prefs.voiceNotes);
     if (typeof prefs.aboutMe === 'string') patch.aboutMe = cleanNotes(prefs.aboutMe);
     config.update(patch);
@@ -1224,7 +1311,20 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('set-last-prompt', (_event, prompt) => {
     lastGeneratedPrompt = prompt || null;
+    // Dictation Promptly just typed for you isn't copied again: your clipboard is being restored.
+    if (prompt && prompt === lastTypedText) { lastTypedText = null; return; }
     if (prompt && config.read().autoCopy !== false) clipboard.writeText(prompt);
+  });
+
+  // The pill's "Make it a prompt" after a dictation: open the window and convert it there.
+  ipcMain.handle('pill-action', (_event, action) => {
+    if (action !== 'make-prompt') return { ok: false };
+    lastDictation = null;
+    hidePillSoon(0);
+    pillSend({ state: 'hidden' });
+    showWindow();
+    winSend('make-prompt');
+    return { ok: true };
   });
 });
 

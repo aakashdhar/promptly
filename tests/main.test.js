@@ -591,3 +591,37 @@ describe('It writes like you', () => {
     expect(fromEdits).not.toContain('current_notes')
   })
 })
+
+describe('Dictation', () => {
+  const { tidyDictation, describeRemoved } = require('../main/dictation.js')
+  const tidy = (t, o) => tidyDictation(t, o).text
+
+  it('keeps your words and only drops hesitation sounds', () => {
+    expect(tidy('Um, so I think we should, uh, ship it on Friday.')).toBe('So I think we should ship it on Friday.')
+    expect(tidy('I was, um, thinking.')).toBe('I was thinking.')
+    expect(tidy('Hmm. I like it, you know, a lot.')).toBe('I like it, you know, a lot.')
+    // Real words that contain filler sounds stay put.
+    expect(tidy('The human error rate is low, umbrella and all.')).toBe('The human error rate is low, umbrella and all.')
+  })
+
+  it('only capitalises where a dropped filler started the sentence', () => {
+    expect(tidy('Wait... what? Er, yes.')).toBe('Wait... what? Yes.')
+    expect(tidy('Uhm okay.')).toBe('Okay.')
+  })
+
+  it('turns spoken line breaks into real ones', () => {
+    expect(tidy('Three things. New line. First the API. New paragraph. Thanks.')).toBe('Three things.\nFirst the API.\n\nThanks.')
+  })
+
+  it('reports what it removed, and can leave fillers in', () => {
+    const r = tidyDictation('Um, uh, um, yes.')
+    expect(r.text).toBe('Yes.')
+    expect(describeRemoved(r.removed)).toBe('um ×2, uh')
+    expect(tidy('Um, yes.', { removeFillers: false })).toBe('Um, yes.')
+  })
+
+  it('is the default mode for new installs, and needs no Claude call', () => {
+    expect(MODES.defaultMode).toBe('dictate')
+    expect(getMode('dictate').kind).toBe('dictation')
+  })
+})

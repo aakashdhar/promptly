@@ -21,7 +21,7 @@ export default function ThinkingState({ transcript, mode, label, accentColor, tr
         </div>
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}
         <div className="text-[13px] font-medium" style={{ color: 'rgba(var(--ink),0.95)', letterSpacing: '-0.01em' }}>
-          {label || (mode === 'image' ? 'Assembling prompt…' : 'Building your prompt')}
+          {label || (mode === 'image' ? 'Assembling prompt…' : mode === 'dictate' ? 'Transcribing' : 'Building your prompt')}
         </div>
       </div>
       {context && (context.destinationLabel || context.selectedText) && (

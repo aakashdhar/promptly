@@ -55,6 +55,13 @@ function Divider() {
   )
 }
 
+// "um ×2, uh": the only words a dictation drops, listed so nothing is changed silently.
+function describeRemoved(removed) {
+  const counts = new Map()
+  for (const word of removed) counts.set(word, (counts.get(word) || 0) + 1)
+  return [...counts].map(([word, n]) => (n > 1 ? `${word} ×${n}` : word)).join(', ')
+}
+
 export default function PromptReadyState({
   originalTranscript,
   generatedPrompt,
@@ -65,7 +72,16 @@ export default function PromptReadyState({
   onIterate,
   isIterated,
   onCollapse,
+  dictation = null,
+  resultView = 'dictation',
+  onShowDictation,
+  onMakePrompt,
 }) {
+  // A dictation shows your words as spoken; "As a prompt" shows the prompt made from them.
+  const isDictation = mode === 'dictate'
+  // Both views of a dictation: "As I said it" already shows your words, and Regenerate/Iterate
+  // would re-run the dictation rather than the prompt.
+  const fromDictation = isDictation || !!dictation
   const [isCopied, setIsCopied] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   // POLISH-004: button hover states
@@ -158,7 +174,7 @@ export default function PromptReadyState({
           style={{ gap: '8px', color: 'rgba(var(--ink),0.95)', letterSpacing: '-0.01em', WebkitAppRegion: 'no-drag' }}
         >
           <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '15px' }}>✓</span>
-          <span>{isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
+          <span>{isDictation ? 'Dictated' : isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
           {isIterated && (
             <span style={{
               fontSize: '11px',
@@ -175,6 +191,7 @@ export default function PromptReadyState({
         </div>
         <div className="flex" style={{ gap: '16px', WebkitAppRegion: 'no-drag' }}>
           {/* POLISH-004: ↻ Iterate hover with glow */}
+          {!fromDictation && (<>
           <button
             onClick={onIterate}
             onMouseEnter={() => setIterateHovered(true)}
@@ -208,6 +225,7 @@ export default function PromptReadyState({
           >
             Regenerate
           </button>
+          </>)}
           <button
             className="text-[11px] bg-transparent border-none cursor-pointer p-0 tracking-[0.01em]"
             style={{
@@ -239,7 +257,32 @@ export default function PromptReadyState({
 
       <Divider />
 
-      {/* YOU SAID */}
+      {dictation && (
+        <div className="flex-shrink-0" style={{ padding: '14px 22px 0', WebkitAppRegion: 'no-drag' }}>
+          <div role="tablist" aria-label="Show as" style={{ display: 'inline-flex', gap: '2px', padding: '2px', borderRadius: '9px', background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.1)' }}>
+            {[['dictation', 'As I said it', onShowDictation], ['prompt', 'As a prompt', onMakePrompt]].map(([view, label, onPick]) => (
+              <button
+                key={view}
+                role="tab"
+                aria-selected={resultView === view}
+                onClick={() => { if (resultView !== view) onPick?.() }}
+                style={{
+                  height: '28px', padding: '0 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: '12px', fontWeight: resultView === view ? 600 : 400,
+                  background: resultView === view ? 'var(--surface)' : 'transparent',
+                  boxShadow: resultView === view ? '0 1px 2px rgba(0,0,0,0.12)' : 'none',
+                  color: resultView === view ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* YOU SAID (a dictation is itself what you said) */}
+      {!fromDictation && (
       <div className="flex-shrink-0" style={{ padding: '20px 22px' }}>
         {/* POLISH-003: section label tracking 0.12em; POLISH-009: 0.16 → 0.45 */}
         <div
@@ -264,8 +307,9 @@ export default function PromptReadyState({
           {originalTranscript}
         </div>
       </div>
+      )}
 
-      <Divider />
+      {!fromDictation && <Divider />}
 
       {/* PROMPT CONTENT */}
       <div
@@ -295,8 +339,14 @@ export default function PromptReadyState({
           WebkitAppRegion: 'no-drag',
         }}
       >
-        {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt, labelColor)}
+        {isEditing || isDictation ? generatedPrompt : renderPromptOutput(generatedPrompt, labelColor)}
       </div>
+
+      {isDictation && dictation?.removed?.length > 0 && (
+        <div className="flex-shrink-0" style={{ padding: '0 22px 10px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+          Removed: {describeRemoved(dictation.removed)}. Nothing else was changed.
+        </div>
+      )}
 
       {/* BUTTON ROW */}
       <div
@@ -351,7 +401,7 @@ export default function PromptReadyState({
             transition: 'all 300ms ease',
           }}
         >
-          {isCopied ? '✓ Copied' : 'Copy prompt'}
+          {isCopied ? '✓ Copied' : isDictation ? 'Copy' : 'Copy prompt'}
         </button>
       </div>
     </div>

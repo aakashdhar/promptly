@@ -54,6 +54,12 @@ body {
 .stream { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; text-align: left; color: rgba(var(--ink), 0.8); }
 .stream bdi { direction: ltr; unicode-bidi: plaintext; }
 .check { color: var(--ok); font-weight: 700; }
+.action {
+  margin-left: 6px; height: 28px; padding: 0 12px; border-radius: 14px; border: 0.5px solid var(--edge);
+  background: rgba(var(--ink), 0.08); color: rgb(var(--ink)); font: inherit; font-weight: 600; cursor: pointer;
+}
+.action:hover { background: rgba(var(--ink), 0.14); }
+.action:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.7); outline-offset: 2px; }
 #recording, #thinking, .row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 [hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .dot, .spin { animation: none; } .pill { transition: none; } }
@@ -77,6 +83,12 @@ body {
     </div>
   </div>
   <div id="copied" hidden><span class="check">✓</span> Prompt copied</div>
+  <div id="dictated" hidden>
+    <div class="row">
+      <span><span class="check">✓</span> <span id="dictated-text">Typed</span></span>
+      <button class="action" id="make-prompt" type="button">Make it a prompt</button>
+    </div>
+  </div>
 </div>
 <script>
 const BARS = 14;
@@ -84,7 +96,7 @@ const wave = document.getElementById('wave');
 const bars = Array.from({ length: BARS }, () => wave.appendChild(document.createElement('i')));
 const history = new Array(BARS).fill(0);
 const pill = document.getElementById('pill');
-const panels = ['recording', 'thinking', 'copied'];
+const panels = ['recording', 'thinking', 'copied', 'dictated'];
 
 function show(panel) {
   panels.forEach((p) => { document.getElementById(p).hidden = p !== panel; });
@@ -106,12 +118,19 @@ window.electronAPI.onPillState((state) => {
     document.getElementById('rec-detail').textContent = describe(state);
     show('recording');
   } else if (state.state === 'thinking') {
-    document.getElementById('stream-text').textContent = (state.text || '').replace(/\s+/g, ' ').trim() || 'Writing your prompt…';
+    const waiting = state.mode === 'Dictation' ? 'Transcribing…' : 'Writing your prompt…';
+    document.getElementById('stream-text').textContent = (state.text || '').replace(/\s+/g, ' ').trim() || waiting;
     show('thinking');
   } else if (state.state === 'copied') {
     show('copied');
+  } else if (state.state === 'dictated') {
+    // Typed where the cursor was, or (without Accessibility) left on the clipboard.
+    document.getElementById('dictated-text').textContent = state.typed ? 'Typed' : 'Copied, press ⌘V';
+    show('dictated');
   }
 });
+
+document.getElementById('make-prompt').addEventListener('click', () => window.electronAPI.pillAction('make-prompt'));
 
 window.electronAPI.onAudioLevel((level) => {
   history.shift();

@@ -186,6 +186,35 @@ export default function SettingsPanel({ onClose }) {
             </div>
           </div>
 
+          {/* Dictation and "Make it a prompt" */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={sectionLabel}>Dictation</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                ['dictationTypeIn', prefs.accessibility?.trusted
+                  ? 'Type into the app I\'m in'
+                  : 'Type into the app I\'m in (needs Accessibility, below; until then it\'s copied for ⌘V)'],
+                ['dictationRemoveFillers', 'Remove um, uh and similar (nothing else is changed)'],
+              ].map(([key, label]) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(var(--ink),0.85)', lineHeight: 1.45, cursor: 'pointer', WebkitAppRegion: 'no-drag' }}>
+                  <input type="checkbox" id={`settings-${key}`} checked={!!prefs[key]} onChange={e => savePrefs({ [key]: e.target.checked })} style={{ marginTop: 2 }} />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <label htmlFor="settings-promptStyle" style={{ display: 'block', fontSize: 12, color: 'rgba(var(--ink),0.85)', margin: '12px 0 5px' }}>
+              "Make it a prompt" writes a
+            </label>
+            <select
+              id="settings-promptStyle"
+              value={prefs.promptStyle}
+              onChange={e => savePrefs({ promptStyle: e.target.value })}
+              style={{ ...inputStyle(null), fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              {(prefs.promptStyles || []).map(o => <option key={o.value} value={o.value}>{o.label} prompt</option>)}
+            </select>
+          </div>
+
           <div style={{ marginBottom: 14 }}>
             <div style={sectionLabel}>Hold to talk and selected text</div>
             {prefs.accessibility?.trusted ? (

@@ -2,6 +2,7 @@
 //   • hold-to-talk: sees the hotkey go down AND up (Electron's globalShortcut only sees presses)
 //   • the app you're in (for destination-aware prompts)
 //   • the text you've selected (command mode)
+//   • typing dictation into the app you're in (⌘V on your behalf)
 // It speaks JSON lines on stdin/stdout with Promptly's main process (see main/helper.js).
 // Hotkey watching and selected text need the Accessibility permission; without it the helper
 // still reports the frontmost app and Promptly falls back to tap-to-toggle.
@@ -147,6 +148,23 @@ func selectedText() -> String? {
     return String(trimmed.prefix(20000))
 }
 
+// MARK: - Typing into the front app
+
+// Dictation lands where the cursor is: Promptly puts the text on the clipboard, then the helper
+// presses ⌘V in the app you're in. Posting key events needs the Accessibility permission.
+func pasteIntoFrontApp() -> Bool {
+    guard AXIsProcessTrusted() else { return false }
+    let source = CGEventSource(stateID: .combinedSessionState)
+    let vKey: CGKeyCode = 9
+    guard let down = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: true),
+          let up = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: false) else { return false }
+    down.flags = .maskCommand
+    up.flags = .maskCommand
+    down.post(tap: .cghidEventTap)
+    up.post(tap: .cghidEventTap)
+    return true
+}
+
 // MARK: - Status
 
 var lastTrusted: Bool?
@@ -199,6 +217,8 @@ func handleCommand(_ line: String) {
         emit(reply)
     case "context":
         emit(["type": "context", "id": id, "app": frontmostApp(), "selectedText": selectedText() ?? NSNull()])
+    case "paste":
+        emit(["type": "pasted", "id": id, "ok": pasteIntoFrontApp()])
     case "status":
         var reply = status()
         reply["id"] = id

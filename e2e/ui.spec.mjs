@@ -106,7 +106,7 @@ async function launch(theme, { setupComplete = true, helper = null, config = {} 
   const claude = writeFakeClaude(dir)
   const engine = path.join(dir, 'engine')
   fs.mkdirSync(engine)
-  fs.writeFileSync(path.join(engine, 'whisper-cli'), '#!/bin/bash\necho "internal dashboard for the support team, zendesk tickets, nextjs and postgres"\n', { mode: 0o755 })
+  fs.writeFileSync(path.join(engine, 'whisper-cli'), '#!/bin/bash\necho "Um, so for the support dashboard, we should pull tickets from Zendesk every five minutes and group them by product area. New paragraph. Uh, and highlight anything that has been waiting more than four hours."\n', { mode: 0o755 })
   fs.writeFileSync(path.join(engine, 'ggml-base.en-q5_1.bin'), 'x')
   fs.writeFileSync(path.join(userData, 'config.json'), JSON.stringify({ setupComplete, theme, claudePath: claude, ...config }))
   const app = await electron.launch({
@@ -183,7 +183,20 @@ for (const theme of ['dark', 'light']) {
     // Playwright forces a light colour scheme unless told otherwise.
     await page.emulateMedia({ colorScheme: theme })
 
+    // A fresh install starts in Dictation.
     await check(page, 'idle', { settle: 800 })
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    await page.waitForTimeout(900)
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect(page.getByRole('tab', { name: 'As I said it' })).toBeVisible({ timeout: 15000 })
+    await check(page, 'dictation-ready', { settle: 800 })
+    await page.getByRole('tab', { name: 'As a prompt' }).click()
+    await expect(page.getByRole('tab', { name: 'As a prompt' })).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
+    await check(page, 'dictation-as-prompt', { settle: 800 })
+    await switchMode(app, page, 'balanced')
+    await expect(page.locator('#mode-pill')).toHaveText('Balanced')
+
     await page.getByText('Balanced').first().click()
     await check(page, 'mode-menu')
     await page.keyboard.press('Escape')
@@ -307,6 +320,8 @@ for (const theme of ['dark', 'light']) {
     await check(pill, 'pill-thinking')
     await pillState({ state: 'copied' })
     await check(pill, 'pill-copied')
+    await pillState({ state: 'dictated', typed: true })
+    await check(pill, 'pill-dictated')
 
     await app.close()
     fs.rmSync(dir, { recursive: true, force: true })

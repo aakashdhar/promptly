@@ -11,6 +11,7 @@ export default function useTextInput({
   handleGenerateResultRef,
   opIdRef,
   contextRef,
+  typedDictationRef,
 }) {
   const handleTypingSubmit = useCallback(async (typedText) => {
     isIterated.current = false
@@ -27,6 +28,8 @@ export default function useTextInput({
     }
 
     const mode = modeRef.current
+    // Typing in Dictation mode means you want a prompt: there's nothing to transcribe.
+    if (mode === 'dictate' && typedDictationRef?.current) { typedDictationRef.current(typedText); return }
     const genResult = await window.electronAPI.generatePrompt(typedText, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined)
     handleGenerateResultRef.current(genResult, typedText, opId)
   }, [])

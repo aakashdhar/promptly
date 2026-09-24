@@ -83,7 +83,12 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
 out({ type: 'ready', trusted: true, tap: true })
 rl.on('line', (line) => {
   const m = JSON.parse(line)
-  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal', pid: 1 }, selectedText: 'TypeError: cannot read properties of undefined' })
+  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal', pid: 1 }, selectedText: require('fs').existsSync(process.env.FAKE_DIR + '/no-selection') ? null : 'TypeError: cannot read properties of undefined' })
+  else if (m.cmd === 'paste') {
+    // Records what ⌘V would have pasted: the clipboard at that moment.
+    require('fs').writeFileSync(process.env.FAKE_DIR + '/pasted', require('child_process').execFileSync('pbpaste'))
+    out({ type: 'pasted', id: m.id, ok: true })
+  }
   else out({ type: 'status', id: m.id, trusted: true, tap: true })
 })
 rl.on('close', () => process.exit(0))
@@ -91,7 +96,9 @@ rl.on('close', () => process.exit(0))
   return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir, helper }
 }
 
-async function launch({ setupComplete = true, signedOut = false, withHelper = false } = {}) {
+// mode: most tests below are about prompt modes, so they start in Balanced; pass mode: null to
+// start the way a fresh install does (Dictation).
+async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'balanced' } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -126,6 +133,11 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
   ), { timeout: 20000 }).toBe(true)
   const page = app.windows().find((w) => w.url().includes('dist-renderer'))
+  if (mode) {
+    await page.evaluate((m) => localStorage.setItem('mode', m), mode)
+    await page.reload()
+    await expect(page.locator('#mode-pill')).toBeVisible({ timeout: 10000 })
+  }
   return { app, page, dir, fakeDir, tmpDir }
 }
 
@@ -558,4 +570,81 @@ test('Settings drafts your style notes from pasted writing', async () => {
   expect(stdin).toContain('<samples>\nHi all, quick one')
   await page.getByRole('button', { name: 'Dismiss' }).click()
   expect((await page.evaluate(() => window.electronAPI.getPreferences())).voiceNotes).toBe('')
+})
+
+// ── Dictation ──
+
+async function dictateFromAnotherApp(app, page, fakeDir, transcript) {
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), transcript)
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await page.waitForTimeout(1000)
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+}
+
+test('Dictation (the default) types what you said into your app, and gives your clipboard back', async () => {
+  ctx = await launch({ withHelper: true, mode: null })
+  const { app, page, fakeDir } = ctx
+  await expect(page.locator('#mode-pill')).toHaveText('Dictation')
+  fs.writeFileSync(path.join(fakeDir, 'no-selection'), '')
+  await withClipboard(app, async () => {
+    await app.evaluate(({ clipboard }) => clipboard.writeText('what I copied earlier'))
+    await dictateFromAnotherApp(app, page, fakeDir, 'Um, so ship it on Friday. New paragraph. Thanks, uh, everyone.')
+
+    // Typed via ⌘V with exactly what was said, minus um/uh, with the paragraph break.
+    await expect.poll(() => fs.existsSync(path.join(fakeDir, 'pasted'))).toBe(true)
+    expect(fs.readFileSync(path.join(fakeDir, 'pasted'), 'utf8')).toBe('So ship it on Friday.\n\nThanks everyone.')
+    // No Claude call, the window stays out of the way, and the clipboard is yours again.
+    expect(calls(fakeDir)).toEqual([])
+    expect((await mainWindow(app)).visible).toBe(false)
+    expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState())).toMatchObject({ state: 'dictated', typed: true })
+    await expect.poll(() => readClipboard(app)).toBe('what I copied earlier')
+  })
+})
+
+test('"Make it a prompt" from the pill turns the dictation into a prompt, and back', async () => {
+  ctx = await launch({ withHelper: true, mode: null })
+  const { app, page, fakeDir } = ctx
+  fs.writeFileSync(path.join(fakeDir, 'no-selection'), '')
+  await withClipboard(app, async () => {
+    await dictateFromAnotherApp(app, page, fakeDir, 'a script that renames my screenshots by date')
+    const pill = app.windows().find((w) => w.url().includes('pill.html'))
+    await pill.getByRole('button', { name: 'Make it a prompt' }).click()
+
+    await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
+    await expect(page.getByRole('tab', { name: 'As a prompt' })).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
+    const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+    expect(stdin).toContain('Mode: Balanced')
+    expect(stdin).toContain('"a script that renames my screenshots by date"')
+    await expect.poll(() => readClipboard(app)).toContain('Task:')
+
+    // Back to the words as spoken, and to the prompt again, without asking Claude twice.
+    await page.getByRole('tab', { name: 'As I said it' }).click()
+    await expect(page.locator('#prompt-output')).toHaveText('a script that renames my screenshots by date')
+    await page.getByRole('tab', { name: 'As a prompt' }).click()
+    await expect(page.locator('#prompt-output')).toContainText('You are a test assistant.')
+    expect(calls(fakeDir)).toHaveLength(1)
+  })
+})
+
+test('without Accessibility, dictation is left on the clipboard for ⌘V', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page, fakeDir } = ctx
+  await withClipboard(app, async () => {
+    await dictateFromAnotherApp(app, page, fakeDir, 'Remember to call the bank.')
+    expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState())).toMatchObject({ state: 'dictated', typed: false })
+    await expect.poll(() => readClipboard(app)).toBe('Remember to call the bank.')
+  })
+})
+
+test('typing in Dictation mode makes a prompt in the style chosen in Settings', async () => {
+  ctx = await launch({ mode: null })
+  const { page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ promptStyle: 'code' }))
+  await typeAndSubmit(page, 'retry failed uploads three times')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('Optimise this prompt for code generation')
 })

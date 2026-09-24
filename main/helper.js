@@ -107,6 +107,7 @@ function createHelper({ binaryPath, onHotkey = () => {}, onStatus = () => {}, lo
     status: () => lastStatus,
     configure: (hotkey) => request('configure', { hotkey }),
     context: () => request('context'),
+    paste: () => request('paste'),
     requestAccess: () => request('requestAccess'),
     refreshStatus: () => request('status'),
   };

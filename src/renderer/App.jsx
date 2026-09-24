@@ -11,6 +11,7 @@ import useVideoBuilder from './hooks/useVideoBuilder.js'
 import useWorkflowBuilder from './hooks/useWorkflowBuilder.js'
 import useOperationHandlers from './hooks/useOperationHandlers.js'
 import useTextInput from './hooks/useTextInput.js'
+import useDictation from './hooks/useDictation.js'
 import { useThinkingProgress } from './hooks/useThinkingProgress.js'
 import IdleState from './components/IdleState.jsx'
 import ShortcutsPanel from './components/ShortcutsPanel.jsx'
@@ -112,6 +113,9 @@ export default function App() {
 
   const { mode, setMode, modeLabel } = useMode()
   const { resizeWindow } = useWindowResize()
+  const { dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation } = useDictation({
+    STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript,
+  })
 
   const {
     isExpanded,
@@ -179,7 +183,7 @@ export default function App() {
     }
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (newState === STATES.THINKING || newState === STATES.RECORDING || newState === STATES.TYPING) setStreamText('')
-    if (newState === STATES.RECORDING || newState === STATES.TYPING) setRecordingContext(null)
+    if (newState === STATES.RECORDING || newState === STATES.TYPING) { setRecordingContext(null); clearDictation() }
     if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
     if (window.electronAPI) {
       window.electronAPI.setWindowButtonsVisible(
@@ -282,6 +286,11 @@ export default function App() {
     if (opId !== undefined && opId !== opIdRef.current) return
     // Read the live mode: a spoken "code mode, …" may have switched it moments ago.
     const mode = modeRef.current
+    if (mode === 'dictate') {
+      if (genResult.success) acceptDictation(genResult, transcript)
+      else transitionRef.current(STATES.ERROR, { message: genResult.error || "Didn't catch anything" })
+      return
+    }
     if (!genResult.success) {
       if (isExpandedRef.current) {
         setGenerationError({
@@ -447,6 +456,8 @@ Return ONLY valid JSON:
     contextRef,
   })
 
+  const typedDictationRef = useRef(null)
+  typedDictationRef.current = promptFromTyping
   const { handleTypingSubmit, handleRegenerate } = useTextInput({
     STATES,
     transitionRef,
@@ -458,6 +469,7 @@ Return ONLY valid JSON:
     handleGenerateResultRef,
     opIdRef,
     contextRef,
+    typedDictationRef,
   })
 
   const { elapsed: thinkingElapsed, currentLabel: thinkingCurrentLabel, labelOpacity: thinkingLabelOpacity } = useThinkingProgress({
@@ -509,8 +521,12 @@ Return ONLY valid JSON:
     const unsubDelta = window.electronAPI.onGenerationDelta((data) => {
       if (stateRef.current === STATES.THINKING) setStreamText(data?.text || '')
     })
-    return () => { unsubContext?.(); unsubDelta?.() }
+    // The pill's "Make it a prompt" after dictating from another app.
+    const unsubMakePrompt = window.electronAPI.onMakePrompt?.(() => makePromptRef.current?.())
+    return () => { unsubContext?.(); unsubDelta?.(); unsubMakePrompt?.() }
   }, [])
+  const makePromptRef = useRef(null)
+  makePromptRef.current = makePrompt
 
   const recM = Math.floor(recSecs / 60)
   const recS = recSecs % 60
@@ -638,12 +654,16 @@ Return ONLY valid JSON:
             )}
             {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
               <PromptReadyState
+                dictation={dictation}
+                resultView={resultView}
+                onShowDictation={showDictation}
+                onMakePrompt={makePrompt}
                 originalTranscript={originalTranscript.current}
                 generatedPrompt={generatedPrompt}
                 setGeneratedPrompt={setGeneratedPrompt}
                 onRegenerate={handleRegenerate}
                 onReset={() => transition(STATES.IDLE)}
-                mode={mode}
+                mode={dictation && resultView === 'prompt' ? promptStyle : mode}
                 onIterate={handleIterate}
                 isIterated={isIterated.current}
                 onCollapse={handleCollapse}

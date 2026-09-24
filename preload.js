@@ -245,6 +245,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openAccessibilitySettings: () =>
     ipcRenderer.invoke('open-accessibility-settings'),
 
+  pillAction: (action) =>
+    ipcRenderer.invoke('pill-action', action),
+
+  onMakePrompt: (cb) => {
+    const handler = () => cb()
+    ipcRenderer.on('make-prompt', handler)
+    return () => ipcRenderer.removeListener('make-prompt', handler)
+  },
+
   recordEdit: (mode, before, after) =>
     ipcRenderer.invoke('record-edit', { mode, before, after }),
 
