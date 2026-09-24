@@ -3,12 +3,12 @@
 // Hotkey presets shown in Settings. `accelerator` is used with Electron's globalShortcut when
 // the helper can't watch the keyboard (no Accessibility permission): tap-to-toggle only.
 // `helper` is what promptly-helper watches for hold-to-talk. Modifier-only keys need the helper.
-// `short` and `action` are how the app names the shortcut in hints ("Double-tap ⌃ and talk").
+// `short` and `action` are how the app names the shortcut in hints ("Double-tap Control and talk").
 const HOTKEY_PRESETS = {
   'double-control': {
     label: 'Double-tap Control',
     short: 'double-tap ⌃',
-    action: 'Double-tap ⌃',
+    action: 'Double-tap Control',
     accelerator: null,
     // Either Control key. Double-tap starts, one tap stops; double-tap and hold is hold to talk.
     helper: { keyCode: 59, modifiers: [], modifierOnly: true, doubleTap: true },
@@ -57,13 +57,15 @@ function getPreset(key) {
   return HOTKEY_PRESETS[key] || HOTKEY_PRESETS[DEFAULT_HOTKEY];
 }
 
-// How to name the shortcut that actually works right now: a key that needs the helper falls back
-// to ⌥ Space (tap to start and stop) until Accessibility is allowed.
+// How hints name the talk shortcut: always the one you chose. A key that needs the helper
+// (double-tap Control, Right Option, Fn) says so while Accessibility is off, and names the
+// ⌥ Space stand-in that works meanwhile, instead of quietly swapping in the stand-in.
 function hotkeyWords(key, { helperActive }) {
   const preset = getPreset(key);
-  if (helperActive) return { short: preset.short, action: preset.action };
-  const fallback = preset.accelerator ? preset : HOTKEY_PRESETS[FALLBACK_HOTKEY];
-  return { short: fallback.short, action: `Press ${fallback.short}` };
+  if (helperActive) return { short: preset.short, action: preset.action, needsAccess: false };
+  if (preset.accelerator) return { short: preset.short, action: `Press ${preset.short}`, needsAccess: false };
+  const fallback = HOTKEY_PRESETS[FALLBACK_HOTKEY];
+  return { short: preset.short, action: preset.action, needsAccess: true, fallback: `Press ${fallback.short}` };
 }
 
 // Turns raw key down/up events into start/stop/cancel:

@@ -202,6 +202,11 @@ export default function ExpandedDetailPanel({
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '44ch', lineHeight: 1.5 }}>
             Or press ⌘T to type. What you say and the prompts you make show up here; pick one on the left to see it again.
           </span>
+          {hotkey.needsAccess && (
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '48ch', lineHeight: 1.5, padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,159,10,0.08)', border: '0.5px solid rgba(255,159,10,0.25)' }}>
+              {hotkey.action} needs Accessibility: Settings (⌘/) → Allow. Until then, {hotkey.fallback.charAt(0).toLowerCase() + hotkey.fallback.slice(1)} to start and stop.
+            </span>
+          )}
         </div>
       )}
 

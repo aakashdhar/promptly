@@ -781,20 +781,6 @@ app.whenReady().then(async () => {
   nativeTheme.themeSource = THEMES.includes(theme) ? theme : 'system';
   await resolveAllPaths();
 
-  createWindow();
-  createPillWindow();
-  helper.start();
-  // Returning users go straight to the bar; setup only appears when something is missing.
-  if (await needsSetup()) {
-    createSplashWindow();
-  } else if (win.webContents.isLoading()) {
-    // The setup check can outlast the page load, so only wait if it's still loading.
-    win.webContents.once('did-finish-load', () => finishSetup());
-  } else {
-    finishSetup();
-  }
-  // Compile the GPU speech shaders in the background so the first recording doesn't wait.
-  whisper.warmUp(audioTmpDir).then((gpu) => log.info(`Speech engine warm-up: ${gpu ? 'GPU ready' : 'using CPU'}`));
 
   // ── Setup wizard ──
 
@@ -1307,6 +1293,24 @@ app.whenReady().then(async () => {
     winSend('make-prompt');
     return { ok: true };
   });
+
+  // Windows last: every IPC handler above is registered before a page can call one. (The
+  // window used to be created first, and requests it made while setup was being checked
+  // failed silently — the shortcut hint, the prompt style and more fell back to defaults.)
+  createWindow();
+  createPillWindow();
+  helper.start();
+  // Returning users go straight to the window; setup only appears when something is missing.
+  if (await needsSetup()) {
+    createSplashWindow();
+  } else if (win.webContents.isLoading()) {
+    // The setup check can outlast the page load, so only wait if it's still loading.
+    win.webContents.once('did-finish-load', () => finishSetup());
+  } else {
+    finishSetup();
+  }
+  // Compile the GPU speech shaders in the background so the first recording doesn't wait.
+  whisper.warmUp(audioTmpDir).then((gpu) => log.info(`Speech engine warm-up: ${gpu ? 'GPU ready' : 'using CPU'}`));
 });
 
 app.on('will-quit', () => {

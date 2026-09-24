@@ -672,9 +672,11 @@ describe('Double-tap Control', () => {
     expect(log).toEqual(['start', 'stop'])
   })
 
-  it('names the shortcut that actually works right now', () => {
-    expect(hotkeyWords('double-control', { helperActive: true })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap ⌃' })
-    expect(hotkeyWords('double-control', { helperActive: false })).toEqual({ short: '⌥ Space', action: 'Press ⌥ Space' })
+  it('always names the chosen shortcut, and what it needs', () => {
+    expect(hotkeyWords('double-control', { helperActive: true })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap Control', needsAccess: false })
+    // Without Accessibility it still names double-tap Control, says what it needs, and what works meanwhile.
+    expect(hotkeyWords('double-control', { helperActive: false })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap Control', needsAccess: true, fallback: 'Press ⌥ Space' })
     expect(hotkeyWords('option-space', { helperActive: true }).action).toBe('Hold ⌥ Space')
+    expect(hotkeyWords('option-space', { helperActive: false })).toMatchObject({ action: 'Press ⌥ Space', needsAccess: false })
   })
 })

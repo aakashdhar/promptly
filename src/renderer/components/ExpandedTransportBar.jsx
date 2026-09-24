@@ -100,7 +100,7 @@ export default function ExpandedTransportBar({
       textLine1 = 'Generation failed'; textLine2 = ''; textDot = 'error'
     }
   } else {
-    textLine1 = mode === 'dictate' ? 'Ready to dictate' : 'Speak your prompt'; textLine2 = `${hotkey.action} or click mic to start`; textDot = null
+    textLine1 = mode === 'dictate' ? 'Ready to dictate' : 'Speak your prompt'; textLine2 = hotkey.needsAccess ? `${hotkey.fallback} or click mic to start` : `${hotkey.action} or click mic to start`; textDot = null
   }
 
   const dotColor = textDot === 'recording' ? 'rgba(200,50,35,0.85)'

@@ -699,3 +699,13 @@ test('the pill can be dragged out of the way, and comes back where you left it',
     expect((await pillBounds()).y).toBe(before.y - 300)
   })
 })
+
+test('on a fresh start the window names double-tap Control and, without Accessibility, says what it needs', async () => {
+  // The window's first requests (preferences, shortcut) must reach main: its handlers are
+  // registered before any window loads.
+  ctx = await launch({ mode: null })
+  const { page } = ctx
+  await expect(page.getByText('Double-tap Control and talk')).toBeVisible()
+  await expect(page.getByText('Double-tap Control needs Accessibility: Settings (⌘/) → Allow. Until then, press ⌥ Space to start and stop.')).toBeVisible()
+  await expect(page.getByText('Press ⌥ Space or click mic to start')).toBeVisible()
+})
