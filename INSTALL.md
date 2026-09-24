@@ -15,6 +15,7 @@ You need a Mac with macOS 12 or later and a Claude account. Everything else is s
 
 ## Using it
 
+- **Two places:** the Promptly window (click the menu bar icon) has your history on the left and the current result on the right; resize it and it remembers. When you talk from another app, a small pill shows instead and you stay where you are: dictation is typed in, a prompt is copied (the pill's **Open** shows it in the window).
 - **Where you are shapes the prompt.** Talking from Terminal, VS Code or Cursor gives a task for a coding agent like Claude Code; from a browser or the Claude app, a self-contained chat prompt; from Figma, a design brief.
 - **Select text first** to work on it: select an error, a paragraph or some code, pick a prompt mode, talk and say "fix this" or "turn this into a spec".
 - **Dictation (the default): talk, and it types where your cursor is.** Double-tap Control in any app (Slack, Mail, Notes, a browser), talk, tap Control once. Your words appear as you said them: only "um" and "uh" are dropped, and saying "new line" or "new paragraph" makes a break. Nothing is rewritten, and your clipboard is put back afterwards. It runs entirely on your Mac, no internet or Claude needed. Typing into the app needs Accessibility (setup's Hold to talk step); without it, the text is copied for ⌘V.

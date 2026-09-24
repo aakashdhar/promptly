@@ -1974,3 +1974,18 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Needs the helper's event tap (Accessibility). Without it, the shortcut falls back to ⌥ Space (tap to start and stop),
 >   and every hint in the app names the shortcut that actually works (hotkeyWords). Existing users keep their choice.
 ---
+
+---
+## D-ONE-WINDOW — One window and the pill; the compact bar is gone — 2026-09-24
+> Request (product owner): three surfaces (pill, compact bar, expanded window) was too much. Keep the pill and the
+>   expanded window, at the size they chose (≈940×600) as the default.
+> Decisions (asked and answered): the window is a normal macOS window — not always on top, doesn't hide on blur,
+>   resizable, remembers size and position (`windowBounds`; first launch centres on the screen you're using). After
+>   talking from another app in a prompt mode, you stay there: the pill says "Copied · Open" (Open shows it in the window).
+> Consequences: ~12 compact components, useWindowResize, the resize/set-window-size/window-buttons/toggle-expand
+>   channels and the blur-hide rules are removed. The window gained what only the bar had: the dictation switch and
+>   "Removed" note, Polish's "What changed", a working view with the live prompt, an error view, a first-run empty
+>   state, Shortcuts as an overlay, ⌘H → history search. Overlays make the window behind them inert.
+> Also: the prompt score (a second Claude call) now runs only when opened ("Score this prompt"), not on every prompt;
+>   the pause button in the window now resumes too; the mode button is a real <button>.
+---

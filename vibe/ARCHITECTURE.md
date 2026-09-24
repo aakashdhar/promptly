@@ -99,14 +99,9 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 > 📝 2026-04-29 · State count updated 15→17: TRANSCRIPTION_ERROR + GENERATION_ERROR added via FEATURE-ONBOARDING-WIZARD
 > 📝 2026-05-19 · State count updated 17→18: EMAIL_READY added via FEATURE-EMAIL-MODE
 
-**`isExpanded` — layout mode flag (POLISH-TOGGLE / BUG-TOGGLE-002):**
-- `isExpanded` (useState boolean, mirrored as `isExpandedRef`) is NOT a state machine state — it is a layout mode.
-- When `isExpanded=true`, App.jsx renders a single `<ExpandedView>` component that covers all states.
-- When `isExpanded=false`, App.jsx renders the existing per-state components normally.
-- `handleExpand()`: sets `isExpanded=true`, calls `setWindowSize(1100, 860)` (BUG-TOGGLE-005). `transition()` skips `resizeWindow` while expanded (guarded by `isExpandedRef.current`).
-- `handleCollapse()`: sets `isExpanded=false`, resets state to IDLE, calls `setWindowSize(520, IDLE_HEIGHT)`.
+**One window (D-ONE-WINDOW, 2026-09-24):**
+- App.jsx renders a single `<ExpandedView>` for every state; the compact bar and its per-state components are gone. `isExpandedRef` survives only as a constant `true` for hooks that still read it.
 - `ExpandedView` owns: top transport bar (record/stop/pause/waveform), left session-history panel, right state-content panel. All state-driving callbacks (onStart, onStop, onPause, onRegenerate, onReset, onIterate) are passed as props from App.jsx — no new IPC channels.
-- `STATE_HEIGHTS.EXPANDED = 860` — window height in expanded mode. Window width: 1100px (scaled from 760×580 to 1100×860 in BUG-TOGGLE-005 for Claude-app-scale layout).
 
 **Rules:**
 - All state transitions go through a single `transition(newState, payload)` function in App.jsx.
@@ -164,9 +159,6 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `retry-transcription` | Re-runs Whisper on the kept audio |
 | renderer → main | `copy-to-clipboard` | Write text to the clipboard |
 | renderer → main | `save-file` | Native save dialog + write |
-| renderer → main | `resize-window` | Height change for compact states |
-| renderer → main | `set-window-size` | Width + height atomically; handles expand/collapse bounds |
-| renderer → main | `set-window-buttons-visible` | Show/hide traffic lights |
 | renderer → main | `show-mode-menu` | Native mode menu (right-click / ⌘,) built from shared/modes.json |
 | renderer → main | `show-tone-menu` | Native Formal/Casual menu for Polish |
 | renderer → main | `update-menubar-state` | App state → menu bar icon, hide-on-blur rules, Option+P registration |
@@ -199,7 +191,7 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | splash → main | `check-whisper-model` / `download-whisper-model` | Model presence (same model transcription uses) and download |
 | main → renderer | `shortcut-pause` | Option+P while recording |
 | main → renderer | `mode-selected` / `tone-selected` | Native menu choices |
-| main → renderer | `show-shortcuts` / `show-history` / `open-settings` / `toggle-expand` | Menu and tray actions |
+| main → renderer | `show-shortcuts` / `show-history` / `open-settings` | Menu and tray actions |
 | main → renderer | `theme-changed` | macOS appearance changed |
 | main → renderer | `transcription-slow-warning` / `generation-slow-warning` | Slow-operation banners |
 | main → splash | `whisper-download-progress` | Model download progress |
@@ -253,7 +245,7 @@ command -v node >/dev/null 2>&1 || fail "node not found"
    app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus() } })
    ```
 
-4. **`win.on('blur')` auto-hide** — hides the floating bar when the user clicks into another app, except in the expanded window and in the states listed in `KEEP_VISIBLE_ON_BLUR` (recording, thinking, typing, settings, builders, email, error screens). `PROMPT_READY` hides on purpose so the user can go and paste. The renderer reports its state through `update-menubar-state`.
+4. **One normal window, plus the pill** (D-ONE-WINDOW) — the main window is a regular macOS window (not always on top, resizable, opens at 940×600 or where you left it; `windowBounds` in config.json). It doesn't hide when you switch apps. Talking via the shortcut while the window isn't the focused app happens in the floating pill; results made that way stay out of your way (pill: "Copied · Open" or, for dictation, "Typed · Make it a prompt"). Builders and errors bring the window forward.
 
 **Tray quit:** Tray "Quit" item must call `app.quit()` (not `win.destroy()`). `before-quit` sets `isQuitting=true` before the `close` event fires, allowing the window to close normally.
 
