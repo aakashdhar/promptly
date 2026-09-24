@@ -1944,3 +1944,21 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Not now: Polish results aren't editable, so they don't feed learning; renderer-built prompts (email tone adjust,
 >   iterate, builders) don't include the notes yet.
 ---
+
+---
+## D-DICTATION — Dictation and Craft prompt — 2026-09-24
+> Goal (product owner): replace Wispr Flow's paid plan in the office — plain dictation that types into any app, with a
+>   one-tap switch to a crafted prompt.
+> Research (2026): plain dictation is commoditised (Claude Code /voice, Spokenly free), and Wispr's top complaint is that
+>   it rewrites what you said. So Dictation is verbatim: local whisper.cpp, only hesitation sounds removed (listed under
+>   the result), spoken "new line"/"new paragraph", no Claude call, works offline and without Claude Code.
+> Decision: Dictation is a mode (kind `dictation`) and the default for new installs; existing users keep their mode.
+> Decision (reverses mac-02 "auto-paste: won't do" for dictation only): from another app, the text is typed where the
+>   cursor is — clipboard + ⌘V posted by the helper (Accessibility), then the user's clipboard (text, rich text, image) is
+>   restored. Without Accessibility it's left on the clipboard. The window doesn't open; the pill says "Typed" and offers
+>   "Make it a prompt" (the pill accepts clicks only while showing that).
+> Decision: "Make it a prompt" uses a prompt style chosen in Settings (default Balanced). Both versions are kept, so the
+>   result card switches "As I said it ↔ As a prompt" with one Claude call. Typing (⌘T) in Dictation mode goes straight
+>   to a prompt. Regenerate/Iterate are hidden on dictation results (they'd re-run the dictation).
+> Next candidates: a second shortcut so one key dictates and another crafts; the Interviewer (clarifying questions).
+---

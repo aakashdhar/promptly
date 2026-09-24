@@ -1,5 +1,5 @@
 # CLAUDE.md — Promptly
-> Promptly is a macOS menu bar app: speak or type what you want, and it turns it into a structured prompt (or an email, image/video prompt, or n8n workflow) using the Claude Code CLI.
+> Promptly is a macOS menu bar app with two ways to talk: Dictation (the default — your words, typed where your cursor is, nothing rewritten, no Claude call) and Craft prompt (your words turned into a structured prompt, email, polished text, image/video prompt or n8n workflow by the Claude Code CLI). Any dictation can be turned into a prompt with one tap.
 > Electron 41 · React 19 + Vite 8 + Tailwind 4 renderer · main process split into `main/` modules · built-in whisper.cpp for transcription · light/dark themes.
 
 ---
@@ -25,6 +25,7 @@ promptly/
 │   ├── claude-setup.js  ←   Claude Code status, install/sign-in via Terminal
 │   ├── helper.js        ←   runs native/helper (hold to talk, frontmost app, selected text)
 │   ├── hotkey.js        ←   hotkey presets + hold-vs-tap state machine
+│   ├── dictation.js     ←   Dictation tidy (um/uh, spoken line breaks), never rewrites
 │   ├── profile.js       ←   It writes like you: your notes + the log of your edits
 │   ├── shortcuts.js     ←   globalShortcut fallback registration
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv

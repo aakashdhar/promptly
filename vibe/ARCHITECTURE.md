@@ -182,6 +182,7 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `get-theme-setting` / `set-theme-setting` | Appearance: system / light / dark |
 | renderer → main | `get-preferences` / `set-preferences` | Hotkey preset, dictionary, auto-copy, launch at login, Accessibility status |
 | renderer/splash → main | `request-accessibility` / `accessibility-status` / `open-accessibility-settings` | Hold to talk + selected text permission |
+| pill → main, main → renderer | `pill-action` ('make-prompt') / `make-prompt` event | The pill's "Make it a prompt" after a dictation from another app: opens the window and converts it there |
 | renderer → main | `record-edit` / `clear-edits` / `learn-style` | It writes like you: log an edit to a result, forget edits, draft "How you write" notes (voiceNotes / aboutMe themselves go through get/set-preferences) |
 | renderer → main (send) | `audio-level` / `mode-changed` | Mic level for the pill waveform; current mode label for the pill |
 | main → renderer | `hotkey-start` / `hotkey-stop` / `hotkey-cancel` | Hold-to-talk / tap decisions from main |
