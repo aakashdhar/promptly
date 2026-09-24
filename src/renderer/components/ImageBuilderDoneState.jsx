@@ -30,15 +30,16 @@ export default function ImageBuilderDoneState({
 }) {
   const [copied, setCopied] = useState(false)
 
-  function handleCopy() {
-    if (window.electronAPI) window.electronAPI.copyToClipboard(prompt)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
-
   const parts = (prompt || '').split('\n\n')
   const promptText = parts[0] || ''
   const flags = parts.length > 1 ? parts.slice(1).join('\n\n') : ''
+
+  // Nano Banana and ChatGPT don't read --flags, so the main copy is the prompt text alone.
+  function handleCopy(text = promptText) {
+    if (window.electronAPI) window.electronAPI.copyToClipboard(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
   const answeredEntries = flattenAnswers(answers)
 
   return (
@@ -65,8 +66,14 @@ export default function ImageBuilderDoneState({
               background: 'rgba(139,92,246,0.06)', border: '0.5px solid rgba(139,92,246,0.2)',
               borderRadius: '8px', padding: '9px 12px', flexShrink: 0,
             }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(139,92,246,0.5)', margin: '0 0 5px 0', fontWeight: 600 }}>Nano Banana flags</p>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(139,92,246,0.5)', margin: '0 0 5px 0', fontWeight: 600 }}>Midjourney flags (optional)</p>
               <code style={{ fontSize: '12px', color: 'rgba(196,168,255,0.8)', fontFamily: 'monospace', lineHeight: 1.5 }}>{flags}</code>
+              <button
+                onClick={() => handleCopy(prompt)}
+                style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: '11px', color: 'rgba(196,168,255,0.6)', WebkitAppRegion: 'no-drag' }}
+              >
+                Copy prompt with flags for Midjourney
+              </button>
             </div>
           )}
           <div style={{ flexShrink: 0 }}>
@@ -108,7 +115,7 @@ export default function ImageBuilderDoneState({
         >Start over</button>
         <div style={{ flex: 1 }} />
         <button
-          onClick={handleCopy}
+          onClick={() => handleCopy()}
           style={{
             padding: '7px 18px', borderRadius: '8px', fontSize: '12.5px', fontWeight: 500,
             background: copied ? 'rgba(52,199,89,0.7)' : 'rgba(139,92,246,0.75)',

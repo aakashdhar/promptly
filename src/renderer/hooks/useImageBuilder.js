@@ -3,7 +3,8 @@ import { saveToHistory } from '../utils/history.js'
 import { parseImageAnalysisOutput, parseImageAssemblyOutput } from '../utils/promptUtils.js'
 
 function buildPhase1Prompt(transcript) {
-  return `You are an expert Nano Banana (Midjourney) prompt engineer.
+  return `You are an expert image prompt engineer for Nano Banana (Google's Gemini image model),
+ChatGPT image generation and Midjourney.
 Analyse the user's spoken image idea and return pre-selected
 parameter values across five categories.
 
@@ -54,7 +55,8 @@ Rules:
 - For filmSim pick from: Kodak Portra 400, Fuji Velvia, Ilford HP5,
   CineStill 800T, Digital clean, Lomography, Medium format
 - For reference pick a relevant photographer/cinematographer if applicable
-- For technical params use Nano Banana's actual parameter ranges:
+- stylise, chaos, weird and seed are Midjourney-only parameters (Nano Banana and
+  ChatGPT ignore them); use Midjourney's ranges:
     stylise: 0-1000 (default 100, higher = more stylised; suggest 750 for cinematic)
     chaos: 0-100 (default 0, higher = more varied; suggest 20 for most subjects)
     weird: 0-3000 (default 0; suggest 0 unless user implies surreal)
@@ -120,8 +122,11 @@ Rules:
 3. Word order matters: subject -> setting -> mood -> lighting ->
    camera/technical -> style reference
 4. Keep the assembled prompt 60-100 words
-5. Do NOT include --parameter flags in the prompt text
-6. Append technical flags as a separate "flags" field
+5. Do NOT include --parameter flags in the prompt text. The prompt text must work on its
+   own in Nano Banana and ChatGPT image gen, which do not read flags — so describe the
+   aspect ratio, resolution and render quality in words inside the prompt
+   (e.g. "vertical 4:5 composition, photorealistic, highly detailed")
+6. Append Midjourney parameter flags as a separate "flags" field (Midjourney users only)
 7. Return ONLY valid JSON — no markdown fences:
 {
   "prompt": "the assembled natural language prompt",
@@ -205,6 +210,7 @@ export default function useImageBuilder({
     if (!window.electronAPI) return
     setIsGeneratingVariations(true)
     const result = await window.electronAPI.generateRaw(buildVariationsPrompt(transcript))
+    if (result?.cancelled) return
     setIsGeneratingVariations(false)
     if (!result.success) return
     const newVars = parseVariations(result.prompt, idOffset)
@@ -225,6 +231,7 @@ export default function useImageBuilder({
     }
 
     const result = await window.electronAPI.generateRaw(buildPhase1Prompt(transcript))
+    if (result?.cancelled) return
     let newDefaults = deepCopy(EMPTY_DEFAULTS)
     if (result.success) {
       const parsed = parsePhase1(result.prompt)
@@ -293,6 +300,7 @@ export default function useImageBuilder({
 
     const activeVar = imageVariations.find(v => v.id === selectedVariation) || imageVariations[0] || null
     const result = await window.electronAPI.generateRaw(buildPhase2Prompt(activeVar, answers))
+    if (result?.cancelled) return
     if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'Could not generate image prompt — try again' })
       return
