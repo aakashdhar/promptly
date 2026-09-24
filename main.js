@@ -41,6 +41,7 @@ if (IS_E2E) {
     hotkey: (phase) => onHelperHotkey(phase),
     pillState: () => lastPillState,
     appState: () => currentAppState,
+    config: () => config.read(),
     trayIconsCreated: () => trayIconsCreated,
   };
 }
@@ -252,7 +253,6 @@ async function runGeneratePrompt({ transcript, mode, options = {} }) {
     if (now - lastSent < 80) return;
     lastSent = now;
     winSend('generation-delta', { text });
-    pillSend({ state: 'thinking', text });
   } : undefined;
   return claude.run(prompt, { onDelta });
 }
@@ -461,7 +461,7 @@ function createPillWindow() {
     frame: false,
     transparent: true,
     resizable: false,
-    movable: false,
+    movable: false, // pill.html drags it (pill-drag); the spot is remembered (pillPosition)
     focusable: false,
     // The pill never takes focus from your app, but its "Make it a prompt" must answer the first click.
     acceptFirstMouse: true,
@@ -477,15 +477,32 @@ function createPillWindow() {
   });
   pillWin.setAlwaysOnTop(true, 'screen-saver');
   pillWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  pillWin.setIgnoreMouseEvents(true);
+  // Clicks pass through the transparent area around the pill; the pill itself takes the mouse
+  // while the pointer is over it (pill.html reports hover), so it can be dragged and clicked.
+  pillWin.setIgnoreMouseEvents(true, { forward: true });
   pillWin.loadFile(path.join(__dirname, 'pill.html'));
 }
 
+// Where the pill was dropped, as a fraction of that screen, so it lands in the same place on
+// any display.
+function savePillPosition() {
+  const display = screen.getDisplayMatching(pillWin.getBounds());
+  const { x, y, width, height } = display.workArea;
+  const [px, py] = pillWin.getPosition();
+  const [w, h] = pillWin.getSize();
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  config.update({ pillPosition: { fx: clamp((px - x) / Math.max(1, width - w)), fy: clamp((py - y) / Math.max(1, height - h)) } });
+}
+
+// On the screen you're using: where you last dragged it, or bottom centre.
 function positionPill() {
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const { x, y, width, height } = display.workArea;
   const [w, h] = pillWin.getSize();
-  pillWin.setPosition(Math.round(x + (width - w) / 2), Math.round(y + height - h - 36));
+  const saved = config.read().pillPosition;
+  const px = saved ? x + saved.fx * (width - w) : x + (width - w) / 2;
+  const py = saved ? y + saved.fy * (height - h) : y + height - h - 36;
+  pillWin.setPosition(Math.round(px), Math.round(py));
 }
 
 function pillSend(payload) {
@@ -517,7 +534,6 @@ function updatePill(appState) {
     // offers to turn them into a prompt instead. The window doesn't open.
     pillSession = false;
     pillSend({ state: 'dictated', typed: lastDictation.typed });
-    if (pillWin && !pillWin.isDestroyed()) pillWin.setIgnoreMouseEvents(false);
     hidePillSoon(6000);
   } else {
     // A result or an error: show it in the window, like any other prompt.
@@ -534,11 +550,11 @@ function updatePill(appState) {
 }
 
 let pillHideTimer = null;
+let pillHovered = false;
 function hidePillSoon(ms) {
   clearTimeout(pillHideTimer);
   pillHideTimer = setTimeout(() => {
-    if (pillSession) return;
-    if (pillWin && !pillWin.isDestroyed()) pillWin.setIgnoreMouseEvents(true);
+    if (pillSession || pillHovered) { if (!pillSession) hidePillSoon(1500); return; }
     if (lastPillState && lastPillState.state === 'dictated') pillSend({ state: 'hidden' });
   }, ms);
 }
@@ -1325,6 +1341,25 @@ app.whenReady().then(async () => {
     // Dictation Promptly just typed for you isn't copied again: your clipboard is being restored.
     if (prompt && prompt === lastTypedText) { lastTypedText = null; return; }
     if (prompt && config.read().autoCopy !== false) clipboard.writeText(prompt);
+  });
+
+  // Dragging the pill: pill.html sends how far the pointer has moved since it was pressed.
+  let pillDragOrigin = null;
+  ipcMain.on('pill-drag', (_event, { phase, dx = 0, dy = 0 } = {}) => {
+    if (!pillWin || pillWin.isDestroyed()) return;
+    if (phase === 'start') pillDragOrigin = pillWin.getPosition();
+    else if (phase === 'move' && pillDragOrigin) pillWin.setPosition(Math.round(pillDragOrigin[0] + dx), Math.round(pillDragOrigin[1] + dy));
+    else if (phase === 'end' && pillDragOrigin) { pillDragOrigin = null; savePillPosition(); }
+  });
+
+  // The pointer is over the pill: take the mouse (drag, click) or let it pass through again.
+  ipcMain.handle('pill-hover', (_event, inside) => {
+    pillHovered = !!inside;
+    if (pillWin && !pillWin.isDestroyed()) {
+      if (pillHovered) pillWin.setIgnoreMouseEvents(false);
+      else pillWin.setIgnoreMouseEvents(true, { forward: true });
+    }
+    return { ok: true };
   });
 
   // The pill's "Make it a prompt" after a dictation: open the window and convert it there.

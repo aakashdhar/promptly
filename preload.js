@@ -248,6 +248,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   pillAction: (action) =>
     ipcRenderer.invoke('pill-action', action),
 
+  pillHover: (inside) =>
+    ipcRenderer.invoke('pill-hover', inside),
+
+  pillDrag: (data) => ipcRenderer.send('pill-drag', data),
+
   onMakePrompt: (cb) => {
     const handler = () => cb()
     ipcRenderer.on('make-prompt', handler)

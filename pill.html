@@ -49,10 +49,23 @@ body {
 .meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .meta b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta span { color: rgba(var(--ink), 0.72); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.spin { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(var(--ink), 0.2); border-top-color: rgb(var(--ink)); animation: spin 0.8s linear infinite; flex-shrink: 0; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.stream { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; text-align: left; color: rgba(var(--ink), 0.8); }
-.stream bdi { direction: ltr; unicode-bidi: plaintext; }
+/* Working: three dots breathing in turn, and the label with a light sweeping across it. */
+.loader { display: flex; align-items: center; gap: 4px; height: 14px; flex-shrink: 0; }
+.loader i { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--ink)); animation: breathe 1.2s ease-in-out infinite; }
+.loader i:nth-child(2) { animation-delay: 0.16s; }
+.loader i:nth-child(3) { animation-delay: 0.32s; }
+@keyframes breathe { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+.working {
+  font-weight: 500; white-space: nowrap;
+  background: linear-gradient(90deg, rgba(var(--ink), 0.6) 0%, rgba(var(--ink), 0.6) 35%, rgb(var(--ink)) 50%, rgba(var(--ink), 0.6) 65%, rgba(var(--ink), 0.6) 100%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: sweep 1.8s linear infinite;
+}
+@keyframes sweep { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+/* Drag the pill anywhere; buttons stay clickable. */
+.pill { cursor: grab; }
+.pill.dragging { cursor: grabbing; }
+.action { cursor: pointer; }
 .check { color: var(--ok); font-weight: 700; }
 .action {
   margin-left: 6px; height: 28px; padding: 0 12px; border-radius: 14px; border: 0.5px solid var(--edge);
@@ -62,7 +75,7 @@ body {
 .action:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.7); outline-offset: 2px; }
 #recording, #thinking, .row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { .dot, .spin { animation: none; } .pill { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dot, .loader i { animation: none; } .working { animation: none; color: rgb(var(--ink)); background: none; } .pill { transition: none; } }
 </style>
 </head>
 <body>
@@ -76,10 +89,8 @@ body {
   </div>
   <div id="thinking" hidden>
     <div class="row">
-      <span class="spin" aria-hidden="true"></span>
-      <!-- A live ticker of the newest words: showing only the tail is the point, so the layout
-           audit leaves it out. -->
-      <div class="stream" id="stream" data-audit-skip><bdi id="stream-text">Writing your prompt…</bdi></div>
+      <span class="loader" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="working" id="working-text">Writing your prompt</span>
     </div>
   </div>
   <div id="copied" hidden><span class="check">✓</span> Prompt copied</div>
@@ -118,8 +129,7 @@ window.electronAPI.onPillState((state) => {
     document.getElementById('rec-detail').textContent = describe(state);
     show('recording');
   } else if (state.state === 'thinking') {
-    const waiting = state.mode === 'Dictation' ? 'Transcribing…' : 'Writing your prompt…';
-    document.getElementById('stream-text').textContent = (state.text || '').replace(/\s+/g, ' ').trim() || waiting;
+    document.getElementById('working-text').textContent = state.mode === 'Dictation' ? 'Transcribing' : 'Writing your prompt';
     show('thinking');
   } else if (state.state === 'copied') {
     show('copied');
@@ -131,6 +141,37 @@ window.electronAPI.onPillState((state) => {
 });
 
 document.getElementById('make-prompt').addEventListener('click', () => window.electronAPI.pillAction('make-prompt'));
+
+// The window around the pill is transparent and lets clicks through; while the pointer is over
+// the pill, the pill takes the mouse so it can be dragged and its button clicked.
+let hovering = false;
+document.addEventListener('mousemove', (e) => {
+  const inside = !!e.target.closest('.pill');
+  if (inside !== hovering) { hovering = inside; window.electronAPI.pillHover(inside); }
+});
+document.addEventListener('mouseleave', () => { if (hovering) { hovering = false; window.electronAPI.pillHover(false); } });
+
+// Drag: main moves the window by how far the pointer has moved since it was pressed, and
+// remembers where it was dropped.
+let drag = null;
+pill.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || e.target.closest('button')) return;
+  drag = { x: e.screenX, y: e.screenY };
+  pill.setPointerCapture(e.pointerId);
+  pill.classList.add('dragging');
+  window.electronAPI.pillDrag({ phase: 'start' });
+});
+pill.addEventListener('pointermove', (e) => {
+  if (drag) window.electronAPI.pillDrag({ phase: 'move', dx: e.screenX - drag.x, dy: e.screenY - drag.y });
+});
+function endDrag() {
+  if (!drag) return;
+  drag = null;
+  pill.classList.remove('dragging');
+  window.electronAPI.pillDrag({ phase: 'end' });
+}
+pill.addEventListener('pointerup', endDrag);
+pill.addEventListener('pointercancel', endDrag);
 
 // The waveform runs on its own 60 fps clock and eases toward the latest mic level, so uneven
 // arrival of levels (they come from another window, through the main process) never shows as

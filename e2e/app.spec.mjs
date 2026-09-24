@@ -649,3 +649,40 @@ test('typing in Dictation mode makes a prompt in the style chosen in Settings', 
   const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
   expect(stdin).toContain('Optimise this prompt for code generation')
 })
+
+test('the pill can be dragged out of the way, and comes back where you left it', async () => {
+  ctx = await launch({ mode: null })
+  const { app, fakeDir } = ctx
+  const pillBounds = () => app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html')).getBounds())
+
+  await withClipboard(app, async () => {
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    const before = await pillBounds()
+
+    // Drag it 300 px up (what pill.html sends while the pointer moves).
+    const pill = app.windows().find((w) => w.url().includes('pill.html'))
+    await pill.evaluate(() => {
+      window.electronAPI.pillDrag({ phase: 'start' })
+      window.electronAPI.pillDrag({ phase: 'move', dx: 0, dy: -300 })
+      window.electronAPI.pillDrag({ phase: 'end' })
+    })
+    await expect.poll(() => pillBounds().then((b) => b.y)).toBe(before.y - 300)
+    const saved = (await app.evaluate(() => globalThis.__promptlyE2E.config())).pillPosition
+    expect(saved.fy).toBeLessThan(1)
+
+    // While working it shows an animation, not the prompt's text.
+    fs.writeFileSync(path.join(fakeDir, 'transcript'), 'hello there')
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+    await expect(pill.locator('#working-text')).toHaveText(/Transcribing|Writing your prompt/)
+
+    // Next time it appears, it's where it was dropped.
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    expect((await pillBounds()).y).toBe(before.y - 300)
+  })
+})

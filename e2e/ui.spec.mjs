@@ -335,7 +335,7 @@ for (const theme of ['dark', 'light']) {
     }, state)
     await pillState({ state: 'recording', mode: 'Balanced', context: { appName: 'Visual Studio Code', selectedText: 'x' } })
     await check(pill, 'pill-recording')
-    await pillState({ state: 'thinking', text: 'Role: You are a senior full-stack engineer. Task: Fix the TypeError in the upload job' })
+    await pillState({ state: 'thinking', mode: 'Balanced' })
     await check(pill, 'pill-thinking')
     await pillState({ state: 'copied' })
     await check(pill, 'pill-copied')
