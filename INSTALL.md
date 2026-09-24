@@ -17,6 +17,7 @@ You need a Mac with macOS 12 or later and a Claude account. Everything else is s
 
 - **Where you are shapes the prompt.** Talking from Terminal, VS Code or Cursor gives a task for a coding agent like Claude Code; from a browser or the Claude app, a self-contained chat prompt; from Figma, a design brief.
 - **Select text first** to work on it: select an error, a paragraph or some code, hold ⌥ Space and say "fix this" or "turn this into a spec".
+- **Make it sound like you.** Settings → You: "How you write" shapes Polish and Email; "About you" (your role, your stack) shapes prompts. Paste a few things you've written and Promptly drafts the notes for you. Edit a prompt or email before copying it and Promptly remembers the change; after a few, it can suggest updates to your notes. Nothing changes without you choosing "Use these".
 - **Say the mode first** to switch: "code mode, …", "email mode, …", "polish mode, …".
 - **Settings** (⌘/): shortcut (including Right Option or Fn held on its own), a dictionary of names and terms to spell right, auto-copy, open at login, and light/dark.
 

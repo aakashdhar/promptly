@@ -35,6 +35,9 @@
 | `native/helper/main.swift` | promptly-helper: JSON-lines protocol; active event tap for the talk key (down/up/cancel), frontmost app, selected text via AX | — |
 | `main/helper.js` | Spawns the helper, request/response with ids + timeouts, restarts on crash, reports trust/tap status | `createHelper()` → `{ start, stop, isRunning, status, configure, context, requestAccess, refreshStatus }` |
 | `main/hotkey.js` | Hotkey presets and the hold (≥350 ms) vs tap state machine | `HOTKEY_PRESETS`, `getPreset`, `createHoldToTalk` |
+| `main/profile.js` | It writes like you: which notes a mode gets (`profile` in modes.json: voice → "How you write", about → "About you"), and the local log of the last 20 edits (userData/style-edits.json) | `createEditLog()` → `{ add, list, count, clear }`, `profileFor`, `cleanNotes`, `formatEdits` |
+| `main/prompts/learn-style.txt` | Drafts "How you write" notes from pasted samples or logged edits (5–10 bullets, habits only, no personal facts) | — |
+| `src/renderer/components/YouSection.jsx` | Settings → You: the two notes, Learn from my writing, Suggest from my edits, Forget my edits. Drafts are suggestions until "Use these" | props: `{ prefs, onSave, onEditCount }` |
 | `main/shortcuts.js` | globalShortcut registration with fallback + notice | `registerRecordingShortcut` |
 | `pill.html` | Floating pill window: recording (waveform, mode, destination), streaming text, copied | — |
 | `src/renderer/utils/spokenMode.js` | "code mode, …" prefix detection | `detectSpokenMode` |

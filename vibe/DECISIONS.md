@@ -1931,3 +1931,16 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Kept: line breaks inside expanded prompt sections. A mode saved by 2.6.0 ("do") falls back to the default.
 > Learned: image input through the CLI works (stream-json content blocks), if a future feature needs it.
 ---
+
+---
+## D-VOICE — It writes like you — 2026-09-24
+> Decision: two plain-text notes in Settings → You, stored in config.json: "How you write" (voiceNotes) goes into
+>   Polish and Email requests, "About you" (aboutMe) into prompt modes. Which a mode gets is `profile` in modes.json;
+>   builders get neither. Both are capped at 2000 characters.
+> Decision: learning is transparent and opt-in. Edits the user makes to a prompt or email (Edit → Done) are logged
+>   locally (last 20, userData/style-edits.json, never sent anywhere until asked). "Suggest from my edits" or "Learn from
+>   my writing" (pasted samples, not stored) runs one `claude -p` call (main/prompts/learn-style.txt) that returns 5–10
+>   bullet habits, no personal facts. The draft is shown for review; nothing changes until "Use these".
+> Not now: Polish results aren't editable, so they don't feed learning; renderer-built prompts (email tone adjust,
+>   iterate, builders) don't include the notes yet.
+---

@@ -25,6 +25,7 @@ promptly/
 │   ├── claude-setup.js  ←   Claude Code status, install/sign-in via Terminal
 │   ├── helper.js        ←   runs native/helper (hold to talk, frontmost app, selected text)
 │   ├── hotkey.js        ←   hotkey presets + hold-vs-tap state machine
+│   ├── profile.js       ←   It writes like you: your notes + the log of your edits
 │   ├── shortcuts.js     ←   globalShortcut fallback registration
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv
 │   ├── platform/        ←   darwin.js holds every macOS path/command
