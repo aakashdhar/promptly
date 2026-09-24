@@ -10,9 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   copyToClipboard: (text) =>
     ipcRenderer.invoke('copy-to-clipboard', { text }),
 
-  checkClaudePath: () =>
-    ipcRenderer.invoke('check-claude-path'),
-
   resizeWindow: (height) =>
     ipcRenderer.invoke('resize-window', { height }),
 
@@ -47,9 +44,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveFile: (opts) =>
     ipcRenderer.invoke('save-file', opts),
 
-  resizeWindowWidth: (width) =>
-    ipcRenderer.invoke('resize-window-width', { width }),
-
   setWindowSize: (width, height) =>
     ipcRenderer.invoke('set-window-size', { width, height }),
 
@@ -77,9 +71,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   setSetupComplete: () =>
     ipcRenderer.invoke('set-setup-complete'),
-
-  resetSetupComplete: () =>
-    ipcRenderer.invoke('reset-setup-complete'),
 
   reopenWizard: () =>
     ipcRenderer.invoke('reopen-wizard'),
@@ -122,11 +113,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('shortcut-pause', cb)
   },
 
-  onShortcutConflict: (callback) => {
-    ipcRenderer.on('shortcut-conflict', callback)
-    return () => ipcRenderer.removeListener('shortcut-conflict', callback)
-  },
-
   getTheme: () =>
     ipcRenderer.invoke('get-theme'),
 
@@ -135,9 +121,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('theme-changed', cb)
     return () => ipcRenderer.removeListener('theme-changed', cb)
   },
-
-  triggerUninstall: () =>
-    ipcRenderer.invoke('uninstall-promptly'),
 
   getStoredPaths: () =>
     ipcRenderer.invoke('get-stored-paths'),

@@ -1,31 +1,30 @@
 'use strict';
 
-process.on('uncaughtException', (err) => {
-  // eslint-disable-next-line no-console
-  console.error('[Promptly] Uncaught exception:', err.message, err.stack);
-});
-
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, systemPreferences, session, screen, Notification } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { exec, execFile, spawn } = require('child_process');
-const { deflateSync } = require('zlib');
+const { execFile } = require('child_process');
 
-const configPath = path.join(app.getPath('userData'), 'config.json');
-function readConfig() {
-  try { return JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch { return {}; }
-}
-function writeConfig(data) {
-  fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
-}
+const { createConfigStore } = require('./main/config');
+const { createLogger } = require('./main/log');
+const platform = require('./main/platform');
+const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath, makeClaudeEnv } = require('./main/binaries');
+const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/llm');
+const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
+const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
+const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
+const log = createLogger(app.getPath('logs'));
+process.on('uncaughtException', (err) => log.error('Uncaught exception:', err));
+process.on('unhandledRejection', (reason) => log.error('Unhandled rejection:', reason instanceof Error ? reason : String(reason)));
+
+const config = createConfigStore(path.join(app.getPath('userData'), 'config.json'));
+
+const BUNDLE_ID = 'io.betacraft.promptly';
 const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 const SHORTCUT_PAUSE = 'Alt+P';
-const CLAUDE_MODEL = 'claude-sonnet-4-6';
-// Must match the model the onboarding wizard downloads and check-whisper-model looks for.
-const WHISPER_MODEL = 'base';
 
 // App states in which the bar stays visible when focus moves to another app.
 // PROMPT_READY is deliberately absent: the user is expected to go and paste.
@@ -37,203 +36,28 @@ const KEEP_VISIBLE_ON_BLUR = new Set([
   'EMAIL_READY', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR',
 ]);
 
-// Replace {KEY} placeholders. A function replacer keeps `$&`, `$'` etc. in user text literal.
-function fillTemplate(template, values) {
-  let out = template;
-  for (const [key, value] of Object.entries(values)) {
-    out = out.replace(`{${key}}`, () => value);
-  }
-  return out;
-}
-
-const PROMPT_TEMPLATE = `You are an expert Claude prompt engineer. Your job is to transform raw spoken descriptions into precision-engineered Claude prompts that get exceptional results.
-
-Analyse the transcript carefully for:
-- Core intent and primary goal
-- What the user emphasised or repeated (make this prominent)
-- Implied constraints they did not explicitly state
-- Expected output format or deliverable
-- Technical domain (code, writing, analysis, design, data)
-
-Mode: {MODE_NAME}
-Mode instruction: {MODE_INSTRUCTION}
-
-Output rules — follow every rule precisely:
-1. Output ONLY the final prompt. No preamble. No "Here is your prompt:". No explanation. Just the prompt itself.
-2. Structure every prompt with these exact plain-text section labels on their own line, followed by a colon and newline:
-
-Role:
-Task:
-Context:
-Constraints:
-Output format:
-
-3. For technical/code prompts always add:
-
-Tech stack:
-Data model: (if data structures are involved)
-
-4. For UI/design prompts always add:
-
-Visual style:
-
-5. What the user stressed or repeated must appear explicitly and prominently in the Task section.
-6. Never invent requirements the user did not mention or imply.
-7. Be specific enough that Claude cannot misinterpret the task.
-8. If the user mentioned a specific format (table, list, code block), preserve it exactly.
-9. Write the prompt in second person: "You are...", "Your task is...", "Write..."
-10. Section labels must be plain text — no markdown bold, no asterisks, no hashtags.
-
-The user said:
-"{TRANSCRIPT}"`;
-
-const MODE_CONFIG = {
-  balanced:  { name: 'Balanced',         instruction: 'Create a well-rounded prompt with appropriate detail for general use.' },
-  detailed:  { name: 'Detailed',         instruction: 'Create a thorough, comprehensive prompt with extensive context, edge cases, and detailed constraints.' },
-  concise:   { name: 'Concise',          instruction: 'Create the shortest possible effective prompt — include only what is essential for Claude to succeed.' },
-  chain:     { name: 'Chain of Thought', instruction: 'Structure the prompt to require Claude to reason step-by-step before answering. Include a Steps section with numbered reasoning stages.' },
-  code:      { name: 'Code',             instruction: 'Optimise this prompt for code generation. Always include Tech stack and Data model sections. Be precise about interfaces, data shapes, and output format.' },
-  refine:    { name: 'Refine',           standalone: true, instruction: `You are an expert design and product feedback analyst. The user has spoken a description of an existing design problem and what they want changed. Your job is to structure their spoken feedback into a precise, actionable Claude prompt that a designer or developer can use immediately to make the exact change needed — with zero ambiguity and zero unnecessary iteration.
-
-Extract from the transcript:
-- What currently exists (the element, its appearance, its behaviour)
-- What is wrong with it (the specific problem — visual, functional, or both)
-- What the desired outcome looks like (what "fixed" means exactly)
-- What must NOT change (constraints, unchanged elements, preserved behaviour)
-- Any brand, accessibility, or technical constraints mentioned
-
-Output rules:
-1. Output ONLY the final prompt. No preamble. No explanation. Just the prompt.
-2. Use these exact plain-text section labels on their own line followed by a colon:
-
-Current state:
-Problem:
-Desired outcome:
-Constraints:
-
-3. Current state — describe the existing element precisely. What it looks like, where it sits, what it does. Be specific enough that Claude can identify it without seeing the screen.
-4. Problem — explain WHY it is wrong, not just that it is wrong. The visual or functional issue. What feeling or behaviour it creates that it shouldn't.
-5. Desired outcome — describe the end result concretely. Not "make it better" — "reduce height from 56px to 40px, switch fill from primary blue to secondary grey, maintain the same label and position."
-6. Constraints — list everything that must stay unchanged. If the user didn't mention constraints, infer sensible ones: accessibility contrast ratios, surrounding layout, existing brand colours, label text.
-7. If the user mentioned specific values (px, colours, font sizes) preserve them exactly.
-8. If the user was vague, make the best specific inference you can and flag it with "(inferred — verify)" at the end of that line.
-9. Do not add a Role section. Do not add a Task section. The four sections above are the complete output.
-
-The user said:
-"{TRANSCRIPT}"` },
-  design:    { name: 'Design',           standalone: true, instruction: `You are a world-class design director and prompt engineer. The user is a designer who has just spoken their creative vision out loud. Your job is to capture that vision with complete fidelity and turn it into a prompt that will make Claude produce exceptional, specific, production-ready design output.
-
-Listen for and extract:
-- The emotional tone and personality of the design (what should someone FEEL when they see it)
-- The core visual metaphor or aesthetic direction the designer is reaching for
-- Any references mentioned — apps, brands, movements, eras, materials
-- What they want to AVOID as much as what they want to include
-- Typography intent — even if vague ("something sophisticated", "feels editorial")
-- Colour intent — even if loose ("warm", "muted", "high contrast", "earthy")
-- Layout and spatial intent — how content should breathe and move
-- Component behaviour — hover states, transitions, animations they described
-- The user they are designing for — context changes everything
-- Device and environment — where will this be seen and used
-
-Output rules:
-1. Output ONLY the final prompt. No preamble. No explanation.
-2. Use these exact plain-text section labels:
-
-Role:
-Design brief:
-Visual personality:
-Colour direction:
-Typography direction:
-Layout and spacing:
-Component behaviour:
-Motion and feel:
-What to avoid:
-Reference points:
-User and context:
-Output format:
-
-3. Under Design brief — capture the core intent in 2-3 sentences. What is being designed, for whom, and what is the single most important feeling it must create.
-4. Under Visual personality — use vivid, specific adjectives. Not "clean" — "restrained, almost terse, like a Swiss grid poster". Not "modern" — "post-Figma minimal, confident negative space, nothing decorative".
-5. Under Colour direction — give Claude a starting palette even if approximate. "Warm off-white background, deep forest green primary, no pure black — use #1a1a1a instead".
-6. Under What to avoid — this section is mandatory. Every designer has things they hate. Extract them from the transcript. If not explicit, infer from the aesthetic direction.
-7. Under Motion and feel — describe the quality of movement, not just what moves. "Transitions should feel unhurried, like turning a page" not just "add transitions".
-8. Under Reference points — list every app, brand, website, or aesthetic the designer mentioned. If they said "like Notion but warmer" — write that exactly.
-9. The prompt must be specific enough that two different designers reading it would produce similar work.
-
-The user said:
-"{TRANSCRIPT}"` },
-  image:     { name: 'Image',            passthrough: true, instruction: '' },
-  video:     { name: 'Video',            passthrough: true, instruction: '' },
-  workflow:  { name: 'Workflow',         passthrough: true, instruction: '' },
-  email:     { name: 'Email',            standalone: true, instruction: `You are an expert email writer. The user has described an email situation in natural language. Your job is to draft a professional, ready-to-send email based on their description.
-
-Analyse the situation and draft the email. Return your response as a JSON object with this exact structure:
-{
-  "subject": "the email subject line",
-  "body": "the full email body with proper formatting and line breaks",
-  "toneAnalysis": {
-    "recipient": "who this email is going to (inferred)",
-    "tone": "one of: Professional, Friendly, Assertive, Apologetic, Persuasive, Formal, Casual",
-    "coreMessage": "the single core message of this email in one sentence",
-    "approach": "brief description of the writing approach taken",
-    "whyThisTone": "1-2 sentence explanation of why this tone fits the situation"
-  }
-}
-
-Rules:
-1. Return ONLY the JSON object — no preamble, no explanation, no markdown fences
-2. The body should be complete and ready to send — no placeholders like [Name]
-3. Infer the recipient type from context (colleague, manager, client, friend, etc.)
-4. Match formality to the situation described
-5. Keep the subject line concise and descriptive
-6. Use appropriate greeting and sign-off
-7. If the user mentions their name, use it in the sign-off
-8. Preserve any specific details, dates, or numbers mentioned
-9. The body field must use actual newline characters (\\n) for line breaks, not literal backslash-n
-10. Ensure the JSON is valid and parseable
-
-User's description:
-{TRANSCRIPT}` },
-  polish:    { name: 'Polish',           standalone: true, instruction: `You are an expert editor and writing coach. The user has spoken something rough — with filler words, repetition, grammatical errors, or unclear phrasing. Your job is to return two things and nothing else:
-
-1. The polished version of what they said — clean, grammatically correct, well-phrased prose that preserves their exact meaning and intent.
-2. A brief list of what you changed — maximum 4 bullet points, each under 10 words.
-
-Tone: {TONE}
-
-Tone guidance:
-- Formal: professional, precise, suitable for workplace communication, emails, reports
-- Casual: warm, natural, conversational, suitable for messages, slack, informal notes
-
-Output format — return EXACTLY this structure with these exact labels, nothing else:
-
-POLISHED:
-{the polished text here}
-
-CHANGES:
-· {change note 1}
-· {change note 2}
-· {change note 3}
-
-Rules:
-1. Preserve the user's meaning exactly — do not add information they did not say
-2. Remove filler words (uh, um, so basically, you know, like)
-3. Fix repeated words, run-on sentences, grammatical errors
-4. Keep it concise — do not pad or elaborate beyond what was said
-5. CHANGES must be brief observations, not explanations
-6. If the input is already clean, say so in CHANGES: "· Text was already well-formed"
-7. Output ONLY the two sections above — no preamble, no sign-off
-
-The user said:
-"{TRANSCRIPT}"` },
+const MENU_BAR_ICON_STATE = {
+  IDLE: 'idle', RECORDING: 'recording', PAUSED: 'recording',
+  THINKING: 'thinking', ITERATING: 'thinking',
+  PROMPT_READY: 'ready',
+  IMAGE_BUILDER: 'builder', IMAGE_BUILDER_DONE: 'builder',
+  VIDEO_BUILDER: 'builder', VIDEO_BUILDER_DONE: 'builder',
+  WORKFLOW_BUILDER: 'builder', WORKFLOW_BUILDER_DONE: 'builder',
 };
+
+// Models offered in Settings. Aliases always resolve to the latest model of that family.
+const MODEL_OPTIONS = [
+  { value: DEFAULT_MODEL, label: 'Sonnet 4.6 (default)' },
+  { value: 'sonnet', label: 'Latest Sonnet' },
+  { value: 'opus', label: 'Latest Opus' },
+  { value: 'haiku', label: 'Latest Haiku (fastest)' },
+];
 
 let claudePath = null;
 let whisperPath = null;
 let ffmpegPath = null;
 let win = null;
 let splashWin = null;
-let tray = null;
 let isQuitting = false;
 let menuBarTray = null;
 let pulseInterval = null;
@@ -244,8 +68,41 @@ let lastTempAudioPath = null;
 let lastGenerateRequest = null;
 let currentAppState = 'IDLE';
 let shortcutsRegistered = false;
-// Claude and Whisper child processes in flight, so an abort can stop them.
+
+function winSend(channel, payload) {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send(channel, payload);
+}
+
+// Claude and Whisper processes behind the current operation, so an abort can stop them.
 const activeChildren = new Set();
+const claude = createClaudeRunner({
+  getClaudePath: () => claudePath,
+  getModel: () => config.read().claudeModel || DEFAULT_MODEL,
+  onSlow: () => winSend('generation-slow-warning'),
+  children: activeChildren,
+});
+// The eval scorecard runs alongside the prompt screen; aborting a new prompt must not kill it.
+const evalClaude = createClaudeRunner({
+  getClaudePath: () => claudePath,
+  getModel: () => config.read().claudeModel || DEFAULT_MODEL,
+});
+const whisper = createWhisperRunner({
+  getWhisperPath: () => whisperPath,
+  getFfmpegPath: () => ffmpegPath,
+  onSlow: () => winSend('transcription-slow-warning'),
+  children: activeChildren,
+});
+
+async function resolveAllPaths() {
+  const stored = config.read();
+  claudePath = await resolveClaudePath(stored.claudePath);
+  whisperPath = await resolveWhisperPath(stored.whisperPath);
+  ffmpegPath = await resolveFfmpegPath(stored.ffmpegPath);
+  log.info('Resolved paths', { claudePath, whisperPath, ffmpegPath });
+}
+
+// ── Temp audio ────────────────────────────────────────────────────────────────
 
 const audioTmpDir = path.join(os.tmpdir(), 'promptly-audio');
 
@@ -261,117 +118,19 @@ function resetAudioTmpDir() {
   try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
 }
 
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-    t[i] = c;
-  }
-  return t;
-})();
+// ── Generation ────────────────────────────────────────────────────────────────
 
-function crc32(buf) {
-  let c = 0xFFFFFFFF;
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
-  return (c ^ 0xFFFFFFFF) >>> 0;
+async function runGeneratePrompt({ transcript, mode, options = {} }) {
+  if (getMode(mode).kind === 'builder') return { success: true, prompt: transcript };
+  const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, options);
+  return claude.run(prompt);
 }
 
-function pngEncode(w, h, rgba) {
-  function chunk(type, data) {
-    const typeB = Buffer.from(type, 'ascii');
-    const lenB = Buffer.allocUnsafe(4);
-    lenB.writeUInt32BE(data.length, 0);
-    const crcB = Buffer.allocUnsafe(4);
-    crcB.writeUInt32BE(crc32(Buffer.concat([typeB, data])), 0);
-    return Buffer.concat([lenB, typeB, data, crcB]);
-  }
-  const ihdr = Buffer.allocUnsafe(13);
-  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
-  const rowLen = 1 + w * 4;
-  const raw = Buffer.allocUnsafe(h * rowLen);
-  for (let y = 0; y < h; y++) {
-    raw[y * rowLen] = 0;
-    for (let x = 0; x < w; x++) {
-      const src = (y * w + x) * 4;
-      const dst = y * rowLen + 1 + x * 4;
-      raw[dst]     = rgba[src];
-      raw[dst + 1] = rgba[src + 1];
-      raw[dst + 2] = rgba[src + 2];
-      raw[dst + 3] = rgba[src + 3];
-    }
-  }
-  return Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw, { level: 6 })),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
-}
+// ── Menu bar ──────────────────────────────────────────────────────────────────
 
 function createMicIcon(state, isDark, showDot = true) {
-  const W = 44, H = 44;
-  const px = new Uint8Array(W * H * 4);
-
-  function set(x, y, r, g, b, a) {
-    if (x < 0 || x >= W || y < 0 || y >= H) return;
-    const i = (y * W + x) * 4;
-    px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = a;
-  }
-  function fillRect(x1, y1, x2, y2, r, g, b, a) {
-    for (let y = y1; y <= y2; y++)
-      for (let x = x1; x <= x2; x++)
-        set(x, y, r, g, b, a);
-  }
-  function fillDisk(cx, cy, rad, r, g, b, a) {
-    const r2 = rad * rad;
-    for (let y = Math.floor(cy - rad); y <= Math.ceil(cy + rad); y++)
-      for (let x = Math.floor(cx - rad); x <= Math.ceil(cx + rad); x++)
-        if ((x - cx) ** 2 + (y - cy) ** 2 <= r2)
-          set(x, y, r, g, b, a);
-  }
-
-  const hidden = state === 'hidden';
-  const alpha = hidden ? 115 : 255;
-  const [mr, mg, mb] = (state === 'idle' || hidden) ? [0, 0, 0]
-    : isDark ? [255, 255, 255] : [0, 0, 0];
-
-  // Mic body: rounded top, flat bottom at y=25 (x=17..27)
-  fillDisk(22, 10, 5, mr, mg, mb, alpha);
-  fillRect(17, 10, 27, 25, mr, mg, mb, alpha);
-
-  // Mic stand arc: ring at center (22,25), inner r=5, outer r=8, y>=25
-  // Inner boundary at y=25 lands exactly on x=17 and x=27 (body edge)
-  for (let y = 25; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const d2 = (x - 22) ** 2 + (y - 25) ** 2;
-      if (d2 >= 25 && d2 <= 64) set(x, y, mr, mg, mb, alpha);
-    }
-
-  // Stem and base
-  fillRect(21, 33, 23, 37, mr, mg, mb, alpha);
-  fillRect(14, 37, 30, 39, mr, mg, mb, alpha);
-
-  // Diagonal slash for hidden state (mic-off indicator)
-  if (hidden) {
-    for (let t = 0; t <= 30; t++) {
-      set(7 + t, 7 + t, 0, 0, 0, 255);
-      set(8 + t, 7 + t, 0, 0, 0, 255);
-      set(7 + t, 8 + t, 0, 0, 0, 255);
-    }
-  }
-
-  // Status dot (top-right)
-  if (showDot && state !== 'idle' && state !== 'hidden') {
-    const [dr, dg, db] = state === 'recording' ? [255, 59, 48]
-      : state === 'thinking' ? [10, 132, 255]
-      : [52, 199, 89];
-    fillDisk(30, 9, 7, dr, dg, db, 255);
-  }
-
-  const img = nativeImage.createFromBuffer(pngEncode(W, H, px), { scaleFactor: 2.0 });
-  if (state === 'idle' || hidden) img.setTemplateImage(true);
+  const img = nativeImage.createFromBuffer(drawMicIconPng(state, isDark, showDot), { scaleFactor: 2.0 });
+  if (isTemplateState(state)) img.setTemplateImage(true);
   return img;
 }
 
@@ -414,8 +173,6 @@ function updateMenuBarIcon(iconState) {
 }
 
 async function handleUninstall() {
-  const BUNDLE_ID = 'io.betacraft.promptly';
-  const home = os.homedir();
   const { response } = await dialog.showMessageBox({
     type: 'warning',
     buttons: ['Cancel', 'Uninstall'],
@@ -427,21 +184,11 @@ async function handleUninstall() {
   });
   if (response === 0) return { cancelled: true };
 
-  const dataPaths = [
-    path.join(home, 'Library', 'Application Support', 'promptly'),
-    path.join(home, 'Library', 'Logs', 'promptly'),
-    path.join(home, 'Library', 'Preferences', `${BUNDLE_ID}.plist`),
-    path.join(home, 'Library', 'Saved Application State', `${BUNDLE_ID}.savedState`),
-  ];
-  for (const p of dataPaths) {
+  for (const p of platform.uninstallDataPaths(os.homedir(), BUNDLE_ID)) {
     try { fs.rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
   }
-  await new Promise((resolve) => {
-    exec(`tccutil reset Microphone ${BUNDLE_ID}`, () => resolve());
-  });
-  await new Promise((resolve) => {
-    exec('rm -rf "/Applications/Promptly.app"', () => resolve());
-  });
+  await platform.resetMicrophonePermission(BUNDLE_ID);
+  await platform.removeInstalledApp();
   isQuitting = true;
   app.quit();
   return { ok: true };
@@ -487,295 +234,7 @@ function buildTrayMenu() {
   return Menu.buildFromTemplate(template);
 }
 
-function updateTrayMenu() {
-  if (!tray) return;
-  tray.setContextMenu(buildTrayMenu());
-}
-
-
-// Claude CLI is a Node.js script (#!/usr/bin/env node). In a packaged .app,
-// process.env.PATH is minimal and excludes nvm's bin dir. Passing PATH enriched
-// with the directory that contains the claude binary ensures 'node' is findable
-// when the shebang is resolved by macOS.
-function makeClaudeEnv(binPath) {
-  // Always inject the original symlink's directory first. For npm globals in nvm the bin/
-  // directory (which contains node) is path.dirname(binPath). realpathSync follows the
-  // symlink to node_modules/package/cli.js — a different dir that does NOT contain node.
-  // We inject both so /usr/local/bin symlink users are also covered.
-  const originalDir = path.dirname(binPath);
-  let resolvedDir = originalDir;
-  try { resolvedDir = path.dirname(fs.realpathSync(binPath)); } catch { /* use original */ }
-  const base = process.env.PATH || '/usr/local/bin:/usr/bin:/bin';
-  const dirs = [originalDir, resolvedDir].filter((d, i, a) => a.indexOf(d) === i && !base.includes(d));
-  return { ...process.env, PATH: dirs.length ? dirs.join(':') + ':' + base : base };
-}
-
-function parseGenerationError(stderr, stdout) {
-  const combined = (stderr + stdout).toLowerCase();
-  if (combined.includes('not authenticated') || combined.includes('login') || combined.includes('unauthorized')) return 'auth';
-  return 'unknown';
-}
-
-async function resolveClaudePath() {
-  const stored = readConfig().claudePath;
-  if (stored && stored.trim()) {
-    try { if (fs.existsSync(stored.trim())) return stored.trim(); } catch { /* ignore */ }
-  }
-  const home = os.homedir();
-  const commonPaths = [
-    '/usr/local/bin/claude',
-    '/usr/bin/claude',
-    path.join(home, '.local/bin/claude'),
-    path.join(home, '.npm-global/bin/claude'),
-    path.join(home, 'node_modules/.bin/claude'),
-    '/opt/homebrew/bin/claude',
-    '/opt/local/bin/claude',
-    path.join(home, '.volta/bin/claude'),
-    path.join(home, 'n/bin/claude'),
-  ];
-  for (const p of commonPaths) {
-    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
-  }
-  const nvmDir = path.join(home, '.nvm', 'versions', 'node');
-  try {
-    if (fs.existsSync(nvmDir)) {
-      for (const version of fs.readdirSync(nvmDir)) {
-        const claudeBin = path.join(nvmDir, version, 'bin', 'claude');
-        try { if (fs.existsSync(claudeBin)) return claudeBin; } catch { /* ignore */ }
-      }
-    }
-  } catch { /* ignore */ }
-  return new Promise((resolve) => {
-    const nvmInit = `export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; which claude`;
-    exec(`zsh -lc '${nvmInit}'`, (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec(`bash -lc '${nvmInit}'`, (err2, stdout2) => {
-        if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
-        resolve(null);
-      });
-    });
-  });
-}
-
-function resolveShimToRealBinary(shimPath) {
-  // Shims (pyenv/conda) need their tool initialized at runtime — resolve to the real binary
-  // so it can be called directly without any shell environment
-  return new Promise((resolve) => {
-    exec('zsh -lc "pyenv which whisper 2>/dev/null"', (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec('bash -lc "pyenv which whisper 2>/dev/null"', (err2, stdout2) => {
-        resolve(stdout2?.trim() || shimPath);
-      });
-    });
-  });
-}
-
-async function resolveWhisperPath() {
-  const stored = readConfig().whisperPath;
-  if (stored && stored.trim()) {
-    try { if (fs.existsSync(stored.trim())) return stored.trim(); } catch { /* ignore */ }
-  }
-  const commonPaths = [
-    '/usr/local/bin/whisper',
-    '/usr/bin/whisper',
-    path.join(os.homedir(), '.pyenv/shims/whisper'),
-    path.join(os.homedir(), '.local/bin/whisper'),
-    path.join(os.homedir(), '.local/pipx/venvs/openai-whisper/bin/whisper'),
-    path.join(os.homedir(), 'Library/Python/3.9/bin/whisper'),
-    path.join(os.homedir(), 'Library/Python/3.10/bin/whisper'),
-    path.join(os.homedir(), 'Library/Python/3.11/bin/whisper'),
-    path.join(os.homedir(), 'Library/Python/3.12/bin/whisper'),
-    '/opt/homebrew/bin/whisper',
-    '/opt/local/bin/whisper',
-  ];
-  for (const p of commonPaths) {
-    try {
-      if (fs.existsSync(p)) {
-        if (p.includes('.pyenv/shims/')) return resolveShimToRealBinary(p);
-        return p;
-      }
-    } catch { /* ignore */ }
-  }
-  const nvmWhisperDir = path.join(os.homedir(), '.nvm', 'versions', 'node');
-  try {
-    if (fs.existsSync(nvmWhisperDir)) {
-      for (const version of fs.readdirSync(nvmWhisperDir)) {
-        const whisperBin = path.join(nvmWhisperDir, version, 'bin', 'whisper');
-        try { if (fs.existsSync(whisperBin)) return whisperBin; } catch { /* ignore */ }
-      }
-    }
-  } catch { /* ignore */ }
-  const shellResolved = await new Promise((resolve) => {
-    exec('zsh -lc "which whisper"', (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec('bash -lc "which whisper"', (err2, stdout2) => {
-        if (!err2 && stdout2.trim()) { resolve(stdout2.trim()); return; }
-        exec('zsh -lc "python3 -m whisper --help > /dev/null 2>&1 && echo found"', (err3, stdout3) => {
-          if (!err3 && stdout3.trim()) { resolve('python3 -m whisper'); return; }
-          resolve(null);
-        });
-      });
-    });
-  });
-  if (shellResolved && shellResolved.includes('.pyenv/shims/')) {
-    return resolveShimToRealBinary(shellResolved);
-  }
-  return shellResolved;
-}
-
-async function resolveFfmpegPath() {
-  const stored = readConfig().ffmpegPath;
-  if (stored && stored.trim()) {
-    try { if (fs.existsSync(stored.trim())) return stored.trim(); } catch { /* ignore */ }
-  }
-  const home = os.homedir();
-  const commonPaths = [
-    '/usr/local/bin/ffmpeg',
-    '/opt/homebrew/bin/ffmpeg',
-    path.join(home, '.local/bin/ffmpeg'),
-    '/usr/bin/ffmpeg',
-  ];
-  for (const p of commonPaths) {
-    try { if (fs.existsSync(p)) return p; } catch { /* ignore */ }
-  }
-  return new Promise((resolve) => {
-    exec('zsh -lc "which ffmpeg"', (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec('bash -lc "which ffmpeg"', (err2, stdout2) => {
-        resolve(stdout2?.trim() || null);
-      });
-    });
-  });
-}
-
-function makeWhisperEnv() {
-  const home = os.homedir();
-  return {
-    ...process.env,
-    PATH: [
-      '/usr/local/bin', '/usr/bin', '/bin', '/opt/homebrew/bin', '/opt/homebrew/sbin', '/opt/local/bin',
-      path.join(home, '.local/bin'), path.join(home, '.pyenv/bin'), path.join(home, '.pyenv/shims'),
-      path.join(home, 'anaconda3/bin'), path.join(home, 'miniconda3/bin'), path.join(home, 'miniforge3/bin'),
-      '/usr/local/opt/ffmpeg/bin', ffmpegPath ? path.dirname(ffmpegPath) : null, process.env.PATH,
-    ].filter(Boolean).join(':'),
-    PYTHONUNBUFFERED: '1',
-    // Python.org macOS installer doesn't connect to the system keychain by default.
-    // Point to macOS's system CA bundle so Whisper can download models over HTTPS.
-    SSL_CERT_FILE: '/etc/ssl/cert.pem',
-    REQUESTS_CA_BUNDLE: '/etc/ssl/cert.pem',
-  };
-}
-
-// whisperPath is either a binary path or the literal 'python3 -m whisper'.
-function whisperCommand(args) {
-  return whisperPath === 'python3 -m whisper'
-    ? ['python3', ['-m', 'whisper', ...args]]
-    : [whisperPath, args];
-}
-
-// Transcribes an audio file and resolves with its text. Uses execFile (no shell), so
-// a path saved in Settings can never be interpreted as shell syntax.
-function runWhisper(audioFile, { timeoutMs, slowWarningMs }) {
-  const outDir = path.dirname(audioFile);
-  const txtFile = path.join(outDir, path.basename(audioFile, path.extname(audioFile)) + '.txt');
-  const [cmd, args] = whisperCommand([
-    audioFile, '--model', WHISPER_MODEL, '--language', 'en', '--output_format', 'txt', '--output_dir', outDir,
-  ]);
-  return new Promise((resolve, reject) => {
-    const child = execFile(cmd, args, { env: makeWhisperEnv(), maxBuffer: 10 * 1024 * 1024 }, (err, _stdout, stderr) => {
-      clearTimeout(slowTimer);
-      clearTimeout(killTimer);
-      activeChildren.delete(child);
-      if (err) {
-        const wrapped = new Error(stderr || err.message || 'Whisper failed');
-        if (timedOut) wrapped.timedOut = true;
-        reject(wrapped);
-        return;
-      }
-      try {
-        const text = fs.readFileSync(txtFile, 'utf8').trim();
-        safeUnlink(txtFile);
-        resolve(text);
-      } catch {
-        reject(new Error('Whisper output not found'));
-      }
-    });
-    activeChildren.add(child);
-    let timedOut = false;
-    const slowTimer = setTimeout(() => winSend('transcription-slow-warning'), slowWarningMs);
-    const killTimer = setTimeout(() => {
-      timedOut = true;
-      child.kill();
-    }, timeoutMs);
-  });
-}
-
-function winSend(channel, payload) {
-  if (!win || win.isDestroyed()) return;
-  win.webContents.send(channel, payload);
-}
-
-// Runs `claude -p <prompt>` and resolves { success, prompt } or { success: false, error, errorType }.
-function runClaude(prompt, { timeoutMs = 45000, slowWarningMs = 30000 } = {}) {
-  return new Promise((resolve) => {
-    if (!claudePath) {
-      resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
-      return;
-    }
-    const child = spawn(claudePath, ['-p', prompt, '--model', CLAUDE_MODEL], { env: makeClaudeEnv(claudePath) });
-    activeChildren.add(child);
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
-    const finish = (result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(slowTimer);
-      clearTimeout(killTimer);
-      activeChildren.delete(child);
-      resolve(result);
-    };
-    const slowTimer = setTimeout(() => winSend('generation-slow-warning'), slowWarningMs);
-    const killTimer = setTimeout(() => {
-      child.kill();
-      finish({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
-    }, timeoutMs);
-    child.stdout.on('data', (d) => { stdout += d.toString(); });
-    child.stderr.on('data', (d) => { stderr += d.toString(); });
-    child.stdin.end();
-    child.on('close', (code, signal) => {
-      if (signal && !settled) { finish({ success: false, error: 'Cancelled', errorType: 'cancelled', cancelled: true }); return; }
-      if (code !== 0) { finish({ success: false, error: stderr.trim() || 'Claude CLI error', errorType: parseGenerationError(stderr, stdout) }); return; }
-      const out = stdout.trim();
-      if (!out) { finish({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' }); return; }
-      finish({ success: true, prompt: out });
-    });
-    child.on('error', (err) => finish({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' }));
-  });
-}
-
-function buildModePrompt(transcript, mode, options = {}) {
-  const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
-  if (modeConf.standalone) {
-    const tone = options.tone || 'formal';
-    return fillTemplate(modeConf.instruction, {
-      TRANSCRIPT: transcript,
-      TONE: tone.charAt(0).toUpperCase() + tone.slice(1),
-    });
-  }
-  return fillTemplate(PROMPT_TEMPLATE, {
-    MODE_NAME: modeConf.name,
-    MODE_INSTRUCTION: modeConf.instruction,
-    TRANSCRIPT: transcript,
-  });
-}
-
-async function runGeneratePrompt({ transcript, mode, options = {} }) {
-  const modeConf = MODE_CONFIG[mode] || MODE_CONFIG.balanced;
-  if (modeConf.passthrough) return { success: true, prompt: transcript };
-  const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, options);
-  return runClaude(prompt);
-}
+// ── Shortcuts ─────────────────────────────────────────────────────────────────
 
 function showWindow() {
   if (!win || win.isDestroyed()) return;
@@ -811,10 +270,39 @@ function registerShortcut() {
   shortcutsRegistered = true;
   if (globalShortcut.register(SHORTCUT_PRIMARY, onPrimaryShortcut)) return;
   if (globalShortcut.register(SHORTCUT_FALLBACK, onPrimaryShortcut)) {
+    log.warn(`${SHORTCUT_PRIMARY} unavailable, using ${SHORTCUT_FALLBACK}`);
     notify('Option+Space is used by another app, so Promptly is listening on Control+` instead.');
   } else {
+    log.warn('No recording shortcut could be registered');
     notify('Promptly could not register a recording shortcut. Open it from the menu bar icon.');
   }
+}
+
+// ── Windows ───────────────────────────────────────────────────────────────────
+
+function createSplashWindow() {
+  splashWin = new BrowserWindow({
+    width: 560,
+    height: 620,
+    show: false,
+    frame: false,
+    transparent: false,
+    backgroundColor: '#0A0A14',
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+  splashWin.loadFile(path.join(__dirname, 'splash.html'));
+  splashWin.once('ready-to-show', () => {
+    splashWin.show();
+    splashWin.center();
+  });
 }
 
 function createWindow() {
@@ -844,7 +332,6 @@ function createWindow() {
     if (!isQuitting) {
       e.preventDefault();
       win.hide();
-      updateTrayMenu();
     }
   });
   win.on('blur', () => {
@@ -863,6 +350,7 @@ function createWindow() {
       }
     });
   }
+  win.webContents.on('render-process-gone', (_e, details) => log.error('Renderer process gone', details));
   win.on('hide', () => {
     clearInterval(pulseInterval);
     pulseInterval = null;
@@ -895,6 +383,8 @@ function createWindow() {
   return win;
 }
 
+// ── App lifecycle ─────────────────────────────────────────────────────────────
+
 app.on('before-quit', () => { isQuitting = true; });
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -915,9 +405,10 @@ app.commandLine.appendSwitch('enable-transparent-visuals');
 Menu.setApplicationMenu(null);
 
 app.whenReady().then(async () => {
+  log.info(`Promptly ${app.getVersion()} starting`);
   // setPermissionCheckHandler: Chromium asks "do I already have this permission?" before
-  // opening any stream. Returning true for 'media' tells Chromium it's already granted —
-  // prevents the repeated per-call dialog. TCC is handled once in splash via askForMediaAccess.
+  // opening any stream. Returning true for 'media' tells Chromium it's already granted,
+  // which prevents a repeated per-call dialog. macOS itself still asks once (TCC).
   session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
     return permission === 'media';
   });
@@ -927,34 +418,12 @@ app.whenReady().then(async () => {
   });
 
   resetAudioTmpDir();
-  claudePath = await resolveClaudePath();
-  whisperPath = await resolveWhisperPath();
-  ffmpegPath = await resolveFfmpegPath();
+  await resolveAllPaths();
 
-  splashWin = new BrowserWindow({
-    width: 560,
-    height: 620,
-    show: false,
-    frame: false,
-    transparent: false,
-    backgroundColor: '#0A0A14',
-    resizable: false,
-    maximizable: false,
-    fullscreenable: false,
-    alwaysOnTop: true,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-    },
-  });
-  splashWin.loadFile(path.join(__dirname, 'splash.html'));
-  splashWin.once('ready-to-show', () => {
-    splashWin.show();
-    splashWin.center();
-  });
-
+  createSplashWindow();
   createWindow();
+
+  // ── Setup wizard ──
 
   ipcMain.handle('splash-done', async () => {
     if (splashWin && !splashWin.isDestroyed()) splashWin.hide();
@@ -973,7 +442,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('splash-check-whisper', async () => {
     // Honours a custom ffmpeg path saved in Settings, not just the default locations.
-    const resolvedFfmpeg = ffmpegPath || await resolveFfmpegPath();
+    const resolvedFfmpeg = ffmpegPath || await resolveFfmpegPath(config.read().ffmpegPath);
     return { ok: !!whisperPath, path: whisperPath, ffmpegFound: !!resolvedFfmpeg };
   });
 
@@ -982,65 +451,39 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('check-setup-complete', () => {
-    return { complete: !!readConfig().setupComplete };
+    return { complete: !!config.read().setupComplete };
   });
 
   ipcMain.handle('set-setup-complete', () => {
-    writeConfig({ ...readConfig(), setupComplete: true });
-  });
-
-  ipcMain.handle('reset-setup-complete', () => {
-    writeConfig({ ...readConfig(), setupComplete: false });
+    config.update({ setupComplete: true });
   });
 
   ipcMain.handle('reopen-wizard', () => {
-    writeConfig({ ...readConfig(), setupComplete: false });
+    config.update({ setupComplete: false });
     if (splashWin && !splashWin.isDestroyed()) {
       splashWin.show();
       splashWin.center();
       return;
     }
-    splashWin = new BrowserWindow({
-      width: 560,
-      height: 620,
-      show: false,
-      frame: false,
-      transparent: false,
-      backgroundColor: '#0A0A14',
-      resizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      alwaysOnTop: true,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        preload: path.join(__dirname, 'preload.js'),
-      },
-    });
-    splashWin.loadFile(path.join(__dirname, 'splash.html'));
-    splashWin.once('ready-to-show', () => {
-      splashWin.show();
-      splashWin.center();
-    });
+    createSplashWindow();
     if (win && !win.isDestroyed()) win.hide();
   });
 
-  ipcMain.handle('request-mic', async () => {
-    const status = systemPreferences.getMediaAccessStatus('microphone');
-    return { ok: status === 'granted' };
-  });
-
-  ipcMain.handle('check-mic-status', async () => {
-    const status = systemPreferences.getMediaAccessStatus('microphone');
-    return { granted: status === 'granted' };
-  });
+  // ── Generation ──
 
   ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} }) => {
-    lastGenerateRequest = { transcript, mode: mode || 'balanced', options };
+    lastGenerateRequest = { transcript, mode: mode || MODES.defaultMode, options };
     return runGeneratePrompt(lastGenerateRequest);
   });
 
-  ipcMain.handle('generate-raw', (_event, { systemPrompt }) => runClaude(systemPrompt));
+  ipcMain.handle('generate-raw', (_event, { systemPrompt }) => claude.run(systemPrompt));
+
+  // Replays the last generate-prompt request with the same mode and options
+  // (tone, email override), so a retry produces what the original call would have.
+  ipcMain.handle('retry-generation', () => {
+    if (!lastGenerateRequest) return { success: false, error: 'Nothing to retry — please record again', errorType: 'unknown' };
+    return runGeneratePrompt(lastGenerateRequest);
+  });
 
   // Stops in-flight Claude and Whisper processes when the user aborts.
   ipcMain.handle('cancel-operations', () => {
@@ -1052,89 +495,62 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('evaluate-prompt', async (_event, { transcript, prompt }) => {
-    if (!claudePath) return { success: false };
-    if (!transcript || !prompt) return { success: false };
-
-    const evalSystemPrompt = `You are a rigorous prompt quality evaluator. Score two versions of the same user request.
-
-INPUT A: The user's original spoken input, unedited.
-INPUT B: A reformatted version produced by an AI assistant.
-
-Score each 0–100 on how well an AI model would understand the intent and produce a high-quality, accurate response. Evaluate on:
-- Intent clarity: Is the goal unambiguous and actionable?
-- Specificity: Are requirements concrete, not vague?
-- Context: Is relevant background included?
-- Constraints: Are preferences, limits, or edge cases specified?
-- Output guidance: Does it define what a good response looks like?
-
-Be honest and strict. INPUT B is NOT automatically better. Penalise it if it:
-- Adds verbose framing or filler that contributes nothing
-- Dilutes or subtly shifts the user's actual intent
-- Is longer without being more precise or useful
-- Over-structures a simple request that was already clear
-
-If INPUT A communicates the intent more directly and concisely, score it higher.
-
-INPUT A:
-"${transcript}"
-
-INPUT B:
-"${prompt}"
-
-Respond ONLY with valid JSON, no markdown fences, no explanation:
-{"rawScore":72,"promptlyScore":85,"rawReasons":["Missing output format and length constraints","Intent clear but role context absent","No examples to anchor expected response style"],"promptlyReasons":["Role and output format clearly specified","Adds useful context that narrows the task","Still lacks concrete examples or success criteria"],"critique":"Adds useful structure but the role framing is generic and the core ask needed only one extra constraint to land.","dimensions":{"clarity":{"raw":65,"structured":82},"specificity":{"raw":50,"structured":78},"context":{"raw":70,"structured":86},"actionability":{"raw":68,"structured":80}},"gap":"Neither version specifies the expected output format or length.","intentDrift":"none","intentDriftLabel":"Intent preserved"}
-
-Rules:
-- rawReasons: exactly 3 items, each 8–14 words, honest about both weaknesses AND strengths
-- promptlyReasons: exactly 3 items, same length, include real flaws if present
-- critique: one sentence, 10–25 words, honest net verdict on INPUT B — no flattery
-- dimensions: score each of the 4 dimensions independently for INPUT A (raw) and INPUT B (structured) — do NOT derive these from rawScore/promptlyScore; assess each dimension on its own merits
-  - clarity: how unambiguous and readable is the request?
-  - specificity: how concrete and detailed are the requirements?
-  - context: how much relevant background is provided?
-  - actionability: how clearly does it define what a good response looks like?
-- gap: one sentence (max 20 words) naming what BOTH versions fail to address — be specific (not "add more context" — say WHAT context is missing)
-- intentDrift: exactly one of "none" | "minor" | "significant"
-  - "none" = INPUT B fully preserves the user's goal and scope
-  - "minor" = INPUT B introduces small reframing or slight scope shift
-  - "significant" = INPUT B meaningfully changes what was asked or adds unwanted framing
-- intentDriftLabel: 2–4 word phrase matching the drift level (e.g. "Intent preserved" / "Minor reframing" / "Goal shifted" / "Scope changed")`;
-
-    return new Promise((resolve) => {
-      let stdout = '';
-      let timedOut = false;
-      const child = spawn(claudePath, ['-p', evalSystemPrompt, '--model', CLAUDE_MODEL], { env: makeClaudeEnv(claudePath) });
-      child.stdin.end();
-
-      const timer = setTimeout(() => {
-        timedOut = true;
-        child.kill();
-        resolve({ success: false });
-      }, 30000);
-
-      child.stdout.on('data', (data) => { stdout += data.toString(); });
-      child.on('close', (code) => {
-        if (timedOut) return;
-        clearTimeout(timer);
-        if (code !== 0) { resolve({ success: false }); return; }
-        try {
-          const raw = stdout.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
-          const parsed = JSON.parse(raw);
-          if (typeof parsed.rawScore === 'number' && typeof parsed.promptlyScore === 'number') {
-            resolve({ success: true, data: parsed });
-          } else {
-            resolve({ success: false });
-          }
-        } catch {
-          resolve({ success: false });
-        }
-      });
-      child.on('error', () => {
-        clearTimeout(timer);
-        resolve({ success: false });
-      });
-    });
+    if (!claudePath || !transcript || !prompt) return { success: false };
+    const result = await evalClaude.run(buildEvalPrompt(transcript, prompt), { timeoutMs: 30000, slowWarningMs: 0 });
+    if (!result.success) return { success: false };
+    try {
+      const parsed = parseJsonOutput(result.prompt);
+      if (typeof parsed.rawScore === 'number' && typeof parsed.promptlyScore === 'number') {
+        return { success: true, data: parsed };
+      }
+    } catch (err) {
+      log.warn('Eval response was not valid JSON', err.message);
+    }
+    return { success: false };
   });
+
+  // ── Transcription ──
+
+  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
+    // A new recording replaces the one kept for retry.
+    safeUnlink(lastTempAudioPath);
+    lastTempAudioPath = null;
+    if (!whisperPath) {
+      return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    }
+    try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
+    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}.webm`);
+    try {
+      fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
+      lastTempAudioPath = tmpFile;
+      const transcript = await whisper.transcribe(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 });
+      safeUnlink(tmpFile);
+      lastTempAudioPath = null;
+      return { success: true, transcript };
+    } catch (err) {
+      // Keep tmpFile on error so retry-transcription can reuse it.
+      log.warn('Transcription failed', err.message);
+      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
+    }
+  });
+
+  ipcMain.handle('retry-transcription', async () => {
+    const noAudio = { success: false, error: 'No audio available — please record again' };
+    if (!lastTempAudioPath) return noAudio;
+    try { if (!fs.existsSync(lastTempAudioPath)) return noAudio; } catch { return noAudio; }
+    if (!whisperPath) return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    try {
+      const transcript = await whisper.transcribe(lastTempAudioPath, { timeoutMs: 90000, slowWarningMs: 20000 });
+      safeUnlink(lastTempAudioPath);
+      lastTempAudioPath = null;
+      return { success: true, transcript };
+    } catch (err) {
+      log.warn('Transcription retry failed', err.message);
+      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
+    }
+  });
+
+  // ── Window ──
 
   ipcMain.handle('copy-to-clipboard', (_event, { text }) => {
     clipboard.writeText(text);
@@ -1153,17 +569,6 @@ Rules:
     return { ok: true };
   });
 
-  ipcMain.handle('resize-window-width', (_event, { width }) => {
-    if (win) {
-      const [, h] = win.getSize();
-      const isBar = width <= 520;
-      if (isBar) win.setResizable(true);
-      win.setSize(width, h, true);
-      if (isBar) win.setResizable(false);
-    }
-    return { ok: true };
-  });
-
   ipcMain.handle('set-window-size', (_event, { width, height }) => {
     if (win) {
       if (width >= 1000) {
@@ -1176,7 +581,7 @@ Rules:
         const expandDisplay = screen.getDisplayNearestPoint(win.getBounds());
         const { width: dw, height: dh } = expandDisplay.workArea;
         win.setMaximumSize(dw, dh);
-        const savedBounds = readConfig().expandedWindowBounds;
+        const savedBounds = config.read().expandedWindowBounds;
         if (savedBounds) {
           const displays = screen.getAllDisplays();
           const isOnScreen = displays.some(d => {
@@ -1197,7 +602,7 @@ Rules:
           win.maximize();
         }
       } else if (width <= 520 && preExpandBounds) {
-        writeConfig({ ...readConfig(), expandedWindowBounds: win.getBounds() });
+        config.update({ expandedWindowBounds: win.getBounds() });
         win.setResizable(false);
         win.setMaximizable(false);
         win.setFullScreenable(false);
@@ -1222,22 +627,8 @@ Rules:
   });
 
   ipcMain.handle('show-mode-menu', (_event, { currentMode }) => {
-    const modes = [
-      { key: 'balanced', label: 'Balanced' },
-      { key: 'detailed', label: 'Detailed' },
-      { key: 'concise', label: 'Concise' },
-      { key: 'chain', label: 'Chain' },
-      { key: 'code', label: 'Code' },
-      { key: 'design', label: 'Design' },
-      { key: 'refine', label: 'Refine' },
-      { key: 'polish', label: 'Polish' },
-      { key: 'image', label: 'Image' },
-      { key: 'video', label: 'Video' },
-      { key: 'workflow', label: 'Workflow' },
-      { key: 'email', label: 'Email' },
-    ];
     const menu = Menu.buildFromTemplate([
-      ...modes.map(({ key, label }) => ({
+      ...MODES.modes.map(({ key, label }) => ({
         label,
         type: 'checkbox',
         checked: currentMode === key,
@@ -1275,50 +666,6 @@ Rules:
     return { ok: true };
   });
 
-  ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
-    // A new recording replaces the one kept for retry.
-    safeUnlink(lastTempAudioPath);
-    lastTempAudioPath = null;
-    if (!whisperPath) {
-      return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
-    }
-    try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
-    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}.webm`);
-    try {
-      fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
-      lastTempAudioPath = tmpFile;
-      const transcript = await runWhisper(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 });
-      safeUnlink(tmpFile);
-      lastTempAudioPath = null;
-      return { success: true, transcript };
-    } catch (err) {
-      // Keep tmpFile on error so retry-transcription can reuse it.
-      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
-    }
-  });
-
-  ipcMain.handle('retry-transcription', async () => {
-    const noAudio = { success: false, error: 'No audio available — please record again' };
-    if (!lastTempAudioPath) return noAudio;
-    try { if (!fs.existsSync(lastTempAudioPath)) return noAudio; } catch { return noAudio; }
-    if (!whisperPath) return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
-    try {
-      const transcript = await runWhisper(lastTempAudioPath, { timeoutMs: 90000, slowWarningMs: 20000 });
-      safeUnlink(lastTempAudioPath);
-      lastTempAudioPath = null;
-      return { success: true, transcript };
-    } catch (err) {
-      return { success: false, error: err.message || 'Transcription failed', ...(err.timedOut && { timedOut: true }) };
-    }
-  });
-
-  // Replays the last generate-prompt request with the same mode and options
-  // (tone, email override), so a retry produces what the original call would have.
-  ipcMain.handle('retry-generation', () => {
-    if (!lastGenerateRequest) return { success: false, error: 'Nothing to retry — please record again', errorType: 'unknown' };
-    return runGeneratePrompt(lastGenerateRequest);
-  });
-
   ipcMain.handle('save-file', async (_event, { content, filename }) => {
     const { filePath, canceled } = await dialog.showSaveDialog(win, {
       defaultPath: filename,
@@ -1341,80 +688,42 @@ Rules:
     return { dark: nativeTheme.shouldUseDarkColors };
   });
 
-  ipcMain.handle('check-claude-path', () => {
-    if (claudePath) {
-      return { found: true, path: claudePath };
-    }
-    return { found: false, error: 'Claude CLI not found.' };
-  });
+  // ── Tool checks (setup wizard + Settings) ──
 
   ipcMain.handle('check-claude', async () => {
-    // Step 1: resolve binary path (use cached or re-resolve)
-    const resolvedPath = claudePath || await resolveClaudePath();
+    const resolvedPath = claudePath || await resolveClaudePath(config.read().claudePath);
     if (!resolvedPath) {
       return { found: false, path: null, version: null, working: false, error: 'Claude CLI not found', authError: false };
     }
+    claudePath = resolvedPath;
 
-    // Step 2: get version string
-    let version = null;
-    try {
-      version = await new Promise((resolve) => {
-        execFile(resolvedPath, ['--version'], { env: makeClaudeEnv(resolvedPath), timeout: 5000 }, (err, stdout) => {
-          resolve(err ? null : (stdout.trim() || null));
-        });
-      });
-    } catch { /* version not critical — continue */ }
-
-    // Step 3: test generation with 15s timeout
-    const testResult = await new Promise((resolve) => {
-      let stdout = '', stderr = '', settled = false;
-      const child = spawn(resolvedPath, ['-p', 'respond with only the word READY'], { env: makeClaudeEnv(resolvedPath) });
-      const timer = setTimeout(() => {
-        settled = true;
-        child.kill();
-        resolve({ ok: false, stdout, stderr, timedOut: true });
-      }, 15000);
-      child.stdout.on('data', (d) => { stdout += d.toString(); });
-      child.stderr.on('data', (d) => { stderr += d.toString(); });
-      child.stdin.end();
-      child.on('close', (code) => {
-        if (settled) return;
-        clearTimeout(timer); settled = true;
-        resolve({ ok: code === 0, stdout, stderr, timedOut: false });
-      });
-      child.on('error', (err) => {
-        if (settled) return;
-        clearTimeout(timer); settled = true;
-        resolve({ ok: false, stdout, stderr: err.message, timedOut: false });
+    const version = await new Promise((resolve) => {
+      execFile(resolvedPath, ['--version'], { env: makeClaudeEnv(resolvedPath), timeout: 5000 }, (err, stdout) => {
+        resolve(err ? null : (stdout.trim() || null));
       });
     });
 
-    const combined = (testResult.stdout + ' ' + testResult.stderr).toLowerCase();
-    const authError = combined.includes('not authenticated') || combined.includes('login') || combined.includes('unauthorized');
-    const working = testResult.ok && testResult.stdout.toLowerCase().includes('ready');
-
+    const test = await evalClaude.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
+    const working = test.success && test.prompt.toLowerCase().includes('ready');
+    const authError = test.errorType === 'auth';
     let error = null;
     if (!working) {
-      if (testResult.timedOut) error = 'Claude is not responding (timed out after 15s)';
+      if (test.timedOut) error = 'Claude is not responding (timed out after 15s)';
       else if (authError) error = 'Claude is not logged in — run: claude login';
-      else error = testResult.stderr.trim() || 'Claude CLI returned an error';
+      else error = test.error || 'Claude CLI returned an error';
     }
-
     return { found: true, path: resolvedPath, version, working, error, authError };
   });
 
   ipcMain.handle('check-whisper', async () => {
-    const resolvedPath = whisperPath || await resolveWhisperPath();
+    const resolvedPath = whisperPath || await resolveWhisperPath(config.read().whisperPath);
     if (!resolvedPath) {
       return { found: false, path: null, error: 'Whisper not found — install via: pip install openai-whisper' };
     }
+    const [cmd, args] = resolvedPath === PYTHON_WHISPER ? ['python3', ['-m', 'whisper', '--help']] : [resolvedPath, ['--help']];
     try {
       await new Promise((resolve, reject) => {
-        if (resolvedPath === 'python3 -m whisper') {
-          exec('python3 -m whisper --help', { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
-        } else {
-          execFile(resolvedPath, ['--help'], { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
-        }
+        execFile(cmd, args, { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
       });
       return { found: true, path: resolvedPath, error: null };
     } catch (err) {
@@ -1423,7 +732,7 @@ Rules:
   });
 
   ipcMain.handle('check-ffmpeg', async () => {
-    const resolvedPath = await resolveFfmpegPath();
+    const resolvedPath = await resolveFfmpegPath(config.read().ffmpegPath);
     if (!resolvedPath) {
       return { found: false, path: null, error: 'ffmpeg not found — install via: brew install ffmpeg' };
     }
@@ -1438,103 +747,35 @@ Rules:
   });
 
   ipcMain.handle('check-whisper-model', () => {
-    const home = os.homedir();
-    const cachePaths = [
-      path.join(home, '.cache', 'whisper', `${WHISPER_MODEL}.pt`),
-      path.join(home, 'Library', 'Caches', 'whisper', `${WHISPER_MODEL}.pt`),
-    ];
-    const MIN_BYTES = 104857600; // 100 MB
-    for (const p of cachePaths) {
-      try {
-        const stat = fs.statSync(p);
-        if (stat.size > MIN_BYTES) {
-          return { downloaded: true, path: p, sizeMB: Math.round(stat.size / 1048576) };
-        }
-      } catch { /* file absent — try next */ }
-    }
-    return { downloaded: false, path: null, sizeMB: null };
+    const model = findDownloadedModel();
+    return model ? { downloaded: true, ...model } : { downloaded: false, path: null, sizeMB: null };
   });
 
-  ipcMain.handle('download-whisper-model', () => {
-    return new Promise((resolve) => {
-      if (!whisperPath) {
-        resolve({ success: false, error: 'Whisper not found — install Whisper first' });
-        return;
-      }
-
-      // tqdm remaining-time string "mm:ss" or "h:mm:ss" → seconds
-      function parseTqdmTime(s) {
-        if (!s) return null;
-        const parts = s.trim().split(':').map(Number);
-        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-        if (parts.length === 2) return parts[0] * 60 + parts[1];
-        return parts[0] || null;
-      }
-
-      const [cmd, spawnArgs] = whisperCommand(['/dev/null', '--model', WHISPER_MODEL]);
-      const downloadEnv = makeWhisperEnv();
-
-      const child = spawn(cmd, spawnArgs, { stdio: ['ignore', 'pipe', 'pipe'], env: downloadEnv });
-      let stderrBuf = '';
-      let resolved = false;
-
-      child.stderr.on('data', (d) => {
-        stderrBuf += d.toString();
-        // tqdm uses \r to rewrite the line in-place — split on both
-        const lines = stderrBuf.split(/[\r\n]/);
-        stderrBuf = lines.pop();
-        for (const line of lines) {
-          const m = line.match(/(\d+)%\|.*?\|\s*([\d.]+)M\/([\d.]+)M\s*\[(.+?)<(.+?),/);
-          if (m) {
-            const payload = {
-              percent:    parseInt(m[1], 10),
-              mbDone:     parseFloat(m[2]),
-              mbTotal:    parseFloat(m[3]),
-              secondsLeft: parseTqdmTime(m[5]),
-            };
-            if (!win || win.isDestroyed()) return;
-            win.webContents.send('whisper-download-progress', payload);
-          }
-        }
-      });
-
-      child.stdout.on('data', () => {}); // drain
-
-      child.on('close', (code) => {
-        if (resolved) return;
-        resolved = true;
-        if (code === 0) {
-          resolve({ success: true });
-        } else {
-          resolve({ success: false, error: stderrBuf.trim() || 'Download failed' });
-        }
-      });
-
-      child.on('error', (err) => {
-        if (resolved) return;
-        resolved = true;
-        resolve({ success: false, error: err.message || 'Download failed' });
-      });
-    });
+  ipcMain.handle('download-whisper-model', async () => {
+    if (!whisperPath) return { success: false, error: 'Whisper not found — install Whisper first' };
+    return whisper.downloadModel((progress) => winSend('whisper-download-progress', progress));
   });
 
-  ipcMain.handle('uninstall-promptly', () => handleUninstall());
+  // ── Settings ──
 
   ipcMain.handle('get-stored-paths', () => {
-    const config = readConfig();
+    const stored = config.read();
     return {
-      claudePath: claudePath || config.claudePath || '',
-      whisperPath: whisperPath || config.whisperPath || '',
-      ffmpegPath: ffmpegPath || config.ffmpegPath || '',
+      claudePath: claudePath || stored.claudePath || '',
+      whisperPath: whisperPath || stored.whisperPath || '',
+      ffmpegPath: ffmpegPath || stored.ffmpegPath || '',
+      claudeModel: stored.claudeModel || DEFAULT_MODEL,
+      modelOptions: MODEL_OPTIONS,
     };
   });
 
-  ipcMain.handle('save-paths', async (_event, { claudePath: cp, whisperPath: wp, ffmpegPath: fp }) => {
-    const config = readConfig();
-    if (cp && cp.trim()) { config.claudePath = cp.trim(); claudePath = cp.trim(); }
-    if (wp && wp.trim()) { config.whisperPath = wp.trim(); whisperPath = wp.trim(); }
-    if (fp && fp.trim()) { config.ffmpegPath = fp.trim(); ffmpegPath = fp.trim(); }
-    writeConfig(config);
+  ipcMain.handle('save-paths', async (_event, { claudePath: cp, whisperPath: wp, ffmpegPath: fp, claudeModel }) => {
+    const patch = {};
+    if (cp && cp.trim()) { patch.claudePath = cp.trim(); claudePath = cp.trim(); }
+    if (wp && wp.trim()) { patch.whisperPath = wp.trim(); whisperPath = wp.trim(); }
+    if (fp && fp.trim()) { patch.ffmpegPath = fp.trim(); ffmpegPath = fp.trim(); }
+    if (claudeModel && MODEL_OPTIONS.some((m) => m.value === claudeModel)) patch.claudeModel = claudeModel;
+    config.update(patch);
     return { ok: true };
   });
 
@@ -1549,9 +790,7 @@ Rules:
   });
 
   ipcMain.handle('recheck-paths', async () => {
-    claudePath = await resolveClaudePath();
-    whisperPath = await resolveWhisperPath();
-    ffmpegPath = await resolveFfmpegPath();
+    await resolveAllPaths();
     return {
       claude: { ok: !!claudePath, path: claudePath },
       whisper: { ok: !!whisperPath, path: whisperPath },
@@ -1559,18 +798,12 @@ Rules:
     };
   });
 
+  // ── Menu bar state ──
+
   ipcMain.handle('update-menubar-state', (_event, appState) => {
-    const stateMap = {
-      IDLE: 'idle', RECORDING: 'recording', PAUSED: 'recording',
-      THINKING: 'thinking', ITERATING: 'thinking',
-      PROMPT_READY: 'ready',
-      IMAGE_BUILDER: 'builder', IMAGE_BUILDER_DONE: 'builder',
-      VIDEO_BUILDER: 'builder', VIDEO_BUILDER_DONE: 'builder',
-      WORKFLOW_BUILDER: 'builder', WORKFLOW_BUILDER_DONE: 'builder',
-    };
     currentAppState = appState;
     updatePauseShortcut(appState);
-    updateMenuBarIcon(stateMap[appState] || 'idle');
+    updateMenuBarIcon(MENU_BAR_ICON_STATE[appState] || 'idle');
   });
 
   ipcMain.handle('set-last-prompt', (_event, prompt) => {
@@ -1592,6 +825,5 @@ app.on('activate', () => {
   if (win && !win.isDestroyed()) {
     win.show();
     win.focus();
-    updateTrayMenu();
   }
 });

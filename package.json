@@ -13,7 +13,7 @@
     "build:renderer": "vite build",
     "start:react": "npm run build:renderer && electron .",
     "dist": "electron-builder --universal",
-    "lint": "eslint main.js preload.js",
+    "lint": "eslint .",
     "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
     "create-cert": "bash scripts/create-cert.sh",
     "sign-app": "bash scripts/sign-app.sh",
@@ -83,6 +83,8 @@
     "files": [
       "main.js",
       "preload.js",
+      "shared/**",
+      "main/**",
       "splash.html",
       "dist-renderer/**",
       "package.json"

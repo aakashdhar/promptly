@@ -9,10 +9,14 @@ export default function SettingsPanel({ onClose }) {
   const [ffmpegStatus, setFfmpegStatus] = useState(null)
   const [saveMsg, setSaveMsg] = useState('')
   const [saveMsgColor, setSaveMsgColor] = useState('rgba(255,255,255,0.35)')
+  const [modelVal, setModelVal] = useState('')
+  const [modelOptions, setModelOptions] = useState([])
 
   useEffect(() => {
     if (!window.electronAPI) return
-    window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath }) => {
+    window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath, claudeModel, modelOptions: options }) => {
+      setModelVal(claudeModel || '')
+      setModelOptions(options || [])
       setClaudeVal(claudePath || '')
       setWhisperVal(whisperPath || '')
       setFfmpegVal(ffmpegPath || '')
@@ -44,6 +48,13 @@ export default function SettingsPanel({ onClose }) {
       setFfmpegVal(result.path)
       setFfmpegStatus({ ok: true, path: result.path })
     }
+  }
+
+  async function handleModelChange(value) {
+    setModelVal(value)
+    await window.electronAPI.savePaths({ claudeModel: value })
+    setSaveMsgColor('rgba(48,209,88,0.75)')
+    setSaveMsg('✓ Model saved — used for the next prompt')
   }
 
   async function handleSaveRecheck() {
@@ -141,6 +152,21 @@ export default function SettingsPanel({ onClose }) {
         </div>
         <div style={{ fontSize: 10, color: hintColor(ffmpegStatus), marginTop: 4, fontFamily: 'inherit', minHeight: 13 }}>{hintText(ffmpegStatus, ffmpegVal)}</div>
       </div>
+
+      {/* Claude model */}
+      {modelOptions.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <label htmlFor="settings-model" style={{ ...sectionLabel, display: 'block' }}>Claude model</label>
+          <select
+            id="settings-model"
+            value={modelVal}
+            onChange={e => handleModelChange(e.target.value)}
+            style={{ ...inputStyle(null), fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            {modelOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      )}
 
       {/* divider */}
       <div style={{ height: 0.5, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', marginBottom: 12 }} />

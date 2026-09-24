@@ -1,20 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import MODE_REGISTRY from '../../../shared/modes.json'
 
-const MODES = [
-  { key: 'balanced', label: 'Balanced', desc: 'Role · Task · Context · Output — works for anything',       dot: 'rgba(100,170,255,0.9)', group: 'general' },
-  { key: 'detailed', label: 'Detailed', desc: 'More depth, more constraints — for complex requests',       dot: 'rgba(100,170,255,0.8)', group: 'general' },
-  { key: 'concise',  label: 'Concise',  desc: 'Tight, focused prompt — forces sharp thinking',             dot: 'rgba(150,160,175,0.8)', group: 'general' },
-  { key: 'chain',    label: 'Chain',    desc: 'Step-by-step reasoning — best for complex analysis',        dot: 'rgba(100,170,255,0.7)', group: 'general' },
-  { key: 'code',     label: 'Code',     desc: 'Stack · constraints · output format — production quality',  dot: 'rgba(100,170,255,0.9)', group: 'general' },
-  { key: 'design',   label: 'Design',   desc: 'UI · UX · component thinking — frames design problems',    dot: 'rgba(200,200,210,0.7)', group: 'general' },
-  { key: 'refine',   label: 'Refine',   desc: "Improve an existing prompt — speak what's wrong",          dot: 'rgba(167,139,250,0.9)', group: 'general' },
-  { key: 'polish',   label: 'Polish',   desc: 'Paste rough text, speak the change — get it back clean',   dot: 'rgba(48,209,88,0.8)',   group: 'specialist' },
-  { key: 'image',    label: 'Image',    desc: 'Nano Banana prompt — 5 categories, 3 variations',          dot: 'rgba(139,92,246,0.9)',  group: 'specialist' },
-  { key: 'video',    label: 'Video',    desc: 'Veo · Sora · Runway · Kling · Pika — model-aware params',  dot: 'rgba(251,146,60,0.9)',  group: 'specialist' },
-  { key: 'workflow', label: 'Workflow', desc: 'Plain English → importable n8n JSON',                      dot: 'rgba(34,197,94,0.9)',   group: 'specialist' },
-  { key: 'email',    label: 'Email',    desc: 'Speak the situation → ready-to-send email with tone',      dot: 'rgba(20,184,166,0.9)',  group: 'specialist' },
-]
+const { modes: MODES } = MODE_REGISTRY
 
 const GENERAL_MODES = MODES.filter(m => m.group === 'general')
 const SPECIALIST_MODES = MODES.filter(m => m.group === 'specialist')
