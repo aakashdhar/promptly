@@ -1857,3 +1857,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Removed IPC (unused): check-claude-path, resize-window-width, reset-setup-complete, uninstall-promptly, request-mic,
 >   check-mic-status, shortcut-conflict. Added: cancel-operations.
 ---
+
+---
+## D-CLI-ONLY — All AI goes through the Claude Code CLI — 2026-09-24
+> Decision (product owner): Promptly uses the Claude Code CLI (`claude -p`) for everything that needs AI. The Anthropic API /
+>   SDK, API keys and a backend proxy are out of scope — this was the idea from the start, not a temporary shortcut.
+> Consequence: users need Claude Code installed and logged in; onboarding checks for it rather than replacing it.
+> Consequence: AI features are built on CLI capabilities — `--model` for model choice, `--output-format stream-json` for
+>   streaming, stdin for prompts — all through main/llm.js.
+> Supersedes: the "call the Anthropic API directly" recommendation from the 2026-09-24 review.
+---

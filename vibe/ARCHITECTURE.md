@@ -15,6 +15,7 @@
   Styling:  Tailwind v4 for static classes; inline styles for dynamic/stateful layout
   Speech:   getUserMedia + MediaRecorder (renderer) → `transcribe-audio` IPC → Whisper CLI (`main/whisper.js`)
   LLM:      Claude Code CLI `claude -p` through `main/llm.js` — prompt on stdin, `--model` always passed
+            CLI only by design: no Anthropic API/SDK, no API keys (D-CLI-ONLY)
   IPC:      Electron ipcMain + preload.js contextBridge; contract enforced by `tests/ipc-contract.test.js`
   Storage:  `config.json` in userData (paths, model, window bounds) + localStorage (mode, tone, history)
   Dist:     electron-builder → .dmg (arm64 + x64)
@@ -371,6 +372,7 @@ Check with the human before doing any of the following:
 The following are P0 review findings — they block phase gates:
 
 - [ ] Adding runtime npm dependencies — zero runtime deps in the packaged .app is a hard constraint (React, Vite, Tailwind are devDeps that are compiled out; new runtime deps require a DECISIONS.md entry)
+- [ ] Calling the Anthropic API/SDK or storing API keys — all AI goes through the Claude Code CLI (D-CLI-ONLY)
 - [ ] Using `nodeIntegration: true` — always use contextBridge/preload instead
 - [ ] Using `dangerouslySetInnerHTML` with any user-provided or Claude-generated text — use JSX text nodes
 - [ ] Calling `exec('claude ...')` without the cached login-shell-resolved path

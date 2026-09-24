@@ -57,7 +57,7 @@ npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh)
 
 ## Architecture rules
 
-1. **Claude calls** go through `main/llm.js` only. It passes the prompt on stdin, always sends `--model`, and uses `makeClaudeEnv(claudePath)`. Never spawn `claude` anywhere else (preflight CHECK 7 enforces `makeClaudeEnv`).
+1. **AI = Claude Code CLI only.** Everything that needs AI runs `claude -p` through `main/llm.js`. Never add the Anthropic API or SDK, API keys, or a backend proxy — this is a product decision, not a stopgap (see DECISIONS.md D-CLI-ONLY). Claude calls go through `main/llm.js` only. It passes the prompt on stdin, always sends `--model`, and uses `makeClaudeEnv(claudePath)`. Never spawn `claude` anywhere else (preflight CHECK 7 enforces `makeClaudeEnv`).
 2. **External binaries** run with `execFile`/`spawn` and an argument array. Never build a shell string containing a path.
 3. **Binary paths** resolve at startup via `main/binaries.js`; macOS-specific locations belong in `main/platform/darwin.js`.
 4. **Modes** are defined once in `shared/modes.json`. Prompt text lives in `main/prompts/`. Don't hardcode mode lists or prompt text in code.
