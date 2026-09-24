@@ -1,1560 +1,423 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+<title>Set up Promptly</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* Same tokens as src/renderer/index.css. The window follows the app's theme setting. */
+:root {
+  color-scheme: light;
+  --ink: 28, 28, 32;
+  --bg: #F4F4F6;
+  --surface: #FFFFFF;
+  --line: rgba(var(--ink), 0.10);
+  --muted: rgba(var(--ink), 0.62);
+  --faint: rgba(var(--ink), 0.42);
+  --action: #0A6CFF;
+  --action-ink: #FFFFFF;
+  --ok: #1E8E4F;
+  --warn: #B26A00;
+  --keycap-top: #FFFFFF;
+  --keycap-side: #D9D9DE;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink: 236, 236, 240;
+    --bg: #1C1C1F;
+    --surface: #242428;
+    --action: #3D8BFF;
+    --ok: #4CC47E;
+    --warn: #E5A33A;
+    --keycap-top: #34343A;
+    --keycap-side: #18181B;
+  }
+}
 
-html, body {
-  background: #0A0A14;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: rgb(var(--ink));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   user-select: none;
-  width: 560px;
-  height: 620px;
-}
-
-.splash {
-  width: 560px;
-  height: 620px;
-  background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
-  border-radius: 18px;
-  border-top: 0.5px solid rgba(255,255,255,0.18);
-  border-left: 0.5px solid rgba(255,255,255,0.1);
-  border-right: 0.5px solid rgba(255,255,255,0.06);
-  border-bottom: 0.5px solid rgba(255,255,255,0.04);
-  box-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 32px 64px rgba(0,0,0,0.5);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  -webkit-app-region: drag;
-}
-
-.splash::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.splash::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 10%; right: 10%; height: 0.5px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.logo-ring {
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  background: rgba(10,132,255,0.08);
-  border: 0.5px solid rgba(10,132,255,0.2);
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  margin-bottom: 24px;
-  opacity: 0;
-  animation: logo-in 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards 0.2s;
-}
-.logo-ring::before {
-  content: ''; position: absolute;
-  width: 64px; height: 64px; border-radius: 50%;
-  border: 0.5px solid rgba(10,132,255,0.12);
-  animation: pulse-expand 2.5s ease-out infinite 1s;
-}
-.logo-ring::after {
-  content: ''; position: absolute;
-  width: 64px; height: 64px; border-radius: 50%;
-  border: 0.5px solid rgba(10,132,255,0.06);
-  animation: pulse-expand 2.5s ease-out infinite 1.5s;
-}
-
-@keyframes logo-in {
-  0% { opacity:0; transform:scale(0.6); }
-  100% { opacity:1; transform:scale(1); }
-}
-@keyframes pulse-expand {
-  0% { transform:scale(1); opacity:1; }
-  100% { transform:scale(2.8); opacity:0; }
-}
-
-.app-name {
-  font-size: 28px; font-weight: 600;
-  color: rgba(255,255,255,0.9);
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
-  opacity: 0;
-  animation: fade-up 0.5s ease forwards 0.7s;
-}
-
-.tagline {
-  font-size: 12px;
-  color: rgba(255,255,255,0.25);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 40px;
-  opacity: 0;
-  animation: fade-up 0.5s ease forwards 1s;
-}
-
-@keyframes fade-up {
-  0% { opacity:0; transform:translateY(8px); }
-  100% { opacity:1; transform:translateY(0); }
-}
-
-.checks {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  opacity: 0;
-  animation: fade-up 0.5s ease forwards 1.3s;
-  margin-bottom: 20px;
-}
-
-.check-item { display:flex; align-items:center; gap:7px; }
-
-.check-icon {
-  width: 18px; height: 18px; border-radius: 50%;
-  border: 0.5px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.03);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-.check-icon.checking {
-  background: rgba(10,132,255,0.1);
-  border-color: rgba(10,132,255,0.3);
-  animation: spin 1s linear infinite;
-}
-.check-icon.done {
-  background: rgba(48,209,88,0.12);
-  border-color: rgba(48,209,88,0.3);
-  animation: none;
-}
-.check-icon.fail {
-  background: rgba(255,59,48,0.12);
-  border-color: rgba(255,59,48,0.3);
-  animation: none;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
-
-.check-label {
-  font-size: 11.5px; color: rgba(255,255,255,0.25);
-  letter-spacing: 0.01em; transition: color 0.3s; white-space: nowrap;
-}
-.check-label.active { color: rgba(255,255,255,0.55); }
-.check-label.done { color: rgba(48,209,88,0.65); }
-.check-label.fail { color: rgba(255,59,48,0.65); }
-
-.sep { width:1px; height:12px; background:rgba(255,255,255,0.08); }
-
-.ready-text {
-  font-size: 11px;
-  color: rgba(48,209,88,0.5);
-  letter-spacing: 0.04em;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  height: 16px;
-}
-
-.install-btn {
-  display: none;
-  margin-top: 16px;
-  height: 32px;
-  padding: 0 20px;
-  background: #0A84FF;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-}
-
-/* ── Welcome screen ── */
-#screen-welcome {
-  display: none;
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
-  border-radius: inherit;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 36px 36px 28px;
-  z-index: 30;
-  overflow-y: auto;
-}
-
-#screen-welcome.visible { display: flex; }
-
-.wz-logo-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 22px;
-}
-
-.wz-logo-ring {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  background: rgba(168,85,247,0.1);
-  border: 0.5px solid rgba(168,85,247,0.25);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 10px;
-}
-
-.wz-app-name {
-  font-size: 20px; font-weight: 600;
-  color: rgba(255,255,255,0.9);
-  letter-spacing: -0.02em;
-  margin-bottom: 2px;
-}
-
-.wz-tagline {
-  font-size: 11px;
-  color: rgba(255,255,255,0.28);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wz-body {
-  font-size: 12px;
-  color: rgba(255,255,255,0.42);
-  line-height: 1.55;
-  text-align: center;
-  max-width: 380px;
-  margin-bottom: 16px;
-}
-
-.wz-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  margin-bottom: 24px;
-}
-
-.wz-step-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(255,255,255,0.03);
-  border: 0.5px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 13px 16px;
-}
-
-.wz-step-num {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: rgba(168,85,247,0.15);
-  border: 0.5px solid rgba(168,85,247,0.3);
-  color: rgba(168,85,247,0.9);
-  font-size: 11px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
-.wz-step-info { flex: 1; }
-
-.wz-step-name {
-  font-size: 12px; font-weight: 500;
-  color: rgba(255,255,255,0.72);
-  margin-bottom: 1px;
-}
-
-.wz-step-desc {
-  font-size: 10.5px;
-  color: rgba(255,255,255,0.3);
-}
-
-.wz-step-time {
-  font-size: 10px;
-  color: rgba(255,255,255,0.2);
-  white-space: nowrap;
-}
-
-.wz-cta {
-  width: 100%;
-  height: 44px;
-  background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(124,58,237,0.85));
-  color: rgba(255,255,255,0.95);
-  border: 0.5px solid rgba(168,85,247,0.35);
-  border-radius: 12px;
-  font-size: 13px; font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-  letter-spacing: 0.01em;
-}
-
-.wz-cta:hover { background: linear-gradient(135deg, rgba(168,85,247,0.95), rgba(124,58,237,0.95)); }
-
-/* ── Wizard screens (1+) shared ── */
-.wz-screen {
-  display: none;
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #0A0A14 0%, #0D0A18 50%, #0A0A14 100%);
-  border-radius: inherit;
-  flex-direction: column;
-  z-index: 31;
   overflow: hidden;
 }
-.wz-screen.visible { display: flex; }
+.drag { -webkit-app-region: drag; height: 36px; }
+button, input, a { -webkit-app-region: no-drag; font: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
 
+.frame { display: flex; flex-direction: column; height: calc(100% - 36px); padding: 0 40px 32px; }
 
-/* Stepper */
-.wz-stepper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 36px 0;
-  gap: 0;
+/* Step rail: the setup really is a sequence, so it is numbered. */
+.rail { display: flex; gap: 18px; margin-bottom: 36px; }
+.rail li { list-style: none; display: flex; align-items: center; gap: 7px; color: var(--faint); font-size: 12px; }
+.rail .n {
+  width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 600; border: 1px solid var(--line); font-variant-numeric: tabular-nums;
 }
-.wz-step-circle {
-  width: 24px; height: 24px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 600;
-  flex-shrink: 0;
-}
-.wz-step-circle.done {
-  background: rgba(48,209,88,0.15);
-  border: 0.5px solid rgba(48,209,88,0.4);
-  color: rgba(48,209,88,0.9);
-}
-.wz-step-circle.current {
-  background: rgba(168,85,247,0.18);
-  border: 0.5px solid rgba(168,85,247,0.45);
-  color: rgba(168,85,247,0.95);
-}
-.wz-step-circle.future {
-  background: rgba(255,255,255,0.04);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.25);
-}
-.wz-step-bar {
-  flex: 1; height: 2px;
-  background: rgba(255,255,255,0.06);
-  max-width: 60px;
-}
-.wz-step-bar.filled { background: rgba(48,209,88,0.4); }
+.rail li[aria-current="step"] { color: rgb(var(--ink)); }
+.rail li[aria-current="step"] .n { background: rgb(var(--ink)); color: var(--bg); border-color: transparent; }
+.rail li.done .n { background: var(--ok); color: #fff; border-color: transparent; }
+.rail ol { display: flex; gap: 18px; margin: 0; padding: 0; }
 
-/* Screen body */
-.wz-body-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 32px 16px;
-  overflow-y: auto;
-}
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.visible { display: flex; }
+h1 { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 8px; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0 0 24px; max-width: 42ch; font-size: 13.5px; }
+.spacer { flex: 1; }
 
-/* Status row */
-.wz-status-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 10px;
-}
-.wz-dot {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-}
-.wz-dot.checking {
-  background: rgba(10,132,255,0.4);
-  border: 0.5px solid rgba(10,132,255,0.6);
-  animation: spin 1s linear infinite;
-}
-.wz-dot.ok { background: rgba(48,209,88,0.85); }
-.wz-dot.fail { background: rgba(255,59,48,0.85); }
-.wz-dot.warn { background: rgba(255,189,46,0.85); }
+.state { display: none; }
+.state.visible { display: block; }
+.status { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); margin-bottom: 16px; }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex-shrink: 0; }
+.status.ok .dot { background: var(--ok); }
+.status.warn .dot { background: var(--warn); }
+.status .detail { color: var(--muted); font-size: 12px; }
+.spin { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line); border-top-color: rgb(var(--ink)); animation: spin 0.8s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.wz-status-title {
-  font-size: 13px; font-weight: 500;
-  color: rgba(255,255,255,0.8);
+.actions { display: flex; gap: 10px; align-items: center; }
+.btn {
+  height: 34px; padding: 0 16px; border-radius: 9px; border: none; cursor: pointer; font-weight: 600; font-size: 13px;
+  background: var(--action); color: var(--action-ink);
 }
-.wz-status-sub {
-  font-size: 11px; color: rgba(255,255,255,0.35);
-  margin-bottom: 10px; line-height: 1.4;
+.btn.secondary { background: rgba(var(--ink), 0.08); color: rgb(var(--ink)); font-weight: 500; }
+.btn.link { background: none; color: var(--muted); padding: 0 4px; font-weight: 400; text-decoration: underline; text-underline-offset: 2px; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.cmd {
+  display: flex; align-items: center; gap: 8px; margin: 14px 0 0; padding: 8px 10px; border-radius: 8px;
+  background: rgba(var(--ink), 0.05); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; color: var(--muted);
+  user-select: text;
+}
+.cmd code { flex: 1; overflow-x: auto; white-space: nowrap; }
+.hint { color: var(--faint); font-size: 12px; margin-top: 10px; }
+
+details.manual { margin-top: 18px; color: var(--muted); font-size: 12px; }
+details.manual summary { cursor: pointer; width: fit-content; }
+.path-row { display: flex; gap: 8px; margin-top: 10px; }
+.path-row input {
+  flex: 1; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface);
+  color: rgb(var(--ink)); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; -webkit-app-region: no-drag;
 }
 
-/* Code block + copy */
-.wz-code-label {
-  font-size: 10px; color: rgba(255,255,255,0.3);
-  margin-bottom: 4px; margin-top: 8px;
+/* The memorable thing: the shortcut, drawn as real keycaps. */
+.keys { display: flex; gap: 10px; align-items: flex-end; margin: 8px 0 22px; }
+.key {
+  min-width: 64px; height: 58px; padding: 0 16px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--keycap-top); color: rgb(var(--ink)); font-size: 17px; font-weight: 500;
+  box-shadow: 0 3px 0 var(--keycap-side), 0 4px 10px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(var(--ink), 0.12);
 }
-.wz-code-row {
-  display: flex; gap: 6px; align-items: center;
-  margin-bottom: 2px;
-}
-.wz-code {
-  flex: 1;
-  background: rgba(255,255,255,0.04);
-  border: 0.5px solid rgba(255,255,255,0.1);
-  border-radius: 7px;
-  padding: 6px 10px;
-  font-family: monospace; font-size: 11px;
-  color: rgba(255,255,255,0.65);
-  white-space: pre;
-}
-.wz-copy-btn {
-  height: 28px; padding: 0 10px;
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid rgba(255,255,255,0.1);
-  border-radius: 7px;
-  font-size: 10px; color: rgba(255,255,255,0.4);
-  cursor: pointer; font-family: inherit;
-  -webkit-app-region: no-drag; white-space: nowrap;
-}
-.wz-copy-btn:hover { background: rgba(255,255,255,0.08); }
+.key.wide { min-width: 190px; font-size: 14px; color: var(--muted); }
+.key.pressed { transform: translateY(2px); box-shadow: 0 1px 0 var(--keycap-side), 0 2px 5px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(var(--ink), 0.12); }
+.tips { margin: 0; padding: 0; list-style: none; color: var(--muted); display: grid; gap: 6px; }
+.tips b { color: rgb(var(--ink)); font-weight: 600; }
 
-.wz-note {
-  font-size: 10px; color: rgba(255,255,255,0.22);
-  margin-top: 4px; line-height: 1.4;
-}
-
-/* Error box */
-.wz-error-box {
-  background: rgba(255,59,48,0.05);
-  border: 0.5px solid rgba(255,59,48,0.2);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-family: monospace; font-size: 10.5px;
-  color: rgba(255,100,90,0.8);
-  max-height: 64px; overflow-y: auto;
-  word-break: break-all;
-  margin-bottom: 8px;
-}
-
-/* Action row */
-.wz-action-row {
-  display: flex; gap: 8px;
-  padding: 10px 32px 16px;
-  flex-shrink: 0;
-}
-.wz-btn-secondary {
-  flex: 1; height: 36px;
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  font-size: 13px; color: rgba(255,255,255,0.5);
-  cursor: pointer; font-family: inherit;
-  -webkit-app-region: no-drag;
-  display: flex; align-items: center; justify-content: center;
-}
-.wz-btn-primary {
-  flex: 1; height: 36px;
-  background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(124,58,237,0.85));
-  border: 0.5px solid rgba(168,85,247,0.35);
-  border-radius: 10px;
-  font-size: 13px; color: rgba(255,255,255,0.95);
-  cursor: pointer; font-family: inherit;
-  -webkit-app-region: no-drag;
-  display: flex; align-items: center; justify-content: center;
-}
-.wz-btn-primary:hover { background: linear-gradient(135deg, rgba(168,85,247,0.95), rgba(124,58,237,0.95)); }
-
-/* Skip link */
-.wz-skip-link {
-  text-align: center;
-  font-size: 11px; color: rgba(255,255,255,0.18);
-  cursor: pointer; padding-bottom: 10px;
-  -webkit-app-region: no-drag;
-  flex-shrink: 0;
-}
-.wz-skip-link:hover { color: rgba(255,255,255,0.35); }
-
-/* Skip confirmation overlay */
-#skipOverlay {
-  display: none;
-  position: absolute;
-  inset: 0;
-  background: rgba(10,10,20,0.92);
-  border-radius: inherit;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 28px;
-  z-index: 50;
-  gap: 14px;
-}
-#skipOverlay.visible { display: flex; }
-.skip-title {
-  font-size: 13px; font-weight: 500;
-  color: rgba(255,255,255,0.8); text-align: center;
-}
-.skip-body {
-  font-size: 11.5px; color: rgba(255,255,255,0.35);
-  text-align: center; line-height: 1.5;
-}
-.skip-btns { display: flex; gap: 10px; width: 100%; }
-.skip-cancel {
-  flex: 1; height: 36px;
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  font-size: 12px; color: rgba(255,255,255,0.5);
-  cursor: pointer; font-family: inherit;
-  -webkit-app-region: no-drag;
-}
-.skip-confirm {
-  flex: 1; height: 36px;
-  background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(124,58,237,0.85));
-  border: 0.5px solid rgba(168,85,247,0.35);
-  border-radius: 10px;
-  font-size: 12px; color: rgba(255,255,255,0.9);
-  cursor: pointer; font-family: inherit;
-  -webkit-app-region: no-drag;
-}
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } .key { transition: none; } }
 </style>
 </head>
 <body>
-<div class="splash">
-  <button id="settingsBtn" style="position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;outline:none;-webkit-app-region:no-drag">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-    </svg>
-  </button>
-  <div style="position:absolute;top:-60px;right:-40px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle, rgba(10,132,255,0.08) 0%, transparent 70%);pointer-events:none;z-index:0;"></div>
-  <div style="position:absolute;bottom:-60px;left:-40px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle, rgba(120,40,200,0.1) 0%, transparent 70%);pointer-events:none;z-index:0;"></div>
-  <div class="content">
-    <div class="logo-ring">
-      <svg width="24" height="28" viewBox="0 0 12 16" fill="none">
-        <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(100,180,255,0.8)" stroke-width="1"/>
-        <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(100,180,255,0.6)" stroke-width="1" stroke-linecap="round"/>
-        <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(100,180,255,0.6)" stroke-width="1" stroke-linecap="round"/>
-      </svg>
+<div class="drag"></div>
+<div class="frame">
+  <nav class="rail" aria-label="Setup steps" id="rail" hidden>
+    <ol>
+      <li data-step="mic"><span class="n">1</span>Microphone</li>
+      <li data-step="claude"><span class="n">2</span>Claude Code</li>
+      <li data-step="done"><span class="n">3</span>Ready</li>
+    </ol>
+  </nav>
+
+  <!-- Welcome -->
+  <section class="screen visible" id="screen-welcome" aria-labelledby="welcome-title">
+    <div class="spacer" style="max-height:60px"></div>
+    <h1 id="welcome-title">Say it. Get a prompt.</h1>
+    <p class="lede">Promptly turns what you say into a clear, structured prompt for Claude. Setup takes about a minute.</p>
+    <ul class="tips" style="margin-bottom:28px">
+      <li><b>Microphone</b> — so Promptly can hear you. Speech is transcribed on this Mac.</li>
+      <li><b>Claude Code</b> — writes the prompts, using your own Claude account.</li>
+    </ul>
+    <div class="spacer"></div>
+    <div class="actions"><button class="btn" id="welcome-start">Set up Promptly</button></div>
+  </section>
+
+  <!-- Step 1: Microphone -->
+  <section class="screen" id="screen-mic" aria-labelledby="mic-title">
+    <h1 id="mic-title">Let Promptly hear you</h1>
+    <p class="lede">macOS will ask once. Recordings are transcribed on this Mac and deleted right after.</p>
+
+    <div class="state visible" id="mic-ask">
+      <div class="actions"><button class="btn" id="mic-allow">Allow microphone</button></div>
     </div>
-    <div class="app-name">Promptly</div>
-    <div class="tagline">Speak · Engineer · Copy</div>
-    <div class="checks">
-      <div class="check-item">
-        <div class="check-icon" id="icon-cli"></div>
-        <span class="check-label" id="label-cli">Claude CLI</span>
-      </div>
-      <div class="sep"></div>
-      <div class="check-item">
-        <div class="check-icon" id="icon-whisper"></div>
-        <span class="check-label" id="label-whisper">Whisper</span>
-      </div>
-      <div class="sep"></div>
-      <div class="check-item">
-        <div class="check-icon" id="icon-mic"></div>
-        <span class="check-label" id="label-mic">Microphone</span>
-      </div>
+    <div class="state" id="mic-ok">
+      <div class="status ok"><span class="dot"></span><div>Microphone access is on.</div></div>
     </div>
-    <div class="ready-text" id="ready-text"></div>
-    <div id="manual-path-hint" style="display:none;margin-top:6px;text-align:center">
-      <a onclick="openPathPanel()" style="font-size:10px;color:rgba(10,132,255,0.7);cursor:pointer;text-decoration:none;-webkit-app-region:no-drag">↳ Already installed at a custom path? Set it here →</a>
-    </div>
-    <button class="install-btn" id="install-btn">Install Claude CLI</button>
-    <button class="install-btn" id="whisper-btn" style="display:none">Copy install command</button>
-  </div>
-  <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:0.08em;color:rgba(255,255,255,0.12);pointer-events:none;user-select:none;">
-    built using vibe-* skills
-  </div>
-
-  <!-- Screen 0: Welcome (wizard first-run) -->
-  <div id="screen-welcome">
-    <div class="wz-logo-row">
-      <div class="wz-logo-ring">
-        <svg width="20" height="24" viewBox="0 0 12 16" fill="none">
-          <rect x="3.5" y="0.5" width="5" height="9" rx="2.5" stroke="rgba(168,85,247,0.8)" stroke-width="1"/>
-          <path d="M1 8.5C1 11.26 3.24 13.5 6 13.5C8.76 13.5 11 11.26 11 8.5" stroke="rgba(168,85,247,0.6)" stroke-width="1" stroke-linecap="round"/>
-          <line x1="6" y1="13.5" x2="6" y2="15.5" stroke="rgba(168,85,247,0.6)" stroke-width="1" stroke-linecap="round"/>
-        </svg>
+    <div class="state" id="mic-denied">
+      <div class="status warn"><span class="dot"></span>
+        <div>Microphone access is off.<div class="detail">Turn on Promptly in System Settings → Privacy &amp; Security → Microphone, then come back.</div></div>
       </div>
-      <div class="wz-app-name">Promptly</div>
-      <div class="wz-tagline">Speak · Engineer · Copy</div>
-    </div>
-    <div class="wz-body">Before you start, Promptly needs three tools installed on your Mac. This takes about 5 minutes and only happens once.</div>
-    <div class="wz-steps">
-      <div class="wz-step-card">
-        <div class="wz-step-num">1</div>
-        <div class="wz-step-info">
-          <div class="wz-step-name">Claude CLI</div>
-          <div class="wz-step-desc">The AI that writes your prompts</div>
-        </div>
-        <div class="wz-step-time">~1 min</div>
-      </div>
-      <div class="wz-step-card">
-        <div class="wz-step-num">2</div>
-        <div class="wz-step-info">
-          <div class="wz-step-name">Whisper + ffmpeg</div>
-          <div class="wz-step-desc">Converts your voice to text</div>
-        </div>
-        <div class="wz-step-time">~3 min</div>
-      </div>
-      <div class="wz-step-card">
-        <div class="wz-step-num">3</div>
-        <div class="wz-step-info">
-          <div class="wz-step-name">Voice model download</div>
-          <div class="wz-step-desc">One-time 148MB download for transcription</div>
-        </div>
-        <div class="wz-step-time">~1 min</div>
-      </div>
-    </div>
-    <button class="wz-cta" id="wzCtaBtn">Let's set up Promptly →</button>
-  </div>
-
-  <!-- Screen 1: Claude CLI check -->
-  <div id="screen-1" class="wz-screen">
-    <!-- Stepper -->
-    <div class="wz-stepper">
-      <div class="wz-step-circle current" id="s1-step1">1</div>
-      <div class="wz-step-bar" id="s1-bar1"></div>
-      <div class="wz-step-circle future" id="s1-step2">2</div>
-      <div class="wz-step-bar" id="s1-bar2"></div>
-      <div class="wz-step-circle future" id="s1-step3">3</div>
-    </div>
-
-    <!-- Body -->
-    <div class="wz-body-area" id="s1-body">
-      <!-- State: CHECKING -->
-      <div id="s1-checking">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot checking"></div>
-          <div class="wz-status-title">Checking Claude CLI...</div>
-        </div>
-        <div class="wz-status-sub" id="s1-substate">Looking for Claude CLI...</div>
-      </div>
-
-      <!-- State: WORKING -->
-      <div id="s1-working" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot ok"></div>
-          <div class="wz-status-title">Claude CLI — working</div>
-        </div>
-        <div class="wz-status-sub" id="s1-path-version"></div>
-        <div class="wz-status-sub" style="color:rgba(48,209,88,0.6)">Test generation passed ✓</div>
-      </div>
-
-      <!-- State: NOT FOUND -->
-      <div id="s1-notfound" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot fail"></div>
-          <div class="wz-status-title">Claude CLI not found</div>
-        </div>
-        <div class="wz-status-sub">Promptly couldn't locate the <code style="color:rgba(255,255,255,0.5);font-size:10px">claude</code> binary automatically.</div>
-        <!-- Already installed section — shown FIRST so it's immediately visible -->
-        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have Claude CLI installed?</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which claude</code> in Terminal to find the path, then paste it below and click <strong style="color:rgba(10,132,255,0.8)">Use path →</strong></div>
-          <div class="wz-code-row" style="margin-bottom:6px">
-            <div class="wz-code">which claude</div>
-            <button class="wz-copy-btn" onclick="wzCopy(this,'which claude')">Copy</button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:4px">
-            <input id="s1-manual-path" type="text" placeholder="/Users/you/.nvm/versions/node/.../bin/claude"
-              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-            <button onclick="s1UseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
-          </div>
-        </div>
-        <!-- Install instructions below for users who need to install fresh -->
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have it yet? install fresh —</div>
-        <div class="wz-code-label">Don't have Node.js? Install it first:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">brew install node</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install node')">Copy</button>
-        </div>
-        <div class="wz-code-label">Then install Claude CLI:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">npm install -g @anthropic-ai/claude-cli</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'npm install -g @anthropic-ai/claude-cli')">Copy</button>
-        </div>
-        <div class="wz-code-label">Then log in:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">claude login</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'claude login')">Copy</button>
-        </div>
-        <div class="wz-note">claude login opens a browser to authenticate</div>
-      </div>
-
-      <!-- State: NOT LOGGED IN -->
-      <div id="s1-notloggedin" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot warn"></div>
-          <div class="wz-status-title">Claude CLI found but not logged in</div>
-        </div>
-        <div class="wz-status-sub">Your session expired or you haven't logged in yet</div>
-        <div class="wz-code-label">Run this to log in:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">claude login</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'claude login')">Copy</button>
-        </div>
-        <div class="wz-note">This opens a browser to authenticate with Anthropic</div>
-      </div>
-
-      <!-- State: NOT RESPONDING -->
-      <div id="s1-notresponding" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot fail"></div>
-          <div class="wz-status-title">Claude CLI not responding</div>
-        </div>
-        <div class="wz-error-box" id="s1-error-output"></div>
-        <div class="wz-code-label">Try running in Terminal:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">claude -p "hello"</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'claude -p &quot;hello&quot;')">Copy</button>
-        </div>
-        <div class="wz-note">If that works, click Check again. If not, try: claude logout &amp;&amp; claude login</div>
-        <!-- Path override — for users where the found path is stale or wrong -->
-        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-top:10px">
-          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Not the right path?</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">If claude is installed at a different location, paste the full path below and click <strong style="color:rgba(10,132,255,0.8)">Use this path →</strong></div>
-          <div style="display:flex;gap:6px;margin-top:4px">
-            <input id="s1-notresponding-path" type="text" placeholder="/Users/you/.nvm/versions/node/.../bin/claude"
-              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-            <button onclick="s1NotrespondingUseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use this path →</button>
-          </div>
-        </div>
+      <div class="actions">
+        <button class="btn" id="mic-open-settings">Open System Settings</button>
+        <button class="btn secondary" id="mic-recheck">Check again</button>
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="wz-action-row" id="s1-actions" style="display:none">
-      <button class="wz-btn-secondary" id="s1-help-btn" style="display:none" onclick="window.electronAPI.splashOpenURL('https://docs.anthropic.com/en/docs/claude-code/')">Need help?</button>
-      <button class="wz-btn-secondary" id="s1-recheck-btn" onclick="runScreen1()">Check again ↺</button>
-      <button class="wz-btn-primary" id="s1-continue-btn" style="display:none" onclick="showScreen(2)">Continue →</button>
-    </div>
-    <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
-  </div>
+    <div class="spacer"></div>
+    <div class="actions"><button class="btn" id="mic-next" disabled>Continue</button></div>
+  </section>
 
-  <!-- Skip confirmation overlay -->
-  <div id="skipOverlay">
-    <div class="skip-title">Skip setup?</div>
-    <div class="skip-body">Promptly may not work correctly if dependencies are missing.</div>
-    <div class="skip-btns">
-      <button class="skip-cancel" onclick="hideSkipOverlay()">Cancel</button>
-      <button class="skip-confirm" onclick="confirmSkip()">Skip anyway</button>
-    </div>
-  </div>
+  <!-- Step 2: Claude Code -->
+  <section class="screen" id="screen-claude" aria-labelledby="claude-title">
+    <h1 id="claude-title">Connect Claude Code</h1>
+    <p class="lede">Promptly uses Claude Code on your Mac to write prompts, signed in with your Claude account.</p>
 
-  <!-- Screen 2: Whisper + ffmpeg -->
-  <div id="screen-2" class="wz-screen">
-    <div class="wz-stepper">
-      <div class="wz-step-circle done">✓</div>
-      <div class="wz-step-bar filled"></div>
-      <div class="wz-step-circle current">2</div>
-      <div class="wz-step-bar" id="s2-bar2"></div>
-      <div class="wz-step-circle future">3</div>
-    </div>
-    <div class="wz-body-area">
-      <!-- CHECKING -->
-      <div id="s2-checking">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot checking"></div>
-          <div class="wz-status-title">Checking Whisper and ffmpeg...</div>
-        </div>
-      </div>
-      <!-- BOTH FOUND -->
-      <div id="s2-both-found" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot ok"></div>
-          <div class="wz-status-title" id="s2-whisper-ok-label">Whisper — found</div>
-        </div>
-        <div class="wz-status-row">
-          <div class="wz-dot ok"></div>
-          <div class="wz-status-title" id="s2-ffmpeg-ok-label">ffmpeg — found</div>
-        </div>
-      </div>
-      <!-- WHISPER NOT FOUND -->
-      <div id="s2-whisper-notfound" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot fail"></div>
-          <div class="wz-status-title">Whisper not found</div>
-        </div>
-        <!-- Already installed section first -->
-        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have Whisper installed?</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which whisper</code> in Terminal to find the path, then paste it below:</div>
-          <div class="wz-code-row" style="margin-bottom:6px">
-            <div class="wz-code">which whisper</div>
-            <button class="wz-copy-btn" onclick="wzCopy(this,'which whisper')">Copy</button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:4px">
-            <input id="s2-manual-path" type="text" placeholder="/usr/local/bin/whisper"
-              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-            <button onclick="s2UseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
-          </div>
-        </div>
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have it yet? install fresh —</div>
-        <div class="wz-code-label">Don't have Python? Install it first:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">brew install python</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install python')">Copy</button>
-        </div>
-        <div class="wz-code-label">Then install Whisper:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">pip3 install openai-whisper</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'pip3 install openai-whisper')">Copy</button>
-        </div>
-      </div>
-      <!-- FFMPEG NOT FOUND (whisper ok) -->
-      <div id="s2-ffmpeg-notfound" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot ok"></div>
-          <div class="wz-status-title" id="s2-whisper-partial-label">Whisper — found ✓</div>
-        </div>
-        <div class="wz-status-row" style="margin-bottom:8px">
-          <div class="wz-dot fail"></div>
-          <div class="wz-status-title">ffmpeg not found — required for audio processing</div>
-        </div>
-        <!-- Already installed section first -->
-        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have ffmpeg installed?</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which ffmpeg</code> in Terminal to find the path, then paste it below:</div>
-          <div class="wz-code-row" style="margin-bottom:6px">
-            <div class="wz-code">which ffmpeg</div>
-            <button class="wz-copy-btn" onclick="wzCopy(this,'which ffmpeg')">Copy</button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:4px">
-            <input id="s2-ffmpeg-manual-path" type="text" placeholder="/opt/homebrew/bin/ffmpeg"
-              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-            <button onclick="s2FfmpegUseManualPath()" style="height:30px;padding:0 12px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;white-space:nowrap;outline:none">Use path →</button>
-          </div>
-        </div>
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have it yet? install fresh —</div>
-        <div class="wz-code-label">Install ffmpeg:</div>
-        <div class="wz-code-row">
-          <div class="wz-code">brew install ffmpeg</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install ffmpeg')">Copy</button>
-        </div>
-        <div class="wz-note">ffmpeg processes audio before Whisper can transcribe it</div>
-      </div>
-      <!-- BOTH NOT FOUND -->
-      <div id="s2-both-notfound" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot fail"></div>
-          <div class="wz-status-title">Whisper and ffmpeg not found</div>
-        </div>
-        <!-- Already installed section first -->
-        <div style="background:rgba(10,132,255,0.06);border:0.5px solid rgba(10,132,255,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:500;color:rgba(255,189,46,0.85);margin-bottom:4px">Already have them installed?</div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,0.35);margin-bottom:8px;line-height:1.4">Run <code style="color:rgba(255,255,255,0.6)">which whisper</code> and <code style="color:rgba(255,255,255,0.6)">which ffmpeg</code> in Terminal, then paste the paths below:</div>
-          <div class="wz-code-label" style="margin-bottom:3px">Whisper path:</div>
-          <div style="display:flex;gap:6px;margin-bottom:8px">
-            <input id="s2-manual-path-both" type="text" placeholder="/usr/local/bin/whisper"
-              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          </div>
-          <div class="wz-code-label" style="margin-bottom:3px">ffmpeg path:</div>
-          <div style="display:flex;gap:6px;margin-bottom:6px">
-            <input id="s2-ffmpeg-manual-path-both" type="text" placeholder="/opt/homebrew/bin/ffmpeg"
-              style="flex:1;height:30px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(10,132,255,0.25);border-radius:7px;padding:0 8px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          </div>
-          <button onclick="s2BothUseManualPath()" style="width:100%;height:30px;background:rgba(10,132,255,0.2);border:0.5px solid rgba(10,132,255,0.4);border-radius:7px;font-size:11px;font-weight:500;color:rgba(10,132,255,0.95);cursor:pointer;font-family:inherit;-webkit-app-region:no-drag;outline:none">Use these paths →</button>
-        </div>
-        <div style="height:0.5px;background:rgba(255,255,255,0.06);margin:4px 0 8px"></div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.22);text-align:center;margin-bottom:8px">— don't have them yet? install fresh —</div>
-        <div class="wz-code-label">Install everything at once:</div>
-        <div class="wz-code-row">
-          <div class="wz-code" style="white-space:pre">brew install python ffmpeg&#10;pip3 install openai-whisper</div>
-          <button class="wz-copy-btn" onclick="wzCopy(this,'brew install python ffmpeg\npip3 install openai-whisper')">Copy</button>
-        </div>
-      </div>
-    </div>
-    <div class="wz-action-row" id="s2-actions" style="display:none">
-      <button class="wz-btn-secondary" id="s2-recheck-btn" onclick="runScreen2()">Check again ↺</button>
-      <button class="wz-btn-primary" id="s2-continue-btn" style="display:none" onclick="showScreen(3)">Continue →</button>
-    </div>
-    <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
-  </div>
-
-  <!-- Screen 3: Model download -->
-  <div id="screen-3" class="wz-screen">
-    <div class="wz-stepper">
-      <div class="wz-step-circle done">✓</div>
-      <div class="wz-step-bar filled"></div>
-      <div class="wz-step-circle done">✓</div>
-      <div class="wz-step-bar filled" id="s3-bar3"></div>
-      <div class="wz-step-circle current" id="s3-step3">3</div>
-    </div>
-    <div class="wz-body-area">
-      <!-- CHECKING -->
-      <div id="s3-checking">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot checking"></div>
-          <div class="wz-status-title">Checking voice model...</div>
-        </div>
-      </div>
-      <!-- ALREADY DOWNLOADED -->
-      <div id="s3-already" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot ok"></div>
-          <div class="wz-status-title">Voice model ready (base, 148MB)</div>
-        </div>
-        <div class="wz-status-sub" style="color:rgba(48,209,88,0.6)">Already downloaded — no action needed</div>
-      </div>
-      <!-- NOT DOWNLOADED (pre-download) -->
-      <div id="s3-notdownloaded" style="display:none">
-        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;margin-bottom:8px">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M10 3v10M6 9l4 4 4-4" stroke="rgba(168,85,247,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M3 15h14" stroke="rgba(168,85,247,0.5)" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <div class="wz-status-title">Voice model download required</div>
-        </div>
-        <div class="wz-status-sub">Whisper needs a voice model to understand speech. This is a one-time 148MB download. Once done, Promptly works fully offline — your voice never leaves your Mac.</div>
-        <div style="background:rgba(255,189,46,0.04);border:0.5px solid rgba(255,189,46,0.15);border-radius:8px;padding:8px 10px;margin-top:6px">
-          <div style="font-size:10px;color:rgba(255,189,46,0.6);line-height:1.5">This would have happened silently on your first recording. We're doing it now so you don't hit a surprise 2-minute wait later.</div>
-        </div>
-      </div>
-      <!-- DOWNLOADING -->
-      <div id="s3-downloading" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot checking"></div>
-          <div class="wz-status-title">Downloading Whisper base model</div>
-        </div>
-        <div style="margin-top:10px">
-          <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:6px">
-            <div id="s3-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(10,132,255,0.8),rgba(100,180,255,0.9));border-radius:2px;transition:width 0.4s ease"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between">
-            <div id="s3-mb-label" style="font-size:10px;color:rgba(255,255,255,0.3)">0 MB of 148 MB</div>
-            <div id="s3-time-label" style="font-size:10px;color:rgba(255,255,255,0.3)"></div>
-          </div>
-        </div>
-      </div>
-      <!-- COMPLETE -->
-      <div id="s3-complete" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot ok"></div>
-          <div class="wz-status-title">Voice model downloaded</div>
-        </div>
-        <div class="wz-status-sub" style="color:rgba(48,209,88,0.6)">Ready to transcribe ✓</div>
-      </div>
-      <!-- FAILED -->
-      <div id="s3-failed" style="display:none">
-        <div class="wz-status-row" style="margin-top:8px">
-          <div class="wz-dot fail"></div>
-          <div class="wz-status-title">Download failed</div>
-        </div>
-        <div class="wz-error-box" id="s3-error-text"></div>
-        <div class="wz-note">You can also download the model manually and place it in ~/.cache/whisper/base.pt</div>
-      </div>
-    </div>
-    <!-- Actions: download button (pre-download) -->
-    <div class="wz-action-row" id="s3-download-action" style="display:none">
-      <button class="wz-btn-primary" id="s3-download-btn" onclick="startDownload()">Download now (148MB)</button>
-    </div>
-    <!-- Actions: success (already downloaded or just completed) -->
-    <div class="wz-action-row" id="s3-success-action" style="display:none">
-      <button class="wz-btn-secondary" onclick="runScreen3()">Check again ↺</button>
-      <button class="wz-btn-primary" onclick="showScreen(4)">Continue →</button>
-    </div>
-    <!-- Actions: retry after failure -->
-    <div class="wz-action-row" id="s3-retry-action" style="display:none">
-      <button class="wz-btn-primary" onclick="startDownload()">Try again ↺</button>
-    </div>
-    <div class="wz-skip-link" onclick="showSkipOverlay()">Skip setup (advanced)</div>
-  </div>
-
-  <!-- Screen 4: All done + mic check -->
-  <div id="screen-4" class="wz-screen">
-    <div class="wz-stepper">
-      <div class="wz-step-circle done">✓</div>
-      <div class="wz-step-bar filled"></div>
-      <div class="wz-step-circle done">✓</div>
-      <div class="wz-step-bar filled"></div>
-      <div class="wz-step-circle done">✓</div>
-    </div>
-    <div class="wz-body-area" style="align-items:center;justify-content:center;gap:14px">
-      <div style="width:56px;height:56px;border-radius:50%;background:rgba(48,209,88,0.12);border:0.5px solid rgba(48,209,88,0.3);display:flex;align-items:center;justify-content:center">
-        <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
-          <path d="M2 9L9 16L22 2" stroke="rgba(48,209,88,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:-0.01em">Almost there</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.35);text-align:center;line-height:1.5;max-width:320px">Tools are installed. One last step — microphone access.</div>
-      <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px">
-        <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
-          <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.55)">Claude CLI</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
-          <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.55)">Whisper + voice model</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,0.04);border:0.5px solid rgba(48,209,88,0.1);border-radius:9px;padding:9px 14px">
-          <span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>
-          <span style="font-size:12px;color:rgba(255,255,255,0.55)">ffmpeg</span>
-        </div>
-        <!-- Mic row — dynamic -->
-        <div id="s4-mic-row" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.1);border-radius:9px;padding:9px 14px;transition:background 0.3s,border-color 0.3s">
-          <span id="s4-mic-icon" style="font-size:13px;width:16px;text-align:center">
-            <svg width="10" height="10" viewBox="0 0 8 8" style="display:block"><path d="M4 1.5A2.5 2.5 0 0 1 6.5 4" stroke="rgba(10,132,255,0.9)" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          <span id="s4-mic-label" style="font-size:12px;color:rgba(255,255,255,0.4)">Checking microphone…</span>
-        </div>
-      </div>
-      <!-- Denied state -->
-      <div id="s4-mic-denied" style="display:none;width:100%;margin-top:-4px">
-        <div class="wz-status-sub" style="color:rgba(255,59,48,0.6);margin-bottom:6px">Promptly needs microphone access to record your voice.</div>
-        <div class="wz-code-label">Open System Settings and allow microphone access for Promptly:</div>
-        <div class="wz-code-row" style="margin-bottom:6px">
-          <div class="wz-code">System Settings → Privacy &amp; Security → Microphone</div>
-          <button class="wz-copy-btn" onclick="window.electronAPI.splashOpenURL('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone')">Open</button>
-        </div>
-        <div class="wz-note">After granting access, click "Check again" below.</div>
-      </div>
-    </div>
-    <div class="wz-action-row" id="s4-actions">
-      <button id="s4-recheck-btn" class="wz-btn-secondary" style="display:none" onclick="runScreen4()">Check again ↺</button>
-      <button id="s4-launch-btn" class="wz-btn-primary" style="flex:1;opacity:0.35;pointer-events:none" onclick="launchApp()">Launch Promptly</button>
-    </div>
-  </div>
-
-  <div id="pathPanel" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#0A0A14,#0D0A18);border-radius:inherit;padding:24px 32px 28px;z-index:20;flex-direction:column;overflow-y:auto">
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.65);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">Path configuration</span>
-      <button id="backBtn" style="font-size:11px;color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 10px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;outline:none;-webkit-app-region:no-drag">← Back</button>
+    <div class="state visible" id="claude-checking">
+      <div class="status"><span class="spin" aria-hidden="true"></span><div>Looking for Claude Code…</div></div>
     </div>
 
-    <div style="margin-bottom:12px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">Claude CLI path</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="position:relative;flex:1">
-          <input id="claudePathInput" type="text" placeholder="/usr/local/bin/claude"
-            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          <div id="claudeStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
-        </div>
-        <button id="browseClaudeBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
-      </div>
-      <div id="claudePathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:13px"></div>
+    <div class="state" id="claude-ready">
+      <div class="status ok"><span class="dot"></span><div>Claude Code is ready.<div class="detail" id="claude-ready-detail"></div></div></div>
     </div>
 
-    <div style="margin-bottom:12px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">Whisper path</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="position:relative;flex:1">
-          <input id="whisperPathInput" type="text" placeholder="/usr/local/bin/whisper"
-            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          <div id="whisperStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
+    <div class="state" id="claude-not-installed">
+      <div class="status warn"><span class="dot"></span><div>Claude Code isn't installed yet.</div></div>
+      <div class="actions"><button class="btn" id="claude-install">Install Claude Code</button></div>
+      <div class="cmd"><code id="install-cmd">curl -fsSL https://claude.ai/install.sh | bash</code><button class="btn link" id="copy-install">Copy</button></div>
+      <p class="hint">This opens Terminal and runs Anthropic's installer. Promptly notices when it's done.</p>
+      <details class="manual">
+        <summary>Already installed somewhere else?</summary>
+        <div class="path-row">
+          <input id="s1-manual-path" placeholder="/path/to/claude" spellcheck="false" aria-label="Path to the claude command">
+          <button class="btn secondary" onclick="s1UseManualPath()">Use this path</button>
         </div>
-        <button id="browseWhisperBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
-      </div>
-      <div id="whisperPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:13px">Paste full path or use Browse to locate the binary</div>
+      </details>
     </div>
 
-    <div style="margin-bottom:14px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif">ffmpeg path</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="position:relative;flex:1">
-          <input id="ffmpegPathInput" type="text" placeholder="/opt/homebrew/bin/ffmpeg"
-            style="width:100%;height:32px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 32px 0 10px;font-size:11px;color:rgba(255,255,255,0.75);font-family:monospace;outline:none;box-sizing:border-box;-webkit-app-region:no-drag"/>
-          <div id="ffmpegStatusDot" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
-        </div>
-        <button id="browseFfmpegBtn" style="height:32px;padding:0 11px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;white-space:nowrap;flex-shrink:0;outline:none;-webkit-app-region:no-drag">Browse</button>
-      </div>
-      <div id="ffmpegPathHint" style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:4px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;min-height:13px">Paste full path or use Browse to locate ffmpeg</div>
+    <div class="state" id="claude-logged-out">
+      <div class="status warn"><span class="dot"></span><div>Claude Code is installed, but not signed in.</div></div>
+      <div class="actions"><button class="btn" id="claude-login">Sign in to Claude</button></div>
+      <p class="hint">This opens Terminal and your browser to sign in. Promptly notices when it's done.</p>
     </div>
 
-    <div style="height:0.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);margin-bottom:12px"></div>
+    <div class="state" id="s1-notresponding">
+      <div class="status warn"><span class="dot"></span>
+        <div>Found Claude Code, but it didn't respond.<div class="detail" id="claude-error-detail"></div></div>
+      </div>
+      <div class="actions"><button class="btn secondary" onclick="runScreen1()">Check again</button></div>
+      <details class="manual" open>
+        <summary>Use a different claude command</summary>
+        <div class="path-row">
+          <input id="s1-notresponding-path" placeholder="/path/to/claude" spellcheck="false" aria-label="Path to the claude command">
+          <button class="btn secondary" onclick="s1NotrespondingUseManualPath()">Use this path</button>
+        </div>
+      </details>
+    </div>
 
-    <button id="saveRecheckBtn" style="width:100%;height:34px;background:linear-gradient(135deg,rgba(10,132,255,0.9),rgba(10,100,220,0.9));color:rgba(255,255,255,0.92);border:0.5px solid rgba(10,132,255,0.35);border-radius:9px;font-size:12px;font-weight:500;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;cursor:pointer;outline:none;-webkit-app-region:no-drag;display:flex;align-items:center;justify-content:center;letter-spacing:0.01em">Save &amp; Recheck</button>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="btn" id="claude-next" disabled>Continue</button>
+      <button class="btn link" id="claude-recheck" onclick="runScreen1()">Check again</button>
+    </div>
+  </section>
 
-    <div id="saveStatus" style="font-size:10.5px;text-align:center;margin-top:8px;min-height:14px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;color:rgba(255,255,255,0.35)"></div>
-  </div>
+  <!-- Speech fallback: only shown when the built-in engine is missing (development builds) -->
+  <section class="screen" id="screen-speech" aria-labelledby="speech-title">
+    <h1 id="speech-title">Speech-to-text is missing</h1>
+    <p class="lede">This copy of Promptly was built without its speech engine. Rebuild with <code>bash scripts/fetch-whisper.sh</code>, or install Python Whisper and set its path in Settings.</p>
+    <div class="status warn"><span class="dot"></span><div id="speech-detail">Checking…</div></div>
+    <div class="spacer"></div>
+    <div class="actions">
+      <button class="btn secondary" onclick="runScreen2()">Check again</button>
+      <button class="btn" id="speech-skip">Continue anyway</button>
+    </div>
+  </section>
+
+  <!-- Step 3: Ready -->
+  <section class="screen" id="screen-done" aria-labelledby="done-title">
+    <h1 id="done-title">You're set</h1>
+    <p class="lede">Press this anywhere on your Mac to start talking. Press it again when you're done.</p>
+    <div class="keys" aria-label="Option plus Space">
+      <div class="key" id="key-opt">⌥</div>
+      <div class="key wide" id="key-space">space</div>
+    </div>
+    <ul class="tips">
+      <li>Promptly lives in the menu bar. Click the microphone icon to show or hide it.</li>
+      <li>Prefer typing? Open Promptly and press <b>⌘T</b>.</li>
+    </ul>
+    <div class="spacer"></div>
+    <div class="actions"><button class="btn" id="done-start">Start using Promptly</button></div>
+  </section>
 </div>
 
 <script>
-function setCheck(id, state) {
-  const icon = document.getElementById('icon-' + id);
-  const label = document.getElementById('label-' + id);
-  label.className = 'check-label ' + (state === 'checking' ? 'active' : state);
-  if (state === 'checking') {
-    icon.className = 'check-icon checking';
-    icon.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M4 1.5A2.5 2.5 0 0 1 6.5 4" stroke="rgba(10,132,255,0.9)" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  } else if (state === 'done') {
-    icon.className = 'check-icon done';
-    icon.innerHTML = '<svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#30D158" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  } else if (state === 'fail') {
-    icon.className = 'check-icon fail';
-    icon.innerHTML = '<svg width="7" height="7" viewBox="0 0 7 7" fill="none"><path d="M1 1L6 6M6 1L1 6" stroke="#FF3B30" stroke-width="1.2" stroke-linecap="round"/></svg>';
-  } else {
-    icon.className = 'check-icon';
-    icon.innerHTML = '';
-  }
-}
+const api = window.electronAPI;
+const STEPS = ['mic', 'claude', 'done'];
+let claudePoll = null;
+let speechBuiltIn = true;
 
-function showReady(msg, isError) {
-  const el = document.getElementById('ready-text');
-  el.textContent = msg;
-  el.style.color = isError ? 'rgba(255,59,48,0.6)' : 'rgba(48,209,88,0.5)';
-  el.style.opacity = '1';
-  const hint = document.getElementById('manual-path-hint');
-  if (hint) hint.style.display = isError ? 'block' : 'none';
-}
-
-function openInstall() {
-  window.electronAPI.splashOpenURL('https://claude.ai/code');
-}
-
-document.getElementById('install-btn').addEventListener('click', openInstall);
-document.getElementById('whisper-btn').addEventListener('click', () => {
-  window.electronAPI.copyToClipboard('pip install openai-whisper');
-  const btn = document.getElementById('whisper-btn');
-  btn.textContent = 'Copied ✓';
-  setTimeout(() => { btn.textContent = 'Copy install command'; }, 2000);
-});
-
-function setPathStatus(prefix, connected, filePath) {
-  const dot = document.getElementById(prefix + 'StatusDot');
-  const input = document.getElementById(prefix + 'PathInput');
-  const hint = document.getElementById(prefix + 'PathHint');
-  if (connected) {
-    dot.style.background = 'rgba(48,209,88,0.9)';
-    input.style.borderColor = 'rgba(48,209,88,0.3)';
-    hint.style.color = 'rgba(48,209,88,0.6)';
-    hint.textContent = '✓ Connected: ' + filePath;
-  } else {
-    dot.style.background = 'rgba(255,59,48,0.7)';
-    input.style.borderColor = 'rgba(255,59,48,0.3)';
-    hint.style.color = 'rgba(255,59,48,0.5)';
-    hint.textContent = 'Not found — paste path manually or use Browse';
-  }
-}
-
-async function openPathPanel() {
-  const panel = document.getElementById('pathPanel');
-  panel.style.display = 'flex';
-  const stored = await window.electronAPI.getStoredPaths();
-  document.getElementById('claudePathInput').value = stored.claudePath || '';
-  document.getElementById('whisperPathInput').value = stored.whisperPath || '';
-  document.getElementById('ffmpegPathInput').value = stored.ffmpegPath || '';
-  setPathStatus('claude', !!stored.claudePath, stored.claudePath);
-  setPathStatus('whisper', !!stored.whisperPath, stored.whisperPath);
-  setPathStatus('ffmpeg', !!stored.ffmpegPath, stored.ffmpegPath);
-}
-
-document.getElementById('settingsBtn').addEventListener('click', openPathPanel);
-
-document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('pathPanel').style.display = 'none';
-});
-
-document.getElementById('browseClaudeBtn').addEventListener('click', async () => {
-  const result = await window.electronAPI.browseForBinary();
-  if (result.path) {
-    document.getElementById('claudePathInput').value = result.path;
-    setPathStatus('claude', true, result.path);
-  }
-});
-
-document.getElementById('browseWhisperBtn').addEventListener('click', async () => {
-  const result = await window.electronAPI.browseForBinary();
-  if (result.path) {
-    document.getElementById('whisperPathInput').value = result.path;
-    setPathStatus('whisper', true, result.path);
-  }
-});
-
-document.getElementById('browseFfmpegBtn').addEventListener('click', async () => {
-  const result = await window.electronAPI.browseForBinary();
-  if (result.path) {
-    document.getElementById('ffmpegPathInput').value = result.path;
-    setPathStatus('ffmpeg', true, result.path);
-  }
-});
-
-document.getElementById('saveRecheckBtn').addEventListener('click', async () => {
-  const status = document.getElementById('saveStatus');
-  const cp = document.getElementById('claudePathInput').value.trim();
-  const wp = document.getElementById('whisperPathInput').value.trim();
-  const fp = document.getElementById('ffmpegPathInput').value.trim();
-  status.style.color = 'rgba(255,255,255,0.35)';
-  status.textContent = 'Saving...';
-  await window.electronAPI.savePaths({ claudePath: cp, whisperPath: wp, ffmpegPath: fp });
-  status.textContent = 'Rechecking...';
-  const result = await window.electronAPI.recheckPaths();
-  setPathStatus('claude', result.claude.ok, result.claude.path);
-  setPathStatus('whisper', result.whisper.ok, result.whisper.path);
-  setPathStatus('ffmpeg', result.ffmpeg.ok, result.ffmpeg.path);
-  if (result.claude.ok && result.whisper.ok && result.ffmpeg.ok) {
-    status.style.color = 'rgba(48,209,88,0.7)';
-    status.textContent = '✓ All checks passed — launching';
-    await new Promise(r => setTimeout(r, 1000));
-    document.getElementById('pathPanel').style.display = 'none';
-    showReady('All checks passed — launching');
-    await new Promise(r => setTimeout(r, 800));
-    window.electronAPI.splashDone();
-  } else {
-    const failedName = !result.claude.ok ? 'Claude CLI' : !result.whisper.ok ? 'Whisper' : 'ffmpeg';
-    status.style.color = 'rgba(255,59,48,0.7)';
-    status.textContent = failedName + ' path not found — verify and try again';
-  }
-});
-
-async function runChecks() {
-  await new Promise(r => setTimeout(r, 1400));
-
-  setCheck('cli', 'checking');
-  await new Promise(r => setTimeout(r, 600));
-  const cliResult = await window.electronAPI.splashCheckCLI();
-
-  if (!cliResult.ok) {
-    setCheck('cli', 'fail');
-    document.getElementById('install-btn').style.display = 'block';
-    document.getElementById('install-btn').textContent = 'Set path manually →';
-    document.getElementById('install-btn').onclick = openPathPanel;
-    showReady('Claude CLI not found — set path or install', true);
-    return;
-  }
-  setCheck('cli', 'done');
-
-  await new Promise(r => setTimeout(r, 200));
-  setCheck('whisper', 'checking');
-  await new Promise(r => setTimeout(r, 400));
-  const whisperResult = await window.electronAPI.splashCheckWhisper();
-
-  if (!whisperResult.ok) {
-    setCheck('whisper', 'fail');
-    document.getElementById('whisper-btn').style.display = 'block';
-    document.getElementById('whisper-btn').textContent = 'Set path manually →';
-    document.getElementById('whisper-btn').onclick = openPathPanel;
-    showReady('Whisper not found — set path or install', true);
-    return;
-  }
-  setCheck('whisper', 'done');
-
-  await new Promise(r => setTimeout(r, 200));
-  setCheck('mic', 'checking');
-  await new Promise(r => setTimeout(r, 300));
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(t => t.stop());
-    setCheck('mic', 'done');
-  } catch (err) {
-    setCheck('mic', 'fail');
-    showReady('Microphone access denied — check System Preferences', true);
-    return;
-  }
-
-  await new Promise(r => setTimeout(r, 300));
-  showReady('All checks passed — launching');
-  await new Promise(r => setTimeout(r, 600));
-  window.electronAPI.splashDone();
-}
-
-// ── Manual path overrides ─────────────────────────────────────────
-async function s1UseManualPath() {
-  const val = document.getElementById('s1-manual-path').value.trim();
-  if (!val) return;
-  const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: val, whisperPath: stored.whisperPath || '', ffmpegPath: stored.ffmpegPath || '' });
-  runScreen1();
-}
-
-async function s1NotrespondingUseManualPath() {
-  const val = document.getElementById('s1-notresponding-path').value.trim();
-  if (!val) return;
-  const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: val, whisperPath: stored.whisperPath || '', ffmpegPath: stored.ffmpegPath || '' });
-  runScreen1();
-}
-
-async function s2UseManualPath() {
-  const val = document.getElementById('s2-manual-path').value.trim();
-  if (!val) return;
-  const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: val, ffmpegPath: stored.ffmpegPath || '' });
-  runScreen2();
-}
-
-async function s2FfmpegUseManualPath() {
-  const val = document.getElementById('s2-ffmpeg-manual-path').value.trim();
-  if (!val) return;
-  const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({ claudePath: stored.claudePath || '', whisperPath: stored.whisperPath || '', ffmpegPath: val });
-  runScreen2();
-}
-
-async function s2BothUseManualPath() {
-  const whisperVal = document.getElementById('s2-manual-path-both').value.trim();
-  const ffmpegVal = document.getElementById('s2-ffmpeg-manual-path-both').value.trim();
-  if (!whisperVal && !ffmpegVal) return;
-  const stored = await window.electronAPI.getStoredPaths();
-  await window.electronAPI.savePaths({
-    claudePath: stored.claudePath || '',
-    whisperPath: whisperVal || stored.whisperPath || '',
-    ffmpegPath: ffmpegVal || stored.ffmpegPath || ''
+function show(id) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('visible', s.id === 'screen-' + id));
+  const rail = document.getElementById('rail');
+  rail.hidden = id === 'welcome';
+  const index = STEPS.indexOf(id === 'speech' ? 'claude' : id);
+  rail.querySelectorAll('li').forEach((li, i) => {
+    li.classList.toggle('done', i < index);
+    if (i === index) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
   });
-  runScreen2();
+  if (id !== 'claude') stopClaudePoll();
 }
 
-// ── Shared helpers ────────────────────────────────────────────────
-function wzCopy(btn, text) {
-  window.electronAPI.copyToClipboard(text);
-  const orig = btn.textContent;
-  btn.textContent = 'Copied ✓';
-  setTimeout(() => { btn.textContent = orig; }, 2000);
+function showState(screen, stateId) {
+  document.querySelectorAll('#screen-' + screen + ' .state').forEach((s) => s.classList.toggle('visible', s.id === stateId));
 }
 
-function showSkipOverlay() {
-  document.getElementById('skipOverlay').classList.add('visible');
-}
-
-function hideSkipOverlay() {
-  document.getElementById('skipOverlay').classList.remove('visible');
-}
-
-async function confirmSkip() {
-  hideSkipOverlay();
-  await window.electronAPI.setSetupComplete();
-  window.electronAPI.splashDone();
-}
-
-// ── Screen 1: Claude CLI ──────────────────────────────────────────
-function s1Show(stateId) {
-  ['s1-checking','s1-working','s1-notfound','s1-notloggedin','s1-notresponding']
-    .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
-}
-
-async function runScreen1() {
-  document.getElementById('s1-actions').style.display = 'none';
-  s1Show('s1-checking');
-
-  const sub = document.getElementById('s1-substate');
-  sub.textContent = 'Looking for Claude CLI...';
-  await new Promise(r => setTimeout(r, 600));
-  sub.textContent = 'Verifying version...';
-  await new Promise(r => setTimeout(r, 500));
-  sub.textContent = 'Testing generation...';
-
-  const result = await window.electronAPI.checkClaude();
-
-  function s1ShowError(stateId, showHelp) {
-    s1Show(stateId);
-    document.getElementById('s1-recheck-btn').style.display = 'flex';
-    document.getElementById('s1-recheck-btn').className = 'wz-btn-primary';
-    document.getElementById('s1-continue-btn').style.display = 'none';
-    document.getElementById('s1-help-btn').style.display = showHelp ? 'flex' : 'none';
-    document.getElementById('s1-actions').style.display = 'flex';
-  }
-
-  if (!result.found) { s1ShowError('s1-notfound', true); return; }
-  if (result.authError) { s1ShowError('s1-notloggedin', false); return; }
-  if (!result.working) {
-    document.getElementById('s1-error-output').textContent = result.error || 'Unknown error';
-    document.getElementById('s1-notresponding-path').value = result.path || '';
-    s1ShowError('s1-notresponding', false);
-    return;
-  }
-
-  // Working
-  s1Show('s1-working');
-  const verStr = result.version ? result.version.split('\n')[0] : '';
-  document.getElementById('s1-path-version').textContent =
-    result.path + (verStr ? '  ·  ' + verStr : '');
-
-  document.getElementById('s1-recheck-btn').style.display = 'flex';
-  document.getElementById('s1-continue-btn').style.display = 'flex';
-  document.getElementById('s1-help-btn').style.display = 'none';
-  document.getElementById('s1-actions').style.display = 'flex';
-}
-
-// ── Screen 2: Whisper + ffmpeg ────────────────────────────────────
-function s2Show(stateId) {
-  ['s2-checking','s2-both-found','s2-whisper-notfound','s2-ffmpeg-notfound','s2-both-notfound']
-    .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
-}
-
-async function runScreen2() {
-  document.getElementById('s2-actions').style.display = 'none';
-  s2Show('s2-checking');
-
-  const [whisper, ffmpeg] = await Promise.all([
-    window.electronAPI.checkWhisper(),
-    window.electronAPI.checkFfmpeg(),
-  ]);
-
-  if (whisper.found && ffmpeg.found) {
-    s2Show('s2-both-found');
-    document.getElementById('s2-whisper-ok-label').textContent = 'Whisper — found at ' + whisper.path;
-    document.getElementById('s2-ffmpeg-ok-label').textContent = 'ffmpeg — found at ' + ffmpeg.path;
-    document.getElementById('s2-bar2').classList.add('filled');
-    document.getElementById('s2-continue-btn').style.display = 'flex';
-    document.getElementById('s2-actions').style.display = 'flex';
-    return;
-  }
-
-  if (!whisper.found && !ffmpeg.found) {
-    s2Show('s2-both-notfound');
-  } else if (!whisper.found) {
-    s2Show('s2-whisper-notfound');
+// ── Microphone ───────────────────────────────────────────────────────────────
+async function checkMic() {
+  const result = await api.requestMicrophone();
+  if (result.granted) {
+    showState('mic', 'mic-ok');
+    document.getElementById('mic-next').disabled = false;
+  } else if (result.status === 'not-determined') {
+    showState('mic', 'mic-ask');
   } else {
-    s2Show('s2-ffmpeg-notfound');
-    document.getElementById('s2-whisper-partial-label').textContent = 'Whisper — found at ' + whisper.path + ' ✓';
+    showState('mic', 'mic-denied');
   }
+}
+document.getElementById('mic-allow').addEventListener('click', checkMic);
+document.getElementById('mic-recheck').addEventListener('click', checkMic);
+document.getElementById('mic-open-settings').addEventListener('click', () => api.openMicrophoneSettings());
+document.getElementById('mic-next').addEventListener('click', () => { show('claude'); runScreen1(); });
 
-  document.getElementById('s2-actions').style.display = 'flex';
+// ── Claude Code ──────────────────────────────────────────────────────────────
+function setClaudeReady(ready) {
+  document.getElementById('claude-next').disabled = !ready;
+  document.getElementById('claude-recheck').hidden = ready;
 }
 
-// ── Screen 3: Model download ──────────────────────────────────────
-let s3progressUnsubscribe = null;
-
-function s3Show(stateId) {
-  ['s3-checking','s3-already','s3-notdownloaded','s3-downloading','s3-complete','s3-failed']
-    .forEach(id => { document.getElementById(id).style.display = id === stateId ? 'block' : 'none'; });
-  document.getElementById('s3-download-action').style.display = 'none';
-  document.getElementById('s3-retry-action').style.display = 'none';
-  document.getElementById('s3-success-action').style.display = 'none';
-}
-
-async function runScreen3() {
-  // Clean up any lingering progress listener
-  if (s3progressUnsubscribe) { s3progressUnsubscribe(); s3progressUnsubscribe = null; }
-  s3Show('s3-checking');
-
-  const result = await window.electronAPI.checkWhisperModel();
-
-  if (result.downloaded) {
-    s3Show('s3-already');
-    document.getElementById('s3-bar3').classList.add('filled');
-    document.getElementById('s3-step3').className = 'wz-step-circle done';
-    document.getElementById('s3-step3').textContent = '✓';
-    document.getElementById('s3-success-action').style.display = 'flex';
+// Checks Claude Code and shows the matching state. Keeps checking while something is missing,
+// so finishing the install or sign-in in Terminal is picked up without clicking anything.
+async function runScreen1({ quiet = false } = {}) {
+  if (!quiet) showState('claude', 'claude-checking');
+  const status = await api.claudeStatus();
+  if (!status.installed && !status.path) {
+    showState('claude', 'claude-not-installed');
+    setClaudeReady(false);
+    startClaudePoll();
     return;
   }
-
-  s3Show('s3-notdownloaded');
-  document.getElementById('s3-download-action').style.display = 'flex';
-}
-
-async function startDownload() {
-  document.getElementById('s3-download-action').style.display = 'none';
-  document.getElementById('s3-retry-action').style.display = 'none';
-  s3Show('s3-downloading');
-  document.getElementById('s3-progress-bar').style.width = '0%';
-  document.getElementById('s3-mb-label').textContent = '0 MB of 148 MB';
-  document.getElementById('s3-time-label').textContent = '';
-
-  // Listen for progress events
-  s3progressUnsubscribe = window.electronAPI.onWhisperDownloadProgress((data) => {
-    document.getElementById('s3-progress-bar').style.width = data.percent + '%';
-    document.getElementById('s3-mb-label').textContent =
-      Math.round(data.mbDone) + ' MB of ' + Math.round(data.mbTotal) + ' MB';
-    if (data.secondsLeft != null) {
-      document.getElementById('s3-time-label').textContent = '~' + data.secondsLeft + ' sec remaining';
+  if (!status.installed) {
+    document.getElementById('s1-notresponding-path').value = status.path || '';
+    document.getElementById('claude-error-detail').textContent = status.path ? 'Tried ' + status.path : '';
+    showState('claude', 's1-notresponding');
+    setClaudeReady(false);
+    startClaudePoll();
+    return;
+  }
+  if (status.loggedIn === false) {
+    showState('claude', 'claude-logged-out');
+    setClaudeReady(false);
+    startClaudePoll();
+    return;
+  }
+  if (status.loggedIn === null) {
+    // Older Claude Code without `auth status`: fall back to a real test prompt.
+    const test = await api.checkClaude();
+    if (!test.working) {
+      if (test.authError) { showState('claude', 'claude-logged-out'); setClaudeReady(false); startClaudePoll(); return; }
+      document.getElementById('s1-notresponding-path').value = status.path || '';
+      document.getElementById('claude-error-detail').textContent = test.error || '';
+      showState('claude', 's1-notresponding');
+      setClaudeReady(false);
+      return;
     }
-  });
-
-  const result = await window.electronAPI.downloadWhisperModel();
-  if (s3progressUnsubscribe) { s3progressUnsubscribe(); s3progressUnsubscribe = null; }
-
-  if (result.success) {
-    s3Show('s3-complete');
-    document.getElementById('s3-bar3').classList.add('filled');
-    document.getElementById('s3-step3').className = 'wz-step-circle done';
-    document.getElementById('s3-step3').textContent = '✓';
-    document.getElementById('s3-success-action').style.display = 'flex';
-  } else {
-    s3Show('s3-failed');
-    document.getElementById('s3-error-text').textContent = result.error || 'Download failed';
-    document.getElementById('s3-retry-action').style.display = 'flex';
   }
+  stopClaudePoll();
+  document.getElementById('claude-ready-detail').textContent = [status.version, status.path].filter(Boolean).join(' · ');
+  showState('claude', 'claude-ready');
+  setClaudeReady(true);
 }
 
-// ── Screen 4: Microphone check ────────────────────────────────────
-async function runScreen4() {
-  const row = document.getElementById('s4-mic-row');
-  const icon = document.getElementById('s4-mic-icon');
-  const label = document.getElementById('s4-mic-label');
-  const denied = document.getElementById('s4-mic-denied');
-  const recheckBtn = document.getElementById('s4-recheck-btn');
-  const launchBtn = document.getElementById('s4-launch-btn');
-
-  // Reset to checking state
-  row.style.background = 'rgba(255,255,255,0.03)';
-  row.style.borderColor = 'rgba(255,255,255,0.1)';
-  icon.innerHTML = '<svg width="10" height="10" viewBox="0 0 8 8" style="display:block;animation:spin 1s linear infinite"><path d="M4 1.5A2.5 2.5 0 0 1 6.5 4" stroke="rgba(10,132,255,0.9)" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  label.style.color = 'rgba(255,255,255,0.4)';
-  label.textContent = 'Checking microphone…';
-  denied.style.display = 'none';
-  recheckBtn.style.display = 'none';
-  launchBtn.style.opacity = '0.35';
-  launchBtn.style.pointerEvents = 'none';
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(t => t.stop());
-    // Granted
-    row.style.background = 'rgba(48,209,88,0.04)';
-    row.style.borderColor = 'rgba(48,209,88,0.1)';
-    icon.innerHTML = '<span style="color:rgba(48,209,88,0.8);font-size:13px">✓</span>';
-    label.style.color = 'rgba(255,255,255,0.55)';
-    label.textContent = 'Microphone — access granted';
-    launchBtn.style.opacity = '1';
-    launchBtn.style.pointerEvents = 'auto';
-    launchBtn.textContent = 'Launch Promptly 🎉';
-  } catch (err) {
-    // Denied or unavailable
-    row.style.background = 'rgba(255,59,48,0.04)';
-    row.style.borderColor = 'rgba(255,59,48,0.2)';
-    icon.innerHTML = '<span style="color:rgba(255,59,48,0.8);font-size:13px">✗</span>';
-    label.style.color = 'rgba(255,59,48,0.7)';
-    label.textContent = 'Microphone — access denied';
-    denied.style.display = 'block';
-    recheckBtn.style.display = 'flex';
-  }
+function startClaudePoll() {
+  if (claudePoll) return;
+  claudePoll = setInterval(() => runScreen1({ quiet: true }), 3000);
+}
+function stopClaudePoll() {
+  clearInterval(claudePoll);
+  claudePoll = null;
 }
 
-// ── Screen navigation ─────────────────────────────────────────────
-function showScreen(n) {
-  document.getElementById('screen-welcome').classList.remove('visible');
-  [1, 2, 3, 4].forEach(i => {
-    const el = document.getElementById('screen-' + i);
-    if (el) el.classList.toggle('visible', i === n);
-  });
-  if (n === 1) runScreen1();
-  if (n === 2) runScreen2();
-  if (n === 3) runScreen3();
-  if (n === 4) runScreen4();
+async function useManualPath(inputId) {
+  const value = document.getElementById(inputId).value.trim();
+  if (!value) return;
+  const stored = await api.getStoredPaths();
+  await api.savePaths({ claudePath: value, whisperPath: stored.speechBuiltIn ? '' : stored.whisperPath, ffmpegPath: stored.ffmpegPath });
+  await api.recheckPaths();
+  runScreen1();
 }
+function s1UseManualPath() { return useManualPath('s1-manual-path'); }
+function s1NotrespondingUseManualPath() { return useManualPath('s1-notresponding-path'); }
 
-async function launchApp() {
-  await window.electronAPI.setSetupComplete();
-  window.electronAPI.splashDone();
-}
+document.getElementById('claude-install').addEventListener('click', async () => {
+  await api.claudeInstall();
+  startClaudePoll();
+});
+document.getElementById('claude-login').addEventListener('click', async () => {
+  await api.claudeLogin();
+  startClaudePoll();
+});
+document.getElementById('copy-install').addEventListener('click', () => {
+  api.copyToClipboard(document.getElementById('install-cmd').textContent);
+  document.getElementById('copy-install').textContent = 'Copied';
+});
+document.getElementById('claude-next').addEventListener('click', () => {
+  if (speechBuiltIn) { show('done'); animateKeys(); } else { show('speech'); runScreen2(); }
+});
 
-document.getElementById('wzCtaBtn').addEventListener('click', () => showScreen(1));
-
-async function initSplash() {
-  const result = await window.electronAPI.checkSetupComplete();
-  if (result.complete) {
-    // Setup already done — show the quick-check splash and auto-launch as before
-    runChecks();
+// ── Speech fallback ──────────────────────────────────────────────────────────
+async function runScreen2() {
+  const result = await api.splashCheckWhisper();
+  speechBuiltIn = !!result.builtIn;
+  if (result.ok) {
+    show('done');
+    animateKeys();
     return;
   }
-  // First time — hide legacy check content, show wizard
-  document.querySelector('.content').style.display = 'none';
-  document.getElementById('screen-welcome').classList.add('visible');
+  document.getElementById('speech-detail').textContent = 'No speech engine found.';
+}
+document.getElementById('speech-skip').addEventListener('click', () => { show('done'); animateKeys(); });
+
+// ── Ready ────────────────────────────────────────────────────────────────────
+function animateKeys() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const keys = [document.getElementById('key-opt'), document.getElementById('key-space')];
+  setTimeout(() => keys.forEach((k) => k.classList.add('pressed')), 500);
+  setTimeout(() => keys.forEach((k) => k.classList.remove('pressed')), 800);
+}
+document.getElementById('done-start').addEventListener('click', async () => {
+  await api.setSetupComplete();
+  api.splashDone();
+});
+
+// ── Start ────────────────────────────────────────────────────────────────────
+document.getElementById('welcome-start').addEventListener('click', () => { show('mic'); checkMicSilently(); });
+
+// If access was already granted earlier, skip straight to "on" without prompting.
+async function checkMicSilently() {
+  const result = await api.requestMicrophone({ prompt: false });
+  if (result.granted) {
+    showState('mic', 'mic-ok');
+    document.getElementById('mic-next').disabled = false;
+  } else if (result.status !== 'not-determined') {
+    showState('mic', 'mic-denied');
+  }
 }
 
-initSplash();
+api.splashCheckWhisper().then((r) => { speechBuiltIn = !!r.builtIn; });
 </script>
 </body>
 </html>

@@ -12,6 +12,12 @@ const ROOT = path.resolve(import.meta.dirname, '..')
 function writeFakeTools(dir) {
   const claude = path.join(dir, 'claude')
   fs.writeFileSync(claude, `#!/bin/bash
+# Setup checks: version, and sign-in state (signed out while $FAKE_DIR/signed-out exists)
+if [ "$1" = "--version" ]; then echo "9.9.9 (Claude Code)"; exit 0; fi
+if [ "$1" = "auth" ]; then
+  if [ -f "$FAKE_DIR/signed-out" ]; then echo '{"loggedIn": false}'; else echo '{"loggedIn": true}'; fi
+  exit 0
+fi
 n=$(ls "$FAKE_DIR"/call-*.args 2>/dev/null | wc -l | tr -d ' ')
 printf '%s\\n' "$@" > "$FAKE_DIR/call-$n.args"
 input=$(cat)
@@ -23,23 +29,26 @@ printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s\\n' "$last"
 touch "$FAKE_DIR/call-$n.done"
 `)
   fs.chmodSync(claude, 0o755)
-  // Fake Whisper: writes <audio basename>.txt into --output_dir, like the real CLI.
+  // Fake built-in engine (whisper-cli + model): only accepts WAV, like the real one.
+  const engineDir = path.join(dir, 'engine')
+  fs.mkdirSync(engineDir)
+  fs.writeFileSync(path.join(engineDir, 'whisper-cli'), `#!/bin/bash
+f=""; prev=""
+for a in "$@"; do [ "$prev" = "-f" ] && f="$a"; prev="$a"; done
+[ "$(head -c 4 "$f")" = "RIFF" ] || { echo "expected WAV input" >&2; exit 1; }
+cp "$f" "$FAKE_DIR/last-audio.wav"
+echo "spoken words from the fake mic"
+`, { mode: 0o755 })
+  fs.writeFileSync(path.join(engineDir, 'ggml-base.en-q5_1.bin'), 'fake model')
   const whisper = path.join(dir, 'whisper')
-  fs.writeFileSync(whisper, `#!/bin/bash
-audio="$1"; out=""
-while [ $# -gt 0 ]; do [ "$1" = "--output_dir" ] && out="$2"; shift; done
-[ -z "$out" ] && exit 0
-base=$(basename "$audio"); base="\${base%.*}"
-echo "spoken words from the fake mic" > "$out/$base.txt"
-`)
-  fs.chmodSync(whisper, 0o755)
+  fs.writeFileSync(whisper, '#!/bin/bash\nexit 1\n', { mode: 0o755 })
   const ffmpeg = path.join(dir, 'ffmpeg')
   fs.writeFileSync(ffmpeg, '#!/bin/bash\nexit 0\n')
   fs.chmodSync(ffmpeg, 0o755)
-  return { claude, whisper: path.join(dir, 'whisper'), ffmpeg: path.join(dir, 'ffmpeg') }
+  return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir }
 }
 
-async function launch() {
+async function launch({ setupComplete = true, signedOut = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -48,8 +57,9 @@ async function launch() {
   fs.mkdirSync(userData)
   fs.mkdirSync(tmpDir)
   const tools = writeFakeTools(fakeDir)
+  if (signedOut) fs.writeFileSync(path.join(fakeDir, 'signed-out'), '')
   fs.writeFileSync(path.join(userData, 'config.json'), JSON.stringify({
-    setupComplete: true,
+    setupComplete,
     claudePath: tools.claude,
     whisperPath: tools.whisper,
     ffmpegPath: tools.ffmpeg,
@@ -57,9 +67,10 @@ async function launch() {
   const app = await electron.launch({
     args: [ROOT],
     cwd: ROOT,
-    env: { ...process.env, PROMPTLY_USER_DATA: userData, FAKE_DIR: fakeDir, TMPDIR: tmpDir },
+    env: { ...process.env, PROMPTLY_USER_DATA: userData, PROMPTLY_WHISPER_DIR: tools.engineDir, FAKE_DIR: fakeDir, TMPDIR: tmpDir },
   })
-  // The splash runs its quick checks, then shows the main window.
+  if (!setupComplete) return { app, dir, fakeDir, tmpDir }
+  // Setup is complete, so the bar opens directly (no splash).
   await expect.poll(async () => app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
   ), { timeout: 20000 }).toBe(true)
@@ -158,6 +169,11 @@ test('hotkey brings a hidden bar back and records from the prompt screen', async
   await expect.poll(() => appState(app)).toBe('PROMPT_READY')
   expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Alt+P'))).toBe(false)
 
+  // The recording reached the engine as 16 kHz mono WAV (converted in the renderer, no ffmpeg).
+  const wav = fs.readFileSync(path.join(fakeDir, 'last-audio.wav'))
+  expect(wav.subarray(0, 4).toString()).toBe('RIFF')
+  expect(wav.readUInt32LE(24)).toBe(16000)
+  expect(wav.readUInt16LE(22)).toBe(1)
   // The recording is deleted once it has been transcribed.
   expect(fs.readdirSync(path.join(tmpDir, 'promptly-audio'))).toEqual([])
   const last = calls(fakeDir).at(-1)
@@ -198,8 +214,48 @@ test('retrying a failed generation keeps the original mode and tone', async () =
   expect(stdins.at(-1)).toContain('"um so like fix this"')
 })
 
-test('the setup check honours a custom ffmpeg path', async () => {
+test('speech-to-text is built in, so setup never asks for Whisper or ffmpeg', async () => {
   ctx = await launch()
   const result = await ctx.page.evaluate(() => window.electronAPI.splashCheckWhisper())
-  expect(result.ffmpegFound).toBe(true)
+  expect(result).toMatchObject({ ok: true, builtIn: true })
+  const paths = await ctx.page.evaluate(() => window.electronAPI.getStoredPaths())
+  expect(paths.speechBuiltIn).toBe(true)
+})
+
+test('first-run setup: microphone, then Claude Code sign-in is picked up on its own', async () => {
+  ctx = await launch({ setupComplete: false, signedOut: true })
+  const { app, fakeDir } = ctx
+  const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
+  await setup.getByRole('button', { name: 'Set up Promptly' }).click()
+
+  await expect(setup.getByText('Microphone access is on.')).toBeVisible()
+  await setup.locator('#mic-next').click()
+
+  await expect(setup.getByText('Claude Code is installed, but not signed in.')).toBeVisible({ timeout: 10000 })
+  await expect(setup.locator('#claude-next')).toBeDisabled()
+  // Signing in happens in Terminal; the wizard should notice without any click.
+  fs.rmSync(path.join(fakeDir, 'signed-out'))
+  await expect(setup.getByText('Claude Code is ready.')).toBeVisible({ timeout: 10000 })
+  await setup.locator('#claude-next').click()
+
+  await expect(setup.getByText("You're set")).toBeVisible()
+  await setup.getByRole('button', { name: 'Start using Promptly' }).click()
+  await expect.poll(async () => app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
+  ), { timeout: 10000 }).toBe(true)
+  const config = JSON.parse(fs.readFileSync(path.join(ctx.dir, 'userData', 'config.json'), 'utf8'))
+  expect(config.setupComplete).toBe(true)
+})
+
+test('a missing Claude Code offers the installer', async () => {
+  ctx = await launch({ setupComplete: false })
+  const { app } = ctx
+  const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
+  await setup.evaluate(() => window.electronAPI.savePaths({ claudePath: '/nonexistent/claude' }))
+  await setup.getByRole('button', { name: 'Set up Promptly' }).click()
+  await setup.locator('#mic-next').click()
+  await expect(setup.getByText("Claude Code isn't installed yet.")).toBeVisible({ timeout: 10000 })
+  await expect(setup.getByRole('button', { name: 'Install Claude Code' })).toBeVisible()
+  await expect(setup.locator('#install-cmd')).toHaveText('curl -fsSL https://claude.ai/install.sh | bash')
+  await expect(setup.locator('#claude-next')).toBeDisabled()
 })

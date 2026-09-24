@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -12,6 +12,7 @@ const platform = require('./main/platform');
 const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath, makeClaudeEnv } = require('./main/binaries');
 const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/llm');
 const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
+const claudeSetup = require('./main/claude-setup');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
@@ -59,6 +60,19 @@ const MENU_BAR_ICON_STATE = {
   WORKFLOW_BUILDER: 'builder', WORKFLOW_BUILDER_DONE: 'builder',
 };
 
+// Built-in speech-to-text (whisper.cpp + model), built by scripts/fetch-whisper.sh.
+// Tests can point at a fake engine with PROMPTLY_WHISPER_DIR.
+const BUNDLED_WHISPER_DIR = (IS_E2E && process.env.PROMPTLY_WHISPER_DIR)
+  || (app.isPackaged ? path.join(process.resourcesPath, 'whisper') : path.join(__dirname, 'vendor', 'whisper'));
+
+// Window backgrounds per theme; must match --bg in src/renderer/index.css and splash.html.
+const WINDOW_BG = { dark: '#1C1C1F', light: '#F4F4F6' };
+const THEMES = ['system', 'light', 'dark'];
+
+function windowBackground() {
+  return nativeTheme.shouldUseDarkColors ? WINDOW_BG.dark : WINDOW_BG.light;
+}
+
 // Models offered in Settings. Aliases always resolve to the latest model of that family.
 const MODEL_OPTIONS = [
   { value: DEFAULT_MODEL, label: 'Sonnet 4.6 (default)' },
@@ -102,6 +116,7 @@ const evalClaude = createClaudeRunner({
   getModel: () => config.read().claudeModel || DEFAULT_MODEL,
 });
 const whisper = createWhisperRunner({
+  getBundledDir: () => BUNDLED_WHISPER_DIR,
   getWhisperPath: () => whisperPath,
   getFfmpegPath: () => ffmpegPath,
   onSlow: () => winSend('transcription-slow-warning'),
@@ -301,7 +316,7 @@ function createSplashWindow() {
     show: false,
     frame: false,
     transparent: false,
-    backgroundColor: '#0A0A14',
+    backgroundColor: windowBackground(),
     resizable: false,
     maximizable: false,
     fullscreenable: false,
@@ -328,7 +343,7 @@ function createWindow() {
     show: false,
     frame: false,
     transparent: false,
-    backgroundColor: '#0A0A14',
+    backgroundColor: windowBackground(),
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     resizable: false,
@@ -391,10 +406,31 @@ function createWindow() {
     win.setAlwaysOnTop(false);
   });
   nativeTheme.on('updated', () => {
+    for (const w of [win, splashWin]) {
+      if (w && !w.isDestroyed()) w.setBackgroundColor(windowBackground());
+    }
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
     updateMenuBarIcon(currentIconState);
   });
   return win;
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
+// Setup is needed on first run, or when Claude Code or speech-to-text stopped working.
+async function needsSetup() {
+  if (!config.read().setupComplete) return true;
+  if (!whisper.engine()) return true;
+  const status = await claudeSetup.getClaudeStatus(claudePath);
+  return !status.installed || status.loggedIn === false;
+}
+
+function finishSetup() {
+  if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
+  if (win && !win.isDestroyed()) { win.show(); win.center(); }
+  registerShortcut();
+  // Runs again after the wizard is reopened from Settings; keep a single tray icon.
+  if (!menuBarTray || menuBarTray.isDestroyed()) createMenuBarIcon();
 }
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
@@ -432,22 +468,28 @@ app.whenReady().then(async () => {
   });
 
   resetAudioTmpDir();
+  const theme = config.read().theme;
+  nativeTheme.themeSource = THEMES.includes(theme) ? theme : 'system';
   await resolveAllPaths();
 
-  createSplashWindow();
   createWindow();
+  // Returning users go straight to the bar; setup only appears when something is missing.
+  if (await needsSetup()) {
+    createSplashWindow();
+  } else if (win.webContents.isLoading()) {
+    // The setup check can outlast the page load, so only wait if it's still loading.
+    win.webContents.once('did-finish-load', () => finishSetup());
+  } else {
+    finishSetup();
+  }
+  // Compile the GPU speech shaders in the background so the first recording doesn't wait.
+  whisper.warmUp(audioTmpDir).then((gpu) => log.info(`Speech engine warm-up: ${gpu ? 'GPU ready' : 'using CPU'}`));
 
   // ── Setup wizard ──
 
   ipcMain.handle('splash-done', async () => {
     if (splashWin && !splashWin.isDestroyed()) splashWin.hide();
-    setTimeout(() => {
-      if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
-      if (win && !win.isDestroyed()) { win.show(); win.center(); }
-      registerShortcut();
-      // splash-done fires again after the wizard is reopened from Settings.
-      if (!menuBarTray || menuBarTray.isDestroyed()) createMenuBarIcon();
-    }, 1200);
+    setTimeout(finishSetup, 400);
   });
 
   ipcMain.handle('splash-check-cli', async () => {
@@ -455,13 +497,65 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('splash-check-whisper', async () => {
-    // Honours a custom ffmpeg path saved in Settings, not just the default locations.
+    const engine = whisper.engine();
+    if (engine?.type === 'bundled') return { ok: true, path: engine.cli, builtIn: true, ffmpegFound: true };
+    // Python fallback: honours a custom ffmpeg path saved in Settings, not just the default locations.
     const resolvedFfmpeg = ffmpegPath || await resolveFfmpegPath(config.read().ffmpegPath);
-    return { ok: !!whisperPath, path: whisperPath, ffmpegFound: !!resolvedFfmpeg };
+    return { ok: !!whisperPath, path: whisperPath, builtIn: false, ffmpegFound: !!resolvedFfmpeg };
+  });
+
+  // ── Claude Code setup ──
+
+  ipcMain.handle('claude-status', async () => {
+    if (!claudePath) claudePath = await resolveClaudePath(config.read().claudePath);
+    return claudeSetup.getClaudeStatus(claudePath);
+  });
+
+  ipcMain.handle('claude-install', async () => {
+    const script = claudeSetup.installScript(claudeSetup.defaultScriptDir());
+    const error = await shell.openPath(script);
+    return { ok: !error, error: error || null, command: claudeSetup.INSTALL_COMMAND };
+  });
+
+  ipcMain.handle('claude-login', async () => {
+    if (!claudePath) claudePath = await resolveClaudePath(config.read().claudePath);
+    if (!claudePath) return { ok: false, error: 'Claude Code is not installed yet' };
+    const script = claudeSetup.loginScript(claudeSetup.defaultScriptDir(), claudePath);
+    const error = await shell.openPath(script);
+    return { ok: !error, error: error || null };
+  });
+
+  // ── Theme ──
+
+  ipcMain.handle('get-theme-setting', () => {
+    const theme = config.read().theme;
+    return { theme: THEMES.includes(theme) ? theme : 'system' };
+  });
+
+  ipcMain.handle('set-theme-setting', (_event, { theme }) => {
+    if (!THEMES.includes(theme)) return { ok: false };
+    config.update({ theme });
+    nativeTheme.themeSource = theme;
+    return { ok: true };
   });
 
   ipcMain.handle('splash-open-url', async (_event, url) => {
     if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url);
+  });
+
+  // Asks macOS for microphone access (shows the system prompt the first time).
+  ipcMain.handle('request-microphone', async (_event, { prompt = true } = {}) => {
+    if (process.platform !== 'darwin' || IS_E2E) return { granted: true, status: 'granted' };
+    let status = systemPreferences.getMediaAccessStatus('microphone');
+    if (status === 'not-determined' && prompt) {
+      await systemPreferences.askForMediaAccess('microphone');
+      status = systemPreferences.getMediaAccessStatus('microphone');
+    }
+    return { granted: status === 'granted', status };
+  });
+
+  ipcMain.handle('open-microphone-settings', () => {
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
   });
 
   ipcMain.handle('check-setup-complete', () => {
@@ -529,11 +623,13 @@ app.whenReady().then(async () => {
     // A new recording replaces the one kept for retry.
     safeUnlink(lastTempAudioPath);
     lastTempAudioPath = null;
-    if (!whisperPath) {
-      return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    if (!whisper.engine()) {
+      return { success: false, error: 'Speech-to-text is not available — reinstall Promptly' };
     }
     try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
-    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}.webm`);
+    // The renderer sends 16 kHz WAV; anything else (a recording it couldn't decode) keeps webm.
+    const isWav = Buffer.from(arrayBuffer.slice(0, 4)).toString('ascii') === 'RIFF';
+    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}.${isWav ? 'wav' : 'webm'}`);
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       lastTempAudioPath = tmpFile;
@@ -552,7 +648,7 @@ app.whenReady().then(async () => {
     const noAudio = { success: false, error: 'No audio available — please record again' };
     if (!lastTempAudioPath) return noAudio;
     try { if (!fs.existsSync(lastTempAudioPath)) return noAudio; } catch { return noAudio; }
-    if (!whisperPath) return { success: false, error: 'Whisper not found — install via pip install openai-whisper' };
+    if (!whisper.engine()) return { success: false, error: 'Speech-to-text is not available — reinstall Promptly' };
     try {
       const transcript = await whisper.transcribe(lastTempAudioPath, { timeoutMs: 90000, slowWarningMs: 20000 });
       safeUnlink(lastTempAudioPath);
@@ -730,6 +826,8 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('check-whisper', async () => {
+    const engine = whisper.engine();
+    if (engine?.type === 'bundled') return { found: true, path: engine.cli, builtIn: true, error: null };
     const resolvedPath = whisperPath || await resolveWhisperPath(config.read().whisperPath);
     if (!resolvedPath) {
       return { found: false, path: null, error: 'Whisper not found — install via: pip install openai-whisper' };
@@ -746,6 +844,8 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('check-ffmpeg', async () => {
+    // The built-in engine reads WAV directly; ffmpeg only matters for the Python fallback.
+    if (whisper.engine()?.type === 'bundled') return { found: true, path: null, builtIn: true, error: null };
     const resolvedPath = await resolveFfmpegPath(config.read().ffmpegPath);
     if (!resolvedPath) {
       return { found: false, path: null, error: 'ffmpeg not found — install via: brew install ffmpeg' };
@@ -761,6 +861,10 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('check-whisper-model', () => {
+    const engine = whisper.engine();
+    if (engine?.type === 'bundled') {
+      return { downloaded: true, path: engine.model, sizeMB: Math.round(fs.statSync(engine.model).size / 1048576), builtIn: true };
+    }
     const model = findDownloadedModel();
     return model ? { downloaded: true, ...model } : { downloaded: false, path: null, sizeMB: null };
   });
@@ -780,6 +884,8 @@ app.whenReady().then(async () => {
       ffmpegPath: ffmpegPath || stored.ffmpegPath || '',
       claudeModel: stored.claudeModel || DEFAULT_MODEL,
       modelOptions: MODEL_OPTIONS,
+      // With the built-in engine, the Whisper and ffmpeg paths are only a fallback.
+      speechBuiltIn: whisper.engine()?.type === 'bundled',
     };
   });
 
@@ -807,8 +913,8 @@ app.whenReady().then(async () => {
     await resolveAllPaths();
     return {
       claude: { ok: !!claudePath, path: claudePath },
-      whisper: { ok: !!whisperPath, path: whisperPath },
-      ffmpeg: { ok: !!ffmpegPath, path: ffmpegPath },
+      whisper: { ok: !!whisper.engine(), path: whisper.engine()?.type === 'bundled' ? 'Built in' : whisperPath },
+      ffmpeg: { ok: !!ffmpegPath || whisper.engine()?.type === 'bundled', path: ffmpegPath },
     };
   });
 

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { recordingToWav } from '../utils/audio.js'
 
 export default function useRecording({
   STATES,
@@ -64,7 +65,7 @@ export default function useRecording({
       isIterated.current = false
       setTranscriptionError?.(null)
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-      const arrayBuffer = await blob.arrayBuffer()
+      const arrayBuffer = await recordingToWav(blob)
 
       setThinkTranscript('')
       if (modeRef.current === 'email') {

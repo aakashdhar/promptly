@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react'
+import { recordingToWav } from '../utils/audio.js'
 import { saveToHistory } from '../utils/history.js'
 
 export default function useIteration({
@@ -48,7 +49,7 @@ export default function useIteration({
 
     recorder.onstop = async () => {
       const blob = new Blob(iterChunksRef.current, { type: 'audio/webm' })
-      const arrayBuffer = await blob.arrayBuffer()
+      const arrayBuffer = await recordingToWav(blob)
       iterIsProcessingRef.current = false
 
       if (!window.electronAPI) {

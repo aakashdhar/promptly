@@ -10,3 +10,5 @@ dist-renderer/
 .claude/worktrees/
 test-results/
 playwright-report/
+vendor/
+.cache/

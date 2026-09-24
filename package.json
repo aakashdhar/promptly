@@ -12,9 +12,9 @@
     "dev": "vite",
     "build:renderer": "vite build",
     "start:react": "npm run build:renderer && electron .",
-    "dist": "electron-builder --universal",
+    "dist": "npm run fetch-whisper && npm run build:renderer && electron-builder --universal",
     "lint": "eslint .",
-    "dist:unsigned": "npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
+    "dist:unsigned": "npm run fetch-whisper && npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
     "create-cert": "bash scripts/create-cert.sh",
     "sign-app": "bash scripts/sign-app.sh",
     "dist:signed": "bash scripts/build-signed.sh",
@@ -24,7 +24,9 @@
     "assert": "node scripts/assert-splash.js",
     "prerelease": "npm run preflight && npm run assert",
     "test": "vitest run",
-    "test:e2e": "npm run build:renderer && playwright test"
+    "test:e2e": "npm run build:renderer && playwright test",
+    "fetch-whisper": "bash scripts/fetch-whisper.sh",
+    "dmg-background": "electron scripts/make-dmg-background.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -71,10 +73,30 @@
       },
       "signIgnore": [
         "uninstall\\.sh$"
-      ]
+      ],
+      "x64ArchFiles": "Contents/Resources/whisper/whisper-cli"
     },
     "dmg": {
-      "title": "Promptly"
+      "title": "Promptly",
+      "background": "build/dmg-background.png",
+      "window": {
+        "width": 600,
+        "height": 440
+      },
+      "iconSize": 88,
+      "contents": [
+        {
+          "x": 150,
+          "y": 170,
+          "type": "file"
+        },
+        {
+          "x": 450,
+          "y": 170,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "extraFiles": [
       {
@@ -90,6 +112,16 @@
       "splash.html",
       "dist-renderer/**",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/whisper",
+        "to": "whisper",
+        "filter": [
+          "whisper-cli",
+          "*.bin"
+        ]
+      }
     ]
   }
 }

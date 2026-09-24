@@ -161,6 +161,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('transcription-slow-warning', cb)
   },
 
+  requestMicrophone: (options) =>
+    ipcRenderer.invoke('request-microphone', options),
+
+  openMicrophoneSettings: () =>
+    ipcRenderer.invoke('open-microphone-settings'),
+
+  claudeStatus: () =>
+    ipcRenderer.invoke('claude-status'),
+
+  claudeInstall: () =>
+    ipcRenderer.invoke('claude-install'),
+
+  claudeLogin: () =>
+    ipcRenderer.invoke('claude-login'),
+
+  getThemeSetting: () =>
+    ipcRenderer.invoke('get-theme-setting'),
+
+  setThemeSetting: (theme) =>
+    ipcRenderer.invoke('set-theme-setting', { theme }),
+
   retryGeneration: () =>
     ipcRenderer.invoke('retry-generation'),
 

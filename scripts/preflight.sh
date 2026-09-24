@@ -49,42 +49,28 @@ echo "$CLAUDE_OUT" | grep -q "READY" || fail "claude binary found but not execut
  Likely a symlinked binary whose node is not in PATH."
 ok "CHECK 3: claude responds READY in non-login shell"
 
-# CHECK 4 — ffmpeg reachable (non-login PATH, then common locations — mirrors resolveFfmpegPath())
-FFMPEG=$(env -i HOME="$HOME" /bin/sh -c 'command -v ffmpeg' 2>/dev/null || true)
-if [ -z "$FFMPEG" ]; then
-  for p in \
-    "/usr/local/bin/ffmpeg" "/opt/homebrew/bin/ffmpeg" \
-    "$HOME/.local/bin/ffmpeg" "/usr/bin/ffmpeg"; do
-    [ -f "$p" ] && { FFMPEG="$p"; break; }
-  done
-fi
-[ -z "$FFMPEG" ] && fail "ffmpeg not found in non-login shell PATH or any common install location."
-ok "CHECK 4: ffmpeg found at $FFMPEG"
+# CHECK 4 — built-in speech engine is built (users no longer install Whisper, Python or ffmpeg)
+WHISPER_DIR="vendor/whisper"
+[ -x "$WHISPER_DIR/whisper-cli" ] || fail "Built-in speech engine missing. Run: bash scripts/fetch-whisper.sh"
+ARCHS=$(lipo -archs "$WHISPER_DIR/whisper-cli" 2>/dev/null)
+echo "$ARCHS" | grep -q arm64 && echo "$ARCHS" | grep -q x86_64 \
+  || fail "whisper-cli is not universal (has: $ARCHS). Rebuild with scripts/fetch-whisper.sh"
+ok "CHECK 4: whisper-cli built ($ARCHS)"
 
-# CHECK 5 — whisper reachable (non-login PATH, then common locations — mirrors resolveWhisperPath())
-WHISPER=$(env -i HOME="$HOME" /bin/sh -c 'command -v whisper' 2>/dev/null || true)
-if [ -z "$WHISPER" ]; then
-  for p in \
-    "/usr/local/bin/whisper" "/usr/bin/whisper" \
-    "$HOME/.pyenv/shims/whisper" "$HOME/.local/bin/whisper" \
-    "$HOME/.local/pipx/venvs/openai-whisper/bin/whisper" \
-    "$HOME/Library/Python/3.12/bin/whisper" "$HOME/Library/Python/3.11/bin/whisper" \
-    "$HOME/Library/Python/3.10/bin/whisper" "$HOME/Library/Python/3.9/bin/whisper" \
-    "/opt/homebrew/bin/whisper" "/opt/local/bin/whisper"; do
-    [ -f "$p" ] && { WHISPER="$p"; break; }
-  done
-fi
-[ -z "$WHISPER" ] && fail "whisper not found in non-login shell PATH or any common install location."
-ok "CHECK 5: whisper found at $WHISPER"
+# CHECK 5 — speech model present and matches the pinned checksum
+MODEL_SHA=$(grep '^MODEL_SHA256=' scripts/fetch-whisper.sh | sed -E 's/MODEL_SHA256="([0-9a-f]+)".*/\1/')
+MODEL_FILE="$WHISPER_DIR/$(grep '^MODEL=' scripts/fetch-whisper.sh | sed -E 's/MODEL="(.+)"/\1/')"
+[ -f "$MODEL_FILE" ] || fail "Speech model missing. Run: bash scripts/fetch-whisper.sh"
+[ "$(shasum -a 256 "$MODEL_FILE" | awk '{print $1}')" = "$MODEL_SHA" ] || fail "Speech model checksum mismatch: $MODEL_FILE"
+ok "CHECK 5: speech model verified ($(basename "$MODEL_FILE"))"
 
-# CHECK 6 — whisper executes (resolve shim → real binary via pyenv if needed, then test --help)
-WHISPER_REAL="$WHISPER"
-if echo "$WHISPER" | grep -q ".pyenv/shims"; then
-  WHISPER_REAL=$(zsh -lc "pyenv which whisper 2>/dev/null" 2>/dev/null || echo "$WHISPER")
-fi
-"$WHISPER_REAL" --help >/dev/null 2>&1 || \
-  fail "whisper found but failed to execute. Check Python PATH and SSL certificate environment variables."
-ok "CHECK 6: whisper --help exits 0"
+# CHECK 6 — the engine actually runs (1 s of silence, CPU only, minimal environment)
+SILENCE=$(mktemp -t promptly-silence).wav
+python3 -c "import wave; w=wave.open('$SILENCE','wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(b'\x00\x00'*16000); w.close()"
+env -i HOME="$HOME" "$WHISPER_DIR/whisper-cli" -m "$MODEL_FILE" -f "$SILENCE" -l en --no-timestamps --no-prints --no-gpu >/dev/null 2>&1 \
+  || { rm -f "$SILENCE"; fail "whisper-cli failed to transcribe a test file"; }
+rm -f "$SILENCE"
+ok "CHECK 6: whisper-cli transcribes"
 
 # CHECK 7 — every Claude process (main.js + main/) uses makeClaudeEnv
 python3 - <<'PYEOF'

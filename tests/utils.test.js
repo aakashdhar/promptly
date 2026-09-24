@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText } from '../src/renderer/utils/promptUtils.js'
 import { formatTime } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
+import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
 
 describe('parseSections', () => {
   it('returns empty array for empty input', () => {
@@ -327,5 +328,19 @@ describe('structured output validation', () => {
     expect(buildImagePromptText('{"prompt":"A cat","flags":"--ar 1:1"}')).toBe('A cat\n\n--ar 1:1')
     expect(buildImagePromptText('{"prompt":"A cat","flags":""}')).toBe('A cat')
     expect(buildImagePromptText('plain text prompt')).toBe('plain text prompt')
+  })
+})
+
+describe('encodeWav', () => {
+  it('writes a 16-bit mono PCM WAV header and clamps samples', () => {
+    const buf = encodeWav(new Float32Array([0, 1, -1, 2]), TARGET_SAMPLE_RATE)
+    const view = new DataView(buf)
+    const text = (o, n) => String.fromCharCode(...new Uint8Array(buf, o, n))
+    expect(text(0, 4)).toBe('RIFF')
+    expect(text(8, 4)).toBe('WAVE')
+    expect(view.getUint16(22, true)).toBe(1)
+    expect(view.getUint32(24, true)).toBe(16000)
+    expect(view.getUint32(40, true)).toBe(8)
+    expect([view.getInt16(44, true), view.getInt16(46, true), view.getInt16(48, true), view.getInt16(50, true)]).toEqual([0, 32767, -32768, 32767])
   })
 })

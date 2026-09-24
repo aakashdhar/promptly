@@ -10,7 +10,8 @@ const { createClaudeRunner, parseJsonOutput, classifyError } = require('../main/
 const { createConfigStore } = require('../main/config.js')
 const { createLogger } = require('../main/log.js')
 const { resolveFfmpegPath, makeClaudeEnv } = require('../main/binaries.js')
-const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv } = require('../main/whisper.js')
+const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv, findBundledEngine, cleanTranscript, silentWav, createWhisperRunner } = require('../main/whisper.js')
+const { getClaudeStatus, installScript, loginScript, shellQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
 const { drawMicIconPng, isTemplateState } = require('../main/tray-icon.js')
 
 let tmp
@@ -255,5 +256,108 @@ describe('tray icon', () => {
     }
     expect(isTemplateState('idle')).toBe(true)
     expect(isTemplateState('recording')).toBe(false)
+  })
+})
+
+describe('built-in speech engine', () => {
+  let dir
+  beforeAll(() => {
+    dir = path.join(tmp, 'engine')
+    fs.mkdirSync(dir, { recursive: true })
+    // Fake whisper-cli: prints its args, and fails unless the input is a WAV (RIFF header).
+    fs.writeFileSync(path.join(dir, 'whisper-cli'), `#!/bin/bash
+f=""; prev=""
+for a in "$@"; do [ "$prev" = "-f" ] && f="$a"; prev="$a"; done
+[ "$(head -c 4 "$f")" = "RIFF" ] || { echo "not a wav" >&2; exit 1; }
+echo " [BLANK_AUDIO] hello   from the engine "
+echo "ARGS $*" >&2
+`, { mode: 0o755 })
+    fs.writeFileSync(path.join(dir, 'ggml-base.en-q5_1.bin'), 'model')
+  })
+
+  it('is found only when both the binary and model exist', () => {
+    expect(findBundledEngine(dir)).toEqual({ cli: path.join(dir, 'whisper-cli'), model: path.join(dir, 'ggml-base.en-q5_1.bin') })
+    expect(findBundledEngine(path.join(tmp, 'nope'))).toBeNull()
+    expect(findBundledEngine(null)).toBeNull()
+  })
+
+  it('cleans non-speech markers and whitespace', () => {
+    expect(cleanTranscript(' [BLANK_AUDIO]\n hello   world \n')).toBe('hello world')
+    expect(cleanTranscript('[MUSIC]\n(wind blowing)')).toBe('')
+  })
+
+  it('writes a valid 16 kHz mono WAV of silence', () => {
+    const wav = silentWav(1)
+    expect(wav.subarray(0, 4).toString()).toBe('RIFF')
+    expect(wav.readUInt32LE(24)).toBe(16000)
+    expect(wav.length).toBe(44 + 32000)
+  })
+
+  it('prefers the built-in engine and uses the CPU until warmed up', async () => {
+    const w = createWhisperRunner({ getBundledDir: () => dir, getWhisperPath: () => '/should/not/be/used', getFfmpegPath: () => null })
+    expect(w.engine().type).toBe('bundled')
+    const audio = path.join(tmp, 'in.wav')
+    fs.writeFileSync(audio, silentWav(1))
+    expect(await w.transcribe(audio, { timeoutMs: 5000 })).toBe('hello from the engine')
+    expect(w.isGpuReady()).toBe(false)
+    expect(await w.warmUp(path.join(tmp, 'warm'))).toBe(true)
+    expect(w.isGpuReady()).toBe(true)
+  })
+
+  it('reports a clear error for audio it cannot read', async () => {
+    const w = createWhisperRunner({ getBundledDir: () => dir, getWhisperPath: () => null, getFfmpegPath: () => null })
+    const bad = path.join(tmp, 'in.webm')
+    fs.writeFileSync(bad, 'webm bytes')
+    await expect(w.transcribe(bad, { timeoutMs: 5000 })).rejects.toThrow(/not a wav/)
+  })
+
+  it('falls back to Python Whisper when the built-in engine is missing', () => {
+    const w = createWhisperRunner({ getBundledDir: () => null, getWhisperPath: () => '/usr/local/bin/whisper', getFfmpegPath: () => null })
+    expect(w.engine()).toEqual({ type: 'python', whisperPath: '/usr/local/bin/whisper' })
+    const none = createWhisperRunner({ getBundledDir: () => null, getWhisperPath: () => null, getFfmpegPath: () => null })
+    expect(none.engine()).toBeNull()
+  })
+})
+
+describe('Claude Code setup', () => {
+  function fakeClaude(name, body) {
+    const file = path.join(tmp, name)
+    fs.writeFileSync(file, `#!/bin/bash\n${body}\n`, { mode: 0o755 })
+    return file
+  }
+
+  it('reports installed and signed in', async () => {
+    const bin = fakeClaude('claude-ok', 'case "$1" in --version) echo "2.1.0 (Claude Code)";; auth) echo \'{"loggedIn": true}\';; esac')
+    expect(await getClaudeStatus(bin)).toEqual({ installed: true, path: bin, version: '2.1.0 (Claude Code)', loggedIn: true })
+  })
+
+  it('reports signed out', async () => {
+    const bin = fakeClaude('claude-out', 'case "$1" in --version) echo "2.1.0";; auth) echo \'{"loggedIn": false}\';; esac')
+    expect((await getClaudeStatus(bin)).loggedIn).toBe(false)
+  })
+
+  it('returns loggedIn null for CLIs without auth status', async () => {
+    const bin = fakeClaude('claude-old', 'case "$1" in --version) echo "1.0.0";; *) echo "unknown command" >&2; exit 1;; esac')
+    expect(await getClaudeStatus(bin)).toMatchObject({ installed: true, loggedIn: null })
+  })
+
+  it('reports not installed for a missing or broken binary', async () => {
+    expect(await getClaudeStatus(null)).toMatchObject({ installed: false })
+    expect(await getClaudeStatus(path.join(tmp, 'missing-claude'))).toMatchObject({ installed: false })
+  })
+
+  it('writes Terminal scripts with the official installer and a safely quoted path', () => {
+    const install = fs.readFileSync(installScript(path.join(tmp, 'scripts')), 'utf8')
+    expect(install).toContain(INSTALL_COMMAND)
+    expect(INSTALL_COMMAND).toBe('curl -fsSL https://claude.ai/install.sh | bash')
+    const login = fs.readFileSync(loginScript(path.join(tmp, 'scripts'), "/Users/a b/it's/claude"), 'utf8')
+    expect(login).toContain(`${shellQuote("/Users/a b/it's/claude")} auth login`)
+    expect(shellQuote("it's")).toBe(`'it'\\''s'`)
+  })
+
+  it('sets USER so Claude Code can read its login from the keychain', () => {
+    const env = makeClaudeEnv('/x/claude', { PATH: '/usr/bin' })
+    expect(env.USER).toBe(os.userInfo().username)
+    expect(makeClaudeEnv('/x/claude', { PATH: '/usr/bin', USER: 'someone' }).USER).toBe('someone')
   })
 })
