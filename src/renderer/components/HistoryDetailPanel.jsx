@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { readableColor } from '../utils/promptUtils.js'
+import { readableColor, isResultMode } from '../utils/promptUtils.js'
 import PromptSections from './PromptSections.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
@@ -72,7 +72,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
       }}/>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px', minHeight: 0 }}>
-        <PromptSections prompt={selected.prompt} textSize="13.5px" textColor="rgba(var(--ink),0.88)" />
+        <PromptSections prompt={selected.prompt} plain={isResultMode(selected.mode)} textSize="13.5px" textColor="rgba(var(--ink),0.88)" />
         {selected.polishChanges && selected.polishChanges.length > 0 && (
           <div style={{ margin: '12px 0 20px', padding: '10px 12px', background: 'rgba(48,209,88,0.04)', border: '0.5px solid rgba(48,209,88,0.12)', borderRadius: '10px' }}>
             <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(48,209,88) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Changes made</div>
@@ -148,7 +148,7 @@ export default function HistoryDetailPanel({ selected, onCopy, onReuse, onBookma
             transition: 'all 200ms',
           }}
         >
-          {copied ? 'Copied ✓' : 'Copy prompt'}
+          {copied ? 'Copied ✓' : isResultMode(selected?.mode) ? 'Copy' : 'Copy prompt'}
         </button>
         <button
           onClick={onReuse}

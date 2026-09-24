@@ -2,6 +2,7 @@
 //   • hold-to-talk: sees the hotkey go down AND up (Electron's globalShortcut only sees presses)
 //   • the app you're in (for destination-aware prompts)
 //   • the text you've selected (command mode)
+//   • the id of the front window, so Promptly can screenshot just that window
 // It speaks JSON lines on stdin/stdout with Promptly's main process (see main/helper.js).
 // Hotkey watching and selected text need the Accessibility permission; without it the helper
 // still reports the frontmost app and Promptly falls back to tap-to-toggle.
@@ -125,6 +126,23 @@ func frontmostApp() -> [String: Any] {
     ]
 }
 
+// The frontmost app's main window, for a screenshot of what the user is looking at. Window
+// numbers, owners and layers are readable without the Screen Recording permission; the capture
+// itself (done by Promptly) is what needs it.
+func frontWindowId(pid: pid_t) -> Int? {
+    guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return nil }
+    for info in list {
+        guard (info[kCGWindowOwnerPID as String] as? Int).map({ pid_t($0) }) == pid,
+              (info[kCGWindowLayer as String] as? Int) == 0,
+              let bounds = info[kCGWindowBounds as String] as? [String: Any],
+              let width = bounds["Width"] as? Double, let height = bounds["Height"] as? Double,
+              width >= 120, height >= 80,
+              let number = info[kCGWindowNumber as String] as? Int else { continue }
+        return number   // the list is front to back, so the first match is the front window
+    }
+    return nil
+}
+
 func copyAttribute(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
     var value: CFTypeRef?
     return AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success ? value : nil
@@ -198,7 +216,9 @@ func handleCommand(_ line: String) {
         reply["id"] = id
         emit(reply)
     case "context":
-        emit(["type": "context", "id": id, "app": frontmostApp(), "selectedText": selectedText() ?? NSNull()])
+        let app = frontmostApp()
+        let windowId = (app["pid"] as? Int).flatMap { frontWindowId(pid: pid_t($0)) }
+        emit(["type": "context", "id": id, "app": app, "windowId": windowId ?? NSNull(), "selectedText": selectedText() ?? NSNull()])
     case "status":
         var reply = status()
         reply["id"] = id

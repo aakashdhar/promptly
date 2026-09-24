@@ -1,5 +1,5 @@
 import MorphCanvas from './MorphCanvas.jsx'
-import { readableColor } from '../utils/promptUtils.js'
+import { readableColor, isResultMode } from '../utils/promptUtils.js'
 
 const PAD = { paddingLeft: 32, paddingRight: 32 }
 
@@ -21,12 +21,12 @@ export default function ThinkingState({ transcript, mode, label, accentColor, tr
         </div>
         {/* POLISH-003: status text — fontWeight 500, letterSpacing -0.01em, color 0.82 */}
         <div className="text-[13px] font-medium" style={{ color: 'rgba(var(--ink),0.95)', letterSpacing: '-0.01em' }}>
-          {label || (mode === 'image' ? 'Assembling prompt…' : 'Building your prompt')}
+          {label || (mode === 'image' ? 'Assembling prompt…' : isResultMode(mode) ? 'Working on it' : 'Building your prompt')}
         </div>
       </div>
       {context && (context.destinationLabel || context.selectedText) && (
         <div style={{ ...PAD, marginTop: -8, marginBottom: 10, fontSize: 12, color: 'var(--text-secondary)' }}>
-          {[context.appName && `For ${context.appName}`, context.selectedText && `using your selection (${context.selectedText.length.toLocaleString()} characters)`].filter(Boolean).join(' · ')}
+          {[context.appName && `For ${context.appName}`, context.selectedText && `using your selection (${context.selectedText.length.toLocaleString()} characters)`, !context.selectedText && context.hasScreenshot && 'seeing your screen'].filter(Boolean).join(' · ')}
         </div>
       )}
       {streamText ? (

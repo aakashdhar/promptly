@@ -78,15 +78,26 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
 out({ type: 'ready', trusted: true, tap: true })
 rl.on('line', (line) => {
   const m = JSON.parse(line)
-  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal', pid: 1 }, selectedText: 'TypeError: cannot read properties of undefined' })
+  // With $FAKE_DIR/no-selection, nothing is selected and the front window can be captured instead.
+  const noSelection = require('fs').existsSync(process.env.FAKE_DIR + '/no-selection')
+  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal', pid: 1 }, windowId: 4242, selectedText: noSelection ? null : 'TypeError: cannot read properties of undefined' })
   else out({ type: 'status', id: m.id, trusted: true, tap: true })
 })
 rl.on('close', () => process.exit(0))
 `, { mode: 0o755 })
-  return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir, helper }
+  // Fake screencapture: records its arguments and writes a tiny "image" to the file it's given.
+  const screencapture = path.join(dir, 'screencapture')
+  fs.writeFileSync(screencapture, `#!/bin/bash
+printf '%s\\n' "$*" > "$FAKE_DIR/screencapture-args"
+for last; do true; done
+printf 'fakejpeg' > "$last"
+`, { mode: 0o755 })
+  return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir, helper, screencapture }
 }
 
-async function launch({ setupComplete = true, signedOut = false, withHelper = false } = {}) {
+// mode: the tests below were written for prompt modes, so they start in Balanced unless told
+// otherwise (a fresh install starts in Do it).
+async function launch({ setupComplete = true, signedOut = false, withHelper = false, withScreen = false, mode = 'balanced' } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -111,6 +122,7 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
       PROMPTLY_WHISPER_DIR: tools.engineDir,
       // No helper unless a test asks for one, so the real frontmost app never leaks into tests.
       PROMPTLY_HELPER: withHelper ? tools.helper : path.join(dir, 'no-helper'),
+      ...(withScreen && { PROMPTLY_SCREENCAPTURE: tools.screencapture }),
       FAKE_DIR: fakeDir,
       TMPDIR: tmpDir,
     },
@@ -121,6 +133,11 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
   ), { timeout: 20000 }).toBe(true)
   const page = app.windows().find((w) => w.url().includes('dist-renderer'))
+  if (mode) {
+    await page.evaluate((m) => localStorage.setItem('mode', m), mode)
+    await page.reload()
+    await expect(page.locator('#mode-pill')).toBeVisible({ timeout: 10000 })
+  }
   return { app, page, dir, fakeDir, tmpDir }
 }
 
@@ -491,4 +508,70 @@ test('setup offers hold to talk when the helper is available, and notices when i
   await expect(setup.getByText('Hold to talk is on.')).toBeVisible({ timeout: 5000 })
   await setup.locator('#hold-next').click()
   await expect(setup.getByText('Hold this anywhere on your Mac and talk.', { exact: false })).toBeVisible({ timeout: 5000 })
+})
+
+// Talks from Terminal with the hotkey and returns what the fake Claude received.
+async function talkFromTerminal(app, page, fakeDir, transcript) {
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), transcript)
+  await withClipboard(app, async () => {
+    await app.evaluate(() => globalThis.__promptlyE2E.hotkey('down'))
+    await expect.poll(() => appState(app)).toBe('RECORDING')
+    await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.pillState()?.context?.appName)).toBe('Terminal')
+    await page.waitForTimeout(1000)
+    await app.evaluate(() => globalThis.__promptlyE2E.hotkey('up'))
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+  })
+  const last = calls(fakeDir).at(-1)
+  return {
+    args: fs.readFileSync(path.join(fakeDir, last), 'utf8'),
+    stdin: fs.readFileSync(path.join(fakeDir, last.replace('.args', '.stdin')), 'utf8'),
+  }
+}
+
+test('Do it (the default): a selection becomes the finished result, not a prompt', async () => {
+  ctx = await launch({ withHelper: true, mode: null })
+  const { app, page, fakeDir } = ctx
+  await expect(page.locator('#mode-pill')).toHaveText('Do it')
+  const { stdin } = await talkFromTerminal(app, page, fakeDir, 'explain this error in one sentence')
+
+  expect(stdin).toContain('return the finished result')
+  expect(stdin).toContain('The user is in Terminal. Shape the result so it can be pasted straight into Terminal')
+  expect(stdin).toContain('<selected_text>\nTypeError: cannot read properties of undefined\n</selected_text>')
+  expect(stdin).not.toContain('A screenshot of the window') // a selection wins over a screenshot
+  // Shown as a result: plain text, "Ready", "Copy".
+  await expect(page.getByText('Ready', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
+  expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState()?.state)).toBe('copied')
+})
+
+test('seeing the screen: with nothing selected, the front window goes to Claude as an image', async () => {
+  ctx = await launch({ withHelper: true, withScreen: true, mode: null })
+  const { app, page, fakeDir, tmpDir } = ctx
+  fs.writeFileSync(path.join(fakeDir, 'no-selection'), '')
+  const { args, stdin } = await talkFromTerminal(app, page, fakeDir, 'what does this mean')
+
+  // Only the front window was captured, by its number.
+  expect(fs.readFileSync(path.join(fakeDir, 'screencapture-args'), 'utf8')).toContain('-l4242')
+  // Claude got one message with the image and the prompt.
+  expect(args).toContain('--input-format\nstream-json')
+  const message = JSON.parse(stdin.trim().split('\n')[0])
+  const [image, text] = message.message.content
+  expect(image).toEqual({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: Buffer.from('fakejpeg').toString('base64') } })
+  expect(text.text).toContain('A screenshot of the window the user is looking at (Terminal) is attached.')
+  expect(text.text).toContain('"what does this mean"')
+  // Screenshots never outlive the app.
+  await app.close()
+  ctx.app = { close: async () => {} }
+  expect(fs.existsSync(path.join(tmpDir, 'promptly-screens')) ? fs.readdirSync(path.join(tmpDir, 'promptly-screens')) : []).toEqual([])
+})
+
+test('with the setting off, no screenshot is taken', async () => {
+  ctx = await launch({ withHelper: true, withScreen: true, mode: null })
+  const { app, page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ seeScreen: false }))
+  fs.writeFileSync(path.join(fakeDir, 'no-selection'), '')
+  const { args } = await talkFromTerminal(app, page, fakeDir, 'what does this mean')
+  expect(fs.existsSync(path.join(fakeDir, 'screencapture-args'))).toBe(false)
+  expect(args).not.toContain('--input-format')
 })

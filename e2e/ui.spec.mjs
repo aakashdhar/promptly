@@ -31,6 +31,7 @@ A short project plan, then the code for the ticket sync job with tests.`
 function writeFakeClaude(dir) {
   const answers = {
     prompt: PROMPT,
+    result: "Yes, let's move it to Friday. That gives us time to finish load testing the new sync service, and nothing changes for the onboarding launch: marketing emails still go out Monday.\n\nI'll update the release notes and let support know today.",
     polish: 'POLISHED:\nCould you send me the quarterly numbers by Thursday? I want to review them before the board meeting on Friday morning.\n\nCHANGES:\n· Removed filler words\n· Split a run-on sentence\n· Made the request direct',
     email: JSON.stringify({
       subject: 'Release moved to Friday: what it means for the onboarding launch',
@@ -68,6 +69,7 @@ process.stdin.on('end', () => {
       : has('Assemble a final') ? a.imageAssembly
       : has('expert email writer') ? a.email
       : has('POLISHED:') ? a.polish
+      : has('return the finished result') ? a.result
       : has("Veo 3.1 (Google's") ? a.videoDefaults
       : has('Assemble the following parameters') ? a.videoPrompt
       : has('n8n workflow engineer. Analyse') ? a.workflowAnalysis
@@ -181,7 +183,14 @@ for (const theme of ['dark', 'light']) {
     // Playwright forces a light colour scheme unless told otherwise.
     await page.emulateMedia({ colorScheme: theme })
 
+    // A fresh install starts in Do it: the finished result, not a prompt.
     await check(page, 'idle', { settle: 800 })
+    await typeAndSubmit(page, 'reply to the team: yes, move the release to friday, onboarding launch unaffected')
+    await expect(page.getByRole('button', { name: 'Copy', exact: true })).toBeVisible({ timeout: 15000 })
+    await check(page, 'do-ready', { settle: 800 })
+    await switchMode(app, page, 'balanced')
+    await expect(page.locator('#mode-pill')).toHaveText('Balanced')
+
     await page.getByText('Balanced').first().click()
     await check(page, 'mode-menu')
     await page.keyboard.press('Escape')

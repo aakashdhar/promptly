@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { readableColor } from '../utils/promptUtils.js'
+import { readableColor, isResultMode } from '../utils/promptUtils.js'
 
 // POLISH-008: section dividers between body and next label
 // POLISH-003: label tracking 0.12em
@@ -153,7 +153,7 @@ export default function PromptReadyState({
           style={{ gap: '8px', color: 'rgba(var(--ink),0.95)', letterSpacing: '-0.01em', WebkitAppRegion: 'no-drag' }}
         >
           <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '15px' }}>✓</span>
-          <span>{isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
+          <span>{isResultMode(mode) ? 'Ready' : isRefine ? 'Refinement prompt ready' : 'Prompt ready'}</span>
           {isIterated && (
             <span style={{
               fontSize: '11px',
@@ -290,7 +290,7 @@ export default function PromptReadyState({
           WebkitAppRegion: 'no-drag',
         }}
       >
-        {isEditing ? generatedPrompt : renderPromptOutput(generatedPrompt, labelColor)}
+        {isEditing || isResultMode(mode) ? generatedPrompt : renderPromptOutput(generatedPrompt, labelColor)}
       </div>
 
       {/* BUTTON ROW */}
@@ -346,7 +346,7 @@ export default function PromptReadyState({
             transition: 'all 300ms ease',
           }}
         >
-          {isCopied ? '✓ Copied' : 'Copy prompt'}
+          {isCopied ? '✓ Copied' : isResultMode(mode) ? 'Copy' : 'Copy prompt'}
         </button>
       </div>
     </div>

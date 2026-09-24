@@ -1,7 +1,15 @@
 import { readableColor } from '../utils/promptUtils.js'
 
-export default function PromptSections({ prompt, labelColor = 'rgba(100,170,255,0.7)', textSize = '14px', textColor = 'rgba(var(--ink),0.85)' }) {
+// plain: a finished result (Do it mode), shown as written instead of split into prompt sections.
+export default function PromptSections({ prompt, plain = false, labelColor = 'rgba(100,170,255,0.7)', textSize = '14px', textColor = 'rgba(var(--ink),0.85)' }) {
   if (!prompt) return null
+  if (plain) {
+    return (
+      <div style={{ fontSize: textSize, color: readableColor(textColor), userSelect: 'text', cursor: 'text', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+        {prompt}
+      </div>
+    )
+  }
   const lines = prompt.split('\n')
   const elements = []
   let i = 0

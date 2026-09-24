@@ -14,6 +14,17 @@ const SYSTEM_PROMPT = "Follow the user's instructions exactly and output only wh
 const LEAN_FLAGS = ['--tools', '', '--no-session-persistence', '--strict-mcp-config', '--system-prompt', SYSTEM_PROMPT];
 // Streams text as it's written: JSON events on stdout, with partial text deltas.
 const STREAM_FLAGS = ['--output-format', 'stream-json', '--include-partial-messages', '--verbose'];
+// Sends the prompt as a JSON message on stdin, which is how images (screenshots) get in.
+const MESSAGE_INPUT_FLAGS = ['--input-format', 'stream-json'];
+
+// One user message: images first, then the text, as Claude's content blocks.
+function buildInputMessage(prompt, images) {
+  const content = [
+    ...images.map((img) => ({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } })),
+    { type: 'text', text: prompt },
+  ];
+  return JSON.stringify({ type: 'user', message: { role: 'user', content } }) + '\n';
+}
 
 // Reads stream-json lines: text deltas as they arrive, and the final result event.
 function createStreamParser(onDelta) {
@@ -56,16 +67,18 @@ function isUnknownOptionError(stderr) {
 function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onSlow = () => {}, children = new Set(), spawnImpl = spawn }) {
   let leanFlagsSupported = true;
 
-  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta }) {
-    const streaming = lean && typeof onDelta === 'function';
-    const parser = streaming ? createStreamParser(onDelta) : null;
+  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta, images = [] }) {
+    // Message input needs stream-json output too, so a run with images always streams.
+    const withImages = lean && images.length > 0;
+    const streaming = lean && (typeof onDelta === 'function' || withImages);
+    const parser = streaming ? createStreamParser(typeof onDelta === 'function' ? onDelta : () => {}) : null;
     return new Promise((resolve) => {
       const claudePath = getClaudePath();
       if (!claudePath) {
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
         return;
       }
-      const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
+      const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : []), ...(streaming ? STREAM_FLAGS : []), ...(withImages ? MESSAGE_INPUT_FLAGS : [])];
       const child = spawnImpl(claudePath, args, { env: makeClaudeEnv(claudePath) });
       children.add(child);
       let stdout = '';
@@ -90,7 +103,7 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
       });
       child.stderr.on('data', (d) => { stderr += d.toString(); });
       child.stdin.on('error', () => { /* child exited before reading stdin; close handler reports it */ });
-      child.stdin.end(prompt);
+      child.stdin.end(withImages ? buildInputMessage(prompt, images) : prompt);
       // A killed process may leave grandchildren holding its stdout open, which delays
       // 'close' indefinitely; 'exit' fires as soon as the process itself is gone.
       child.on('exit', (_code, signal) => {
@@ -121,8 +134,10 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
   }
 
   // onDelta(textSoFar) streams the answer as it's written (skipped on CLIs without the flags).
-  async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta } = {}) {
-    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, onDelta });
+  // images: [{ mediaType, data (base64) }] sent alongside the prompt; an old CLI without
+  // message input gets the text alone.
+  async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta, images = [] } = {}) {
+    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, onDelta, images });
     if (!result.success && leanFlagsSupported && isUnknownOptionError(result.stderr || '')) {
       leanFlagsSupported = false;
       return strip(await runOnce(prompt, { timeoutMs, slowWarningMs, lean: false }));
@@ -157,4 +172,4 @@ function parseJsonOutput(raw) {
   }
 }
 
-module.exports = { DEFAULT_MODEL, createClaudeRunner, createStreamParser, classifyError, parseJsonOutput };
+module.exports = { DEFAULT_MODEL, createClaudeRunner, createStreamParser, buildInputMessage, classifyError, parseJsonOutput };

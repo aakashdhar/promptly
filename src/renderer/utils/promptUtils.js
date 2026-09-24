@@ -1,3 +1,10 @@
+import MODE_REGISTRY from '../../../shared/modes.json'
+
+// Modes whose output is the finished text itself (a reply, a rewrite, an answer), not a prompt.
+export function isResultMode(mode) {
+  return MODE_REGISTRY.modes.find((m) => m.key === mode)?.output === 'result'
+}
+
 export function parseSections(text) {
   if (!text) return []
   const lines = text.split('\n')

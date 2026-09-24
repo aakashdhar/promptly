@@ -101,6 +101,7 @@ case "$FAKE_MODE" in
   auth) echo "Invalid API key · Please run /login" >&2; exit 1 ;;
   empty) exit 0 ;;
   slow) sleep 5; echo late ;;
+  json-echo) node -e 'console.log(JSON.stringify({type:"result",is_error:false,result:JSON.stringify({args:[process.argv[1]],stdin:process.argv[2]})}))' -- "$*" "$input" ;;
 esac
 `)
   fs.chmodSync(file, 0o755)
@@ -129,6 +130,20 @@ describe('createClaudeRunner', () => {
   it('retries without the lean flags on an older CLI', async () => {
     const r = await runner('old-cli').run('hi')
     expect(r).toEqual({ success: true, prompt: 'ok-without-lean-flags' })
+  })
+
+  it('sends images with the prompt as one JSON message on stdin', async () => {
+    const r = await runner('json-echo').run('what is this?', { images: [{ mediaType: 'image/jpeg', data: 'QUJD' }] })
+    expect(r.success).toBe(true)
+    const { args, stdin } = JSON.parse(r.prompt)
+    expect(args[0]).toContain('--input-format stream-json')
+    expect(args[0]).toContain('--output-format stream-json')
+    const message = JSON.parse(stdin)
+    expect(message.type).toBe('user')
+    expect(message.message.content).toEqual([
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: 'QUJD' } },
+      { type: 'text', text: 'what is this?' },
+    ])
   })
 
   it('reports auth errors', async () => {
@@ -543,5 +558,68 @@ fi
     fs.writeFileSync(bin, `#!/bin/bash\ncat > /dev/null\necho '{"type":"result","is_error":true,"result":"Not logged in · Please run /login"}'\nexit 1\n`, { mode: 0o755 })
     const r = await createClaudeRunner({ getClaudePath: () => bin }).run('hi', { onDelta: () => {} })
     expect(r).toMatchObject({ success: false, errorType: 'auth' })
+  })
+})
+
+describe('Do it mode', () => {
+  it('asks for the finished result, shaped for the app and using the screenshot', () => {
+    const p = buildModePrompt('reply yes but friday', 'do', { context: { appName: 'Slack', hasScreenshot: true } })
+    expect(p).toContain('return the finished result')
+    expect(p).toContain('pasted straight into Slack')
+    expect(p).toContain('A screenshot of the window the user is looking at (Slack) is attached.')
+    expect(p).toContain('"reply yes but friday"')
+    expect(p).not.toContain('Where this prompt will be used')
+  })
+
+  it('is the default mode, and prompt modes never mention an app or screenshot unless given one', () => {
+    expect(MODES.defaultMode).toBe('do')
+    expect(getMode('nope').key).toBe('do')
+    const p = buildModePrompt('hello', 'balanced', { context: {} })
+    expect(p).not.toContain('screenshot')
+    expect(p).not.toContain('The user is in')
+  })
+})
+
+describe('createScreenshots', () => {
+  const { createScreenshots } = require('../main/screenshot.js')
+
+  function fakeExec(calls, { fail = false } = {}) {
+    return (cmd, args, _opts, cb) => {
+      calls.push([cmd, ...args])
+      if (!fail && cmd === 'capture') fs.writeFileSync(args[args.length - 1], 'jpegbytes')
+      cb(fail ? new Error('no permission') : null)
+    }
+  }
+
+  it('captures one window by number, shrinks it, and hands it back as base64', async () => {
+    const calls = []
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shots-'))
+    const shots = createScreenshots({ dir, getCapturePath: () => 'capture', sipsPath: 'sips', execFileImpl: fakeExec(calls) })
+    const id = await shots.capture(4242)
+    expect(id).toBeTruthy()
+    expect(calls[0].slice(0, 6)).toEqual(['capture', '-x', '-o', '-t', 'jpg', '-l4242'])
+    expect(calls[1].slice(0, 3)).toEqual(['sips', '-Z', '1600'])
+    expect(shots.read(id)).toEqual({ mediaType: 'image/jpeg', data: Buffer.from('jpegbytes').toString('base64') })
+    shots.clear()
+    expect(shots.read(id)).toBeNull()
+    expect(fs.existsSync(dir)).toBe(false)
+  })
+
+  it('returns nothing when capture fails or there is no window', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shots-'))
+    const shots = createScreenshots({ dir, getCapturePath: () => 'capture', execFileImpl: fakeExec([], { fail: true }) })
+    expect(await shots.capture(7)).toBeNull()
+    expect(await shots.capture(null)).toBeNull()
+    expect(fs.readdirSync(dir)).toEqual([])
+  })
+
+  it('forgets screenshots after ten minutes', async () => {
+    let t = 0
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shots-'))
+    const shots = createScreenshots({ dir, getCapturePath: () => 'capture', sipsPath: 'sips', execFileImpl: fakeExec([]), now: () => t })
+    const old = await shots.capture(1)
+    t = 11 * 60 * 1000
+    await shots.capture(2)
+    expect(shots.has(old)).toBe(false)
   })
 })

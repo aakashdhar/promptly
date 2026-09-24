@@ -73,10 +73,10 @@ body {
       <span class="spin" aria-hidden="true"></span>
       <!-- A live ticker of the newest words: showing only the tail is the point, so the layout
            audit leaves it out. -->
-      <div class="stream" id="stream" data-audit-skip><bdi id="stream-text">Writing your prompt…</bdi></div>
+      <div class="stream" id="stream" data-audit-skip><bdi id="stream-text">Working on it…</bdi></div>
     </div>
   </div>
-  <div id="copied" hidden><span class="check">✓</span> Prompt copied</div>
+  <div id="copied" hidden><span class="check">✓</span> Copied</div>
 </div>
 <script>
 const BARS = 14;
@@ -95,6 +95,7 @@ function describe(state) {
   const parts = [];
   if (state.context && state.context.appName) parts.push('for ' + state.context.appName);
   if (state.context && state.context.selectedText) parts.push('using your selection');
+  else if (state.context && state.context.hasScreenshot) parts.push('seeing your screen');
   return [state.mode, ...parts].filter(Boolean).join(' · ');
 }
 
@@ -106,7 +107,7 @@ window.electronAPI.onPillState((state) => {
     document.getElementById('rec-detail').textContent = describe(state);
     show('recording');
   } else if (state.state === 'thinking') {
-    document.getElementById('stream-text').textContent = (state.text || '').replace(/\s+/g, ' ').trim() || 'Writing your prompt…';
+    document.getElementById('stream-text').textContent = (state.text || '').replace(/\s+/g, ' ').trim() || 'Working on it…';
     show('thinking');
   } else if (state.state === 'copied') {
     show('copied');

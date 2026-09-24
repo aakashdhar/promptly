@@ -70,6 +70,13 @@ export default function SettingsPanel({ onClose }) {
     setPrefs((p) => ({ ...p, accessibility }))
   }
 
+  const [screenAsked, setScreenAsked] = useState(false)
+  async function handleAllowScreen() {
+    const { status } = await window.electronAPI.requestScreenRecording()
+    setPrefs((p) => ({ ...p, screenRecording: status }))
+    setScreenAsked(true)
+  }
+
   async function handleThemeChange(value) {
     setThemeVal(value)
     await window.electronAPI.setThemeSetting(value)
@@ -200,6 +207,25 @@ export default function SettingsPanel({ onClose }) {
           </div>
 
           <div style={{ marginBottom: 14 }}>
+            <div style={sectionLabel}>See the window you're in</div>
+            {prefs.screenRecording === 'granted' ? (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(var(--ink),0.85)', lineHeight: 1.5, cursor: 'pointer', WebkitAppRegion: 'no-drag' }}>
+                <input type="checkbox" id="settings-seeScreen" checked={!!prefs.seeScreen} onChange={e => savePrefs({ seeScreen: e.target.checked })} style={{ marginTop: 3 }} />
+                When nothing is selected, send Claude a screenshot of the window you're talking about, so "what does this mean?" just works.
+              </label>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  {screenAsked
+                    ? 'Turn on Promptly in System Settings → Screen Recording, then quit and reopen Promptly.'
+                    : 'Needs Screen Recording permission. Promptly only captures the one window you\'re in, when you start talking with nothing selected.'}
+                </div>
+                <button onClick={handleAllowScreen} style={{ ...browseBtn, color: 'rgba(var(--ink),0.85)' }}>Allow</button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
             <label htmlFor="settings-dictionary" style={{ ...sectionLabel, display: 'block' }}>Dictionary</label>
             <textarea
               id="settings-dictionary"
@@ -214,7 +240,7 @@ export default function SettingsPanel({ onClose }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
             {[
-              ['autoCopy', 'Copy prompts to the clipboard automatically'],
+              ['autoCopy', 'Copy results to the clipboard automatically'],
               ['launchAtLogin', 'Open Promptly when I log in'],
             ].map(([key, label]) => (
               <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(var(--ink),0.85)', cursor: 'pointer', WebkitAppRegion: 'no-drag' }}>

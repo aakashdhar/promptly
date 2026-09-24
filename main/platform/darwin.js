@@ -106,6 +106,21 @@ function whisperModelCacheDirs(home) {
   return [path.join(home, '.cache', 'whisper'), path.join(home, 'Library', 'Caches', 'whisper')];
 }
 
+// Screenshots of the window the user is talking about: the system capture tool, and sips to
+// shrink the result (Claude doesn't need a 5K image, and a smaller one is faster to send).
+const SCREENCAPTURE_PATH = '/usr/sbin/screencapture';
+const SIPS_PATH = '/usr/bin/sips';
+const SCREEN_RECORDING_SETTINGS_URL = 'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture';
+
+function screenCaptureArgs(windowId, file) {
+  // -x no sound, -o no window shadow, -l one window by its number
+  return ['-x', '-o', '-t', 'jpg', `-l${windowId}`, file];
+}
+
+function shrinkImageArgs(file, maxEdge) {
+  return ['-Z', String(maxEdge), file];
+}
+
 function uninstallDataPaths(home, bundleId) {
   return [
     path.join(home, 'Library', 'Application Support', 'promptly'),
@@ -117,6 +132,10 @@ function uninstallDataPaths(home, bundleId) {
 
 function resetMicrophonePermission(bundleId) {
   return new Promise((resolve) => exec(`tccutil reset Microphone ${bundleId}`, () => resolve()));
+}
+
+function resetScreenRecordingPermission(bundleId) {
+  return new Promise((resolve) => exec(`tccutil reset ScreenCapture ${bundleId}`, () => resolve()));
 }
 
 function removeInstalledApp() {
@@ -137,5 +156,11 @@ module.exports = {
   whisperModelCacheDirs,
   uninstallDataPaths,
   resetMicrophonePermission,
+  resetScreenRecordingPermission,
   removeInstalledApp,
+  SCREENCAPTURE_PATH,
+  SIPS_PATH,
+  SCREEN_RECORDING_SETTINGS_URL,
+  screenCaptureArgs,
+  shrinkImageArgs,
 };
