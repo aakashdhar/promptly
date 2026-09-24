@@ -1922,3 +1922,12 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   history column on smaller windows (history now steps aside below 1180 px); long URLs scrolled sideways.
 > Removed: the "built using vibe-* skills" line on the idle bar (it crowded the bottom edge).
 ---
+
+---
+## D-DOIT-REMOVED — Do it mode and window screenshots removed — 2026-09-24
+> Built in 2.6.0 (Do it: finished replies/rewrites instead of prompts; screenshots of the front window sent via
+>   `claude -p --input-format stream-json`). Removed the same day at the product owner's request: in practice it
+>   didn't work well, and Claude Desktop already does screen-aware answers, so it added nothing distinctive.
+> Kept: line breaks inside expanded prompt sections. A mode saved by 2.6.0 ("do") falls back to the default.
+> Learned: image input through the CLI works (stream-json content blocks), if a future feature needs it.
+---
