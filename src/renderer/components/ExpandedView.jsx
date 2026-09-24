@@ -3,6 +3,7 @@ import ExpandedTransportBar from './ExpandedTransportBar.jsx'
 import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
+import ShortcutsPanel from './ShortcutsPanel.jsx'
 
 // Builders lay out two columns of their own; below this width the history list would squeeze
 // them, so it steps aside (⌘H still opens history).
@@ -27,7 +28,6 @@ export default function ExpandedView({
   generatedPrompt,
   thinkTranscript,
   onStart,
-  onCollapse,
   onPause,
   onStop,
   onStopIterate,
@@ -67,6 +67,15 @@ export default function ExpandedView({
   onModeSelect,
   onShowShortcuts,
   onShowHistory,
+  errorMessage,
+  streamText,
+  recordingContext,
+  dictation,
+  resultView,
+  promptStyle,
+  onShowDictation,
+  onMakePrompt,
+  onCloseShortcuts,
 }) {
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
@@ -90,6 +99,18 @@ export default function ExpandedView({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', position: 'relative' }}>
+      {currentState === 'SHORTCUTS' && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20,
+          background: 'var(--bg)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
+          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <ShortcutsPanel onClose={onCloseShortcuts} />
+          </div>
+        </div>
+      )}
       {currentState === 'SETTINGS' && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 20,
@@ -97,9 +118,14 @@ export default function ExpandedView({
           display: 'flex', flexDirection: 'column',
         }}>
           <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
-          <SettingsPanel onClose={onCloseSettings} />
+          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <SettingsPanel onClose={onCloseSettings} />
+          </div>
         </div>
       )}
+      {/* While Settings or Shortcuts cover the window, what's behind them can't be reached by
+          Tab or a screen reader. */}
+      <div inert={currentState === 'SETTINGS' || currentState === 'SHORTCUTS' ? true : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ExpandedTransportBar
         currentState={currentState}
         duration={duration}
@@ -109,7 +135,6 @@ export default function ExpandedView({
         onStop={onStop}
         onStopIterate={onStopIterate}
         onPause={onPause}
-        onCollapse={onCollapse}
         onOpenSettings={onOpenSettings}
         onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
         onAbort={onAbort}
@@ -164,7 +189,16 @@ export default function ExpandedView({
           transcriptionSlow={transcriptionSlow}
           generationErrorProps={generationErrorProps}
           generationSlow={generationSlow}
+          errorMessage={errorMessage}
+          streamText={streamText}
+          recordingContext={recordingContext}
+          dictation={dictation}
+          resultView={resultView}
+          promptStyle={promptStyle}
+          onShowDictation={onShowDictation}
+          onMakePrompt={onMakePrompt}
         />
+      </div>
       </div>
     </div>
   )

@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react'
 import { getHistory, deleteHistoryItem, clearHistory, searchHistory } from '../utils/history.js'
 import { getModeTagStyle, readableColor } from '../utils/promptUtils.js'
+import MODE_REGISTRY from '../../../shared/modes.json'
+
+const MODE_LABELS = Object.fromEntries(MODE_REGISTRY.modes.map((m) => [m.key, m.label]))
 
 export default function ExpandedHistoryList({ currentState, selected, onSelect }) {
   const [history, setHistory] = useState(() => getHistory())
   const [hoveredId, setHoveredId] = useState(null)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  // ⌘H (and the menu's History) jump straight to searching your history.
+  useEffect(() => {
+    const open = () => setSearchOpen(true)
+    window.addEventListener('promptly:search-history', open)
+    return () => window.removeEventListener('promptly:search-history', open)
+  }, [])
   const [query, setQuery] = useState('')
   const [activeTab, setActiveTab] = useState('all')
   const [activeFilter, setActiveFilter] = useState('all')
@@ -303,7 +313,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                       textTransform: 'uppercase', padding: '2px 7px', borderRadius: '3px',
                       background: tagStyle.background, color: readableColor(tagStyle.color),
                     }}>
-                      {entry.mode}
+                      {MODE_LABELS[entry.mode] || entry.mode}
                     </span>
                   </div>
                 </div>

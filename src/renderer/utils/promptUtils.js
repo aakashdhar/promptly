@@ -123,6 +123,7 @@ export function evalVerdict(delta) {
 }
 
 export function getModeTagStyle(mode) {
+  if (mode === 'dictate') return { background: 'rgba(var(--ink),0.07)', color: 'var(--text-secondary)' }
   if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgb(167,139,250) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }

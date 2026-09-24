@@ -174,15 +174,13 @@ async function switchMode(app, page, mode) {
   await page.waitForLoadState('domcontentloaded')
   await page.emulateMedia({ colorScheme: page.__theme })
   await page.waitForTimeout(900)
-  await sizeExpanded(app, 1280, 800)
 }
 
-// The expanded window normally fills the screen; review it at a common laptop size and at a
-// small one.
-async function sizeExpanded(app, width, height) {
+// Screens are reviewed at the window's default size (940 × 600); some also at a bigger one.
+async function sizeWindow(app, width, height) {
   await app.evaluate(({ BrowserWindow }, [w, h]) => {
     const win = BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes('dist-renderer'))
-    if (win.getSize()[0] > 520) { win.unmaximize(); win.setBounds({ x: 40, y: 40, width: w, height: h }) }
+    win.setSize(w, h)
   }, [width, height])
 }
 
@@ -202,12 +200,18 @@ for (const theme of ['dark', 'light']) {
     // Playwright forces a light colour scheme unless told otherwise.
     await page.emulateMedia({ colorScheme: theme })
 
-    // A fresh install starts in Dictation.
+    // A fresh install starts in Dictation, in the window at its default size.
+    const talk = async () => {
+      await page.getByRole('button', { name: 'Start talking' }).click()
+      await expect.poll(() => appState(app)).toBe('RECORDING')
+    }
     await check(page, 'idle', { settle: 800 })
-    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
-    await expect.poll(() => appState(app)).toBe('RECORDING')
-    await page.waitForTimeout(900)
-    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+    await page.locator('#mode-pill').click()
+    await check(page, 'mode-menu')
+    await page.keyboard.press('Escape')
+    await talk()
+    await check(page, 'recording', { settle: 900 })
+    await page.getByRole('button', { name: 'Stop' }).click()
     await expect(page.getByRole('tab', { name: 'As I said it' })).toBeVisible({ timeout: 15000 })
     await check(page, 'dictation-ready', { settle: 800 })
     await page.getByRole('tab', { name: 'As a prompt' }).click()
@@ -216,9 +220,6 @@ for (const theme of ['dark', 'light']) {
     await switchMode(app, page, 'balanced')
     await expect(page.locator('#mode-pill')).toHaveText('Balanced')
 
-    await page.getByText('Balanced').first().click()
-    await check(page, 'mode-menu')
-    await page.keyboard.press('Escape')
     await page.keyboard.press('Meta+?')
     await check(page, 'shortcuts')
     await page.keyboard.press('Escape')
@@ -253,14 +254,15 @@ for (const theme of ['dark', 'light']) {
     await scrollAll(page)
     await check(page, 'prompt-ready-bottom')
 
-    await page.keyboard.press('Meta+h')
-    await check(page, 'history')
-    await page.keyboard.press('Escape')
-    await expect.poll(() => appState(app)).not.toBe('HISTORY')
-
-    // A failed request.
+    // History: ⌘H searches it; picking an entry shows it again.
     await page.keyboard.press('Escape')
     await expect.poll(() => appState(app)).toBe('IDLE')
+    await page.keyboard.press('Meta+h')
+    await check(page, 'history-search')
+    await page.locator('[data-history-entry]').last().click()
+    await check(page, 'history-entry', { settle: 600 })
+
+    // A failed request.
     fs.writeFileSync(path.join(dir, 'fail'), '')
     await typeAndSubmit(page, 'this one fails')
     await expect.poll(() => appState(app), { timeout: 15000 }).toMatch(/ERROR/)
@@ -269,26 +271,24 @@ for (const theme of ['dark', 'light']) {
 
     // Polish
     await switchMode(app, page, 'polish')
-    await check(page, 'polish-idle')
     await typeAndSubmit(page, 'so um can you send me the quarterly numbers by thursday i want to review them before the board meeting friday morning')
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
     await check(page, 'polish-ready', { settle: 800 })
 
-    // Email (opens expanded)
+    // Email
     await switchMode(app, page, 'email')
-    await check(page, 'email-idle', { settle: 800 })
     await typeAndSubmit(page, 'tell the team the release moved to friday but the onboarding launch is unaffected')
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('EMAIL_READY')
     await check(page, 'email-ready', { settle: 800 })
 
-    // Image builder
+    // Image builder, at the default size and a bigger window.
     await switchMode(app, page, 'image')
     await typeAndSubmit(page, 'a calm red fox in a snowy forest')
     await expect(page.getByRole('button', { name: /Confirm & assemble prompt/ })).toBeEnabled({ timeout: 15000 })
     await check(page, 'image-builder', { settle: 800 })
-    await sizeExpanded(app, 960, 680)
-    await check(page, 'image-builder-small', { settle: 600 })
-    await sizeExpanded(app, 1280, 800)
+    await sizeWindow(app, 1280, 800)
+    await check(page, 'image-builder-large', { settle: 600 })
+    await sizeWindow(app, 940, 600)
     await page.getByRole('button', { name: /Confirm & assemble prompt/ }).click()
     await expect(page.getByText('Midjourney flags (optional)')).toBeVisible({ timeout: 15000 })
     await check(page, 'image-done', { settle: 800 })
@@ -305,24 +305,6 @@ for (const theme of ['dark', 'light']) {
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('WORKFLOW_BUILDER')
     await check(page, 'workflow-builder', { settle: 800 })
 
-    // Expanded view with history and a selected entry.
-    await switchMode(app, page, 'balanced')
-    await page.getByRole('button', { name: 'Expand' }).click()
-    await page.waitForTimeout(500)
-    await sizeExpanded(app, 1280, 800)
-    await check(page, 'expanded', { settle: 900 })
-    await page.locator('[data-history-entry]').last().click()
-    await check(page, 'expanded-entry', { settle: 600 })
-    await page.getByRole('button', { name: 'Collapse' }).click().catch(() => {})
-
-    // Recording in the window.
-    await page.keyboard.press('Escape')
-    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
-    await expect.poll(() => appState(app)).toBe('RECORDING')
-    await check(page, 'recording', { settle: 900 })
-    await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
-    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
-
     // The floating pill.
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
     const pill = app.windows().find((w) => w.url().includes('pill.html'))
@@ -337,7 +319,7 @@ for (const theme of ['dark', 'light']) {
     await check(pill, 'pill-recording')
     await pillState({ state: 'thinking', mode: 'Balanced' })
     await check(pill, 'pill-thinking')
-    await pillState({ state: 'copied' })
+    await pillState({ state: 'copied', copied: true })
     await check(pill, 'pill-copied')
     await pillState({ state: 'dictated', typed: true })
     await check(pill, 'pill-dictated')

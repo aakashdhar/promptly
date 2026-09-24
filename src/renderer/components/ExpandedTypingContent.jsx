@@ -52,12 +52,12 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             </svg>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Switch to voice</span>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>⌘↵ to generate</span>
         </div>
       </div>
 
       <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: 0 }}>
-        <div style={{ position: 'relative', flex: 1 }}>
+        {/* The box takes whatever height is left, so the buttons below always fit. */}
+        <div style={{ position: 'relative', flex: 1, minHeight: '120px' }}>
           <textarea
             ref={typingTextareaRef}
             value={typingText}
@@ -69,7 +69,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             }}
             placeholder="Describe what you want Claude to build, design, or write..."
             style={{
-              width: '100%', height: '100%', minHeight: '320px',
+              width: '100%', height: '100%',
               background: 'rgba(var(--ink),0.02)',
               border: '0.5px solid rgba(10,132,255,0.2)',
               borderRadius: '14px',

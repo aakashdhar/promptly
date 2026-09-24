@@ -229,7 +229,7 @@ test('the mode dropdown lists every mode from the shared registry', async () => 
   await expect(menu).toHaveCount(0)
 })
 
-test('hotkey from another app records in the pill, then shows the prompt and copies it', async () => {
+test('a prompt made from another app stays out of your way: copied, with Open in the pill', async () => {
   ctx = await launch()
   const { app, page, fakeDir, tmpDir } = ctx
   await typeAndSubmit(page, 'first prompt')
@@ -250,10 +250,14 @@ test('hotkey from another app records in the pill, then shows the prompt and cop
     await page.waitForTimeout(1200)
     await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
-    // The result opens the window, the pill says it was copied, and the clipboard has the prompt.
-    await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
-    expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState()?.state)).toBe('copied')
+    // You stay in your app: the prompt is on the clipboard and the pill offers to open it.
     await expect.poll(() => readClipboard(app)).toContain('spoken words from the fake mic')
+    expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState()?.state)).toBe('copied')
+    expect((await mainWindow(app)).visible).toBe(false)
+    const pill = app.windows().find((w) => w.url().includes('pill.html'))
+    await pill.getByRole('button', { name: 'Open' }).click()
+    await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
+    await expect(page.locator('#prompt-output')).toContainText('spoken words from the fake mic')
   })
   expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Alt+P'))).toBe(false)
 
@@ -266,23 +270,21 @@ test('hotkey from another app records in the pill, then shows the prompt and cop
   expect(fs.readdirSync(path.join(tmpDir, 'promptly-audio'))).toEqual([])
 })
 
-test('the bar stays up while typing and hides from the prompt screen', async () => {
+test('the window is a normal window: it stays open when you switch apps', async () => {
   ctx = await launch()
   const { app, page } = ctx
   const blur = () => app.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes('dist-renderer')).emit('blur')
   })
-  await page.keyboard.press('Meta+t')
-  await expect.poll(() => appState(app)).toBe('TYPING')
-  await blur()
-  expect((await mainWindow(app)).visible).toBe(true)
-
-  const box = page.getByPlaceholder('Describe what you want Claude to build, design, or write...')
-  await box.fill('something to paste elsewhere')
-  await box.press('Meta+Enter')
+  await typeAndSubmit(page, 'something to paste elsewhere')
   await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
   await blur()
-  expect((await mainWindow(app)).visible).toBe(false)
+  expect((await mainWindow(app)).visible).toBe(true)
+  const win = await app.evaluate(({ BrowserWindow }) => {
+    const w = BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes('dist-renderer'))
+    return { alwaysOnTop: w.isAlwaysOnTop(), resizable: w.isResizable(), size: w.getSize() }
+  })
+  expect(win).toMatchObject({ alwaysOnTop: false, resizable: true, size: [940, 600] })
 })
 
 test('retrying a failed generation keeps the original mode and tone', async () => {
@@ -550,8 +552,8 @@ test('edits you make are remembered, and Settings drafts your style notes from t
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
 
   await page.getByRole('button', { name: 'Edit' }).click()
-  await page.locator('#prompt-output').evaluate((el) => { el.textContent = 'Role:\nYou are my editor.\n\nTask:\nKeep it short.' })
-  await page.getByRole('button', { name: 'Done' }).click()
+  await page.locator('#prompt-output [contenteditable]').evaluate((el) => { el.textContent = 'Role:\nYou are my editor.\n\nTask:\nKeep it short.' })
+  await page.getByRole('button', { name: 'Save' }).click()
   expect((await page.evaluate(() => window.electronAPI.getPreferences())).editCount).toBe(1)
 
   await page.keyboard.press('Escape')

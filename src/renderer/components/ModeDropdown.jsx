@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import MODE_REGISTRY from '../../../shared/modes.json'
 
@@ -37,7 +37,7 @@ function Chip({ m, active, onPick, onHover }) {
   )
 }
 
-export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef, fitWindow = false }) {
+export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef }) {
   const ref = useRef(null)
   const [hovered, setHovered] = useState(null)
   const [promptStyle, setPromptStyle] = useState('balanced')
@@ -47,11 +47,6 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
   useEffect(() => {
     window.electronAPI?.getPreferences?.().then((p) => { if (p?.promptStyle) setPromptStyle(p.promptStyle) }).catch(() => {})
   }, [])
-
-  // In the compact bar the window is only as tall as the bar: grow it to fit the whole menu.
-  useLayoutEffect(() => {
-    if (fitWindow && ref.current) window.electronAPI?.resizeWindow(Math.ceil(top + ref.current.offsetHeight + 16))
-  }, [fitWindow, top])
 
   useEffect(() => {
     function handlePointerDown(e) {
@@ -81,13 +76,19 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
     [isDictation ? promptStyle : mode, 'Craft a prompt', !isDictation],
   ]
 
+  // Opens under the mode button, kept inside the window whichever side the button is on.
+  const WIDTH = 440
+  const anchor = anchorRef?.current?.getBoundingClientRect()
+  const wantedLeft = anchor ? anchor.left : window.innerWidth - right - WIDTH
+  const left = Math.max(12, Math.min(window.innerWidth - WIDTH - 12, wantedLeft))
+
   const menu = (
     <div
       ref={ref}
       role="dialog"
       aria-label="Mode"
       style={{
-        position: 'fixed', top: `${top}px`, right: `${right}px`, width: '440px', boxSizing: 'border-box',
+        position: 'fixed', top: `${top}px`, left: `${left}px`, width: `${WIDTH}px`, boxSizing: 'border-box',
         padding: '12px 16px 10px',
         background: 'var(--surface-raised)', border: '0.5px solid rgba(var(--ink),0.12)', borderRadius: '14px',
         boxShadow: 'var(--popover-shadow)', zIndex: 9999, WebkitAppRegion: 'no-drag',

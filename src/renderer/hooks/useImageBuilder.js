@@ -185,7 +185,6 @@ export default function useImageBuilder({
   transitionRef,
   isExpandedRef,
   originalTranscript,
-  resizeWindow,
   setThinkTranscript,
   setThinkingLabel,
   setThinkingAccentColor,
@@ -280,7 +279,6 @@ export default function useImageBuilder({
     }
 
     transitionRef.current(STATES.IMAGE_BUILDER)
-    if (!isExpandedRef.current) resizeWindow(520)
   }, [imageDefaults, imageAnswers, removedByUser, generateVariations])
 
   // Phase 2 — assembly with selected variation as narrative base

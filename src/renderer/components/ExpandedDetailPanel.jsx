@@ -13,6 +13,7 @@ import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 import ExpandedErrorContent from './ExpandedErrorContent.jsx'
 import EmailReadyState from './EmailReadyState.jsx'
 import EvalPanel from './EvalPanel.jsx'
+import useHotkeyWords from '../hooks/useHotkeyWords.js'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
@@ -52,7 +53,16 @@ export default function ExpandedDetailPanel({
   transcriptionSlow,
   generationErrorProps,
   generationSlow,
+  errorMessage,
+  streamText,
+  recordingContext,
+  dictation,
+  resultView,
+  promptStyle,
+  onShowDictation,
+  onMakePrompt,
 }) {
+  const hotkey = useHotkeyWords()
   const [entryCopied, setEntryCopied] = useState(false)
   const [entryExported, setEntryExported] = useState(false)
   const [evalCache, setEvalCache] = useState({})
@@ -67,6 +77,8 @@ export default function ExpandedDetailPanel({
     || currentState === 'EMAIL_READY'
     || currentState === 'TRANSCRIPTION_ERROR'
     || currentState === 'GENERATION_ERROR'
+    || currentState === 'THINKING'
+    || currentState === 'ERROR'
     || (currentState === 'RECORDING' && mode === 'email')
 
   const showEntryDetail = !isContentState && selected !== null
@@ -184,11 +196,11 @@ export default function ExpandedDetailPanel({
             <circle cx="12" cy="12" r="9" stroke="rgba(var(--ink),0.18)" strokeWidth="1.2"/>
             <path d="M12 7v5l3 3" stroke="rgba(var(--ink),0.18)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: '16px', fontWeight: 400, color: 'var(--text-tertiary)', letterSpacing: '-0.01em' }}>
-            Select a session to view details
+          <span style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(var(--ink),0.85)', letterSpacing: '-0.01em' }}>
+            {hotkey.action} and talk
           </span>
-          <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
-            Your generated prompts appear here
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '44ch', lineHeight: 1.5 }}>
+            Or press ⌘T to type. What you say and the prompts you make show up here; pick one on the left to see it again.
           </span>
         </div>
       )}
@@ -351,8 +363,45 @@ export default function ExpandedDetailPanel({
         />
       )}
 
+      {/* Working: what you said, and the prompt as Claude writes it. */}
+      {currentState === 'THINKING' && (
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
+          <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: 600, color: 'rgba(var(--ink),0.9)', marginBottom: '18px' }}>
+            <span className="working-dots" aria-hidden="true"><i /><i /><i /></span>
+            {mode === 'dictate' ? 'Transcribing' : 'Writing your prompt'}
+            {recordingContext?.appName && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>for {recordingContext.appName}</span>}
+          </div>
+          {thinkTranscript && (
+            <>
+              <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px' }}>You said</div>
+              <p style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--text-secondary)', margin: '0 0 20px', maxWidth: '72ch' }}>{thinkTranscript}</p>
+            </>
+          )}
+          {streamText && (
+            <div id="think-stream" className="selectable" style={{ fontSize: '14px', lineHeight: 1.8, color: 'rgba(var(--ink),0.9)', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>{streamText}</div>
+          )}
+        </div>
+      )}
+
+      {currentState === 'ERROR' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '24px' }}>
+          <span style={{ fontSize: '16px', fontWeight: 500, color: 'rgba(var(--ink),0.9)' }}>{errorMessage || 'Something went wrong'}</span>
+          <button
+            onClick={onReset}
+            style={{ height: '32px', padding: '0 16px', borderRadius: '8px', border: '0.5px solid rgba(var(--ink),0.14)', background: 'rgba(var(--ink),0.06)', color: 'rgba(var(--ink),0.9)', fontSize: '13px', fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {currentState === 'PROMPT_READY' && (
         <ExpandedPromptReadyContent
+          dictation={dictation}
+          resultView={resultView}
+          onShowDictation={onShowDictation}
+          onMakePrompt={onMakePrompt}
+          displayMode={dictation && resultView === 'prompt' ? promptStyle : mode}
           transcript={thinkTranscript}
           generatedPrompt={generatedPrompt}
           setGeneratedPrompt={setGeneratedPrompt}

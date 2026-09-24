@@ -93,7 +93,12 @@ body {
       <span class="working" id="working-text">Writing your prompt</span>
     </div>
   </div>
-  <div id="copied" hidden><span class="check">✓</span> Prompt copied</div>
+  <div id="copied" hidden>
+    <div class="row">
+      <span><span class="check">✓</span> <span id="copied-text">Prompt copied</span></span>
+      <button class="action" id="open-window" type="button">Open</button>
+    </div>
+  </div>
   <div id="dictated" hidden>
     <div class="row">
       <span><span class="check">✓</span> <span id="dictated-text">Typed</span></span>
@@ -132,6 +137,7 @@ window.electronAPI.onPillState((state) => {
     document.getElementById('working-text').textContent = state.mode === 'Dictation' ? 'Transcribing' : 'Writing your prompt';
     show('thinking');
   } else if (state.state === 'copied') {
+    document.getElementById('copied-text').textContent = state.copied === false ? 'Prompt ready' : 'Prompt copied';
     show('copied');
   } else if (state.state === 'dictated') {
     // Typed where the cursor was, or (without Accessibility) left on the clipboard.
@@ -141,6 +147,7 @@ window.electronAPI.onPillState((state) => {
 });
 
 document.getElementById('make-prompt').addEventListener('click', () => window.electronAPI.pillAction('make-prompt'));
+document.getElementById('open-window').addEventListener('click', () => window.electronAPI.pillAction('open'));
 
 // The window around the pill is transparent and lets clicks through; while the pointer is over
 // the pill, the pill takes the mouse so it can be dragged and its button clicked.

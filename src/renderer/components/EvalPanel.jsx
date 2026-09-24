@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { evalScoreColor, evalVerdict, readableColor } from '../utils/promptUtils.js'
 
 const DIMENSION_LABELS = { clarity: 'Clarity', specificity: 'Specificity', context: 'Context', actionability: 'Actionability' }
@@ -14,8 +14,12 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
   const [evalFailed, setEvalFailed] = useState(false)
   const [barsMounted, setBarsMounted] = useState(false)
 
-  useEffect(() => {
-    if (cachedResult) return
+  // Scoring is a second Claude call, so it only runs when you open the panel (once per prompt),
+  // not for every prompt you make.
+  const started = useRef(!!cachedResult)
+  function startEval() {
+    if (started.current) return
+    started.current = true
     window.electronAPI.evaluatePrompt({ transcript, prompt })
       .then((result) => {
         if (result?.success) {
@@ -26,7 +30,7 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
         }
       })
       .catch(() => setEvalFailed(true))
-  }, [])
+  }
 
   useEffect(() => {
     setBarsMounted(false)
@@ -57,7 +61,7 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
   return (
     <div>
       <button
-        onClick={evalFailed ? undefined : () => setIsOpen(v => !v)}
+        onClick={evalFailed ? undefined : () => { startEval(); setIsOpen(v => !v) }}
         style={{
           fontSize: '12px',
           color: evalFailed ? 'var(--text-tertiary)' : 'var(--text-secondary)',
@@ -66,7 +70,7 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
           padding: 0, WebkitAppRegion: 'no-drag',
         }}
       >
-        ↗ Eval
+        ↗ Score this prompt
       </button>
 
       <div style={{

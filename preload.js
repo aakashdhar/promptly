@@ -10,12 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   copyToClipboard: (text) =>
     ipcRenderer.invoke('copy-to-clipboard', { text }),
 
-  resizeWindow: (height) =>
-    ipcRenderer.invoke('resize-window', { height }),
-
-  setWindowButtonsVisible: (visible) =>
-    ipcRenderer.invoke('set-window-buttons-visible', { visible }),
-
   showModeMenu: (currentMode) =>
     ipcRenderer.invoke('show-mode-menu', { currentMode }),
 
@@ -43,9 +37,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   saveFile: (opts) =>
     ipcRenderer.invoke('save-file', opts),
-
-  setWindowSize: (width, height) =>
-    ipcRenderer.invoke('set-window-size', { width, height }),
 
   onShowHistory: (callback) => {
     const cb = () => callback()
@@ -135,11 +126,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('open-settings', cb)
   },
 
-  onToggleExpand: (callback) => {
-    const cb = () => callback()
-    ipcRenderer.on('toggle-expand', cb)
-    return () => ipcRenderer.removeListener('toggle-expand', cb)
-  },
 
   updateMenuBarState: (state) =>
     ipcRenderer.invoke('update-menubar-state', state),

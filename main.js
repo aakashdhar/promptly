@@ -57,16 +57,6 @@ const SHORTCUT_PRIMARY = 'Alt+Space';
 const SHORTCUT_FALLBACK = 'Control+`';
 const SHORTCUT_PAUSE = 'Alt+P';
 
-// App states in which the bar stays visible when focus moves to another app.
-// PROMPT_READY is deliberately absent: the user is expected to go and paste.
-const KEEP_VISIBLE_ON_BLUR = new Set([
-  'RECORDING', 'PAUSED', 'THINKING', 'ITERATING', 'TYPING', 'SETTINGS',
-  'IMAGE_BUILDER', 'IMAGE_BUILDER_DONE',
-  'VIDEO_BUILDER', 'VIDEO_BUILDER_DONE',
-  'WORKFLOW_BUILDER', 'WORKFLOW_BUILDER_DONE',
-  'EMAIL_READY', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR',
-]);
-
 const MENU_BAR_ICON_STATE = {
   IDLE: 'idle', RECORDING: 'recording', PAUSED: 'recording',
   THINKING: 'thinking', ITERATING: 'thinking',
@@ -111,7 +101,6 @@ let menuBarTray = null;
 let pulseInterval = null;
 let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
-let preExpandBounds = null;
 let lastTempAudioPath = null;
 let lastGenerateRequest = null;
 let currentAppState = 'IDLE';
@@ -273,7 +262,7 @@ function createMenuBarIcon() {
   menuBarTray.setToolTip('Promptly — ready');
   menuBarTray.on('click', () => {
     if (!win || win.isDestroyed()) return;
-    if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
+    if (win.isVisible() && win.isFocused()) win.hide(); else showWindow();
   });
   menuBarTray.on('right-click', () => {
     menuBarTray.popUpContextMenu(buildTrayMenu());
@@ -389,7 +378,8 @@ async function startFromHotkey() {
   lastDictation = null;
   hidePillSoon(0);
   // With the bar hidden, recording shows in the floating pill and the bar stays out of the way.
-  pillSession = !win || win.isDestroyed() || !win.isVisible();
+  // Talking from another app (the window closed, or behind the app you're in) happens in the pill.
+  pillSession = !win || win.isDestroyed() || !win.isVisible() || !win.isFocused();
   if (pillSession) pillSend({ state: 'recording', mode: currentModeLabel });
   winSend('hotkey-start');
   // Capture where the user is and what they've selected, for destination-aware prompts.
@@ -535,16 +525,16 @@ function updatePill(appState) {
     pillSession = false;
     pillSend({ state: 'dictated', typed: lastDictation.typed });
     hidePillSoon(6000);
-  } else {
-    // A result or an error: show it in the window, like any other prompt.
+  } else if (appState === 'PROMPT_READY' || appState === 'EMAIL_READY') {
+    // A prompt made from another app: you stay there with it on the clipboard. The pill offers
+    // to open it in the window.
     pillSession = false;
-    const copied = appState === 'PROMPT_READY' || appState === 'EMAIL_READY';
-    if (copied && config.read().autoCopy !== false) {
-      pillSend({ state: 'copied' });
-      setTimeout(() => { if (!pillSession) pillSend({ state: 'hidden' }); }, 1400);
-    } else {
-      pillSend({ state: 'hidden' });
-    }
+    pillSend({ state: 'copied', copied: config.read().autoCopy !== false });
+    hidePillSoon(6000);
+  } else {
+    // Builders and errors need you in the window.
+    pillSession = false;
+    pillSend({ state: 'hidden' });
     showWindow();
   }
 }
@@ -555,7 +545,7 @@ function hidePillSoon(ms) {
   clearTimeout(pillHideTimer);
   pillHideTimer = setTimeout(() => {
     if (pillSession || pillHovered) { if (!pillSession) hidePillSoon(1500); return; }
-    if (lastPillState && lastPillState.state === 'dictated') pillSend({ state: 'hidden' });
+    if (lastPillState && (lastPillState.state === 'dictated' || lastPillState.state === 'copied')) pillSend({ state: 'hidden' });
   }, ms);
 }
 
@@ -631,22 +621,40 @@ function createSplashWindow() {
   });
 }
 
+const WINDOW_DEFAULT = { width: 940, height: 600 };
+const WINDOW_MIN = { width: 760, height: 520 };
+
+// Where the window opens: where you last left it if that's still on a screen, otherwise the
+// default size centred on the screen you're using.
+function windowBounds() {
+  const saved = config.read().windowBounds;
+  if (saved && saved.width >= WINDOW_MIN.width && saved.height >= WINDOW_MIN.height) {
+    const onScreen = screen.getAllDisplays().some(({ workArea: wa }) =>
+      saved.x >= wa.x - 20 && saved.y >= wa.y - 20 && saved.x + saved.width <= wa.x + wa.width + 20 && saved.y + saved.height <= wa.y + wa.height + 20);
+    if (onScreen) return saved;
+  }
+  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const width = Math.min(WINDOW_DEFAULT.width, wa.width);
+  const height = Math.min(WINDOW_DEFAULT.height, wa.height);
+  return { width, height, x: Math.round(wa.x + (wa.width - width) / 2), y: Math.round(wa.y + (wa.height - height) / 2) };
+}
+
 function createWindow() {
+  // One normal window (history beside the current result); talking from other apps happens in
+  // the floating pill. It opens at the size and place you last left it.
   win = new BrowserWindow({
-    width: 520,
-    height: 134, // the idle bar; the renderer resizes per state
-    minWidth: 520,
-    maxWidth: 520, // overridden at runtime by set-window-size IPC (calls setMinimumSize/setMaximumSize before setSize)
+    ...windowBounds(),
+    minWidth: WINDOW_MIN.width,
+    minHeight: WINDOW_MIN.height,
     show: false,
     frame: false,
     transparent: false,
     backgroundColor: windowBackground(),
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
-    resizable: false,
+    resizable: true,
     maximizable: true,
-    fullscreenable: false,
-    alwaysOnTop: true,
+    fullscreenable: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -660,13 +668,15 @@ function createWindow() {
       win.hide();
     }
   });
-  win.on('blur', () => {
-    // Hide when focus moves to another app, except in the expanded window and in states
-    // where the user is mid-task (animated resize can also trigger a spurious blur).
-    if (preExpandBounds) return;
-    if (KEEP_VISIBLE_ON_BLUR.has(currentAppState)) return;
-    win.hide();
-  });
+  let saveBoundsTimer = null;
+  const saveBounds = () => {
+    clearTimeout(saveBoundsTimer);
+    saveBoundsTimer = setTimeout(() => {
+      if (!win.isDestroyed() && !win.isFullScreen() && !win.isMaximized()) config.update({ windowBounds: win.getBounds() });
+    }, 400);
+  };
+  win.on('resize', saveBounds);
+  win.on('move', saveBounds);
   if (!app.isPackaged) {
     // Dev-only devtools shortcut, scoped to this window instead of registered system-wide.
     win.webContents.on('before-input-event', (event, input) => {
@@ -688,19 +698,6 @@ function createWindow() {
     pulseInterval = null;
     if (menuBarTray && !menuBarTray.isDestroyed())
       menuBarTray.setImage(createMicIcon('idle'));
-  });
-  win.on('maximize', () => {
-    win.unmaximize();
-    winSend('toggle-expand');
-  });
-  win.on('unmaximize', () => {
-    win.setAlwaysOnTop(false);
-  });
-  win.on('enter-full-screen', () => {
-    win.setAlwaysOnTop(false);
-  });
-  win.on('leave-full-screen', () => {
-    win.setAlwaysOnTop(false);
   });
   nativeTheme.on('updated', () => {
     for (const w of [win, splashWin]) {
@@ -1070,74 +1067,6 @@ app.whenReady().then(async () => {
     return { success: true };
   });
 
-  ipcMain.handle('resize-window', (_event, { height }) => {
-    if (win) {
-      const [currentWidth] = win.getSize();
-      // Only lock resize if in minimized bar mode (narrow window)
-      const isBar = currentWidth <= 520;
-      if (isBar) win.setResizable(true);
-      win.setSize(currentWidth, height, true);
-      if (isBar) win.setResizable(false);
-    }
-    return { ok: true };
-  });
-
-  ipcMain.handle('set-window-size', (_event, { width, height }) => {
-    if (win) {
-      if (width >= 1000) {
-        preExpandBounds = win.getBounds();
-        win.setResizable(true);
-        win.setMaximizable(true);
-        win.setFullScreenable(true);
-        win.setAlwaysOnTop(false);
-        win.setMinimumSize(800, 600);
-        const expandDisplay = screen.getDisplayNearestPoint(win.getBounds());
-        const { width: dw, height: dh } = expandDisplay.workArea;
-        win.setMaximumSize(dw, dh);
-        const savedBounds = config.read().expandedWindowBounds;
-        if (savedBounds) {
-          const displays = screen.getAllDisplays();
-          const isOnScreen = displays.some(d => {
-            const wa = d.workArea;
-            return (
-              savedBounds.x >= wa.x &&
-              savedBounds.y >= wa.y &&
-              savedBounds.x + savedBounds.width <= wa.x + wa.width &&
-              savedBounds.y + savedBounds.height <= wa.y + wa.height
-            );
-          });
-          if (isOnScreen) {
-            win.setBounds(savedBounds, false);
-          } else {
-            win.maximize();
-          }
-        } else {
-          win.maximize();
-        }
-      } else if (width <= 520 && preExpandBounds) {
-        config.update({ expandedWindowBounds: win.getBounds() });
-        win.setResizable(false);
-        win.setMaximizable(false);
-        win.setFullScreenable(false);
-        win.setAlwaysOnTop(true);
-        win.setMinimumSize(520, 50);
-        win.setMaximumSize(520, 2000);
-        if (win.isMaximized()) win.unmaximize();
-        if (win.isFullScreen()) win.setFullScreen(false);
-        const { x, y } = preExpandBounds;
-        win.setBounds({ x, y, width, height }, false);
-        preExpandBounds = null;
-      } else {
-        win.setSize(width, height, true);
-      }
-    }
-    return { ok: true };
-  });
-
-  ipcMain.handle('set-window-buttons-visible', (_event, { visible }) => {
-    if (win) win.setWindowButtonVisibility(visible);
-    return { ok: true };
-  });
 
   ipcMain.handle('show-mode-menu', (_event, { currentMode }) => {
     const menu = Menu.buildFromTemplate([
@@ -1364,6 +1293,12 @@ app.whenReady().then(async () => {
 
   // The pill's "Make it a prompt" after a dictation: open the window and convert it there.
   ipcMain.handle('pill-action', (_event, action) => {
+    if (action === 'open') {
+      hidePillSoon(0);
+      pillSend({ state: 'hidden' });
+      showWindow();
+      return { ok: true };
+    }
     if (action !== 'make-prompt') return { ok: false };
     lastDictation = null;
     hidePillSoon(0);

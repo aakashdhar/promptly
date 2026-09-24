@@ -15,7 +15,6 @@ export default function ExpandedTransportBar({
   onStop,
   onStopIterate,
   onPause,
-  onCollapse,
   onOpenSettings,
   onTypePrompt,
   onAbort,
@@ -39,7 +38,6 @@ export default function ExpandedTransportBar({
   const isVideo = mode === 'video'
   const isWorkflow = mode === 'workflow'
   const isEmail = mode === 'email'
-  const isFullViewMode = isVideo || isWorkflow || isEmail
   const isPolish = mode === 'polish'
   const isRefine = mode === 'refine'
   const pillBg = isPolish ? 'rgba(48,209,88,0.12)' : isRefine ? 'rgba(168,85,247,0.12)' : isVideo ? 'rgba(251,146,60,0.12)' : isWorkflow ? 'rgba(34,197,94,0.12)' : isEmail ? 'rgba(20,184,166,0.12)' : 'rgba(10,132,255,0.12)'
@@ -102,7 +100,7 @@ export default function ExpandedTransportBar({
       textLine1 = 'Generation failed'; textLine2 = ''; textDot = 'error'
     }
   } else {
-    textLine1 = 'Speak your prompt'; textLine2 = `${hotkey.action} or click mic to start`; textDot = null
+    textLine1 = mode === 'dictate' ? 'Ready to dictate' : 'Speak your prompt'; textLine2 = `${hotkey.action} or click mic to start`; textDot = null
   }
 
   const dotColor = textDot === 'recording' ? 'rgba(200,50,35,0.85)'
@@ -120,7 +118,7 @@ export default function ExpandedTransportBar({
       flexShrink: 0,
       position: 'relative',
     }}>
-      {/* Traffic-light drag spacer — settings left, collapse right */}
+      {/* Traffic-light drag spacer, with Settings at the right */}
       <div style={{
         height: '36px', WebkitAppRegion: 'drag',
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px',
@@ -128,7 +126,7 @@ export default function ExpandedTransportBar({
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}
-            title="Path settings (⌘/)"
+            title="Settings (⌘/)"
             style={{
               width: '28px', height: '28px', borderRadius: '7px',
               background: 'rgba(var(--ink),0.05)',
@@ -136,7 +134,7 @@ export default function ExpandedTransportBar({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
               WebkitAppRegion: 'no-drag', padding: 0,
-              transition: 'background 150ms', flexShrink: 0,
+              transition: 'background 150ms', flexShrink: 0, marginRight: '18px',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.12)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.05)' }}
@@ -147,29 +145,6 @@ export default function ExpandedTransportBar({
             </svg>
           </button>
         )}
-        <button
-          onClick={isFullViewMode ? undefined : onCollapse}
-          title={isWorkflow ? 'Workflow mode uses full view' : isVideo ? 'Video mode requires expanded view' : isEmail ? 'Email mode uses expanded view' : 'Collapse'}
-          style={{
-            width: '28px', height: '28px', borderRadius: '7px',
-            background: 'rgba(var(--ink),0.05)',
-            border: '0.5px solid rgba(var(--ink),0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: isFullViewMode ? 'not-allowed' : 'pointer', marginRight: '18px',
-            WebkitAppRegion: 'no-drag', padding: 0, pointerEvents: isFullViewMode ? 'none' : 'auto',
-            transition: 'background 150ms', flexShrink: 0,
-            opacity: isFullViewMode ? 0.3 : 1,
-          }}
-          onMouseEnter={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(var(--ink),0.12)' }}
-          onMouseLeave={e => { if (!isFullViewMode) e.currentTarget.style.background = 'rgba(var(--ink),0.05)' }}
-        >
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M10 2L6.5 5.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M8.5 5.5H6.5V3.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 10L5.5 6.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M3.5 6.5H5.5V8.5" stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
       </div>
 
       {/* Transport row — inline-flex, shrinks to content, centred */}
@@ -204,8 +179,8 @@ export default function ExpandedTransportBar({
             fontFamily: 'monospace', fontSize: '13px',
             color: 'var(--text-secondary)', minWidth: '28px', textAlign: 'right',
             letterSpacing: '0.06em',
-            opacity: isTyping || isIterating ? 0.2 : 1,
-            transition: 'opacity 200ms',
+            // The timer means nothing while typing: hidden, keeping its space so nothing shifts.
+            visibility: isTyping || isIterating ? 'hidden' : 'visible',
           }}>
             {duration}
           </span>
@@ -264,6 +239,10 @@ export default function ExpandedTransportBar({
               </div>
             ) : (
               <div
+                role="button"
+                tabIndex={0}
+                aria-label={isRecording || isIterating ? 'Stop' : 'Start talking'}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (isRecording ? onStop : isIterating ? onStopIterate : onStart)?.() } }}
                 onClick={isRecording ? onStop : isIterating ? onStopIterate : onStart}
                 style={{
                   width: '52px', height: '52px', borderRadius: '50%',
@@ -312,18 +291,21 @@ export default function ExpandedTransportBar({
           </div>
 
           {/* Mode pill */}
-          <span
+          <button
+            type="button"
             ref={pillRef}
+            id="mode-pill"
+            aria-haspopup="dialog"
             onClick={handleModePillClick}
             style={{
-              padding: '5px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 500,
+              padding: '5px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 500, fontFamily: 'inherit',
               background: pillBg, border: pillBorder, color: readableColor(pillColor),
               cursor: 'pointer', whiteSpace: 'nowrap',
               WebkitAppRegion: 'no-drag',
             }}
           >
             {modeLabel}
-          </span>
+          </button>
 
           {/* Type button — 36px */}
           <div

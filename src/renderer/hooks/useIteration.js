@@ -5,7 +5,6 @@ import { saveToHistory } from '../utils/history.js'
 export default function useIteration({
   STATES,
   transitionRef,
-  resizeWindow,
   isExpandedRef,
   generatedPromptRef,
   modeRef,
@@ -68,7 +67,6 @@ export default function useIteration({
       }
       setThinkTranscript(iterText)
       transitionRef.current(STATES.THINKING)
-      if (!isExpandedRef.current) resizeWindow(320)
 
       const iterationSystemPrompt = `You are an expert Claude prompt engineer. You have a previously generated prompt and the user has spoken a refinement.
 

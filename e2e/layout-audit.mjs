@@ -121,7 +121,7 @@ function auditInPage({ edgeMin, minFont }) {
   const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
 
   const all = Array.from(document.body.querySelectorAll('*')).filter((el) =>
-    !el.closest('[data-audit-skip]') && !['SCRIPT', 'STYLE', 'svg', 'path', 'I', 'OPTION'].includes(el.tagName) && !(el instanceof SVGElement) && isShown(el))
+    !el.closest('[data-audit-skip]') && !el.closest('[inert]') && !['SCRIPT', 'STYLE', 'svg', 'path', 'I', 'OPTION'].includes(el.tagName) && !(el instanceof SVGElement) && isShown(el))
 
   for (const el of all) {
     if (!readable(el) && !interactive(el)) continue

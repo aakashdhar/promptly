@@ -18,11 +18,8 @@ export default function useKeyboardShortcuts({
   pauseRecordingRef,
   resumeRecordingRef,
   openHistory,
-  closeHistory,
   openSettings,
   closeSettings,
-  handleExpand,
-  isExpandedRef,
   requestStop,
   dismissRecording,
 }) {
@@ -69,9 +66,6 @@ export default function useKeyboardShortcuts({
         openSettings()
       }),
 
-      window.electronAPI.onToggleExpand?.(() => {
-        if (!isExpandedRef.current) handleExpand?.()
-      }),
     ]
 
     return () => unsubs.forEach(fn => fn?.())
@@ -85,8 +79,6 @@ export default function useKeyboardShortcuts({
           stopRecordingRef.current()
         } else if (stateRef.current === STATES.SHORTCUTS) {
           transitionRef.current(prevStateRef.current || STATES.IDLE)
-        } else if (stateRef.current === STATES.HISTORY) {
-          closeHistory()
         } else if (stateRef.current === STATES.SETTINGS) {
           closeSettings()
         } else if (stateRef.current !== STATES.IDLE) {
@@ -94,9 +86,7 @@ export default function useKeyboardShortcuts({
         }
         return
       }
-      if (meta && e.key === 'h' &&
-          stateRef.current !== STATES.RECORDING &&
-          stateRef.current !== STATES.HISTORY) {
+      if (meta && e.key === 'h' && stateRef.current !== STATES.RECORDING) {
         e.preventDefault()
         openHistory()
         return

@@ -2,6 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { parseSections, readableColor } from '../utils/promptUtils.js'
 import EvalPanel from './EvalPanel.jsx'
 
+// "um ×2, uh": the only words a dictation drops, listed so nothing is changed silently.
+function describeRemoved(removed) {
+  const counts = new Map()
+  for (const word of removed) counts.set(word, (counts.get(word) || 0) + 1)
+  return [...counts].map(([word, n]) => (n > 1 ? `${word} ×${n}` : word)).join(', ')
+}
+
 export default function ExpandedPromptReadyContent({
   transcript,
   generatedPrompt,
@@ -13,14 +20,25 @@ export default function ExpandedPromptReadyContent({
   onRegenerate,
   onReset,
   isIterated,
+  dictation = null,
+  resultView = 'dictation',
+  onShowDictation,
+  onMakePrompt,
+  displayMode,
 }) {
+  // What's on screen: a dictation (your words), a polish, or a prompt (possibly made from a
+  // dictation, which keeps the switch back to "As I said it").
+  const shownMode = displayMode || mode
+  const isDictation = shownMode === 'dictate'
+  const fromDictation = isDictation || !!dictation
+  const plainText = isDictation || isPolishMode
   const [isEditing, setIsEditing] = useState(false)
   const [editHovered, setEditHovered] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const promptRef = useRef(null)
   const preEditValue = useRef('')
 
-  const isRefine = mode === 'refine'
+  const isRefine = shownMode === 'refine'
   const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
 
   useEffect(() => {
@@ -67,7 +85,7 @@ export default function ExpandedPromptReadyContent({
         const edited = promptRef.current.textContent
         setGeneratedPrompt(edited)
         // Your edits teach Promptly what you prefer (Settings → You).
-        window.electronAPI?.recordEdit?.(mode, preEditValue.current, edited)
+        window.electronAPI?.recordEdit?.(shownMode, preEditValue.current, edited)
       }
       setIsEditing(false)
     }
@@ -84,8 +102,8 @@ export default function ExpandedPromptReadyContent({
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px 12px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>
-          <span style={{ color: 'var(--color-green, #30D158)', fontSize: '17px', textShadow: '0 0 8px rgba(48,209,88,0.5)' }}>✓</span>
-          <span>Prompt ready</span>
+          <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '17px' }}>✓</span>
+          <span>{isDictation ? 'Dictated' : isPolishMode ? 'Polished' : 'Prompt ready'}</span>
           {isIterated && (
             <span style={{
               fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
@@ -95,15 +113,39 @@ export default function ExpandedPromptReadyContent({
           )}
         </div>
         <div style={{ display: 'flex', gap: '18px' }}>
-          <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>
-          <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>
+          {!fromDictation && <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>}
+          {!fromDictation && <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>}
           <button onClick={onReset} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
         </div>
       </div>
 
+      {dictation && (
+        <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
+          <div role="tablist" aria-label="Show as" style={{ display: 'inline-flex', gap: '2px', padding: '2px', borderRadius: '9px', background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.1)' }}>
+            {[['dictation', 'As I said it', onShowDictation], ['prompt', 'As a prompt', onMakePrompt]].map(([view, label, onPick]) => (
+              <button
+                key={view}
+                role="tab"
+                aria-selected={resultView === view}
+                onClick={() => { if (resultView !== view) onPick?.() }}
+                style={{
+                  height: '28px', padding: '0 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: '12px', fontWeight: resultView === view ? 600 : 400,
+                  background: resultView === view ? 'var(--surface)' : 'transparent',
+                  boxShadow: resultView === view ? '0 1px 2px rgba(0,0,0,0.12)' : 'none',
+                  color: resultView === view ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ height: '0.5px', background: 'rgba(var(--ink),0.06)', margin: '0 28px', flexShrink: 0 }} />
 
-      <div className="selectable" style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
+      <div className="selectable" id="prompt-output" style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
         {isEditing ? (
           <div
             ref={promptRef}
@@ -116,6 +158,11 @@ export default function ExpandedPromptReadyContent({
             }}
           >
             {generatedPrompt}
+          </div>
+        ) : plainText ? (
+          // Dictation and polished text read as written, not as prompt sections.
+          <div style={{ fontSize: '15px', lineHeight: '1.8', color: 'rgba(var(--ink),0.95)', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>
+            {isPolishMode ? (polishResult?.polished || generatedPrompt) : generatedPrompt}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
@@ -146,6 +193,18 @@ export default function ExpandedPromptReadyContent({
           </div>
         )}
       </div>
+
+      {isDictation && dictation?.removed?.length > 0 && (
+        <div style={{ padding: '0 28px 10px', fontSize: '11px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+          Removed: {describeRemoved(dictation.removed)}. Nothing else was changed.
+        </div>
+      )}
+      {isPolishMode && polishResult?.changes?.length > 0 && (
+        <div style={{ margin: '0 28px 12px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(48,209,88,0.06)', border: '0.5px solid rgba(48,209,88,0.18)', flexShrink: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: readableColor('rgb(48,209,88)'), marginBottom: '4px' }}>What changed</div>
+          {polishResult.changes.map((c, i) => <div key={i} style={{ fontSize: '12px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>{c.replace(/^[·•-]\s*/, '· ')}</div>)}
+        </div>
+      )}
 
       <div style={{ flexShrink: 0 }}>
         <div style={{ height: '0.5px', background: 'rgba(var(--ink),0.06)', margin: '0 28px' }} />
@@ -179,12 +238,14 @@ export default function ExpandedPromptReadyContent({
               transition: 'all 300ms ease',
             }}
           >
-            {isCopied ? '✓ Copied' : 'Copy prompt'}
+            {isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : 'Copy prompt'}
           </button>
         </div>
-        <div style={{ padding: '0 24px 16px' }}>
-          <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} />
-        </div>
+        {!plainText && (
+          <div style={{ padding: '0 24px 16px' }}>
+            <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} />
+          </div>
+        )}
       </div>
     </div>
   )

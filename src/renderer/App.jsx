@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useMode from './hooks/useMode.js'
 import usePolishMode, { parsePolishOutput } from './hooks/usePolishMode.js'
-import useWindowResize from './hooks/useWindowResize.js'
 import useWindowLayout from './hooks/useWindowLayout.js'
 import useRecording from './hooks/useRecording.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
@@ -13,21 +12,7 @@ import useOperationHandlers from './hooks/useOperationHandlers.js'
 import useTextInput from './hooks/useTextInput.js'
 import useDictation from './hooks/useDictation.js'
 import { useThinkingProgress } from './hooks/useThinkingProgress.js'
-import IdleState from './components/IdleState.jsx'
-import ShortcutsPanel from './components/ShortcutsPanel.jsx'
-import HistoryPanel from './components/HistoryPanel.jsx'
-import RecordingState from './components/RecordingState.jsx'
-import PausedState from './components/PausedState.jsx'
-import ThinkingState from './components/ThinkingState.jsx'
-import PromptReadyState from './components/PromptReadyState.jsx'
-import PolishReadyState from './components/PolishReadyState.jsx'
-import ErrorState from './components/ErrorState.jsx'
-import IteratingState from './components/IteratingState.jsx'
-import TypingState from './components/TypingState.jsx'
-import SettingsPanel from './components/SettingsPanel.jsx'
 import ExpandedView from './components/ExpandedView.jsx'
-import ImageBuilderState from './components/ImageBuilderState.jsx'
-import ImageBuilderDoneState from './components/ImageBuilderDoneState.jsx'
 import { saveToHistory, bookmarkHistoryItem } from './utils/history.js'
 import { parseEmailOutput } from './utils/promptUtils.js'
 
@@ -52,30 +37,6 @@ const STATES = {
   EMAIL_READY: 'EMAIL_READY',
   TRANSCRIPTION_ERROR: 'TRANSCRIPTION_ERROR',
   GENERATION_ERROR: 'GENERATION_ERROR',
-}
-
-const STATE_HEIGHTS = {
-  IDLE: 134,
-  RECORDING: 89,
-  PAUSED: 89,
-  THINKING: 320,
-  PROMPT_READY: 560,
-  ERROR: 112,
-  SHORTCUTS: 380,
-  HISTORY: 720,
-  ITERATING: 200,
-  TYPING: 290,
-  SETTINGS: 600,
-  EXPANDED: 860,
-  IMAGE_BUILDER: 520,
-  IMAGE_BUILDER_DONE: 380,
-  VIDEO_BUILDER: 860,
-  VIDEO_BUILDER_DONE: 860,
-  WORKFLOW_BUILDER: 860,
-  WORKFLOW_BUILDER_DONE: 860,
-  EMAIL_READY: 860,
-  TRANSCRIPTION_ERROR: 860,
-  GENERATION_ERROR: 860,
 }
 
 export default function App() {
@@ -112,29 +73,14 @@ export default function App() {
   const [streamText, setStreamText] = useState('')
 
   const { mode, setMode, modeLabel } = useMode()
-  const { resizeWindow } = useWindowResize()
   const { dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation } = useDictation({
     STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript,
   })
 
-  const {
-    isExpanded,
-    isExpandedRef,
-    handleExpand,
-    handleCollapse,
-    openHistory,
-    closeHistory,
-    openSettings,
-    closeSettings,
-  } = useWindowLayout({
-    animateToStateRef,
-    stateRef,
-    setCurrentState,
-    prevStateRef,
-    transitionRef,
-    STATES,
-    STATE_HEIGHTS,
-  })
+  const { openHistory, openSettings, closeSettings } = useWindowLayout({ prevStateRef, stateRef, transitionRef, STATES })
+  // There is only the window now (the pill covers talking from other apps). Hooks written for
+  // both layouts still read this; it is always true.
+  const isExpandedRef = useRef(true)
 
   // POLISH-001: animate between states
   function animateToState(newState) {
@@ -152,13 +98,6 @@ export default function App() {
   animateToStateRef.current = animateToState
 
   useEffect(() => {
-    // Skip IDLE resize when mode auto-expands on mount — handleExpand fires directly
-    // (no RAF), so the RAF-wrapped resizeWindow would race and win, collapsing the window.
-    // Called directly, not through the rAF-wrapped resizeWindow: the window is still hidden on
-    // mount and hidden windows get no animation frames, which left the bar at its old height.
-    if (mode !== 'image' && mode !== 'video' && mode !== 'workflow' && mode !== 'email') {
-      window.electronAPI?.resizeWindow(STATE_HEIGHTS.IDLE)
-    }
     return () => {
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
     }
@@ -168,9 +107,6 @@ export default function App() {
   useEffect(() => { generatedPromptRef.current = generatedPrompt }, [generatedPrompt])
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
-  useEffect(() => {
-    if ((mode === 'image' || mode === 'video' || mode === 'workflow' || mode === 'email') && !isExpandedRef.current) handleExpand()
-  }, [mode])
 
   function transition(newState, payload = {}) {
     const fromState = stateRef.current
@@ -184,21 +120,13 @@ export default function App() {
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (newState === STATES.THINKING || newState === STATES.RECORDING || newState === STATES.TYPING) setStreamText('')
     if (newState === STATES.RECORDING || newState === STATES.TYPING) { setRecordingContext(null); clearDictation() }
-    if (!isExpandedRef.current) resizeWindow(STATE_HEIGHTS[newState])
-    if (window.electronAPI) {
-      window.electronAPI.setWindowButtonsVisible(
-        newState !== STATES.RECORDING &&
-        newState !== STATES.PAUSED &&
-        newState !== STATES.ITERATING
-      )
-      window.electronAPI.updateMenuBarState?.(newState)
-    }
+    window.electronAPI?.updateMenuBarState?.(newState)
     animateToState(newState)
   }
 
   transitionRef.current = transition
 
-  const { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef })
+  const { polishResult, setPolishResult, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef })
 
   const handleGenerateResultRef = useRef(null)
 
@@ -235,7 +163,6 @@ export default function App() {
   })
 
   const {
-    imageBuiltPrompt,
     isReiteratingRef,
     runPreSelection,
     handleImageStartOver,
@@ -245,7 +172,6 @@ export default function App() {
     transitionRef,
     isExpandedRef,
     originalTranscript,
-    resizeWindow,
     setThinkTranscript,
     setThinkingLabel,
     setThinkingAccentColor,
@@ -310,7 +236,6 @@ export default function App() {
     if (mode === 'image') {
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
-      if (!isExpandedRef.current) handleExpand()
       setThinkingLabel('Analysing your idea...')
       setThinkingAccentColor('rgba(139,92,246,0.85)')
       runPreSelection(originalTranscript.current, isReiterate)
@@ -319,7 +244,6 @@ export default function App() {
     if (mode === 'video') {
       const isReiterate = isVideoReiteratingRef.current
       isVideoReiteratingRef.current = false
-      if (!isExpandedRef.current) handleExpand()
       setThinkingLabel('Analysing your idea...')
       setThinkingAccentColor('rgba(251,146,60,0.8)')
       runVideoPreSelection(originalTranscript.current, isReiterate)
@@ -328,12 +252,10 @@ export default function App() {
     if (mode === 'workflow') {
       const isReiterate = isWorkflowReiteratingRef.current
       isWorkflowReiteratingRef.current = false
-      if (!isExpandedRef.current) handleExpand()
       runWorkflowAnalysis(originalTranscript.current, isReiterate)
       return
     }
     if (mode === 'email') {
-      if (!isExpandedRef.current) handleExpand()
       try {
         const parsed = parseEmailOutput(genResult.prompt)
         setEmailOutput(parsed)
@@ -364,10 +286,9 @@ export default function App() {
   }, [mode, runPreSelection, runVideoPreSelection, runWorkflowAnalysis])
   handleGenerateResultRef.current = handleGenerateResult
 
-  const { iterationBase, handleIterate, stopIterating, dismissIterating } = useIteration({
+  const { handleIterate, stopIterating, dismissIterating } = useIteration({
     STATES,
     transitionRef,
-    resizeWindow,
     isExpandedRef,
     generatedPromptRef,
     modeRef,
@@ -503,10 +424,8 @@ Return ONLY valid JSON:
     pauseRecordingRef,
     resumeRecordingRef,
     openHistory,
-    closeHistory,
     openSettings,
     closeSettings,
-    handleExpand,
     isExpandedRef,
     requestStop,
     dismissRecording: handleDismiss,
@@ -550,7 +469,6 @@ Return ONLY valid JSON:
         className={stateClass}
         style={{flex:1, display:'flex', flexDirection:'column', position:'relative', minHeight:0, overflow:'hidden'}}
       >
-        {isExpanded ? (
           <ExpandedView
             currentState={displayState}
             mode={mode}
@@ -559,8 +477,7 @@ Return ONLY valid JSON:
             generatedPrompt={generatedPrompt}
             thinkTranscript={thinkTranscript}
             onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE || s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE || s === STATES.EMAIL_READY) startRecording() }}
-            onCollapse={handleCollapse}
-            onPause={pauseRecording}
+            onPause={() => (stateRef.current === STATES.PAUSED ? resumeRecording() : pauseRecording())}
             onStop={stopRecording}
             onStopIterate={stopIterating}
             onRegenerate={handleRegenerate}
@@ -607,166 +524,19 @@ Return ONLY valid JSON:
             thinkingLabelOpacity={thinkingLabelOpacity}
             onModeSelect={setMode}
             onShowShortcuts={() => { prevStateRef.current = stateRef.current; transition(STATES.SHORTCUTS) }}
+            onCloseShortcuts={() => transition(prevStateRef.current || STATES.IDLE)}
             onShowHistory={openHistory}
+            errorMessage={errorMessage}
+            streamText={streamText}
+            recordingContext={recordingContext}
+            dictation={dictation}
+            resultView={resultView}
+            promptStyle={promptStyle}
+            onShowDictation={showDictation}
+            onMakePrompt={makePrompt}
           />
-        ) : (
-          <>
-            {displayState === STATES.IDLE && (
-              <IdleState
-                mode={mode}
-                modeLabel={modeLabel}
-                onStart={() => { if (stateRef.current === STATES.IDLE) startRecording() }}
-                onTypePrompt={() => transition(STATES.TYPING)}
-                polishTone={polishTone}
-                onPolishToneChange={setPolishToneValue}
-                onExpand={handleExpand}
-                onModeSelect={setMode}
-                onShowShortcuts={() => { prevStateRef.current = stateRef.current; transition(STATES.SHORTCUTS) }}
-                onShowHistory={openHistory}
-              />
-            )}
-            {displayState === STATES.RECORDING && (
-              <RecordingState onStop={stopRecording} onDismiss={handleDismiss} onPause={pauseRecording} duration={duration} />
-            )}
-            {displayState === STATES.PAUSED && (
-              <PausedState duration={duration} onResume={resumeRecording} onStop={stopRecording} onDismiss={handleDismiss} />
-            )}
-            {displayState === STATES.ITERATING && (
-              <IteratingState
-                contextText={iterationBase.current?.transcript || ''}
-                duration={duration}
-                onStop={stopIterating}
-                onDismiss={dismissIterating}
-              />
-            )}
-            {displayState === STATES.TYPING && (
-              <>
-                <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
-                <TypingState
-                  onDismiss={() => transition(STATES.IDLE)}
-                  onSubmit={handleTypingSubmit}
-                  resizeWindow={resizeWindow}
-                />
-              </>
-            )}
-            {displayState === STATES.THINKING && (
-              <ThinkingState transcript={thinkTranscript} mode={mode} label={thinkingLabel} accentColor={thinkingAccentColor} transcriptionSlow={transcriptionSlow} generationSlow={generationSlow} streamText={streamText} context={recordingContext} />
-            )}
-            {displayState === STATES.PROMPT_READY && mode !== 'polish' && (
-              <PromptReadyState
-                dictation={dictation}
-                resultView={resultView}
-                onShowDictation={showDictation}
-                onMakePrompt={makePrompt}
-                originalTranscript={originalTranscript.current}
-                generatedPrompt={generatedPrompt}
-                setGeneratedPrompt={setGeneratedPrompt}
-                onRegenerate={handleRegenerate}
-                onReset={() => transition(STATES.IDLE)}
-                mode={dictation && resultView === 'prompt' ? promptStyle : mode}
-                onIterate={handleIterate}
-                isIterated={isIterated.current}
-                onCollapse={handleCollapse}
-              />
-            )}
-            {displayState === STATES.PROMPT_READY && mode === 'polish' && (
-              <PolishReadyState
-                polished={polishResult?.polished || generatedPrompt}
-                changes={polishResult?.changes || []}
-                transcript={originalTranscript.current}
-                tone={polishTone}
-                onReset={() => { setCopied(false); transition(STATES.IDLE) }}
-                onCopy={() => {
-                  if (window.electronAPI) window.electronAPI.copyToClipboard(polishResult?.polished || generatedPrompt)
-                  setCopied(true)
-                  setTimeout(() => setCopied(false), 1800)
-                }}
-                copied={copied}
-                onToneChange={handlePolishToneChange}
-                onCollapse={handleCollapse}
-              />
-            )}
-            {displayState === STATES.ERROR && (
-              <ErrorState message={errorMessage} onDismiss={() => transition(STATES.IDLE)} />
-            )}
-            {displayState === STATES.SHORTCUTS && (
-              <>
-                <div className="h-[36px] w-full flex-shrink-0" style={{WebkitAppRegion:'drag'}} />
-                <ShortcutsPanel onClose={() => transition(prevStateRef.current || STATES.IDLE)} />
-              </>
-            )}
-            {displayState === STATES.SETTINGS && (
-              <>
-                <div className="h-[36px] w-full flex-shrink-0" style={{WebkitAppRegion:'drag'}} />
-                <SettingsPanel onClose={closeSettings} />
-              </>
-            )}
-            {displayState === STATES.HISTORY && (
-              <>
-                <div className="h-[28px] w-full" style={{WebkitAppRegion:'drag'}} />
-                <HistoryPanel
-                  onClose={closeHistory}
-                  onReuse={(entry) => {
-                    originalTranscript.current = entry.transcript
-                    setGeneratedPrompt(entry.prompt)
-                    if (entry.mode === 'polish') {
-                      setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })
-                    } else {
-                      setPolishResult(null)
-                    }
-                    if (window.electronAPI) window.electronAPI.setWindowSize(520, STATE_HEIGHTS.PROMPT_READY)
-                    transition(STATES.PROMPT_READY)
-                  }}
-                />
-              </>
-            )}
-            {displayState === STATES.IMAGE_BUILDER && (
-              <ImageBuilderState
-                {...imageBuilderProps}
-                isExpanded={false}
-              />
-            )}
-            {displayState === STATES.IMAGE_BUILDER_DONE && (
-              <ImageBuilderDoneState
-                prompt={imageBuiltPrompt}
-                answers={imageBuilderProps.imageAnswers}
-                transcript={originalTranscript.current}
-                onStartOver={() => { handleImageStartOver(); transition(STATES.IMAGE_BUILDER) }}
-                isExpanded={false}
-              />
-            )}
-          </>
-        )}
       </div>
 
-      {!isExpanded && displayState !== STATES.IDLE &&
-       displayState !== STATES.HISTORY && displayState !== STATES.SETTINGS &&
-       displayState !== STATES.SHORTCUTS && displayState !== STATES.ERROR &&
-       // The recording bars have their own ✕; a second button there crowds the stop button.
-       displayState !== STATES.RECORDING && displayState !== STATES.PAUSED && displayState !== STATES.ITERATING && (
-        <button
-          onClick={handleAbort}
-          title="Reset to start"
-          style={{
-            position: 'absolute', top: '10px', right: '14px', zIndex: 20,
-            width: '26px', height: '26px', borderRadius: '7px',
-            background: 'rgba(var(--ink),0.05)',
-            border: '0.5px solid rgba(var(--ink),0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', WebkitAppRegion: 'no-drag', padding: 0,
-            transition: 'background 150ms',
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(var(--ink),0.1)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(var(--ink),0.05)'}
-        >
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M9 3H4.5A2.5 2.5 0 0 0 2 5.5v0A2.5 2.5 0 0 0 4.5 8H8"
-              stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M6.5 5.5L9 3L6.5 0.5"
-              stroke="rgba(var(--ink),0.45)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      )}
     </div>
   )
 }
