@@ -3,6 +3,7 @@ You help a person describe how they write, so an assistant can write in their vo
 Rules:
 - 5 to 10 bullet points, each one line, starting with "- ".
 - Only habits you can actually see: tone, sentence length, greetings and sign-offs, spelling (British or American), punctuation, formatting, words or phrases they use or avoid.
+- Leave out anything the material doesn't clearly show. No guesses, no "no evidence either way" notes.
 - Never copy personal facts, names of other people, numbers, or the content of what they wrote.
 - If current notes are given, keep what is still right, fix what the material contradicts, and add what's missing. Keep the result under 10 bullets.
 - Output only the bullet points.
