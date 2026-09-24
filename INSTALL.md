@@ -15,9 +15,11 @@ You need a Mac with macOS 12 or later and a Claude account. Everything else is s
 
 ## Using it
 
+- **Do it (the default) gives you the finished thing, not a prompt.** Select an email, a Slack thread or a paragraph, hold ⌥ Space and say "reply yes, but push it to Friday", "make this shorter" or "translate this to Hindi". The result is copied, ready to paste.
+- **Ask about what's on screen.** With nothing selected, say "what does this error mean?" or "summarize this page". Promptly sends Claude a screenshot of the window you're in. Turn it on once in Settings → See the window you're in (macOS asks for Screen Recording; quit and reopen Promptly after allowing it). Only that one window is captured, and the image is deleted within ten minutes.
 - **Where you are shapes the prompt.** Talking from Terminal, VS Code or Cursor gives a task for a coding agent like Claude Code; from a browser or the Claude app, a self-contained chat prompt; from Figma, a design brief.
 - **Select text first** to work on it: select an error, a paragraph or some code, hold ⌥ Space and say "fix this" or "turn this into a spec".
-- **Say the mode first** to switch: "code mode, …", "email mode, …", "polish mode, …".
+- **Say the mode first** to switch: "code mode, …", "email mode, …", "polish mode, …". Pick a prompt mode (Balanced, Code, …) from the mode button when you want a prompt to paste into Claude instead.
 - **Settings** (⌘/): shortcut (including Right Option or Fn held on its own), a dictionary of names and terms to spell right, auto-copy, open at login, and light/dark.
 
 Speech-to-text is built in and runs on your Mac. There's nothing to install for it: no Python, Whisper or ffmpeg.

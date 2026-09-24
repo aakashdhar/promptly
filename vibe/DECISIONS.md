@@ -1922,3 +1922,19 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   history column on smaller windows (history now steps aside below 1180 px); long URLs scrolled sideways.
 > Removed: the "built using vibe-* skills" line on the idle bar (it crowded the bottom edge).
 ---
+
+---
+## D-DOIT — Do it: finished results, with your selection or your screen — 2026-09-24
+> Direction (product owner): not developers only; anyone with the Claude CLI. Value beyond prompts: act on what you've
+>   selected in any app, and see the screen.
+> Decision: a new standalone mode "Do it" (key `do`, `output: result`, `appAware`) is the default for new installs. It
+>   returns the finished text (reply, rewrite, translation, answer), shaped for the app you were in, shown as plain text
+>   with "Ready" / "Copy" and no prompt score. Prompt modes are unchanged and one click away.
+> Decision: screenshots go through the CLI, not the API: `claude -p --input-format stream-json` with the image as a
+>   base64 content block (verified with the real CLI, streaming included). Still CLI-only (D-CLI-ONLY).
+> Decision: capture only the front window (helper reports its CGWindow number; `screencapture -l` + `sips -Z 1600`),
+>   only at the moment you press the talk key, only when nothing is selected (a selection is more precise), only with the
+>   Screen Recording permission and the Settings toggle on. Images live in the temp folder under a random id, deleted
+>   after 10 minutes (so a retry still has it) and on quit; uninstall resets the permission.
+> Trade-off: an image adds roughly 1–2k tokens to a request.
+---
