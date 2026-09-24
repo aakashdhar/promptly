@@ -59,6 +59,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
 /* Step rail: the setup really is a sequence, so it is numbered. */
 .rail { display: flex; gap: 18px; margin-bottom: 28px; }
 .rail[hidden] { display: none; }
+[hidden] { display: none !important; }
 .rail li { list-style: none; display: flex; align-items: center; gap: 7px; color: var(--faint); font-size: 12px; }
 .rail .n {
   width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
@@ -264,10 +265,17 @@ details.manual summary { cursor: pointer; width: fit-content; }
   <!-- Step 4: Ready -->
   <section class="screen" id="screen-done" aria-labelledby="done-title">
     <h1 id="done-title">You're set</h1>
-    <p class="lede" id="done-lede">Press this anywhere on your Mac to start talking. Press it again when you're done.</p>
-    <div class="keys" id="keys" aria-label="Option plus Space">
-      <div class="key" id="key-opt">⌥</div>
-      <div class="key wide" id="key-space">space</div>
+    <p class="lede" id="done-lede">Double-tap this anywhere on your Mac and talk. Tap it once when you're done: your words are typed where your cursor is.</p>
+    <div class="keys" id="keys" aria-label="Double-tap Control">
+      <div class="key" id="key-opt" hidden>⌥</div>
+      <div class="key" id="key-space">control</div>
+    </div>
+    <div class="status warn" id="done-needs-access" hidden>
+      <span class="dot"></span>
+      <div>Double-tap Control needs Accessibility.
+        <div class="detail">Until it's on, press ⌥ Space to start and again to stop, and your words are copied for ⌘V.</div>
+        <div class="actions" style="margin-top:10px"><button class="btn" id="done-allow">Allow Accessibility</button></div>
+      </div>
     </div>
     <ul class="tips">
       <li>Promptly lives in the menu bar. Click the microphone icon to show or hide it.</li>
@@ -440,23 +448,38 @@ async function runScreen2() {
 document.getElementById('speech-skip').addEventListener('click', () => showHold());
 
 // ── Ready ────────────────────────────────────────────────────────────────────
-// With Accessibility the shortcut is double-tap Control (two taps of one key); without it,
-// ⌥ Space pressed once to start and once to stop.
+// The shortcut is double-tap Control. It needs Accessibility: until that's on, this screen says
+// so (with a button) rather than quietly showing the ⌥ Space fallback. Someone who picked
+// Option + Space in Settings sees that instead.
+function showNeedsAccess(on) {
+  document.getElementById('done-needs-access').hidden = !on;
+}
+document.getElementById('done-allow').addEventListener('click', async () => {
+  const s = await api.requestAccessibility();
+  showNeedsAccess(!(s && s.tap));
+});
+api.onAccessibilityChanged && api.onAccessibilityChanged((status) => {
+  if (document.getElementById('screen-done').classList.contains('visible')) showNeedsAccess(!(status && status.tap));
+});
+
 async function animateKeys() {
   const s = await api.accessibilityStatus();
   const prefs = api.getPreferences ? await api.getPreferences() : null;
-  const doubleTap = !!(s && s.tap) && (!prefs || prefs.hotkey === 'double-control');
+  const tap = !!(s && s.tap);
+  const optionSpace = !!prefs && prefs.hotkey === 'option-space';
   const opt = document.getElementById('key-opt');
   const space = document.getElementById('key-space');
-  if (doubleTap) {
-    opt.textContent = '⌃';
-    space.textContent = 'control';
-    space.classList.remove('wide');
-    opt.hidden = true;
-    document.getElementById('keys').setAttribute('aria-label', 'Double-tap Control');
-    document.getElementById('done-lede').textContent = "Double-tap this anywhere on your Mac and talk. Tap it once when you're done: your words are typed where your cursor is.";
-  } else if (s && s.tap) {
-    document.getElementById('done-lede').textContent = "Hold this anywhere on your Mac and talk. Let go when you're done.";
+  const doubleTap = !optionSpace;
+  if (optionSpace) {
+    opt.hidden = false;
+    space.textContent = 'space';
+    space.classList.add('wide');
+    document.getElementById('keys').setAttribute('aria-label', 'Option plus Space');
+    document.getElementById('done-lede').textContent = tap
+      ? "Hold this anywhere on your Mac and talk. Let go when you're done."
+      : "Press this anywhere on your Mac to start talking. Press it again when you're done.";
+  } else {
+    showNeedsAccess(!tap);
   }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (doubleTap) {

@@ -368,6 +368,10 @@ for (const theme of ['dark', 'light']) {
     await setup.locator('#claude-next').click()
     await check(setup, 'setup-hold')
     await setup.evaluate(() => document.getElementById('hold-next').click())
+    // Without Accessibility the Ready screen still shows the chosen shortcut, and says what it needs.
+    await expect(setup.locator('#key-space')).toHaveText('control')
+    await expect(setup.locator('#key-opt')).toBeHidden()
+    await expect(setup.getByText('Double-tap Control needs Accessibility.')).toBeVisible()
     await check(setup, 'setup-done')
     await app.close()
     fs.rmSync(dir, { recursive: true, force: true })

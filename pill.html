@@ -45,7 +45,7 @@ body {
 .paused .dot { animation: none; opacity: 0.45; }
 @keyframes pulse { 50% { opacity: 0.35; } }
 .wave { display: flex; align-items: center; gap: 2px; height: 22px; }
-.wave i { display: block; width: 3px; height: 3px; border-radius: 2px; background: rgba(var(--ink), 0.75); transition: height 80ms linear; }
+.wave i { display: block; width: 3px; height: 3px; border-radius: 2px; background: rgba(var(--ink), 0.75); }
 .meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .meta b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta span { color: rgba(var(--ink), 0.72); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -132,11 +132,31 @@ window.electronAPI.onPillState((state) => {
 
 document.getElementById('make-prompt').addEventListener('click', () => window.electronAPI.pillAction('make-prompt'));
 
+// The waveform runs on its own 60 fps clock and eases toward the latest mic level, so uneven
+// arrival of levels (they come from another window, through the main process) never shows as
+// stutter. It scrolls one bar every 70 ms.
+let targetLevel = 0;
+let shownLevel = 0;
+let lastShift = 0;
+let animating = false;
 window.electronAPI.onAudioLevel((level) => {
-  history.shift();
-  history.push(Math.max(0, Math.min(1, level)));
-  bars.forEach((bar, i) => { bar.style.height = Math.round(3 + history[i] * 19) + 'px'; });
+  targetLevel = Math.max(0, Math.min(1, level));
+  if (!animating) { animating = true; requestAnimationFrame(tick); }
 });
+function tick(now) {
+  if (document.getElementById('recording').hidden) { animating = false; return; }
+  // Rise quickly, fall gently: speech looks lively without flicker.
+  shownLevel += (targetLevel - shownLevel) * (targetLevel > shownLevel ? 0.45 : 0.12);
+  if (now - lastShift >= 70) {
+    history.shift();
+    history.push(shownLevel);
+    lastShift = now;
+  }
+  // The newest bar follows the live level between shifts, so the right edge moves every frame.
+  history[BARS - 1] = Math.max(history[BARS - 1] * 0.9, shownLevel);
+  bars.forEach((bar, i) => { bar.style.height = (3 + history[i] * 19).toFixed(1) + 'px'; });
+  requestAnimationFrame(tick);
+}
 </script>
 </body>
 </html>

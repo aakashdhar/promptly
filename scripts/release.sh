@@ -136,10 +136,19 @@ DMG_PATH="dist/$DMG_NAME"
 step "Creating $DMG_NAME"
 # electron-builder lays out the DMG window (Applications shortcut + first-open instructions
 # background from build/dmg-background.png) around the already-signed app.
-npx electron-builder --mac dmg --universal --prepackaged "$APP_PATH" \
-  --config.mac.identity=null \
-  --config.dmg.artifactName="$DMG_NAME" \
-  > /tmp/promptly-dmg.log 2>&1 \
+# scripts/dmgbuild-wrapper.sh moves the DMG's hidden files below the window, so people who show
+# hidden files in Finder don't see them over the instructions. It uses electron-builder's own
+# cached dmgbuild, so on a machine that has never built a DMG, one plain build fetches it first.
+build_dmg() {
+  npx electron-builder --mac dmg --universal --prepackaged "$APP_PATH" \
+    --config.mac.identity=null \
+    --config.dmg.artifactName="$DMG_NAME" \
+    > /tmp/promptly-dmg.log 2>&1
+}
+if ! ls "$HOME"/Library/Caches/electron-builder/dmg-builder@*/dmgbuild-bundle-*/dmgbuild >/dev/null 2>&1; then
+  build_dmg || { cat /tmp/promptly-dmg.log; fail "DMG build failed"; }
+fi
+CUSTOM_DMGBUILD_PATH="$ROOT_DIR/scripts/dmgbuild-wrapper.sh" build_dmg \
   || { cat /tmp/promptly-dmg.log; fail "DMG build failed"; }
 [ -f "$DMG_PATH" ] || fail "DMG not found at $DMG_PATH"
 ok "DMG created → $DMG_PATH"

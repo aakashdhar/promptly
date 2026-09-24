@@ -593,7 +593,7 @@ function applyHotkey() {
 function createSplashWindow() {
   splashWin = new BrowserWindow({
     width: 560,
-    height: 520,
+    height: 560,
     show: false,
     frame: false,
     transparent: false,
@@ -1311,6 +1311,10 @@ app.whenReady().then(async () => {
     currentAppState = appState;
     // The renderer has reported where it is, so the "recording is starting" grace period is over.
     recordRequestedAt = 0;
+    // While recording, the (usually hidden) bar measures the mic level for the pill. Chromium
+    // throttles timers in hidden windows to about once a second, which made the waveform stutter;
+    // lift that only while recording.
+    if (win && !win.isDestroyed()) win.webContents.setBackgroundThrottling(!(appState === 'RECORDING' || appState === 'PAUSED'));
     updatePill(appState);
     updatePauseShortcut(appState);
     updateMenuBarIcon(MENU_BAR_ICON_STATE[appState] || 'idle');
