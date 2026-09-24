@@ -1,31 +1,52 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import MODE_REGISTRY from '../../../shared/modes.json'
 
 const { modes: MODES } = MODE_REGISTRY
 
-const GENERAL_MODES = MODES.filter(m => m.group === 'general')
-const SPECIALIST_MODES = MODES.filter(m => m.group === 'specialist')
+// The mode menu is organised around the one real choice — Dictation or Craft a prompt — with
+// the prompt styles as compact chips underneath and one line describing the hovered (or current)
+// mode, instead of a long list where every mode has a paragraph.
+const PROMPT_STYLES = MODES.filter((m) => m.group === 'general' && m.kind !== 'dictation')
+const SPECIALIST = MODES.filter((m) => m.group === 'specialist')
+const BY_KEY = Object.fromEntries(MODES.map((m) => [m.key, m]))
 
-const SECTION_LABEL_STYLE = {
-  fontFamily: '"DM Mono", monospace',
-  fontSize: '11px',
-  fontWeight: 500,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: 'var(--text-tertiary)',
-  padding: '8px 10px 4px',
-  display: 'block',
-}
+const sectionLabel = { fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', margin: '14px 0 7px' }
 
-const DIVIDER_STYLE = {
-  height: '0.5px',
-  background: 'rgba(var(--ink),0.06)',
-  margin: '4px 0',
+function Chip({ m, active, onPick, onHover }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(m.key)}
+      onMouseEnter={() => onHover(m.key)}
+      onFocus={() => onHover(m.key)}
+      aria-pressed={active}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        height: '28px', padding: '0 11px', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit',
+        fontSize: '12px', fontWeight: active ? 600 : 400,
+        color: active ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
+        background: active ? 'rgba(var(--ink),0.1)' : 'rgba(var(--ink),0.035)',
+        border: `0.5px solid ${active ? 'rgba(var(--ink),0.28)' : 'rgba(var(--ink),0.1)'}`,
+        transition: 'background 100ms, border-color 100ms',
+      }}
+    >
+      <span aria-hidden="true" style={{ width: '6px', height: '6px', borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
+      {m.label}
+    </button>
+  )
 }
 
 export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef, fitWindow = false }) {
   const ref = useRef(null)
+  const [hovered, setHovered] = useState(null)
+  const [promptStyle, setPromptStyle] = useState('balanced')
+  const isDictation = BY_KEY[mode]?.kind === 'dictation'
+  const described = BY_KEY[hovered] || BY_KEY[mode]
+
+  useEffect(() => {
+    window.electronAPI?.getPreferences?.().then((p) => { if (p?.promptStyle) setPromptStyle(p.promptStyle) }).catch(() => {})
+  }, [])
 
   // In the compact bar the window is only as tall as the bar: grow it to fit the whole menu.
   useLayoutEffect(() => {
@@ -40,103 +61,85 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
         onClose()
       }
     }
+    function handleKey(e) { if (e.key === 'Escape') onClose() }
     document.addEventListener('pointerdown', handlePointerDown, true)
-    return () => document.removeEventListener('pointerdown', handlePointerDown, true)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [onClose, anchorRef])
 
-  function handleSelect(key) {
+  function pick(key) {
     onSelect(key)
     onClose()
   }
 
-  function renderItem(m) {
-    const isActive = mode === m.key
-    return (
-      <div
-        key={m.key}
-        onPointerDown={e => { e.stopPropagation(); handleSelect(m.key) }}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '6px 10px',
-          cursor: 'pointer',
-          borderRadius: '6px',
-          margin: '0 4px',
-          background: isActive ? 'rgba(var(--ink),0.07)' : 'transparent',
-          transition: 'background 100ms',
-        }}
-        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(var(--ink),0.04)' }}
-        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
-      >
-        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: m.dot, flexShrink: 0 }} />
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: '12px', fontWeight: 400, color: 'rgba(var(--ink),0.95)', lineHeight: 1.3 }}>
-            {m.label}
-          </span>
-          <span style={{
-            display: 'block', fontSize: '11px', fontWeight: 400,
-            color: 'var(--text-secondary)', lineHeight: 1.4,
-          }}>
-            {m.desc}
-          </span>
-        </span>
-        {isActive && (
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M1.5 5.5L4.5 8.5L9.5 2.5" stroke="rgba(var(--ink),0.65)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </div>
-    )
-  }
+  // "Craft a prompt" from Dictation goes to the prompt style set in Settings (Balanced by default).
+  const segments = [
+    ['dictate', 'Dictation', isDictation],
+    [isDictation ? promptStyle : mode, 'Craft a prompt', !isDictation],
+  ]
 
   const menu = (
     <div
       ref={ref}
+      role="dialog"
+      aria-label="Mode"
       style={{
-        position: 'fixed',
-        top: `${top}px`,
-        right: `${right}px`,
-        width: '380px',
-        background: 'var(--surface-raised)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        border: '0.5px solid rgba(var(--ink),0.12)',
-        borderRadius: '12px',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5)',
-        zIndex: 9999,
-        overflow: 'hidden',
-        WebkitAppRegion: 'no-drag',
-        paddingBottom: '4px',
+        position: 'fixed', top: `${top}px`, right: `${right}px`, width: '440px', boxSizing: 'border-box',
+        padding: '12px 16px 10px',
+        background: 'var(--surface-raised)', border: '0.5px solid rgba(var(--ink),0.12)', borderRadius: '14px',
+        boxShadow: 'var(--popover-shadow)', zIndex: 9999, WebkitAppRegion: 'no-drag',
       }}
     >
-      <div style={{ paddingTop: '4px' }}>
-        <span style={SECTION_LABEL_STYLE}>General</span>
-        {GENERAL_MODES.map(renderItem)}
+      <div role="tablist" aria-label="How to use what you say" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', padding: '3px', borderRadius: '10px', background: 'rgba(var(--ink),0.06)' }}>
+        {segments.map(([key, label, active]) => (
+          <button
+            key={label}
+            role="tab"
+            aria-selected={active}
+            onClick={() => (active ? onClose() : pick(key))}
+            onMouseEnter={() => setHovered(key)}
+            style={{
+              height: '32px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: '13px', fontWeight: active ? 600 : 500,
+              color: active ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
+              background: active ? 'var(--surface)' : 'transparent',
+              boxShadow: active ? '0 1px 2px rgba(0,0,0,0.14)' : 'none',
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-      <div style={DIVIDER_STYLE} />
-      <div>
-        <span style={SECTION_LABEL_STYLE}>Specialist</span>
-        {SPECIALIST_MODES.map(renderItem)}
+
+      <div style={sectionLabel}>Prompt style</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        {PROMPT_STYLES.map((m) => <Chip key={m.key} m={m} active={mode === m.key} onPick={pick} onHover={setHovered} />)}
       </div>
-      <div style={DIVIDER_STYLE} />
-      <div style={{ padding: '2px 0' }}>
-        <div
-          onPointerDown={e => { e.stopPropagation(); onShowShortcuts(); onClose() }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', cursor: 'pointer', borderRadius: '6px', margin: '0 4px' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.04)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-        >
-          <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>Keyboard shortcuts</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'system-ui' }}>⌘?</span>
-        </div>
-        <div
-          onPointerDown={e => { e.stopPropagation(); onShowHistory(); onClose() }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', cursor: 'pointer', borderRadius: '6px', margin: '0 4px' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--ink),0.04)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-        >
-          <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>History</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'system-ui' }}>⌘H</span>
-        </div>
+
+      <div style={sectionLabel}>Specialist</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        {SPECIALIST.map((m) => <Chip key={m.key} m={m} active={mode === m.key} onPick={pick} onHover={setHovered} />)}
+      </div>
+
+      {/* What the hovered (or current) mode does: one place, two lines at most. */}
+      <div aria-live="polite" style={{ minHeight: '34px', marginTop: '12px', paddingTop: '10px', borderTop: '0.5px solid rgba(var(--ink),0.08)', fontSize: '12px', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
+        {described && <><span style={{ color: 'rgba(var(--ink),0.9)', fontWeight: 500 }}>{described.label}:</span> {described.desc}</>}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '0.5px solid rgba(var(--ink),0.08)' }}>
+        {[['Keyboard shortcuts', '⌘?', onShowShortcuts], ['History', '⌘H', onShowHistory]].map(([label, keys, action]) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => { action(); onClose() }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', color: 'var(--text-secondary)' }}
+          >
+            {label}<span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{keys}</span>
+          </button>
+        ))}
       </div>
     </div>
   )

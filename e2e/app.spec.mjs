@@ -214,8 +214,19 @@ test('the mode dropdown lists every mode from the shared registry', async () => 
   ctx = await launch()
   const modes = JSON.parse(fs.readFileSync(path.join(ROOT, 'shared/modes.json'), 'utf8')).modes
   const { page } = ctx
-  await page.getByText('Balanced').first().click()
-  for (const m of modes) await expect(page.getByText(m.desc)).toBeVisible()
+  await page.locator('#mode-pill').click()
+  const menu = page.getByRole('dialog', { name: 'Mode' })
+  // The two ways to talk, then every prompt style and specialist mode as a chip.
+  await expect(menu.getByRole('tab', { name: 'Dictation' })).toBeVisible()
+  await expect(menu.getByRole('tab', { name: 'Craft a prompt' })).toHaveAttribute('aria-selected', 'true')
+  for (const m of modes.filter((x) => x.kind !== 'dictation')) await expect(menu.getByRole('button', { name: m.label, exact: true })).toBeVisible()
+  // One line describes the hovered mode.
+  await menu.getByRole('button', { name: 'Code', exact: true }).hover()
+  await expect(menu.getByText(modes.find((m) => m.key === 'code').desc)).toBeVisible()
+  // Picking a chip switches mode and closes the menu.
+  await menu.getByRole('button', { name: 'Code', exact: true }).click()
+  await expect(page.locator('#mode-pill')).toHaveText('Code')
+  await expect(menu).toHaveCount(0)
 })
 
 test('hotkey from another app records in the pill, then shows the prompt and copies it', async () => {
