@@ -10,7 +10,7 @@
 2. Read `vibe/ARCHITECTURE.md` — the rules every change is measured against.
 3. Read `vibe/CODEBASE.md` — current file map.
 4. Skim the end of `vibe/TASKS.md` for what just happened.
-5. Check `memory/wiki/INDEX.md` and the component page for any file you're about to touch (see Project Memory below).
+5. Check the Gotchas section of `vibe/CODEBASE.md` before touching an area it mentions.
 
 ---
 
