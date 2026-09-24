@@ -31,7 +31,7 @@ module.exports = [
   },
   {
     // Build config and tests (ES modules on Node)
-    files: ['vite.config.js', 'vitest.config.mjs', 'tests/**/*.js'],
+    files: ['vite.config.mjs', 'vitest.config.mjs', 'playwright.config.mjs', 'tests/**/*.js', 'e2e/**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

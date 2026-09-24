@@ -15,7 +15,21 @@ const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
 const { MODES, getMode, buildModePrompt, buildEvalPrompt } = require('./main/prompts');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
-const log = createLogger(app.getPath('logs'));
+// End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
+const IS_E2E = !!process.env.PROMPTLY_USER_DATA;
+if (IS_E2E) {
+  app.setPath('userData', process.env.PROMPTLY_USER_DATA);
+  // Chromium's fake microphone, so recording works without touching the real one.
+  app.commandLine.appendSwitch('use-fake-device-for-media-stream');
+  app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
+  // Lets tests fire the global hotkey and read state without registering real shortcuts.
+  globalThis.__promptlyE2E = {
+    pressHotkey: () => onPrimaryShortcut(),
+    appState: () => currentAppState,
+  };
+}
+
+const log = createLogger(IS_E2E ? path.join(process.env.PROMPTLY_USER_DATA, 'logs') : app.getPath('logs'));
 process.on('uncaughtException', (err) => log.error('Uncaught exception:', err));
 process.on('unhandledRejection', (reason) => log.error('Unhandled rejection:', reason instanceof Error ? reason : String(reason)));
 
@@ -266,7 +280,7 @@ function updatePauseShortcut(appState) {
 }
 
 function registerShortcut() {
-  if (shortcutsRegistered) return;
+  if (shortcutsRegistered || IS_E2E) return;
   shortcutsRegistered = true;
   if (globalShortcut.register(SHORTCUT_PRIMARY, onPrimaryShortcut)) return;
   if (globalShortcut.register(SHORTCUT_FALLBACK, onPrimaryShortcut)) {

@@ -23,9 +23,11 @@
     "preflight": "bash scripts/preflight.sh",
     "assert": "node scripts/assert-splash.js",
     "prerelease": "npm run preflight && npm run assert",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "npm run build:renderer && playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.2.2",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "41.10.7",
