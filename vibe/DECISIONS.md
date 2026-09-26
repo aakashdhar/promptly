@@ -2105,3 +2105,14 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   the n8n JSON in history (was a summary line), auto-copies it, lets filled values be edited, and uses node versions
 >   that import cleanly.
 > - Score this prompt shows only for prompts (not Polish, Email or Workflow JSON). Esc during work cancels like Cancel.
+
+## D-SETTINGS-SCORE — Settings in side tabs; a clearer, fairer score — 2026-09-26
+> Settings had grown into one long list. The owner picked icon tabs placed down the side: six short tabs
+>   (General, Dictation, Speech, Prompts, You, Setup), each a column of rows with the setting and a line about it on
+>   the left and its control on the right; checkboxes became switches. Changes save as they're made; only tool paths
+>   wait for "Check again". Settings now fills the window with its own title bar.
+> The score panel (layout A of three shown) is one number pair with the gain, one line per dimension with a dot for
+>   what you said and one for the prompt, reasons marked strength/weakness, and "Still missing". The scoring prompt
+>   no longer shows example numbers (they anchored scores), no longer rewards a generic role line, and rewards what
+>   the new prompts are built on: success criteria, kept details and marked assumptions. Email and Workflow no
+>   longer show a prompt score (the 2.15.0 notes said so, but the panels were still there).
