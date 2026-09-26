@@ -2127,3 +2127,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Your words replaces the Dictionary box (same setting, one entry per line; commas still read): words to listen for,
 >   "N10 → n8n" fixes applied to every transcript, and suggestions from the user's own repeated edits.
 
+## D-HARNESS-SCHEDULE — Harnesses run on a schedule through launchd — 2026-09-27
+> A plan could say "every night", but nothing started the harness then. After saving, the files screen now offers
+>   a schedule (every day, weekdays, a day of the week, or hourly), pre-filled from a new SCHEDULE line Claude
+>   writes. It is a launchd job in ~/Library/LaunchAgents rather than cron or a timer inside Promptly: it runs with
+>   Promptly closed, catches up after sleep, and is removed with one click. One job per project folder (label from
+>   the folder's name and a hash of its path), so scheduling again replaces it. The job runs the harness's own
+>   command from the project folder with a PATH that includes Claude's folder and Homebrew; output goes to
+>   .harness/schedule.log. Main only schedules the folder and command from the last save, never paths sent by the
+>   window. The run command also stays on screen after saving (it used to be replaced by "Saved to").
+
