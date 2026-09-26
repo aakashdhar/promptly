@@ -2056,3 +2056,20 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   result. Mode and destination moved from a second text line to the hover state.
 ---
 
+---
+## D-SLIM-TOOLBAR — The window rearranged: slim toolbar, one-line result, Ribbon, hideable history — 2026-09-26
+> Request: keep the look (dark panels, blue tracked labels, monospace times, badges) but space things out, reorder,
+>   and hide what isn't needed. Three rearrangements were shown; the product owner chose "Slim toolbar", then approved an
+>   animated flow and picked the Ribbon waveform from four, asking for History to be hideable so it can run full width.
+> Layout: the 150 px talk band becomes a 56 px toolbar beside the traffic lights (moved to y 21 to centre them). Pause
+>   and the timer appear only while recording. History: one header row, filters in a Filter menu, count in the header,
+>   no footer, a dictation and its prompt folded into one row. Result: one header line (state, As I said it / As a
+>   prompt, Iterate, Regenerate, Reset) and one bottom bar (Edit, Score this prompt, Copy). The score opens above the bar.
+> Recording shows the Ribbon (RibbonCanvas) across the result area, fed by the real mic level; amber when faint, grey
+>   when paused or transcribing. Working: "Transcribing" (calm Ribbon + shimmer), then "You said" and the prompt
+>   streaming, with a seconds counter and Cancel. Builders keep their own progress labels in that header.
+> History can be hidden (toolbar button, ⌃⌘S), remembered in config; ⌘H shows it again. Removed: the toolbar's reset
+>   button (Cancel and Reset live in the result header), WaveformCanvas and MorphCanvas.
+> Menus (mode, history filter) make what's behind them inert while open.
+---
+
