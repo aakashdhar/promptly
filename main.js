@@ -498,9 +498,10 @@ let currentModeLabel = '';
 // ── Floating pill ──
 
 function createPillWindow() {
+  // Room for the widest state (hover, with a long app name) and the pill's shadow.
   pillWin = new BrowserWindow({
-    width: 480,
-    height: 76,
+    width: 560,
+    height: 92,
     show: false,
     frame: false,
     transparent: true,
@@ -585,8 +586,14 @@ function updatePill(appState) {
     pillSession = false;
     pillSend({ state: 'copied', copied: config.read().autoCopy !== false });
     hidePillSoon(6000);
+  } else if (appState === 'ERROR' || appState === 'TRANSCRIPTION_ERROR' || appState === 'GENERATION_ERROR') {
+    // The pill says something went wrong and offers the window, which has the details and a
+    // retry; it doesn't pull the window over the app you're in.
+    pillSession = false;
+    pillSend({ state: 'error' });
+    hidePillSoon(8000);
   } else {
-    // Builders and errors need you in the window.
+    // Builders need you in the window.
     pillSession = false;
     pillSend({ state: 'hidden' });
     showWindow();
@@ -599,7 +606,7 @@ function hidePillSoon(ms) {
   clearTimeout(pillHideTimer);
   pillHideTimer = setTimeout(() => {
     if (pillSession || pillHovered) { if (!pillSession) hidePillSoon(1500); return; }
-    if (lastPillState && (lastPillState.state === 'dictated' || lastPillState.state === 'copied')) pillSend({ state: 'hidden' });
+    if (lastPillState && ['dictated', 'copied', 'error'].includes(lastPillState.state)) pillSend({ state: 'hidden' });
   }, ms);
 }
 
@@ -1377,6 +1384,10 @@ app.whenReady().then(async () => {
       hidePillSoon(0);
       pillSend({ state: 'hidden' });
       showWindow();
+      return { ok: true };
+    }
+    if (action === 'cancel') {
+      cancelFromHotkey();
       return { ok: true };
     }
     if (action !== 'make-prompt') return { ok: false };

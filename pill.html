@@ -5,173 +5,216 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
 <title>Promptly</title>
 <style>
-/* The floating pill shown while you talk from another app. Same tokens as the main window. */
+/* The floating pill ("Island"): one dark capsule for every state while you talk from another app.
+   It changes width to fit what it says. Spacing: 48 px tall; round or filled shapes sit 8 px from
+   every edge; a state that ends in words keeps them 20 px from the edge; 12 px between items. */
 :root {
-  color-scheme: light;
-  --ink: 28, 28, 32;
-  --pill: rgba(250, 250, 252, 0.94);
-  --edge: rgba(0, 0, 0, 0.10);
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
-  --rec: #E5352B;
-  --ok: #177A45;
-  --warn: #8A5300;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --ink: 236, 236, 240;
-    --pill: rgba(36, 36, 40, 0.94);
-    --edge: rgba(255, 255, 255, 0.10);
-    --shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
-    --rec: #FF453A;
-    --ok: #4CC47E;
-    --warn: #FFB340;
-  }
+  color-scheme: dark;
+  --pill: rgba(22, 22, 24, 0.95);
+  --edge: rgba(255, 255, 255, 0.13);
+  --text: #F5F5F7;
+  --sub: #A8A8AE;
+  --fill: rgba(255, 255, 255, 0.09);
+  --rec: #FF453A;
+  --ok: #30D158;
+  --warn: #FFB340;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --h: 48px; --inset: 8px; --gap: 12px; --badge: 32px; --text-edge: 20px;
 }
 html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
 body {
-  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; box-sizing: border-box;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 16px; box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; -webkit-font-smoothing: antialiased;
   user-select: none;
 }
 .pill {
-  display: flex; align-items: center; gap: 10px;
-  height: 44px; max-width: 440px; padding: 0 18px 0 16px; box-sizing: border-box;
-  border-radius: 22px; background: var(--pill); border: 0.5px solid var(--edge); box-shadow: var(--shadow);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  color: rgb(var(--ink)); font-size: 13px;
-  opacity: 0; transform: translateY(8px); transition: opacity 160ms ease, transform 160ms ease;
+  position: relative; height: var(--h); width: 160px; border-radius: calc(var(--h) / 2); overflow: hidden; white-space: nowrap;
+  background: var(--pill); color: var(--text); border: 0.5px solid var(--edge);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.10), 0 12px 26px rgba(0, 0, 0, 0.40), 0 2px 6px rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+  opacity: 0; transform: translateY(8px) scale(0.94);
+  transition: width 460ms var(--ease), opacity 220ms ease, transform 460ms var(--ease);
+  cursor: grab;
 }
 .pill.visible { opacity: 1; transform: none; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rec); flex-shrink: 0; animation: pulse 1.2s ease-in-out infinite; }
-.paused .dot { animation: none; opacity: 0.45; }
-@keyframes pulse { 50% { opacity: 0.35; } }
-.wave { display: flex; align-items: center; gap: 2px; height: 22px; }
-.wave i { display: block; width: 3px; height: 3px; border-radius: 2px; background: rgba(var(--ink), 0.75); }
-.meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.meta b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta span { color: rgba(var(--ink), 0.72); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta span.warn { color: var(--warn); font-weight: 600; }
-/* Working: three dots breathing in turn, and the label with a light sweeping across it. */
-.loader { display: flex; align-items: center; gap: 4px; height: 14px; flex-shrink: 0; }
-.loader i { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--ink)); animation: breathe 1.2s ease-in-out infinite; }
-.loader i:nth-child(2) { animation-delay: 0.16s; }
-.loader i:nth-child(3) { animation-delay: 0.32s; }
-@keyframes breathe { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
-.working {
-  font-weight: 500; white-space: nowrap;
-  background: linear-gradient(90deg, rgba(var(--ink), 0.6) 0%, rgba(var(--ink), 0.6) 35%, rgb(var(--ink)) 50%, rgba(var(--ink), 0.6) 65%, rgba(var(--ink), 0.6) 100%);
-  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: sweep 1.8s linear infinite;
-}
-@keyframes sweep { from { background-position: 100% 0; } to { background-position: -150% 0; } }
-/* Drag the pill anywhere; buttons stay clickable. */
-.pill { cursor: grab; }
 .pill.dragging { cursor: grabbing; }
-.action { cursor: pointer; }
-.check { color: var(--ok); font-weight: 700; }
-.action {
-  margin-left: 6px; height: 28px; padding: 0 12px; border-radius: 14px; border: 0.5px solid var(--edge);
-  background: rgba(var(--ink), 0.08); color: rgb(var(--ink)); font: inherit; font-weight: 600; cursor: pointer;
-}
-.action:hover { background: rgba(var(--ink), 0.14); }
-.action:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.7); outline-offset: 2px; }
-#recording, #thinking, .row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.row { position: absolute; left: 0; top: 0; height: 100%; box-sizing: border-box; display: flex; align-items: center; gap: var(--gap); padding: var(--inset); transition: opacity 140ms ease; }
+.row.text-end { padding-right: var(--text-edge); }
+.row.fading { opacity: 0; }
+
+.badge { width: var(--badge); height: var(--badge); border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; }
+.badge.rec { background: rgba(255, 69, 58, 0.16); }
+.badge.rec::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--rec); animation: pulse 1.4s ease-in-out infinite; }
+.badge.amber { background: rgba(255, 179, 64, 0.16); }
+.badge.amber::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--warn); }
+.badge.still { background: var(--fill); }
+.badge.ok { background: var(--ok); animation: pop 380ms var(--ease); }
+.badge.bang { background: var(--warn); color: #151517; font-weight: 800; font-size: 16px; }
+@keyframes pulse { 50% { transform: scale(0.72); } }
+@keyframes pop { from { transform: scale(0.4); } }
+.wdots { display: flex; gap: 3px; }
+.wdots i { width: 4px; height: 4px; border-radius: 50%; background: var(--text); animation: hop 1s var(--ease) infinite; }
+.wdots i:nth-child(2) { animation-delay: 0.14s; }
+.wdots i:nth-child(3) { animation-delay: 0.28s; }
+@keyframes hop { 0%, 60%, 100% { opacity: 0.35; transform: none; } 30% { opacity: 1; transform: translateY(-2px); } }
+
+.bars { display: flex; align-items: center; gap: 3px; height: 24px; }
+.bars i { display: block; width: 3px; height: 4px; border-radius: 3px; background: var(--text); }
+.bars.amber i { background: var(--warn); }
+.bars.frozen i { background: #6E6E73; }
+
+.t { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.s { font-size: 14px; color: var(--sub); }
+.t, .s { overflow: hidden; text-overflow: ellipsis; }
+.app { max-width: 150px; }
+.warn { color: var(--warn); }
+.chip { height: var(--badge); min-width: 52px; padding: 0 10px; box-sizing: border-box; border-radius: calc(var(--badge) / 2); background: var(--fill);
+  display: grid; place-items: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--sub); }
+.btn { height: var(--badge); padding: 0 14px; border-radius: calc(var(--badge) / 2); border: 0; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; background: #F5F5F7; color: #111113; flex-shrink: 0; }
+.btn.soft { background: var(--fill); color: var(--text); }
+.btn:hover { filter: brightness(0.92); }
+.btn.soft:hover { background: rgba(255, 255, 255, 0.15); filter: none; }
+.round { width: var(--badge); height: var(--badge); border-radius: 50%; border: 0; background: var(--fill); color: var(--sub); display: grid; place-items: center; cursor: pointer; padding: 0; flex-shrink: 0; }
+.round:hover { background: rgba(255, 255, 255, 0.15); color: var(--text); }
+.btn:focus-visible, .round:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.8); outline-offset: 2px; }
+.div { width: 1px; height: 18px; background: rgba(255, 255, 255, 0.14); flex-shrink: 0; }
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { .dot, .loader i { animation: none; } .working { animation: none; color: rgb(var(--ink)); background: none; } .pill { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pill, .row { transition: none; } .badge.rec::after, .wdots i, .badge.ok { animation: none; } }
 </style>
 </head>
 <body>
-<div class="pill" id="pill" role="status" aria-live="polite">
-  <div id="recording">
-    <div class="row">
-      <span class="dot" aria-hidden="true"></span>
-      <div class="wave" id="wave" aria-hidden="true"></div>
-      <div class="meta"><b id="rec-title">Listening</b><span id="rec-detail"></span></div>
-    </div>
-  </div>
-  <div id="thinking" hidden>
-    <div class="row">
-      <span class="loader" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="working" id="working-text">Writing your prompt</span>
-    </div>
-  </div>
-  <div id="copied" hidden>
-    <div class="row">
-      <span><span class="check">✓</span> <span id="copied-text">Prompt copied</span></span>
-      <button class="action" id="open-window" type="button">Open</button>
-    </div>
-  </div>
-  <div id="dictated" hidden>
-    <div class="row">
-      <span><span class="check">✓</span> <span id="dictated-text">Typed</span></span>
-      <button class="action" id="make-prompt" type="button">Make it a prompt</button>
-    </div>
-  </div>
-</div>
+<div class="pill" id="pill" role="status" aria-live="polite"><div class="row" id="row"></div></div>
 <script>
-const BARS = 14;
-const wave = document.getElementById('wave');
-const bars = Array.from({ length: BARS }, () => wave.appendChild(document.createElement('i')));
-const history = new Array(BARS).fill(0);
 const pill = document.getElementById('pill');
-const panels = ['recording', 'thinking', 'copied', 'dictated'];
+const row = document.getElementById('row');
+const BARS = 16;
 
-function show(panel) {
-  panels.forEach((p) => { document.getElementById(p).hidden = p !== panel; });
-  pill.classList.toggle('visible', !!panel);
+const CHECK = '<span class="badge ok" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0B0B0C" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>';
+const PAUSE = '<span class="badge still" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="#A8A8AE"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg></span>';
+const CANCEL = '<button class="round" type="button" data-act="cancel" aria-label="Cancel recording"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const bars = (cls) => `<span class="bars ${cls || ''}" aria-hidden="true">${'<i></i>'.repeat(BARS)}</span>`;
+
+// What the pill knows about the current recording.
+const rec = { mode: '', app: '', paused: false, quiet: false, startedAt: 0, pausedFor: 0, pausedAt: 0 };
+let view = null;      // 'listening' | 'hover' | 'quiet' | 'paused' | 'working' | 'typed' | 'copied' | 'error' | null
+let hovering = false;
+let workLabel = 'Transcribing';
+let doneText = '';
+
+function seconds() {
+  if (!rec.startedAt) return 0;
+  const now = rec.paused ? rec.pausedAt : Date.now();
+  return Math.max(0, Math.floor((now - rec.startedAt - rec.pausedFor) / 1000));
+}
+const clock = () => { const s = seconds(); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const time = () => `<span class="chip" data-timer>${clock()}</span>`;
+
+// Each view: its content, and whether it ends in words (20 px edge) or a shape (8 px edge).
+function content(v) {
+  switch (v) {
+    case 'listening': return { html: `<span class="badge rec" aria-hidden="true"></span>${bars()}${time()}`, label: 'Listening' };
+    case 'hover': {
+      const where = rec.app ? `<span class="s">${esc(rec.mode)}</span><span class="t app">→ ${esc(rec.app)}</span>` : `<span class="t">${esc(rec.mode || 'Listening')}</span>`;
+      return { html: `<span class="badge rec" aria-hidden="true"></span>${bars()}${time()}<span class="div"></span>${where}${CANCEL}`, label: 'Listening' };
+    }
+    case 'quiet': return { html: `<span class="badge amber" aria-hidden="true"></span>${bars('amber')}<span class="t warn">Speak up</span>${time()}`, label: 'Speak up or move closer' };
+    case 'paused': return { html: `${PAUSE}${bars('frozen')}<span class="s">Paused</span>${time()}`, label: 'Paused' };
+    case 'working': return { html: `<span class="badge still" aria-hidden="true"><span class="wdots"><i></i><i></i><i></i></span></span><span class="t">${workLabel}</span>`, textEnd: true, label: workLabel };
+    case 'typed': return { html: `${CHECK}<span class="t">${esc(doneText)}</span><button class="btn" type="button" data-act="make-prompt">Make it a prompt</button>`, label: doneText };
+    case 'copied': return { html: `${CHECK}<span class="t">${esc(doneText)}</span><button class="btn soft" type="button" data-act="open">Open</button>`, label: doneText };
+    case 'error': return { html: `<span class="badge bang" aria-hidden="true">!</span><span class="t">Something went wrong</span><button class="btn soft" type="button" data-act="open">Open</button>`, label: 'Something went wrong' };
+    default: return null;
+  }
 }
 
-function describe(state) {
-  const parts = [];
-  if (state.context && state.context.appName) parts.push('for ' + state.context.appName);
-  if (state.context && state.context.selectedText) parts.push('using your selection');
-  return [state.mode, ...parts].filter(Boolean).join(' · ');
+// Swaps what the pill says: the old content fades, the width springs to fit the new, it fades in.
+let swapTimer = null;
+function render(v) {
+  if (v === view && v !== 'listening' && v !== 'hover') return;
+  const wasVisible = !!view;
+  view = v;
+  clearTimeout(swapTimer);
+  if (!v) { pill.classList.remove('visible'); return; }
+  const spec = content(v);
+  const apply = () => {
+    row.className = 'row' + (spec.textEnd ? ' text-end' : '');
+    row.innerHTML = spec.html;
+    pill.setAttribute('aria-label', spec.label);
+    // Measure the content's own width, not the pill's current one.
+    row.style.width = 'max-content';
+    const width = Math.ceil(row.getBoundingClientRect().width);
+    row.style.width = '';
+    if (!wasVisible) { pill.style.transition = 'none'; pill.style.width = width + 'px'; pill.offsetWidth; pill.style.transition = ''; }
+    else pill.style.width = width + 'px';
+    row.classList.remove('fading');
+    pill.classList.add('visible');
+    barEls = [...row.querySelectorAll('.bars i')];
+    drawBars();
+  };
+  if (!wasVisible) apply();
+  else { row.classList.add('fading'); swapTimer = setTimeout(apply, 140); }
 }
 
-// While recording, the detail line says what's being made; if the speaker is faint it asks
-// them to speak up instead, while there's still time.
-let recDetail = '';
-let micQuiet = false;
-function showRecDetail() {
-  const el = document.getElementById('rec-detail');
-  el.textContent = micQuiet ? 'Speak up or move closer' : recDetail;
-  el.classList.toggle('warn', micQuiet);
+function recordingView() {
+  if (rec.paused) return 'paused';
+  if (rec.quiet) return 'quiet';
+  return hovering ? 'hover' : 'listening';
 }
-window.electronAPI.onMicQuiet((quiet) => { micQuiet = !!quiet; showRecDetail(); });
 
 window.electronAPI.onPillState((state) => {
-  if (state.state === 'hidden') { show(null); return; }
+  if (state.state === 'hidden') { render(null); return; }
   if (state.state === 'recording') {
-    pill.classList.toggle('paused', !!state.paused);
-    document.getElementById('rec-title').textContent = state.paused ? 'Paused' : 'Listening';
-    recDetail = describe(state);
-    showRecDetail();
-    show('recording');
+    // A new recording starts the clock; pausing stops it without resetting it.
+    if (!rec.startedAt || view === null || !['listening', 'hover', 'quiet', 'paused'].includes(view)) {
+      Object.assign(rec, { startedAt: Date.now(), pausedFor: 0, pausedAt: 0, quiet: false, paused: false });
+    }
+    if (state.paused && !rec.paused) rec.pausedAt = Date.now();
+    if (!state.paused && rec.paused) rec.pausedFor += Date.now() - rec.pausedAt;
+    rec.paused = !!state.paused;
+    rec.mode = state.mode || rec.mode || '';
+    if (state.context) rec.app = state.context.appName || '';
+    render(recordingView());
   } else if (state.state === 'thinking') {
-    document.getElementById('working-text').textContent = state.mode === 'Dictation' ? 'Transcribing' : 'Writing your prompt';
-    show('thinking');
+    workLabel = state.mode === 'Dictation' ? 'Transcribing' : 'Writing your prompt';
+    render('working');
   } else if (state.state === 'copied') {
-    document.getElementById('copied-text').textContent = state.copied === false ? 'Prompt ready' : 'Prompt copied';
-    show('copied');
+    doneText = state.copied === false ? 'Prompt ready' : 'Prompt copied';
+    render('copied');
   } else if (state.state === 'dictated') {
     // Typed where the cursor was, or (without Accessibility) left on the clipboard.
-    document.getElementById('dictated-text').textContent = state.typed ? 'Typed' : 'Copied, press ⌘V';
-    show('dictated');
+    doneText = state.typed ? (rec.app ? `Typed into ${rec.app}` : 'Typed') : 'Copied, press ⌘V';
+    render('typed');
+  } else if (state.state === 'error') {
+    render('error');
   }
 });
 
-document.getElementById('make-prompt').addEventListener('click', () => window.electronAPI.pillAction('make-prompt'));
-document.getElementById('open-window').addEventListener('click', () => window.electronAPI.pillAction('open'));
+window.electronAPI.onMicQuiet((quiet) => {
+  rec.quiet = !!quiet;
+  if (['listening', 'hover', 'quiet'].includes(view)) render(recordingView());
+});
+
+row.addEventListener('click', (e) => {
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (act) window.electronAPI.pillAction(act);
+});
 
 // The window around the pill is transparent and lets clicks through; while the pointer is over
-// the pill, the pill takes the mouse so it can be dragged and its button clicked.
-let hovering = false;
+// the pill, the pill takes the mouse so it can be dragged, hovered and clicked.
 document.addEventListener('mousemove', (e) => {
   const inside = !!e.target.closest('.pill');
-  if (inside !== hovering) { hovering = inside; window.electronAPI.pillHover(inside); }
+  if (inside === hovering) return;
+  hovering = inside;
+  window.electronAPI.pillHover(inside);
+  if (view === 'listening' || view === 'hover') render(recordingView());
 });
-document.addEventListener('mouseleave', () => { if (hovering) { hovering = false; window.electronAPI.pillHover(false); } });
+document.addEventListener('mouseleave', () => {
+  if (!hovering) return;
+  hovering = false;
+  window.electronAPI.pillHover(false);
+  if (view === 'hover') render(recordingView());
+});
 
 // Drag: main moves the window by how far the pointer has moved since it was pressed, and
 // remembers where it was dropped.
@@ -195,9 +238,17 @@ function endDrag() {
 pill.addEventListener('pointerup', endDrag);
 pill.addEventListener('pointercancel', endDrag);
 
+// The timer ticks once a second while recording.
+setInterval(() => {
+  if (!['listening', 'hover', 'quiet', 'paused'].includes(view)) return;
+  row.querySelectorAll('[data-timer]').forEach((el) => { el.textContent = clock(); });
+}, 1000);
+
 // The waveform runs on its own 60 fps clock and eases toward the latest mic level, so uneven
 // arrival of levels (they come from another window, through the main process) never shows as
-// stutter. It scrolls one bar every 70 ms.
+// stutter. It scrolls one bar every 70 ms; paused, it holds still.
+const history = new Array(BARS).fill(0);
+let barEls = [];
 let targetLevel = 0;
 let shownLevel = 0;
 let lastShift = 0;
@@ -207,7 +258,7 @@ window.electronAPI.onAudioLevel((level) => {
   if (!animating) { animating = true; requestAnimationFrame(tick); }
 });
 function tick(now) {
-  if (document.getElementById('recording').hidden) { animating = false; return; }
+  if (!['listening', 'hover', 'quiet'].includes(view)) { animating = false; return; }
   // Rise quickly, fall gently: speech looks lively without flicker.
   shownLevel += (targetLevel - shownLevel) * (targetLevel > shownLevel ? 0.45 : 0.12);
   if (now - lastShift >= 70) {
@@ -217,9 +268,10 @@ function tick(now) {
   }
   // The newest bar follows the live level between shifts, so the right edge moves every frame.
   history[BARS - 1] = Math.max(history[BARS - 1] * 0.9, shownLevel);
-  bars.forEach((bar, i) => { bar.style.height = (3 + history[i] * 19).toFixed(1) + 'px'; });
+  drawBars();
   requestAnimationFrame(tick);
 }
+function drawBars() { barEls.forEach((bar, i) => { bar.style.height = (4 + history[i] * 20).toFixed(1) + 'px'; }); }
 </script>
 </body>
 </html>

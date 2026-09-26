@@ -67,6 +67,7 @@ touch "$FAKE_DIR/call-$n.done"
 f=""; prev=""
 for a in "$@"; do [ "$prev" = "-f" ] && f="$a"; prev="$a"; done
 [ "$(head -c 4 "$f")" = "RIFF" ] || { echo "expected WAV input" >&2; exit 1; }
+[ -f "$FAKE_DIR/whisper-fail" ] && case "$f" in *warmup*) ;; *) echo "engine failed" >&2; exit 1;; esac
 cp "$f" "$FAKE_DIR/last-audio.wav"
 printf '%s\n' "$*" > "$FAKE_DIR/whisper-args"
 if [ -f "$FAKE_DIR/transcript" ]; then cat "$FAKE_DIR/transcript"; else echo "spoken words from the fake mic"; fi
@@ -796,6 +797,32 @@ test('cancelling a recording throws it away instead of transcribing it', async (
   expect(args).not.toMatch(/promptly-\d+\.wav/)
 })
 
+test('the pill: its cancel button throws the recording away, and an error stays in the pill with Open', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page, fakeDir } = ctx
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
+  const pillWin = () => app.windows().find((w) => w.url().includes('pill.html'))
+
+  // Cancel from the pill (the × shown on hover).
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await pillWin().locator('#pill').hover()
+  await pillWin().getByRole('button', { name: 'Cancel recording' }).click()
+  await expect.poll(() => appState(app)).toBe('IDLE')
+  expect((await mainWindow(app)).visible).toBe(false)
+
+  // Transcription fails: the pill says so and offers the window, which stays out of the way until asked.
+  fs.writeFileSync(path.join(fakeDir, 'whisper-fail'), '')
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await page.waitForTimeout(800)
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.pillState()?.state), { timeout: 15000 }).toBe('error')
+  expect((await mainWindow(app)).visible).toBe(false)
+  await pillWin().getByRole('button', { name: 'Open' }).click()
+  await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
+})
+
 test('the pill can be dragged out of the way, and comes back where you left it', async () => {
   ctx = await launch({ mode: null })
   const { app, fakeDir } = ctx
@@ -819,11 +846,11 @@ test('the pill can be dragged out of the way, and comes back where you left it',
     const saved = (await app.evaluate(() => globalThis.__promptlyE2E.config())).pillPosition
     expect(saved.fy).toBeLessThan(1)
 
-    // While working it shows an animation, not the prompt's text.
+    // The pill shows short labels (working, typed), never your words.
     fs.writeFileSync(path.join(fakeDir, 'transcript'), 'hello there')
     await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
-    await expect(pill.locator('#working-text')).toHaveText(/Transcribing|Writing your prompt/)
+    expect(await pill.locator('#pill').innerText()).not.toContain('hello there')
 
     // Next time it appears, it's where it was dropped.
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))

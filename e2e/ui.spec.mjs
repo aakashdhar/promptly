@@ -308,7 +308,8 @@ for (const theme of ['dark', 'light']) {
     // The floating pill.
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
     const pill = app.windows().find((w) => w.url().includes('pill.html'))
-    await pill.emulateMedia({ colorScheme: theme })
+    // Reduced motion: the pill's fades and width changes finish at once, so each check sees the settled state.
+    await pill.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
     const pillState = (state) => app.evaluate(({ BrowserWindow }, s) => {
       const p = BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html'))
       p.showInactive()
@@ -317,12 +318,23 @@ for (const theme of ['dark', 'light']) {
     }, state)
     await pillState({ state: 'recording', mode: 'Balanced', context: { appName: 'Visual Studio Code', selectedText: 'x' } })
     await check(pill, 'pill-recording')
+    // Hover shows where the words are going (a long app name included) and a cancel button.
+    await pill.locator('#pill').hover()
+    await check(pill, 'pill-hover', { settle: 700 })
+    await pill.mouse.move(2, 2)
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html')).webContents.send('mic-quiet', true))
+    await check(pill, 'pill-quiet', { settle: 700 })
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html')).webContents.send('mic-quiet', false))
+    await pillState({ state: 'recording', paused: true, mode: 'Balanced' })
+    await check(pill, 'pill-paused', { settle: 700 })
     await pillState({ state: 'thinking', mode: 'Balanced' })
     await check(pill, 'pill-thinking')
     await pillState({ state: 'copied', copied: true })
     await check(pill, 'pill-copied')
     await pillState({ state: 'dictated', typed: true })
     await check(pill, 'pill-dictated')
+    await pillState({ state: 'error' })
+    await check(pill, 'pill-error')
 
     await app.close()
     fs.rmSync(dir, { recursive: true, force: true })
