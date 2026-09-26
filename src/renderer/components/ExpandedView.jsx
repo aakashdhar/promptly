@@ -9,6 +9,8 @@ import ShortcutsPanel from './ShortcutsPanel.jsx'
 // them, so it steps aside (⌘H still opens history).
 const BUILDER_STATES = new Set(['IMAGE_BUILDER', 'VIDEO_BUILDER', 'WORKFLOW_BUILDER', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'EMAIL_READY'])
 const ROOMY_WIDTH = 1180
+// A finished result: picking a history entry replaces it on the right.
+const RESTING_STATES = new Set(['PROMPT_READY', 'EMAIL_READY', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR'])
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth)
@@ -89,6 +91,10 @@ export default function ExpandedView({
     setSelected(entry)
     if (entry) setIsViewingHistory(true)
     else setIsViewingHistory(false)
+    // A finished result on screen would otherwise keep the right pane, so the pick seemed to do
+    // nothing. The result is already in history, so closing it loses nothing. Work in progress
+    // (recording, typing, Claude writing) stays put.
+    if (entry && RESTING_STATES.has(currentState)) onReset()
   }
 
   const windowWidth = useWindowWidth()

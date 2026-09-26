@@ -192,6 +192,25 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
   expect(stdin).toContain('"make a todo app with dark mode"')
 })
 
+test('picking an older prompt in history shows it, even with the latest result on screen', async () => {
+  ctx = await launch()
+  const { page } = ctx
+  await typeAndSubmit(page, 'first request about invoices')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  await page.getByRole('button', { name: 'Reset' }).click()
+  await typeAndSubmit(page, 'second request about sprints')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText('second request about sprints').first()).toBeVisible()
+
+  await page.locator('[data-history-entry]', { hasText: 'first request about invoices' }).first().click()
+  // The older entry replaces the latest result on the right.
+  await expect(page.getByText(/You said/)).toBeVisible()
+  await expect(page.locator('[data-history-entry]', { hasText: 'first request' }).first()).toBeVisible()
+  const right = await page.evaluate(() => document.body.innerText)
+  expect(right).toContain('first request about invoices')
+  expect(await appState(ctx.app)).toBe('IDLE')
+})
+
 test('aborting while thinking cancels Claude and the next request still shows', async () => {
   ctx = await launch()
   const { page, fakeDir } = ctx
