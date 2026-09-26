@@ -316,25 +316,49 @@ for (const theme of ['dark', 'light']) {
       p.webContents.send('pill-state', s)
       if (s.state === 'recording') for (let n = 0; n < 20; n++) p.webContents.send('audio-level', Math.abs(Math.sin(n / 2)) * 0.8)
     }, state)
+    // Every state keeps even padding: its first and last items 8 px from the edges (20 px after
+    // closing words), and 8 px top and bottom.
+    const pillPadding = async (name) => {
+      await pill.waitForTimeout(600)
+      const e = await pill.evaluate(() => {
+        const box = document.getElementById('pill').getBoundingClientRect()
+        const row = document.getElementById('row')
+        const first = row.firstElementChild.getBoundingClientRect()
+        const last = row.lastElementChild.getBoundingClientRect()
+        return { left: first.left - box.left, right: box.right - last.right, top: first.top - box.top, bottom: box.bottom - first.bottom, textEnd: row.classList.contains('text-end') }
+      })
+      const want = { left: 8, right: e.textEnd ? 20 : 8, top: 8, bottom: 8 }
+      for (const side of ['left', 'right', 'top', 'bottom']) {
+        if (Math.abs(e[side] - want[side]) > 1.5) found.push(`  [${theme}/${name}] padding    ${side} is ${e[side].toFixed(1)} px, should be ${want[side]} px`)
+      }
+    }
     await pillState({ state: 'recording', mode: 'Balanced', context: { appName: 'Visual Studio Code', selectedText: 'x' } })
     await check(pill, 'pill-recording')
+    await pillPadding('pill-recording')
     // Hover shows where the words are going (a long app name included) and a cancel button.
     await pill.locator('#pill').hover()
     await check(pill, 'pill-hover', { settle: 700 })
+    await pillPadding('pill-hover')
     await pill.mouse.move(2, 2)
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html')).webContents.send('mic-quiet', true))
     await check(pill, 'pill-quiet', { settle: 700 })
+    await pillPadding('pill-quiet')
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html')).webContents.send('mic-quiet', false))
     await pillState({ state: 'recording', paused: true, mode: 'Balanced' })
     await check(pill, 'pill-paused', { settle: 700 })
+    await pillPadding('pill-paused')
     await pillState({ state: 'thinking', mode: 'Balanced' })
     await check(pill, 'pill-thinking')
+    await pillPadding('pill-thinking')
     await pillState({ state: 'copied', copied: true })
     await check(pill, 'pill-copied')
+    await pillPadding('pill-copied')
     await pillState({ state: 'dictated', typed: true })
     await check(pill, 'pill-dictated')
+    await pillPadding('pill-dictated')
     await pillState({ state: 'error' })
     await check(pill, 'pill-error')
+    await pillPadding('pill-error')
 
     await app.close()
     fs.rmSync(dir, { recursive: true, force: true })

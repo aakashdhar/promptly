@@ -141,9 +141,13 @@ function render(v) {
     row.className = 'row' + (spec.textEnd ? ' text-end' : '');
     row.innerHTML = spec.html;
     pill.setAttribute('aria-label', spec.label);
-    // Measure the content's own width, not the pill's current one.
+    // The pill's width: where the last item really ends, plus the right padding (8 px, or 20 px
+    // after words). Measuring the row's own max-content width under-counts items with a
+    // min-width (the timer chip), which left them touching the edge.
+    // Layout offsets, not screen rects: the pill is scaled down while it appears.
     row.style.width = 'max-content';
-    const width = Math.ceil(row.getBoundingClientRect().width);
+    const last = row.lastElementChild;
+    const width = Math.ceil(last.offsetLeft + last.offsetWidth + parseFloat(getComputedStyle(row).paddingRight));
     row.style.width = '';
     if (!wasVisible) { pill.style.transition = 'none'; pill.style.width = width + 'px'; pill.offsetWidth; pill.style.transition = ''; }
     else pill.style.width = width + 'px';
