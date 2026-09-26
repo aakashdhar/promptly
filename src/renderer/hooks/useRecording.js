@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { recordingToWav, MIC_CONSTRAINTS, withTimeout } from '../utils/audio.js'
 import { detectSpokenMode } from '../utils/spokenMode.js'
+import { setMicLevel } from '../utils/micLevel.js'
 
 export default function useRecording({
   STATES,
@@ -40,12 +41,15 @@ export default function useRecording({
         analyser.getFloatTimeDomainData(samples)
         let sum = 0
         for (let i = 0; i < samples.length; i++) sum += samples[i] * samples[i]
-        window.electronAPI?.sendAudioLevel?.(Math.min(1, Math.sqrt(sum / samples.length) * 5))
+        const level = Math.min(1, Math.sqrt(sum / samples.length) * 5)
+        setMicLevel(isPausedRef.current ? 0 : level)
+        window.electronAPI?.sendAudioLevel?.(level)
       }, 60)
       levelMeterRef.current = { ctx, timer }
     } catch { /* the waveform is decoration; recording works without it */ }
   }
   function stopLevelMeter() {
+    setMicLevel(0)
     const meter = levelMeterRef.current
     if (!meter) return
     clearInterval(meter.timer)

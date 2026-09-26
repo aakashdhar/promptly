@@ -13,9 +13,13 @@ import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 import ExpandedErrorContent from './ExpandedErrorContent.jsx'
 import EmailReadyState from './EmailReadyState.jsx'
 import EvalPanel from './EvalPanel.jsx'
+import RibbonCanvas from './RibbonCanvas.jsx'
+import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
+
+
 const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
 
 
@@ -62,6 +66,11 @@ export default function ExpandedDetailPanel({
   promptStyle,
   onShowDictation,
   onMakePrompt,
+  onAbort,
+  thinkingElapsed = 0,
+  thinkingCurrentLabel = '',
+  modeLabel = '',
+  micQuiet = false,
 }) {
   const hotkey = useHotkeyWords()
   const [entryCopied, setEntryCopied] = useState(false)
@@ -80,7 +89,7 @@ export default function ExpandedDetailPanel({
     || currentState === 'GENERATION_ERROR'
     || currentState === 'THINKING'
     || currentState === 'ERROR'
-    || (currentState === 'RECORDING' && mode === 'email')
+    || currentState === 'RECORDING' || currentState === 'PAUSED'
 
   const showEntryDetail = !isContentState && selected !== null
   const showEmpty = !isContentState && !selected
@@ -370,22 +379,60 @@ export default function ExpandedDetailPanel({
         />
       )}
 
-      {/* Working: what you said, and the prompt as Claude writes it. */}
-      {currentState === 'THINKING' && (
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
-          <div role="status" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', fontWeight: 600, color: 'rgba(var(--ink),0.9)', marginBottom: '18px' }}>
-            <span className="working-dots" aria-hidden="true"><i /><i /><i /></span>
-            {mode === 'dictate' ? 'Transcribing' : 'Writing your prompt'}
-            {recordingContext?.appName && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>for {recordingContext.appName}</span>}
+      {/* Listening: the Ribbon across the full width while you talk. */}
+      {(currentState === 'RECORDING' || currentState === 'PAUSED') && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <ResultHeader
+            left={currentState === 'PAUSED'
+              ? <span style={{ fontWeight: 600 }}>Paused</span>
+              : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: 600 }}><span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgb(255,69,58)' }} />Listening</span>}
+            right={<button type="button" onClick={onAbort} style={ghostBtn}>Cancel</button>}
+          />
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '22px', padding: '0 28px' }}>
+            <RibbonCanvas tone={currentState === 'PAUSED' ? 'calm' : micQuiet ? 'quiet' : 'live'} />
+            <p style={{ margin: 0, textAlign: 'center', fontSize: '13px', color: micQuiet && currentState === 'RECORDING' ? readableColor('rgba(255,159,10,0.95)') : 'var(--text-secondary)', fontWeight: micQuiet && currentState === 'RECORDING' ? 600 : 400 }}>
+              {currentState === 'PAUSED' ? 'Resume when you\u2019re ready.'
+                : micQuiet ? 'You\u2019re quite faint. Move closer or raise your voice.'
+                : mode === 'dictate' ? <>Talk naturally. Your words are typed <b style={{ color: 'rgba(var(--ink),0.9)', fontWeight: 600 }}>just as you said them</b>.</>
+                : mode === 'email' ? <>Describe the situation. Claude drafts a <b style={{ color: 'rgba(var(--ink),0.9)', fontWeight: 600 }}>ready-to-send email</b>.</>
+                : <>Talk naturally. <b style={{ color: 'rgba(var(--ink),0.9)', fontWeight: 600 }}>{modeLabel || 'Promptly'}</b> will turn it into a prompt.</>}
+            </p>
           </div>
-          {thinkTranscript && (
-            <>
-              <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px' }}>You said</div>
-              <p style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--text-secondary)', margin: '0 0 20px', maxWidth: '72ch' }}>{thinkTranscript}</p>
-            </>
-          )}
-          {streamText && (
-            <div id="think-stream" className="selectable" style={{ fontSize: '14px', lineHeight: 1.8, color: 'rgba(var(--ink),0.9)', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>{streamText}</div>
+        </div>
+      )}
+
+      {/* Working: transcribing (the Ribbon settles), then what you said and the prompt as Claude writes it. */}
+      {currentState === 'THINKING' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <ResultHeader
+            left={
+              <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <span className="working-hop" aria-hidden="true"><i /><i /><i /></span>
+                {!thinkTranscript ? 'Transcribing'
+                  : ['image', 'video', 'workflow'].includes(mode) ? (thinkingCurrentLabel || 'Working')
+                  : thinkingLabel || (mode === 'dictate' ? 'Finishing up' : 'Writing your prompt')}
+                <span style={{ fontFamily: "'SF Mono', ui-monospace, Menlo, monospace", fontWeight: 400, fontSize: '12px', color: 'var(--text-secondary)' }}>{thinkingElapsed}s</span>
+                {recordingContext?.appName && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>for {recordingContext.appName}</span>}
+              </span>
+            }
+            right={<button type="button" onClick={onAbort} style={ghostBtn}>Cancel</button>}
+          />
+          {!thinkTranscript ? (
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '22px', padding: '0 28px' }}>
+              <RibbonCanvas tone="calm" />
+              <div style={{ width: '46%', display: 'flex', flexDirection: 'column', gap: '12px' }} aria-hidden="true">
+                <div className="skeleton-line" />
+                <div className="skeleton-line" style={{ width: '78%' }} />
+              </div>
+            </div>
+          ) : (
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 28px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '6px' }}>You said</div>
+              <p style={{ fontSize: '13.5px', lineHeight: 1.7, color: 'var(--text-secondary)', margin: '0 0 22px', maxWidth: '72ch' }}>{thinkTranscript}</p>
+              {streamText && (
+                <div id="think-stream" className="selectable" style={{ fontSize: '14px', lineHeight: 1.8, color: 'rgba(var(--ink),0.92)', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>{streamText}</div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -512,22 +559,6 @@ export default function ExpandedDetailPanel({
           isCopied={workflowBuilderProps.isCopied}
           isExpanded
         />
-      )}
-
-      {currentState === 'RECORDING' && mode === 'email' && (
-        <div style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '14px',
-          minHeight: '200px',
-        }}>
-          <span style={{ fontSize: '40px', lineHeight: 1 }}>✉</span>
-          <span style={{ fontSize: '14px', color: 'var(--text-secondary)', letterSpacing: '-0.01em', textAlign: 'center' }}>
-            Describe your email situation naturally
-          </span>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            Claude will draft a ready-to-send email
-          </span>
-        </div>
       )}
 
       {currentState === 'EMAIL_READY' && (

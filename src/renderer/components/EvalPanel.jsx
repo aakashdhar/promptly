@@ -8,8 +8,9 @@ function isAmberReason(r) {
   return l.includes('but') || l.includes('however') || l.includes('lacks') || l.includes('missing') || l.startsWith('no ')
 }
 
-export default function EvalPanel({ transcript, prompt, cachedResult, onResult }) {
-  const [isOpen, setIsOpen] = useState(false)
+export default function EvalPanel({ transcript, prompt, cachedResult, onResult, open, hideToggle = false }) {
+  const [openState, setIsOpen] = useState(false)
+  const isOpen = open ?? openState
   const [evalData, setEvalData] = useState(cachedResult || null)
   const [evalFailed, setEvalFailed] = useState(false)
   const [barsMounted, setBarsMounted] = useState(false)
@@ -31,6 +32,9 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
       })
       .catch(() => setEvalFailed(true))
   }
+
+  // Opened from outside: score on first open.
+  useEffect(() => { if (open) startEval() }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setBarsMounted(false)
@@ -60,7 +64,7 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
 
   return (
     <div>
-      <button
+      {!hideToggle && <button
         onClick={evalFailed ? undefined : () => { startEval(); setIsOpen(v => !v) }}
         style={{
           fontSize: '12px',
@@ -71,7 +75,7 @@ export default function EvalPanel({ transcript, prompt, cachedResult, onResult }
         }}
       >
         ↗ Score this prompt
-      </button>
+      </button>}
 
       <div style={{
         overflow: 'hidden',

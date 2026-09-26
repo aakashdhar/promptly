@@ -84,6 +84,27 @@ export default function ExpandedView({
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
+  // History can be hidden (the toolbar button or ⌃⌘S) so the result, and the Ribbon while you
+  // talk, use the full width. The choice is remembered.
+  const [historyHidden, setHistoryHidden] = useState(false)
+  useEffect(() => {
+    window.electronAPI?.getPreferences?.().then((p) => { if (p) setHistoryHidden(!!p.historyHidden) }).catch(() => {})
+  }, [])
+  function setHistoryShown(shown) {
+    setHistoryHidden(!shown)
+    window.electronAPI?.setPreferences?.({ historyHidden: !shown })
+  }
+  useEffect(() => {
+    function onKey(e) {
+      if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 's') { e.preventDefault(); setHistoryHidden((h) => { window.electronAPI?.setPreferences?.({ historyHidden: !h }); return !h }) }
+    }
+    // ⌘H searches history, so it brings the list back if it was hidden.
+    const onSearch = () => setHistoryHidden((h) => { if (h) window.electronAPI?.setPreferences?.({ historyHidden: false }); return false })
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('promptly:search-history', onSearch)
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('promptly:search-history', onSearch) }
+  }, [])
+
   function handleSelect(entry) {
     if (entry && selected && entry.id === selected.id) {
       setSelected(null)
@@ -100,6 +121,7 @@ export default function ExpandedView({
   }
 
   const windowWidth = useWindowWidth()
+  const historyShown = !historyHidden && (windowWidth >= ROOMY_WIDTH || !BUILDER_STATES.has(currentState))
 
   function handleEntryChange(updatedEntry) {
     setSelected(updatedEntry)
@@ -145,25 +167,32 @@ export default function ExpandedView({
         onPause={onPause}
         onOpenSettings={onOpenSettings}
         onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
-        onAbort={onAbort}
         generationErrorType={generationErrorProps?.errorType}
-        thinkingElapsed={thinkingElapsed}
-        thinkingCurrentLabel={thinkingCurrentLabel}
-        thinkingLabelOpacity={thinkingLabelOpacity}
         onModeSelect={onModeSelect}
         onShowShortcuts={onShowShortcuts}
         onShowHistory={onShowHistory}
         micQuiet={micQuiet}
+        historyHidden={historyHidden}
+        onToggleHistory={() => setHistoryShown(historyHidden)}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
-        {(windowWidth >= ROOMY_WIDTH || !BUILDER_STATES.has(currentState)) && (
+        {/* The history column slides away when hidden; builders also push it aside in a narrow window. */}
+        <div
+          inert={historyShown ? undefined : true}
+          aria-hidden={historyShown ? undefined : true}
+          style={{
+            width: historyShown ? '260px' : '0px',
+            flexShrink: 0, overflow: 'hidden', display: 'flex',
+            transition: 'width 420ms cubic-bezier(0.32, 0.72, 0, 1)',
+          }}
+        >
           <ExpandedHistoryList
             currentState={currentState}
             selected={selected}
             onSelect={handleSelect}
           />
-        )}
+        </div>
         <ExpandedDetailPanel
           selected={selected}
           resultMode={resultMode}
@@ -207,6 +236,11 @@ export default function ExpandedView({
           promptStyle={promptStyle}
           onShowDictation={onShowDictation}
           onMakePrompt={onMakePrompt}
+          onAbort={onAbort}
+          thinkingElapsed={thinkingElapsed}
+          thinkingCurrentLabel={thinkingCurrentLabel}
+          modeLabel={modeLabel}
+          micQuiet={micQuiet}
         />
       </div>
       </div>

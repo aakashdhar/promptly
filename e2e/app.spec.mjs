@@ -162,6 +162,13 @@ function calls(fakeDir) {
   return fs.readdirSync(fakeDir).filter((f) => f.endsWith('.args')).sort()
 }
 
+// What the latest Claude call was given. The fake writes its .args a moment before its .stdin.
+async function lastStdin(fakeDir) {
+  let file
+  await expect.poll(() => { file = path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')); return fs.existsSync(file) }).toBe(true)
+  return fs.readFileSync(file, 'utf8')
+}
+
 async function typeAndSubmit(page, text) {
   await page.keyboard.press('Meta+t')
   const box = page.getByPlaceholder('Describe what you want Claude to build, design, or write...')
@@ -235,7 +242,8 @@ test('aborting while thinking cancels Claude and the next request still shows', 
   await typeAndSubmit(page, 'first request that gets aborted')
   await expect.poll(() => calls(fakeDir).length, { timeout: 10000 }).toBe(1)
 
-  await page.getByTitle('Reset to start').click()
+  // Cancel, in the working header, stops Claude.
+  await page.getByRole('button', { name: 'Cancel' }).click()
   fs.rmSync(path.join(fakeDir, 'delay'))
 
   await typeAndSubmit(page, 'second request after abort')
@@ -712,7 +720,7 @@ test('a prompt made from a dictation can be regenerated, in the style it was mad
   await page.getByRole('button', { name: 'Regenerate' }).click()
   await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(before + 1)
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
-  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  const stdin = await lastStdin(fakeDir)
   expect(stdin).toContain('Optimise this prompt for code generation')
   await expect(page.getByRole('button', { name: '↻ Iterate' })).toBeVisible()
 })
@@ -722,6 +730,7 @@ test('an older prompt reopened from history can be regenerated in its own mode, 
   const { page, fakeDir } = ctx
   await page.evaluate(() => localStorage.setItem('mode', 'code'))
   await page.reload()
+  await expect(page.locator('#mode-pill')).toHaveText('Code', { timeout: 10000 })
   await typeAndSubmit(page, 'add pagination to the orders api')
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
   // Switch to Dictation, then go back to the Code prompt in history.
@@ -735,7 +744,7 @@ test('an older prompt reopened from history can be regenerated in its own mode, 
   await page.getByRole('button', { name: 'Regenerate' }).click()
   await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(before + 1)
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
-  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  const stdin = await lastStdin(fakeDir)
   expect(stdin).toContain('Optimise this prompt for code generation')
   expect(stdin).toContain('add pagination to the orders api')
 })
@@ -821,6 +830,35 @@ test('the pill: its cancel button throws the recording away, and an error stays 
   expect((await mainWindow(app)).visible).toBe(false)
   await pillWin().getByRole('button', { name: 'Open' }).click()
   await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
+})
+
+test('history can be hidden and stays hidden; a dictation and the prompt made from it are one row', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page } = ctx
+  // Hide with the toolbar button: the column slides away and the choice is remembered.
+  await page.getByRole('button', { name: 'Hide history' }).click()
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.config().historyHidden)).toBe(true)
+  await expect(page.getByRole('button', { name: 'Show history' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Show history' })).toBeVisible({ timeout: 10000 })
+  // ⌃⌘S brings it back.
+  await page.keyboard.press('Control+Meta+s')
+  await expect(page.getByRole('button', { name: 'Hide history' })).toBeVisible()
+
+  // Typing in Dictation makes a prompt; saving a dictation first and then making it a prompt pairs them.
+  await page.evaluate(() => {
+    const now = Date.now()
+    localStorage.setItem('promptly_history', JSON.stringify([
+      { id: 'p1', timestamp: now, transcript: 'plan the launch email', prompt: 'Role: …', mode: 'balanced' },
+      { id: 'd1', timestamp: now - 1000, transcript: 'plan the launch email', prompt: 'plan the launch email', mode: 'dictate' },
+      { id: 'd0', timestamp: now - 5000, transcript: 'note for Deepak', prompt: 'note for Deepak', mode: 'dictate' },
+    ]))
+  })
+  await page.reload()
+  const rows = page.locator('[data-history-entry]')
+  await expect(rows).toHaveCount(2, { timeout: 10000 })
+  await expect(rows.first()).toContainText('plan the launch email')
+  await expect(rows.first().getByLabel('Made from a dictation')).toBeVisible()
 })
 
 test('the pill can be dragged out of the way, and comes back where you left it', async () => {

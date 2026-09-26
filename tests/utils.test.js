@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
-import { formatTime } from '../src/renderer/utils/history.js'
+import { formatTime, pairDictations } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
 
@@ -373,3 +373,21 @@ describe('readableColor', () => {
     expect(readableColor('inherit')).toBe('inherit')
   })
 })
+
+describe('pairDictations', () => {
+  const d = (id, text) => ({ id, mode: 'dictate', transcript: text, prompt: text })
+  const p = (id, transcript, mode = 'balanced') => ({ id, mode, transcript, prompt: 'Role: …' })
+
+  it('shows a prompt made from a dictation as one row, marked as spoken', () => {
+    const rows = pairDictations([p('p1', 'plan the launch'), d('d1', 'plan the launch'), d('d0', 'note for Deepak')])
+    expect(rows.map((r) => r.id)).toEqual(['p1', 'd0'])
+    expect(rows[0].fromDictation).toBe('d1')
+  })
+
+  it('leaves unrelated neighbours apart', () => {
+    const rows = pairDictations([p('p1', 'something else'), d('d1', 'plan the launch'), p('p0', 'typed request')])
+    expect(rows.map((r) => r.id)).toEqual(['p1', 'd1', 'p0'])
+    expect(rows.every((r) => !r.fromDictation)).toBe(true)
+  })
+})
+

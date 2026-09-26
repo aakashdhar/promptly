@@ -712,7 +712,7 @@ function createWindow() {
     transparent: false,
     backgroundColor: windowBackground(),
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 12, y: 12 },
+    trafficLightPosition: { x: 18, y: 21 }, // centred in the 56 px toolbar
     resizable: true,
     maximizable: true,
     fullscreenable: true,
@@ -916,6 +916,7 @@ app.whenReady().then(async () => {
       dictationTypeIn: stored.dictationTypeIn !== false,
       dictationRemoveFillers: stored.dictationRemoveFillers !== false,
       dictationSymbols: stored.dictationSymbols !== false,
+      historyHidden: stored.historyHidden === true,
       speech: speechPrefs(),
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
       accessibility: helper.status(),
@@ -932,6 +933,7 @@ app.whenReady().then(async () => {
     if (typeof prefs.dictationTypeIn === 'boolean') patch.dictationTypeIn = prefs.dictationTypeIn;
     if (typeof prefs.dictationRemoveFillers === 'boolean') patch.dictationRemoveFillers = prefs.dictationRemoveFillers;
     if (typeof prefs.dictationSymbols === 'boolean') patch.dictationSymbols = prefs.dictationSymbols;
+    if (typeof prefs.historyHidden === 'boolean') patch.historyHidden = prefs.historyHidden;
     if (prefs.speechModel === 'standard' || prefs.speechModel === 'accurate') patch.speechModel = prefs.speechModel;
     if (SPEECH_LANGUAGES.some((l) => l.value === prefs.speechLanguage)) patch.speechLanguage = prefs.speechLanguage;
     if (typeof prefs.voiceNotes === 'string') patch.voiceNotes = cleanNotes(prefs.voiceNotes);

@@ -211,6 +211,10 @@ for (const theme of ['dark', 'light']) {
     await page.keyboard.press('Escape')
     await talk()
     await check(page, 'recording', { settle: 900 })
+    // History hidden (⌃⌘S): the Ribbon runs the full width.
+    await page.keyboard.press('Control+Meta+s')
+    await check(page, 'recording-full-width', { settle: 900 })
+    await page.keyboard.press('Control+Meta+s')
     await page.getByRole('button', { name: 'Stop' }).click()
     await expect(page.getByRole('tab', { name: 'As I said it' })).toBeVisible({ timeout: 15000 })
     await check(page, 'dictation-ready', { settle: 800 })
@@ -259,6 +263,10 @@ for (const theme of ['dark', 'light']) {
     await expect.poll(() => appState(app)).toBe('IDLE')
     await page.keyboard.press('Meta+h')
     await check(page, 'history-search')
+    await page.getByRole('button', { name: 'Close search' }).click()
+    await page.getByRole('button', { name: 'Filter history' }).click()
+    await check(page, 'history-filter')
+    await page.keyboard.press('Escape')
     await page.locator('[data-history-entry]').last().click()
     await check(page, 'history-entry', { settle: 600 })
 

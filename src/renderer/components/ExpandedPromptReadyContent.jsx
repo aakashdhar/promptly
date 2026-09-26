@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { parseSections, readableColor } from '../utils/promptUtils.js'
 import EvalPanel from './EvalPanel.jsx'
+import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import MODE_REGISTRY from '../../../shared/modes.json'
 
 // Modes whose result is text Claude wrote from what you said, so it can be iterated on or
@@ -40,6 +41,7 @@ export default function ExpandedPromptReadyContent({
   const [isEditing, setIsEditing] = useState(false)
   const [editHovered, setEditHovered] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
+  const [scoreOpen, setScoreOpen] = useState(false)
   const promptRef = useRef(null)
   const preEditValue = useRef('')
 
@@ -49,6 +51,7 @@ export default function ExpandedPromptReadyContent({
   useEffect(() => {
     setIsEditing(false)
     setIsCopied(false)
+    setScoreOpen(false)
   }, [generatedPrompt])
 
   useEffect(() => {
@@ -105,52 +108,49 @@ export default function ExpandedPromptReadyContent({
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px 12px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>
-          <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '17px' }}>✓</span>
-          <span>{isDictation ? 'Dictated' : isPolishMode ? 'Polished' : 'Prompt ready'}</span>
+      <ResultHeader
+        left={<>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '16px' }}>✓</span>
+            {isDictation ? 'Dictated' : isPolishMode ? 'Polished' : 'Prompt ready'}
+          </span>
           {isIterated && (
             <span style={{
               fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
               background: 'rgba(10,132,255,0.08)', border: '0.5px solid rgba(10,132,255,0.2)',
-              borderRadius: '20px', padding: '1px 8px', letterSpacing: '.04em',
+              borderRadius: '20px', padding: '1px 8px', letterSpacing: '.04em', whiteSpace: 'nowrap',
             }}>↻ iterated</span>
           )}
-        </div>
-        <div style={{ display: 'flex', gap: '18px' }}>
-          {canRework && <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>}
-          {canRework && <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>}
-          <button onClick={onReset} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
-        </div>
-      </div>
+          {dictation && (
+            <div role="tablist" aria-label="Show as" style={{ display: 'inline-flex', gap: '2px', padding: '2px', borderRadius: '9px', background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.1)' }}>
+              {[['dictation', 'As I said it', onShowDictation], ['prompt', 'As a prompt', onMakePrompt]].map(([view, label, onPick]) => (
+                <button
+                  key={view}
+                  role="tab"
+                  aria-selected={resultView === view}
+                  onClick={() => { if (resultView !== view) onPick?.() }}
+                  style={{
+                    height: '28px', padding: '0 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: '12.5px', fontWeight: resultView === view ? 600 : 400, whiteSpace: 'nowrap',
+                    background: resultView === view ? 'var(--surface)' : 'transparent',
+                    boxShadow: resultView === view ? '0 1px 2px rgba(0,0,0,0.12)' : 'none',
+                    color: resultView === view ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </>}
+        right={<>
+          {canRework && <button type="button" onClick={onIterate} style={{ ...ghostBtn, color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500 }}>↻ Iterate</button>}
+          {canRework && <button type="button" onClick={onRegenerate} style={ghostBtn}>Regenerate</button>}
+          <button type="button" onClick={onReset} style={ghostBtn}>Reset</button>
+        </>}
+      />
 
-      {dictation && (
-        <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
-          <div role="tablist" aria-label="Show as" style={{ display: 'inline-flex', gap: '2px', padding: '2px', borderRadius: '9px', background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.1)' }}>
-            {[['dictation', 'As I said it', onShowDictation], ['prompt', 'As a prompt', onMakePrompt]].map(([view, label, onPick]) => (
-              <button
-                key={view}
-                role="tab"
-                aria-selected={resultView === view}
-                onClick={() => { if (resultView !== view) onPick?.() }}
-                style={{
-                  height: '28px', padding: '0 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                  fontSize: '12px', fontWeight: resultView === view ? 600 : 400,
-                  background: resultView === view ? 'var(--surface)' : 'transparent',
-                  boxShadow: resultView === view ? '0 1px 2px rgba(0,0,0,0.12)' : 'none',
-                  color: resultView === view ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ height: '0.5px', background: 'rgba(var(--ink),0.06)', margin: '0 28px', flexShrink: 0 }} />
-
-      <div className="selectable" id="prompt-output" style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
+      <div className="selectable" id="prompt-output" style={{ flex: 1, overflowY: 'auto', padding: '22px 28px 18px' }}>
         {isEditing ? (
           <div
             ref={promptRef}
@@ -211,46 +211,52 @@ export default function ExpandedPromptReadyContent({
         </div>
       )}
 
-      <div style={{ flexShrink: 0 }}>
-        <div style={{ height: '0.5px', background: 'rgba(var(--ink),0.06)', margin: '0 28px' }} />
-        <div style={{ display: 'flex', gap: '10px', padding: '14px 24px 20px', alignItems: 'center' }}>
-          <button
-            onClick={handleEdit}
-            onMouseEnter={() => setEditHovered(true)}
-            onMouseLeave={() => setEditHovered(false)}
-            style={{
-              height: '40px', padding: '0 20px',
-              border: editHovered ? '0.5px solid rgba(var(--ink),0.16)' : '0.5px solid rgba(var(--ink),0.1)',
-              background: editHovered ? 'rgba(var(--ink),0.08)' : 'rgba(var(--ink),0.04)',
-              color: 'rgba(var(--ink),0.92)', borderRadius: '8px',
-              fontSize: '13px', cursor: 'pointer', transition: 'all 150ms ease',
-            }}
-          >
-            {isEditing ? 'Save' : 'Edit'}
-          </button>
-          <div style={{ flex: 1 }} />
-          <button
-            onClick={handleCopy}
-            style={{
-              height: '40px', padding: '0 32px',
-              border: 'none', borderTop: '0.5px solid rgba(var(--ink),0.2)',
-              background: isCopied
-                ? 'linear-gradient(135deg, rgba(48,209,88,0.85), rgba(30,168,70,0.85))'
-                : 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
-              color: 'white', borderRadius: '8px',
-              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-              boxShadow: isCopied ? '0 2px 16px rgba(48,209,88,0.35)' : '0 2px 20px rgba(10,132,255,0.4)',
-              transition: 'all 300ms ease',
-            }}
-          >
-            {isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : 'Copy prompt'}
-          </button>
+      {!plainText && (
+        <div style={{ padding: scoreOpen ? '0 24px 12px' : 0, flexShrink: 0, maxHeight: '46%', overflowY: 'auto' }}>
+          <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} open={scoreOpen} hideToggle />
         </div>
+      )}
+
+      {/* One action bar: change it on the left, take it on the right. */}
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderTop: '0.5px solid rgba(var(--ink),0.08)' }}>
+        <button
+          type="button"
+          onClick={handleEdit}
+          onMouseEnter={() => setEditHovered(true)}
+          onMouseLeave={() => setEditHovered(false)}
+          style={{
+            height: '36px', padding: '0 18px', fontFamily: 'inherit',
+            border: editHovered ? '0.5px solid rgba(var(--ink),0.18)' : '0.5px solid rgba(var(--ink),0.12)',
+            background: editHovered ? 'rgba(var(--ink),0.09)' : 'rgba(var(--ink),0.05)',
+            color: 'rgba(var(--ink),0.92)', borderRadius: '10px',
+            fontSize: '13px', cursor: 'pointer', transition: 'all 150ms ease',
+          }}
+        >
+          {isEditing ? 'Save' : 'Edit'}
+        </button>
         {!plainText && (
-          <div style={{ padding: '0 24px 16px' }}>
-            <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} />
-          </div>
+          <button type="button" onClick={() => setScoreOpen((v) => !v)} aria-expanded={scoreOpen} style={ghostBtn}>
+            {scoreOpen ? 'Hide score' : '↗ Score this prompt'}
+          </button>
         )}
+        <div style={{ flex: 1 }} />
+        <button
+          type="button"
+          onClick={handleCopy}
+          style={{
+            height: '36px', padding: '0 24px', fontFamily: 'inherit',
+            border: 'none',
+            background: isCopied
+              ? 'linear-gradient(135deg, rgba(48,209,88,0.85), rgba(30,168,70,0.85))'
+              : 'linear-gradient(135deg, rgba(10,132,255,0.95), rgba(10,100,220,0.95))',
+            color: 'var(--on-accent)', borderRadius: '10px',
+            fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+            boxShadow: isCopied ? '0 2px 16px rgba(48,209,88,0.35)' : '0 4px 16px rgba(10,132,255,0.35)',
+            transition: 'all 300ms ease',
+          }}
+        >
+          {isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : 'Copy prompt'}
+        </button>
       </div>
     </div>
   )

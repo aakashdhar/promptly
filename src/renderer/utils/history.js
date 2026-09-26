@@ -63,3 +63,20 @@ export function formatTime(iso) {
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
   return new Date(iso).toLocaleDateString('en', { month: 'short', day: 'numeric' })
 }
+
+// A prompt made from a dictation ("Make it a prompt") is saved right after the dictation, with
+// the dictation's words as its transcript. Shown as one row: the prompt, marked as spoken.
+export function pairDictations(entries) {
+  const out = []
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i]
+    const next = entries[i + 1]
+    if (e.mode !== 'dictate' && next && next.mode === 'dictate' && next.prompt && next.prompt.trim() === (e.transcript || '').trim()) {
+      out.push({ ...e, fromDictation: next.id })
+      i++
+    } else {
+      out.push(e)
+    }
+  }
+  return out
+}

@@ -44,6 +44,15 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
   const isDictation = BY_KEY[mode]?.kind === 'dictation'
   const described = BY_KEY[hovered] || BY_KEY[mode]
 
+  // While the menu is open the window behind it can't be clicked or tabbed into; a click
+  // anywhere outside still closes it.
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (!root) return undefined
+    root.inert = true
+    return () => { root.inert = false }
+  }, [])
+
   useEffect(() => {
     window.electronAPI?.getPreferences?.().then((p) => { if (p?.promptStyle) setPromptStyle(p.promptStyle) }).catch(() => {})
   }, [])
