@@ -177,6 +177,7 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | pill → main, main → renderer | `pill-action` ('make-prompt') / `make-prompt` event | The pill's "Make it a prompt" after a dictation from another app: opens the window and converts it there |
 | renderer → main | `record-edit` / `clear-edits` / `learn-style` | It writes like you: log an edit to a result, forget edits, draft "How you write" notes (voiceNotes / aboutMe themselves go through get/set-preferences) |
 | renderer → main | `download-speech-model` / `cancel-speech-model` / `remove-speech-model` | Best accuracy speech model: download (switches to it when done), cancel, remove (back to Standard). Choice and language go through get/set-preferences (`speech`, `speechModel`, `speechLanguage`) |
+| main → renderer | `mic-quiet` | `true`/`false` while recording: the speaker is too faint (window's status line and the pill say "Speak up or move closer") |
 | main → renderer | `speech-model-progress` | `{ percent, mbDone, mbTotal }` while the model downloads |
 | renderer → main (send) | `audio-level` / `mode-changed` | Mic level for the pill waveform; current mode label for the pill |
 | main → renderer | `hotkey-start` / `hotkey-stop` / `hotkey-cancel` | Hold-to-talk / tap decisions from main |

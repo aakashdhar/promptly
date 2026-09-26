@@ -2010,3 +2010,21 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   left alone (weight vs money). Nothing else is reworded — still the difference from Wispr.
 ---
 
+---
+## D-REWORK-AND-MIC — Rework any prompt; microphone tuned for dictation — 2026-09-26
+> History: picking an entry did nothing while a result was on screen (always, with one window). A finished result now
+>   closes when you pick an entry (it's already in history); work in progress stays.
+> Rework (request: "no option to retry or reiterate an older prompt"): the app tracks the mode of the result on screen
+>   (`resultMode`), separate from the selected mode. Regenerate and Iterate use it, so a prompt made from a dictation, or
+>   one reopened from history ("Open to refine"; "Open" for a dictation, which returns with its As a prompt switch), is
+>   reworked in the style it was made in without changing the mode you talk in. Iterate/Regenerate now show on every
+>   template/standalone result, including prompts made from dictation (hidden only on plain dictations and builders).
+>   Reworking a prompt made from a dictation drops the As I said it switch for that result; the dictation stays in history.
+> Microphone: getUserMedia used Chromium's call defaults. Echo cancellation and noise suppression are now off (nothing
+>   plays back while dictating; suppression thins soft or distant voices), auto gain stays on. Not measurable offline —
+>   judged on a real mic. Simulated quiet/far speech showed voice detection is not the problem (a false alarm from a
+>   quoting bug in the test script was ruled out); accuracy is limited by the audio, and Best accuracy helps most.
+> "Speak up or move closer": main/audio-level.js watches the meter; thresholds are estimates (meter = RMS × 5: faint
+>   talking peaks < 0.12, clears ≥ 0.15, silence ignored) to be tuned on real use.
+---
+
