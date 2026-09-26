@@ -2028,3 +2028,16 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   talking peaks < 0.12, clears ≥ 0.15, silence ignored) to be tuned on real use.
 ---
 
+---
+## D-STUCK-RECORDING — A recording can't get stuck, and leaves a trail — 2026-09-26
+> Report: the pill froze on "Listening" (waveform stopped, flat at the end) and Control did nothing; the user had to
+>   quit, losing what they'd said. No crash in the log. Cause (reproduced in e2e): the microphone stream ended mid-
+>   recording, the MediaRecorder stopped itself before any `onstop` handler existed, and the stop path then saw an
+>   "inactive" recorder and did nothing, forever.
+> Fix: the stop handling is set up when recording starts; a recording that stops by itself (or whose track ends) is
+>   finished with what was recorded; stop works in any recorder state; converting the audio times out after 20 s and
+>   any failure shows an error instead of hanging. Cancel still discards. Iterate-by-voice got the same treatment.
+> Diagnostics: recording start/end, "window stopped responding", renderer crashes, and the window's own errors
+>   (`renderer-log`) go to main.log; a stop that hasn't finished 10 s after the shortcut is logged.
+---
+

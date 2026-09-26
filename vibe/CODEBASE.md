@@ -182,6 +182,11 @@ See the IPC surface table in `vibe/ARCHITECTURE.md` (kept complete; `tests/ipc-c
 
 ## Gotchas (learned the hard way)
 
+- **A MediaRecorder can stop by itself.** When the microphone goes away mid-recording (AirPods, input switching,
+  another app taking it) the recorder stops on its own. useRecording sets `onstop` when recording starts and finishes
+  through one `finishRecording` (once per recorder), so a self-stopped recording is still transcribed and Control
+  still works. Assigning `onstop` only inside the stop handler left the app stuck "Listening" forever (seen live).
+
 - **Never pass `--no-timestamps` to whisper-cli.** Without timestamps whisper.cpp moves on a whole 30-second window
   whenever the model stops early, so after a pause everything else said in that window vanished (seen live: phrases
   2–4 of a 10-phrase test missing). With timestamps it resumes from the last segment. Voice detection (`--vad`) is the
