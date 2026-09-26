@@ -584,6 +584,10 @@ export default function ExpandedDetailPanel({
           plan={harnessBuilderProps.plan}
           files={harnessBuilderProps.files}
           savedTo={harnessBuilderProps.savedTo}
+          scheduled={harnessBuilderProps.scheduled}
+          alreadyScheduled={harnessBuilderProps.alreadyScheduled}
+          onSchedule={harnessBuilderProps.onSchedule}
+          onUnschedule={harnessBuilderProps.onUnschedule}
           onBackToPlan={harnessBuilderProps.onBackToPlan}
           onStartOver={harnessBuilderProps.onStartOver}
           onSaveToProject={harnessBuilderProps.onSaveToProject}

@@ -144,6 +144,7 @@ async function launch(theme, { setupComplete = true, helper = null, config = {} 
     env: {
       ...process.env,
       PROMPTLY_USER_DATA: userData,
+      PROMPTLY_SAVE_DIR: fs.mkdtempSync(path.join(dir, 'project-')),
       PROMPTLY_WHISPER_DIR: engine,
       PROMPTLY_HELPER: helper === null ? path.join(dir, 'no-helper') : writeFakeHelper(dir, helper),
       TMPDIR: dir,
@@ -369,6 +370,12 @@ for (const theme of ['dark', 'light']) {
     await page.getByRole('button', { name: 'Write the files' }).click()
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER_DONE')
     await check(page, 'harness-files', { settle: 600 })
+    await page.getByRole('button', { name: 'Save to project…' }).click()
+    await expect(page.getByRole('button', { name: '✓ Saved' })).toBeVisible()
+    await check(page, 'harness-files-saved', { settle: 300 })
+    await page.getByRole('button', { name: 'Schedule it' }).click()
+    await expect(page.getByRole('button', { name: 'Remove schedule' })).toBeVisible()
+    await check(page, 'harness-files-scheduled', { settle: 300 })
     await page.getByRole('button', { name: 'Start over' }).click()
     await typeAndSubmit(page, 'move this repo to TypeScript with three agents in parallel')
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER')

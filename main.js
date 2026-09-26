@@ -1107,6 +1107,13 @@ app.whenReady().then(async () => {
 
   // ── Harness mode ──
 
+  let lastSavedHarness = null; // { dir, run } from the last Save to project…
+  // Tests keep their launchd jobs inside the throwaway profile, never in the real LaunchAgents.
+  const harnessPlistPath = (dir) => path.join(
+    IS_E2E ? path.join(app.getPath('userData'), 'LaunchAgents') : platform.launchAgentsDir(os.homedir()),
+    `${harness.agentLabel(dir)}.plist`,
+  );
+
   ipcMain.handle('harness-plan', async (_event, { transcript, context = {} } = {}) => {
     const stored = config.read();
     const block = buildContextBlock(getMode('harness'), { ...context, ...profileFor(getMode('harness'), stored), dictionary: dictionaryWords() });
@@ -1135,7 +1142,7 @@ app.whenReady().then(async () => {
 
   // Saves the harness into a project folder the user picks. Existing files are only replaced
   // after they confirm; an existing .claude/settings.json gets the new hooks added, not replaced.
-  ipcMain.handle('save-harness', async (_event, { files } = {}) => {
+  ipcMain.handle('save-harness', async (_event, { files, run } = {}) => {
     const list = Array.isArray(files) ? files.filter((f) => f && harness.safeRelativePath(f.path)) : [];
     if (!list.length) return { ok: false, error: 'Nothing to save' };
     let dir = IS_E2E ? process.env.PROMPTLY_SAVE_DIR : null;
@@ -1164,10 +1171,45 @@ app.whenReady().then(async () => {
     try {
       const written = harness.writeFiles(dir, list);
       log.info('Saved harness', { dir, files: written.length });
-      return { ok: true, dir, written };
+      lastSavedHarness = { dir, run: String(run || '').trim() };
+      const alreadyScheduled = fs.existsSync(harnessPlistPath(dir));
+      return { ok: true, dir, written, alreadyScheduled };
     } catch (err) {
       return { ok: false, error: err.message };
     }
+  });
+
+  // Runs the harness saved last on a schedule, as a launchd job in the user's LaunchAgents
+  // (one per project folder; scheduling again replaces it). Only the folder and command from
+  // that save are used, never paths sent by the window.
+  ipcMain.handle('schedule-harness', async (_event, { schedule } = {}) => {
+    const sched = harness.checkSchedule(schedule);
+    if (!lastSavedHarness?.run) return { ok: false, error: 'Save the harness to a project first' };
+    if (!sched) return { ok: false, error: 'Pick when it should run' };
+    const { dir, run } = lastSavedHarness;
+    const label = harness.agentLabel(dir);
+    const plistPath = harnessPlistPath(dir);
+    const claudeDir = claudePath ? path.dirname(claudePath) : '';
+    const pathEnv = [claudeDir, platform.SCHEDULE_PATH].filter(Boolean).join(platform.PATH_DELIMITER);
+    try {
+      fs.mkdirSync(path.dirname(plistPath), { recursive: true });
+      fs.writeFileSync(plistPath, harness.launchAgentPlist({ label, dir, run, schedule: sched, pathEnv }));
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+    const loaded = IS_E2E ? { ok: true } : await platform.loadLaunchAgent(plistPath, label);
+    if (!loaded.ok) return { ok: false, error: `macOS didn't accept the schedule: ${loaded.error}` };
+    log.info('Scheduled harness', { dir, label, schedule: sched });
+    return { ok: true, label: harness.scheduleLabel(sched) };
+  });
+
+  ipcMain.handle('unschedule-harness', async () => {
+    if (!lastSavedHarness) return { ok: false, error: 'No saved harness' };
+    const label = harness.agentLabel(lastSavedHarness.dir);
+    if (!IS_E2E) await platform.unloadLaunchAgent(label);
+    try { fs.rmSync(harnessPlistPath(lastSavedHarness.dir), { force: true }); } catch (err) { return { ok: false, error: err.message }; }
+    log.info('Removed harness schedule', { dir: lastSavedHarness.dir, label });
+    return { ok: true };
   });
 
   // Replays the last generate-prompt request with the same mode and options

@@ -24,6 +24,8 @@ export default function useHarnessBuilder({
   const [answers, setAnswers] = useState({})
   const [harnessFiles, setHarnessFiles] = useState(null) // { run, files }
   const [savedTo, setSavedTo] = useState('')
+  const [scheduled, setScheduled] = useState('') // "every day at 02:00" once installed
+  const [alreadyScheduled, setAlreadyScheduled] = useState(false)
   const isReiteratingRef = useRef(false)
   const runIdRef = useRef(0)
 
@@ -67,11 +69,12 @@ export default function useHarnessBuilder({
     if (runId !== runIdRef.current || result?.cancelled) return
     if (!result?.success) return fail(result?.error || 'Writing the harness failed. Please try again.')
 
-    const bundle = { run: result.run, files: result.files }
+    const bundle = { run: result.run, schedule: result.schedule || null, files: result.files }
     saveToHistory({ transcript: originalTranscript.current, prompt: bundleHarness(bundle), mode: 'harness' })
     window.electronAPI?.setLastPrompt?.(bundleHarness(bundle))
     setHarnessFiles(bundle)
     setSavedTo('')
+    setScheduled('')
     transitionRef.current(STATES.HARNESS_BUILDER_DONE)
   }, [STATES, transitionRef, originalTranscript, setThinkTranscript, setThinkingLabel, setThinkingAccentColor, harnessPlan, answers, fail])
 
@@ -81,16 +84,33 @@ export default function useHarnessBuilder({
     setAnswers({})
     setHarnessFiles(null)
     setSavedTo('')
+    setScheduled('')
     isReiteratingRef.current = false
     transitionRef.current(STATES.IDLE)
   }, [STATES, transitionRef])
 
   const saveToProject = useCallback(async () => {
     if (!harnessFiles) return
-    const result = await window.electronAPI?.saveHarness?.(harnessFiles.files)
-    if (result?.ok) setSavedTo(result.dir)
+    const result = await window.electronAPI?.saveHarness?.(harnessFiles.files, harnessFiles.run)
+    if (result?.ok) {
+      setSavedTo(result.dir)
+      setScheduled('')
+      setAlreadyScheduled(!!result.alreadyScheduled)
+    }
     return result
   }, [harnessFiles])
+
+  const schedule = useCallback(async (when) => {
+    const result = await window.electronAPI?.scheduleHarness?.(when)
+    if (result?.ok) { setScheduled(result.label); setAlreadyScheduled(false) }
+    return result
+  }, [])
+
+  const unschedule = useCallback(async () => {
+    const result = await window.electronAPI?.unscheduleHarness?.()
+    if (result?.ok) { setScheduled(''); setAlreadyScheduled(false) }
+    return result
+  }, [])
 
   const harnessBuilderProps = {
     transcript: originalTranscript.current,
@@ -98,6 +118,10 @@ export default function useHarnessBuilder({
     answers,
     files: harnessFiles,
     savedTo,
+    scheduled,
+    alreadyScheduled,
+    onSchedule: schedule,
+    onUnschedule: unschedule,
     onAnswer: (id, value) => setAnswers((prev) => ({ ...prev, [id]: value })),
     onConfirm: writeHarnessFiles,
     onReiterate: () => { isReiteratingRef.current = true; startRecordingRef?.current?.() },

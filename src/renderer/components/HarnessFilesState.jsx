@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
 import { HARNESS_ACCENT, bundleHarness } from '../hooks/useHarnessBuilder.js'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
+import HarnessRunPanel from './HarnessRunPanel.jsx'
 
 const MONO = "'SF Mono', ui-monospace, Menlo, monospace"
 const GREEN = readableColor('rgba(48,209,88,1)')
@@ -9,9 +10,8 @@ const COMMENT = /^\s*(#(?!!)|\/\/|<!--)/
 
 const dirOf = (p) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/') + 1) : '')
 const nameOf = (p) => p.slice(p.lastIndexOf('/') + 1)
-const home = (dir) => dir.replace(/^\/Users\/[^/]+/, '~')
 
-export default function HarnessFilesState({ plan, files, savedTo, onBackToPlan, onStartOver, onSaveToProject, onCopy }) {
+export default function HarnessFilesState({ plan, files, savedTo, scheduled, alreadyScheduled, onBackToPlan, onStartOver, onSaveToProject, onSchedule, onUnschedule, onCopy }) {
   const [active, setActive] = useState(0)
   const [copied, setCopied] = useState('')
   const [saving, setSaving] = useState(false)
@@ -86,6 +86,17 @@ export default function HarnessFilesState({ plan, files, savedTo, onBackToPlan, 
           ))}
         </div>
       </div>
+      <HarnessRunPanel
+        key={files.run + savedTo}
+        run={files.run}
+        suggested={files.schedule}
+        savedTo={savedTo}
+        scheduled={scheduled}
+        alreadyScheduled={alreadyScheduled}
+        onCopy={onCopy}
+        onSchedule={onSchedule}
+        onUnschedule={onUnschedule}
+      />
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderTop: '0.5px solid rgba(var(--ink),0.08)', minWidth: 0 }}>
         <button
           type="button"
@@ -96,8 +107,7 @@ export default function HarnessFilesState({ plan, files, savedTo, onBackToPlan, 
         </button>
         <button type="button" onClick={() => copy('all')} style={ghostBtn}>{copied === 'all' ? '✓ Copied all' : 'Copy all'}</button>
         <span style={{ fontSize: '12px', color: saveError ? readableColor('rgba(255,69,58,1)') : 'var(--text-secondary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {saveError || (savedTo ? <>Saved to <span style={{ fontFamily: MONO, color: 'rgba(var(--ink),0.9)' }}>{home(savedTo)}</span></>
-            : files.run ? <>Run it with <span style={{ fontFamily: MONO, color: 'rgba(var(--ink),0.9)' }}>{files.run}</span></> : null)}
+          {saveError || (savedTo ? <span title={savedTo}>Saved to {savedTo.replace(/\/+$/, '').split('/').pop()}</span> : null)}
         </span>
         <div style={{ flex: 1 }} />
         <button

@@ -1090,8 +1090,28 @@ test('Harness mode: a spoken job becomes a plan with gaps to fill, then files sa
     await expect(page.getByText('| Test | Try | Change | Result |')).toBeVisible()
 
     // Saved into the project, scripts executable; it's in history too.
+    await expect(page.getByLabel('Run command')).toHaveText('bash .harness/loop.sh')
+    await expect(page.getByText('Save to a project first, then it can run on its own.')).toBeVisible()
     await page.getByRole('button', { name: 'Save to project…' }).click()
     await expect(page.getByRole('button', { name: '✓ Saved' })).toBeVisible()
+
+    // After saving, the command is still there, and the schedule Claude suggested can be installed.
+    await expect(page.getByLabel('Run command')).toHaveText('bash .harness/loop.sh')
+    await expect(page.getByLabel('How often')).toHaveValue('day')
+    await expect(page.getByLabel('Time')).toHaveValue('02:00')
+    await page.getByLabel('How often').selectOption('weekday')
+    await page.getByLabel('Time').fill('03:30')
+    await page.getByRole('button', { name: 'Schedule it' }).click()
+    await expect(page.getByText('Runs weekdays at 03:30')).toBeVisible()
+    const agents = path.join(ctx.dir, 'userData', 'LaunchAgents')
+    const [plistName] = fs.readdirSync(agents)
+    const plist = fs.readFileSync(path.join(agents, plistName), 'utf8')
+    expect(plist).toContain(`<key>WorkingDirectory</key><string>${saveDir}</string>`)
+    expect(plist).toContain('<string>bash .harness/loop.sh</string>')
+    expect(plist.match(/<key>Weekday<\/key>/g)).toHaveLength(5)
+    await page.getByRole('button', { name: 'Remove schedule' }).click()
+    await expect(page.getByRole('button', { name: 'Schedule it' })).toBeVisible()
+    expect(fs.readdirSync(agents)).toHaveLength(0)
     expect(fs.statSync(path.join(saveDir, '.harness/loop.sh')).mode & 0o111).toBeTruthy()
     expect(fs.readFileSync(path.join(saveDir, '.harness/PROMPT.md'), 'utf8')).toContain('## Each pass')
     const history = await page.evaluate(() => JSON.parse(localStorage.getItem('promptly_history') || '[]'))

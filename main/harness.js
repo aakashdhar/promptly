@@ -73,6 +73,7 @@ function safeRelativePath(p) {
 function parseFiles(raw) {
   const src = String(raw || '').replace(/\r\n/g, '\n');
   const run = (src.match(/^RUN:\s*(.+)$/m) || [])[1]?.trim() || '';
+  const schedule = parseSchedule((src.match(/^SCHEDULE:\s*(.+)$/m) || [])[1]);
   const files = [];
   const seen = new Set();
   const re = /^=== FILE (.+?) ===\n(?:PURPOSE:\s*(.*)\n)?([\s\S]*?)^=== END ===$/gm;
@@ -83,7 +84,100 @@ function parseFiles(raw) {
     seen.add(filePath);
     files.push({ path: filePath, purpose: text(m[2] || '', 60), content: m[3].replace(/\n$/, '') + '\n' });
   }
-  return files.length ? { run: run.slice(0, 200), files } : null;
+  return files.length ? { run: run.slice(0, 200), schedule, files } : null;
+}
+
+// ── Schedule ──
+// A schedule is { every: 'day' | 'weekday' | 'week' | 'hour', time: 'HH:MM', day: 0-6 (Sunday = 0, weeks only) }.
+// Claude writes it as one line ("daily 02:00", "weekdays 09:30", "weekly mon 02:00", "hourly :15", "none");
+// the user can change it before it's installed.
+
+const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EVERY = new Set(['day', 'weekday', 'week', 'hour']);
+
+function cleanTime(t) {
+  const m = String(t || '').match(/^(\d{1,2})?:(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1] || 0);
+  const min = Number(m[2]);
+  return h < 24 && min < 60 ? `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}` : null;
+}
+
+function parseSchedule(line) {
+  const words = String(line || '').trim().toLowerCase().split(/\s+/);
+  const [kind] = words;
+  if (kind === 'daily' || kind === 'weekdays') {
+    const time = cleanTime(words[1]);
+    return time ? { every: kind === 'daily' ? 'day' : 'weekday', time } : null;
+  }
+  if (kind === 'weekly') {
+    const day = DAYS.indexOf(String(words[1] || '').slice(0, 3));
+    const time = cleanTime(words[2]);
+    return day >= 0 && time ? { every: 'week', day, time } : null;
+  }
+  if (kind === 'hourly') return { every: 'hour', time: cleanTime(words[1]) || '00:00' };
+  return null;
+}
+
+// A schedule from the window, checked again before anything is installed.
+function checkSchedule(s) {
+  if (!s || !EVERY.has(s.every)) return null;
+  const time = cleanTime(s.time);
+  if (!time) return null;
+  if (s.every === 'week') {
+    const day = Number(s.day);
+    return Number.isInteger(day) && day >= 0 && day < 7 ? { every: 'week', day, time } : null;
+  }
+  return { every: s.every, time };
+}
+
+function scheduleLabel(s) {
+  if (!s) return '';
+  if (s.every === 'hour') return s.time.endsWith(':00') ? 'every hour' : `every hour at :${s.time.slice(3)}`;
+  if (s.every === 'week') return `every ${DAY_NAMES[s.day]} at ${s.time}`;
+  return `${s.every === 'day' ? 'every day' : 'weekdays'} at ${s.time}`;
+}
+
+// launchd's StartCalendarInterval entries for a schedule.
+function calendarIntervals(s) {
+  const [h, m] = s.time.split(':').map(Number);
+  if (s.every === 'hour') return [{ Minute: m }];
+  if (s.every === 'weekday') return [1, 2, 3, 4, 5].map((d) => ({ Weekday: d, Hour: h, Minute: m }));
+  if (s.every === 'week') return [{ Weekday: s.day, Hour: h, Minute: m }];
+  return [{ Hour: h, Minute: m }];
+}
+
+// One launchd job per project folder, so scheduling again replaces it.
+function agentLabel(dir) {
+  const slug = path.basename(dir).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'project';
+  const hash = require('crypto').createHash('sha1').update(path.resolve(dir)).digest('hex').slice(0, 8);
+  return `com.promptly.harness.${slug}-${hash}`;
+}
+
+const xml = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// The launchd job: runs the harness's own command from the project folder, output to .harness/schedule.log.
+function launchAgentPlist({ label, dir, run, schedule, pathEnv }) {
+  const dict = (o) => `<dict>${Object.entries(o).map(([k, v]) => `<key>${k}</key><integer>${v}</integer>`).join('')}</dict>`;
+  const log = path.join(dir, '.harness', 'schedule.log');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>${xml(label)}</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/bash</string><string>-c</string><string>${xml(run)}</string></array>
+  <key>WorkingDirectory</key><string>${xml(dir)}</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>${xml(pathEnv)}</string></dict>
+  <key>StartCalendarInterval</key>
+  <array>${calendarIntervals(schedule).map(dict).join('')}</array>
+  <key>StandardOutPath</key><string>${xml(log)}</string>
+  <key>StandardErrorPath</key><string>${xml(log)}</string>
+</dict>
+</plist>
+`;
 }
 
 // While Claude writes: the files finished so far, and the one being written.
@@ -143,4 +237,4 @@ function writeFiles(dir, files) {
   return written;
 }
 
-module.exports = { buildPlanPrompt, buildFilesPrompt, parsePlan, parseFiles, progressText, safeRelativePath, bundleFiles, mergeSettings, existingFiles, writeFiles };
+module.exports = { buildPlanPrompt, buildFilesPrompt, parsePlan, parseFiles, progressText, safeRelativePath, bundleFiles, mergeSettings, existingFiles, writeFiles, parseSchedule, checkSchedule, scheduleLabel, calendarIntervals, agentLabel, launchAgentPlist };

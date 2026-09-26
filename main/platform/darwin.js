@@ -4,7 +4,7 @@
 // is all a Windows port needs on the main-process side.
 
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 
 const PATH_DELIMITER = ':';
 const DEFAULT_PATH = '/usr/local/bin:/usr/bin:/bin';
@@ -123,7 +123,38 @@ function removeInstalledApp() {
   return new Promise((resolve) => exec('rm -rf "/Applications/Promptly.app"', () => resolve()));
 }
 
+// ── Scheduled harnesses (launchd) ──
+
+// launchd starts jobs with a bare PATH; the harness needs claude, git, node and Homebrew tools.
+const SCHEDULE_PATH = '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin';
+
+function launchAgentsDir(home) {
+  return path.join(home, 'Library', 'LaunchAgents');
+}
+
+function launchctl(args) {
+  return new Promise((resolve) => {
+    execFile('launchctl', args, { timeout: 10000 }, (err, _stdout, stderr) => resolve(err ? { ok: false, error: (stderr || err.message).trim() } : { ok: true }));
+  });
+}
+
+const guiDomain = () => `gui/${process.getuid()}`;
+
+// Replaces a loaded job with the same label, then loads the plist.
+async function loadLaunchAgent(plistPath, label) {
+  await launchctl(['bootout', `${guiDomain()}/${label}`]);
+  return launchctl(['bootstrap', guiDomain(), plistPath]);
+}
+
+function unloadLaunchAgent(label) {
+  return launchctl(['bootout', `${guiDomain()}/${label}`]);
+}
+
 module.exports = {
+  SCHEDULE_PATH,
+  launchAgentsDir,
+  loadLaunchAgent,
+  unloadLaunchAgent,
   PATH_DELIMITER,
   DEFAULT_PATH,
   SSL_ENV,

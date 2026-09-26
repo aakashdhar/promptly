@@ -31,9 +31,10 @@ Rules for the harness:
 - Never put secrets, tokens or API keys in any file.
 - Comments explain why, briefly.
 
-Output exactly this format and nothing else. RUN is the one command that starts the harness from the project folder. PURPOSE is at most 5 words.
+Output exactly this format and nothing else. RUN is the one command that starts the harness from the project folder. SCHEDULE is when the plan says it should run on its own, as one of: `daily HH:MM`, `weekdays HH:MM`, `weekly <mon|tue|wed|thu|fri|sat|sun> HH:MM`, `hourly :MM`, or `none` when the user starts it or the time is still a gap. PURPOSE is at most 5 words.
 
 RUN: bash .harness/run.sh
+SCHEDULE: daily 02:00
 === FILE .harness/run.sh ===
 PURPOSE: Runs the passes
 #!/bin/bash

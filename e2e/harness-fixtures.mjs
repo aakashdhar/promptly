@@ -61,6 +61,7 @@ export const HARNESS_PIPELINE = JSON.stringify({
 
 export const HARNESS_FILES = [
   'RUN: bash .harness/loop.sh',
+  'SCHEDULE: daily 02:00',
   '=== FILE .harness/loop.sh ===',
   'PURPOSE: Runs the passes',
   '#!/bin/bash',

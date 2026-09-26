@@ -275,8 +275,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   harnessFiles: (transcript, plan, answers) =>
     ipcRenderer.invoke('harness-files', { transcript, plan, answers }),
 
-  saveHarness: (files) =>
-    ipcRenderer.invoke('save-harness', { files }),
+  saveHarness: (files, run) =>
+    ipcRenderer.invoke('save-harness', { files, run }),
+
+  scheduleHarness: (schedule) =>
+    ipcRenderer.invoke('schedule-harness', { schedule }),
+
+  unscheduleHarness: () =>
+    ipcRenderer.invoke('unschedule-harness'),
 
   downloadSpeechModel: () =>
     ipcRenderer.invoke('download-speech-model'),
