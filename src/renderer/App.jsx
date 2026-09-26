@@ -3,7 +3,7 @@ import useMode from './hooks/useMode.js'
 import usePolishMode, { parsePolishOutput } from './hooks/usePolishMode.js'
 import useWindowLayout from './hooks/useWindowLayout.js'
 import useRecording from './hooks/useRecording.js'
-import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
+import useKeyboardShortcuts, { CAN_START_TYPING } from './hooks/useKeyboardShortcuts.js'
 import useIteration from './hooks/useIteration.js'
 import useImageBuilder from './hooks/useImageBuilder.js'
 import useVideoBuilder from './hooks/useVideoBuilder.js'
@@ -511,7 +511,7 @@ Return ONLY valid JSON:
             onCloseSettings={closeSettings}
             onTypingSubmit={handleTypingSubmit}
             onSwitchToVoice={() => transition(STATES.IDLE)}
-            onTypePrompt={() => transition(STATES.TYPING)}
+            onTypePrompt={() => { if (CAN_START_TYPING.has(stateRef.current)) transition(STATES.TYPING) }}
             onReuse={(entry) => {
               isIterated.current = false
               originalTranscript.current = entry.transcript

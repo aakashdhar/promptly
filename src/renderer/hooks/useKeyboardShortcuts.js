@@ -1,5 +1,13 @@
 import { useEffect } from 'react'
 
+// Where ⌘T and the Type button open the typing box: anywhere you're not in the middle of
+// something (recording, Claude writing, filling in a builder). A result on screen is already
+// in history, so starting a new request loses nothing.
+export const CAN_START_TYPING = new Set([
+  'IDLE', 'PROMPT_READY', 'EMAIL_READY', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE',
+  'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR', 'SETTINGS', 'SHORTCUTS',
+])
+
 // States in which the global hotkey starts a fresh recording. Finished and error
 // states are included so the hotkey keeps working after the first prompt.
 const RESTARTABLE_STATES = ['IDLE', 'SHORTCUTS', 'PROMPT_READY', 'EMAIL_READY', 'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR']
@@ -91,7 +99,7 @@ export default function useKeyboardShortcuts({
         openHistory()
         return
       }
-      if (meta && e.key === 't' && stateRef.current === STATES.IDLE) {
+      if (meta && e.key === 't' && CAN_START_TYPING.has(stateRef.current)) {
         e.preventDefault()
         transitionRef.current(STATES.TYPING)
         return

@@ -192,12 +192,28 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
   expect(stdin).toContain('"make a todo app with dark mode"')
 })
 
+test('⌘T opens the typing box from Settings too, but never interrupts a recording', async () => {
+  ctx = await launch()
+  const { app, page } = ctx
+  await page.keyboard.press('Meta+/')
+  await expect(page.getByText('Settings', { exact: true })).toBeVisible()
+  await page.keyboard.press('Meta+t')
+  await expect(page.getByPlaceholder('Describe what you want Claude to build, design, or write...')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await page.keyboard.press('Meta+t')
+  await page.waitForTimeout(300)
+  expect(await appState(app)).toBe('RECORDING')
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+})
+
 test('picking an older prompt in history shows it, even with the latest result on screen', async () => {
   ctx = await launch()
   const { page } = ctx
   await typeAndSubmit(page, 'first request about invoices')
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
-  await page.getByRole('button', { name: 'Reset' }).click()
+  // ⌘T starts a new request straight from the result, no Reset needed.
   await typeAndSubmit(page, 'second request about sprints')
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
   await expect(page.getByText('second request about sprints').first()).toBeVisible()
