@@ -25,6 +25,7 @@ export default function ExpandedTransportBar({
   onModeSelect,
   onShowShortcuts,
   onShowHistory,
+  micQuiet = false,
 }) {
   const hotkey = useHotkeyWords()
   const isRecording = currentState === 'RECORDING'
@@ -76,7 +77,7 @@ export default function ExpandedTransportBar({
 
   let textLine1, textLine2, textDot
   if (isRecording) {
-    textLine1 = 'Listening...'; textLine2 = 'Tap stop when done'; textDot = 'recording'
+    textLine1 = 'Listening...'; textLine2 = micQuiet ? 'Speak up or move closer to the mic' : 'Tap stop when done'; textDot = 'recording'
   } else if (isThinking) {
     textLine1 = ''; textLine2 = ''; textDot = null
   } else if (isIterating) {
@@ -405,7 +406,12 @@ export default function ExpandedTransportBar({
                   </span>
                 </div>
                 {textLine2 && (
-                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', paddingLeft: textDot ? '11px' : '0' }}>
+                  <span role={isRecording && micQuiet ? 'status' : undefined} style={{
+                    fontSize: '11px', paddingLeft: textDot ? '11px' : '0',
+                    ...(isRecording && micQuiet
+                      ? { color: readableColor('rgba(255,159,10,0.95)'), fontWeight: 600 }
+                      : { color: 'var(--text-tertiary)' }),
+                  }}>
                     {textLine2}
                   </span>
                 )}

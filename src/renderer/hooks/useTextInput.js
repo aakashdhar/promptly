@@ -7,6 +7,7 @@ export default function useTextInput({
   originalTranscript,
   setThinkTranscript,
   modeRef,
+  resultModeRef,
   polishToneRef,
   handleGenerateResultRef,
   opIdRef,
@@ -44,12 +45,14 @@ export default function useTextInput({
       return
     }
 
-    const mode = modeRef.current
+    // Regenerate the result on screen in the mode it was made in (a prompt made from a
+    // dictation, or reopened from history, may differ from the mode selected now).
+    const mode = resultModeRef?.current || modeRef.current
     const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, mode, {
       ...(mode === 'polish' && { tone: polishToneRef.current }),
       ...(contextRef?.current && { context: contextRef.current }),
     })
-    handleGenerateResultRef.current(genResult, originalTranscript.current, opId)
+    handleGenerateResultRef.current(genResult, originalTranscript.current, opId, mode)
   }, [])
 
   return { handleTypingSubmit, handleRegenerate }

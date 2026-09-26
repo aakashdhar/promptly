@@ -78,6 +78,8 @@ export default function ExpandedView({
   onShowDictation,
   onMakePrompt,
   onCloseShortcuts,
+  resultMode,
+  micQuiet,
 }) {
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
@@ -151,6 +153,7 @@ export default function ExpandedView({
         onModeSelect={onModeSelect}
         onShowShortcuts={onShowShortcuts}
         onShowHistory={onShowHistory}
+        micQuiet={micQuiet}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
@@ -163,6 +166,7 @@ export default function ExpandedView({
         )}
         <ExpandedDetailPanel
           selected={selected}
+          resultMode={resultMode}
           isViewingHistory={isViewingHistory}
           currentState={currentState}
           generatedPrompt={generatedPrompt}

@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { parseSections, readableColor } from '../utils/promptUtils.js'
 import EvalPanel from './EvalPanel.jsx'
+import MODE_REGISTRY from '../../../shared/modes.json'
+
+// Modes whose result is text Claude wrote from what you said, so it can be iterated on or
+// regenerated. Dictations are your own words; builders have their own start-over flows.
+const REWORKABLE = new Set(MODE_REGISTRY.modes.filter((m) => m.kind === 'template' || m.kind === 'standalone').map((m) => m.key))
 
 // "um ×2, uh": the only words a dictation drops, listed so nothing is changed silently.
 function describeRemoved(removed) {
@@ -30,7 +35,7 @@ export default function ExpandedPromptReadyContent({
   // dictation, which keeps the switch back to "As I said it").
   const shownMode = displayMode || mode
   const isDictation = shownMode === 'dictate'
-  const fromDictation = isDictation || !!dictation
+  const canRework = !isDictation && REWORKABLE.has(shownMode)
   const plainText = isDictation || isPolishMode
   const [isEditing, setIsEditing] = useState(false)
   const [editHovered, setEditHovered] = useState(false)
@@ -113,8 +118,8 @@ export default function ExpandedPromptReadyContent({
           )}
         </div>
         <div style={{ display: 'flex', gap: '18px' }}>
-          {!fromDictation && <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>}
-          {!fromDictation && <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>}
+          {canRework && <button onClick={onIterate} style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↻ Iterate</button>}
+          {canRework && <button onClick={onRegenerate} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Regenerate</button>}
           <button onClick={onReset} style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Reset</button>
         </div>
       </div>

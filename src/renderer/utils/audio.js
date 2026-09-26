@@ -59,3 +59,11 @@ export async function recordingToWav(blob) {
     return blob.arrayBuffer()
   }
 }
+
+// Microphone settings for dictation. The browser defaults are tuned for video calls: echo
+// cancellation (pointless when nothing is playing back) and noise suppression, which treats a
+// soft or distant voice as noise and thins it out. Auto gain stays on to lift quiet speakers.
+export const MIC_CONSTRAINTS = {
+  audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true, channelCount: 1 },
+  video: false,
+}

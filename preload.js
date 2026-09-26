@@ -214,6 +214,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   sendAudioLevel: (level) => ipcRenderer.send('audio-level', level),
 
+  onMicQuiet: (callback) => {
+    const cb = (_event, quiet) => callback(quiet)
+    ipcRenderer.on('mic-quiet', cb)
+    return () => ipcRenderer.removeListener('mic-quiet', cb)
+  },
+
   reportMode: (label) => ipcRenderer.send('mode-changed', label),
 
   getPreferences: () =>

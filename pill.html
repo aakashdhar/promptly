@@ -14,6 +14,7 @@
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
   --rec: #E5352B;
   --ok: #177A45;
+  --warn: #8A5300;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,6 +25,7 @@
     --shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
     --rec: #FF453A;
     --ok: #4CC47E;
+    --warn: #FFB340;
   }
 }
 html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
@@ -49,6 +51,7 @@ body {
 .meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .meta b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta span { color: rgba(var(--ink), 0.72); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta span.warn { color: var(--warn); font-weight: 600; }
 /* Working: three dots breathing in turn, and the label with a light sweeping across it. */
 .loader { display: flex; align-items: center; gap: 4px; height: 14px; flex-shrink: 0; }
 .loader i { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--ink)); animation: breathe 1.2s ease-in-out infinite; }
@@ -126,12 +129,24 @@ function describe(state) {
   return [state.mode, ...parts].filter(Boolean).join(' · ');
 }
 
+// While recording, the detail line says what's being made; if the speaker is faint it asks
+// them to speak up instead, while there's still time.
+let recDetail = '';
+let micQuiet = false;
+function showRecDetail() {
+  const el = document.getElementById('rec-detail');
+  el.textContent = micQuiet ? 'Speak up or move closer' : recDetail;
+  el.classList.toggle('warn', micQuiet);
+}
+window.electronAPI.onMicQuiet((quiet) => { micQuiet = !!quiet; showRecDetail(); });
+
 window.electronAPI.onPillState((state) => {
   if (state.state === 'hidden') { show(null); return; }
   if (state.state === 'recording') {
     pill.classList.toggle('paused', !!state.paused);
     document.getElementById('rec-title').textContent = state.paused ? 'Paused' : 'Listening';
-    document.getElementById('rec-detail').textContent = describe(state);
+    recDetail = describe(state);
+    showRecDetail();
     show('recording');
   } else if (state.state === 'thinking') {
     document.getElementById('working-text').textContent = state.mode === 'Dictation' ? 'Transcribing' : 'Writing your prompt';

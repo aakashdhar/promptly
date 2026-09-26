@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react'
-import { recordingToWav } from '../utils/audio.js'
+import { recordingToWav, MIC_CONSTRAINTS } from '../utils/audio.js'
 import { saveToHistory } from '../utils/history.js'
 
 export default function useIteration({
@@ -8,6 +8,7 @@ export default function useIteration({
   isExpandedRef,
   generatedPromptRef,
   modeRef,
+  resultModeRef,
   isIterated,
   originalTranscript,
   setThinkTranscript,
@@ -22,12 +23,12 @@ export default function useIteration({
 
   const handleIterate = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
       const recorder = new MediaRecorder(stream)
       iterRecorderRef.current = recorder
       iterChunksRef.current = []
       recorder.ondataavailable = (e) => iterChunksRef.current.push(e.data)
-      iterationBase.current = { transcript: originalTranscript.current, prompt: generatedPromptRef.current, mode: modeRef.current }
+      iterationBase.current = { transcript: originalTranscript.current, prompt: generatedPromptRef.current, mode: resultModeRef?.current || modeRef.current }
       isIterated.current = false
       recorder.start()
       stopTimer()
@@ -97,7 +98,7 @@ Mode: ${iterationBase.current.mode}`
       isIterated.current = true
       originalTranscript.current = iterText
       setGeneratedPrompt(genResult.prompt)
-      saveToHistory({ transcript: iterText, prompt: genResult.prompt, mode: modeRef.current, isIteration: true, basedOn: iterationBase.current.prompt.slice(0, 100) })
+      saveToHistory({ transcript: iterText, prompt: genResult.prompt, mode: iterationBase.current.mode, isIteration: true, basedOn: iterationBase.current.prompt.slice(0, 100) })
       transitionRef.current(STATES.PROMPT_READY)
     }
   }, [])

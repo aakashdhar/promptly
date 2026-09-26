@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { recordingToWav } from '../utils/audio.js'
+import { recordingToWav, MIC_CONSTRAINTS } from '../utils/audio.js'
 import { detectSpokenMode } from '../utils/spokenMode.js'
 
 export default function useRecording({
@@ -71,7 +71,7 @@ export default function useRecording({
     if (contextRef) contextRef.current = null
     stopRequestedRef.current = false
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
       const recorder = new MediaRecorder(stream)
       mediaRecorderRef.current = recorder
       audioChunksRef.current = []

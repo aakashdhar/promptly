@@ -685,6 +685,64 @@ test('typing in Dictation mode makes a prompt in the style chosen in Settings', 
   expect(stdin).toContain('Optimise this prompt for code generation')
 })
 
+test('a prompt made from a dictation can be regenerated, in the style it was made in', async () => {
+  ctx = await launch({ mode: null })
+  const { page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ promptStyle: 'code' }))
+  await typeAndSubmit(page, 'retry failed uploads three times')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  const before = calls(fakeDir).length
+  await page.getByRole('button', { name: 'Regenerate' }).click()
+  await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(before + 1)
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('Optimise this prompt for code generation')
+  await expect(page.getByRole('button', { name: '↻ Iterate' })).toBeVisible()
+})
+
+test('an older prompt reopened from history can be regenerated in its own mode, whatever mode is selected now', async () => {
+  ctx = await launch()
+  const { page, fakeDir } = ctx
+  await page.evaluate(() => localStorage.setItem('mode', 'code'))
+  await page.reload()
+  await typeAndSubmit(page, 'add pagination to the orders api')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  // Switch to Dictation, then go back to the Code prompt in history.
+  await page.evaluate(() => localStorage.setItem('mode', 'dictate'))
+  await page.reload()
+  await expect(page.locator('#mode-pill')).toContainText('Dictation', { timeout: 10000 })
+  await page.locator('[data-history-entry]', { hasText: 'add pagination' }).first().click()
+  await page.getByRole('button', { name: 'Open to refine' }).click()
+  await expect(page.getByRole('button', { name: '↻ Iterate' })).toBeVisible()
+  const before = calls(fakeDir).length
+  await page.getByRole('button', { name: 'Regenerate' }).click()
+  await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(before + 1)
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
+  expect(stdin).toContain('Optimise this prompt for code generation')
+  expect(stdin).toContain('add pagination to the orders api')
+})
+
+test('a faint speaker is asked to speak up while recording', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page } = ctx
+  await page.locator('#mode-pill').waitFor()
+  // Record what the app asks the microphone for.
+  await page.evaluate(() => {
+    const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    navigator.mediaDevices.getUserMedia = (c) => { window.__micAsk = c; return real(c) }
+  })
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  // Call-style processing off (it thins out soft voices), auto gain on.
+  expect(await page.evaluate(() => window.__micAsk.audio)).toMatchObject({ echoCancellation: false, noiseSuppression: false, autoGainControl: true })
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('mic-quiet', true)))
+  await expect(page.getByText('Speak up or move closer to the mic')).toBeVisible()
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('mic-quiet', false)))
+  await expect(page.getByText('Tap stop when done')).toBeVisible()
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+})
+
 test('the pill can be dragged out of the way, and comes back where you left it', async () => {
   ctx = await launch({ mode: null })
   const { app, fakeDir } = ctx

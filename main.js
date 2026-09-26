@@ -13,6 +13,7 @@ const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath
 const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/llm');
 const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
 const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
+const { createQuietDetector } = require('./main/audio-level');
 const claudeSetup = require('./main/claude-setup');
 const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
@@ -206,6 +207,13 @@ function speechPrefs() {
     // The large model needs Apple Silicon's GPU to be quick.
     appleSilicon: process.platform === 'darwin' && (process.arch === 'arm64' || /Apple/.test(os.cpus()[0]?.model || '')),
   };
+}
+
+// "Speak up or move closer": told to the window and the pill while recording.
+const quietDetector = createQuietDetector();
+function sendMicQuiet(quiet) {
+  winSend('mic-quiet', quiet);
+  if (pillWin && !pillWin.isDestroyed()) pillWin.webContents.send('mic-quiet', quiet);
 }
 
 // ── Dictation: typing into the app you're in ──
@@ -863,6 +871,8 @@ app.whenReady().then(async () => {
 
   ipcMain.on('audio-level', (_event, level) => {
     if (pillSession && pillWin && !pillWin.isDestroyed()) pillWin.webContents.send('audio-level', level);
+    const wasQuiet = quietDetector.isQuiet();
+    if (quietDetector.push(level) !== wasQuiet) sendMicQuiet(!wasQuiet);
   });
 
   ipcMain.on('mode-changed', (_event, label) => { currentModeLabel = String(label || ''); });
@@ -1300,6 +1310,11 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('update-menubar-state', (_event, appState) => {
     currentAppState = appState;
+    // Each recording judges the speaker's volume afresh (pausing and resuming carries on).
+    if (appState !== 'RECORDING' && appState !== 'PAUSED') {
+      if (quietDetector.isQuiet()) sendMicQuiet(false);
+      quietDetector.reset();
+    }
     // The renderer has reported where it is, so the "recording is starting" grace period is over.
     recordRequestedAt = 0;
     // While recording, the (usually hidden) bar measures the mic level for the pill. Chromium

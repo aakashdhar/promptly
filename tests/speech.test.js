@@ -205,3 +205,42 @@ describe('other languages', () => {
     expect(buildModePrompt('shorten this report', 'balanced', { context: {} })).not.toMatch(/Hindi/)
   })
 })
+
+describe('"Speak up" detector', () => {
+  const { createQuietDetector } = require('../main/audio-level.js')
+  // ~16 levels a second, like the recorder's meter: speech rises and falls around `peak`.
+  const feed = (d, seconds, peak, floor = 0.006) => {
+    let quiet = false
+    for (let i = 0; i < seconds * 16; i++) quiet = d.push(i % 4 === 0 ? floor : peak * (0.6 + 0.4 * ((i % 3) / 2)))
+    return quiet
+  }
+
+  it('says nothing for someone speaking normally', () => {
+    expect(feed(createQuietDetector(), 6, 0.35)).toBe(false)
+  })
+
+  it('asks a faint speaker to speak up after a few seconds, not straight away', () => {
+    const d = createQuietDetector()
+    expect(feed(d, 1, 0.06)).toBe(false)
+    expect(feed(d, 4, 0.06)).toBe(true)
+  })
+
+  it('stays quiet during silence', () => {
+    expect(feed(createQuietDetector(), 6, 0.006)).toBe(false)
+  })
+
+  it('clears once they are heard clearly, and a pause does not clear or trigger it', () => {
+    const d = createQuietDetector()
+    feed(d, 5, 0.06)
+    expect(d.isQuiet()).toBe(true)
+    expect(feed(d, 3, 0.006)).toBe(true)
+    expect(feed(d, 3, 0.35)).toBe(false)
+  })
+
+  it('starts fresh for each recording', () => {
+    const d = createQuietDetector()
+    feed(d, 5, 0.06)
+    d.reset()
+    expect(d.isQuiet()).toBe(false)
+  })
+})

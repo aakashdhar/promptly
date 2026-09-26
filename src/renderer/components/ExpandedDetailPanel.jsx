@@ -21,6 +21,7 @@ const ALL_TAGS = ['Perfect', 'Clear', 'Detailed', 'Too long']
 
 export default function ExpandedDetailPanel({
   selected,
+  resultMode,
   isViewingHistory,
   currentState,
   generatedPrompt,
@@ -345,6 +346,7 @@ export default function ExpandedDetailPanel({
             </button>
             <button
               onClick={handleEntryReuse}
+              title={selected.mode === 'dictate' ? 'Show it as the current result, where you can make it a prompt' : 'Bring it back to iterate on, regenerate or edit'}
               style={{
                 flex: 1, height: '40px', borderRadius: '9px',
                 fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
@@ -353,7 +355,7 @@ export default function ExpandedDetailPanel({
                 boxShadow: '0 2px 14px rgba(10,132,255,0.35)',
               }}
             >
-              Reuse
+              {selected.mode === 'dictate' ? 'Open' : 'Open to refine'}
             </button>
           </div>
         </div>
@@ -406,7 +408,7 @@ export default function ExpandedDetailPanel({
           resultView={resultView}
           onShowDictation={onShowDictation}
           onMakePrompt={onMakePrompt}
-          displayMode={dictation && resultView === 'prompt' ? promptStyle : mode}
+          displayMode={resultMode || (dictation && resultView === 'prompt' ? promptStyle : mode)}
           transcript={thinkTranscript}
           generatedPrompt={generatedPrompt}
           setGeneratedPrompt={setGeneratedPrompt}

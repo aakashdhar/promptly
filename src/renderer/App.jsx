@@ -73,8 +73,18 @@ export default function App() {
   const [streamText, setStreamText] = useState('')
 
   const { mode, setMode, modeLabel } = useMode()
-  const { dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation } = useDictation({
-    STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript,
+  // The mode of the result on screen, which can differ from the selected mode: a prompt made
+  // from a dictation, or one reopened from history. Regenerate and Iterate use it.
+  const [resultMode, setResultModeState] = useState(null)
+  const resultModeRef = useRef(null)
+  const setResultMode = useCallback((m) => { resultModeRef.current = m; setResultModeState(m) }, [])
+
+  // Main says so while you're recording but too faint to transcribe well.
+  const [micQuiet, setMicQuiet] = useState(false)
+  useEffect(() => window.electronAPI?.onMicQuiet?.((quiet) => setMicQuiet(!!quiet)), [])
+
+  const { dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation, openDictation } = useDictation({
+    STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript, setResultMode,
   })
 
   const { openHistory, openSettings, closeSettings } = useWindowLayout({ prevStateRef, stateRef, transitionRef, STATES })
@@ -119,7 +129,7 @@ export default function App() {
     }
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (newState === STATES.THINKING || newState === STATES.RECORDING || newState === STATES.TYPING) setStreamText('')
-    if (newState === STATES.RECORDING || newState === STATES.TYPING) { setRecordingContext(null); clearDictation() }
+    if (newState === STATES.RECORDING || newState === STATES.TYPING) { setRecordingContext(null); clearDictation(); setResultMode(null) }
     window.electronAPI?.updateMenuBarState?.(newState)
     animateToState(newState)
   }
@@ -208,10 +218,12 @@ export default function App() {
     startRecordingRef,
   })
 
-  const handleGenerateResult = useCallback((genResult, transcript, opId) => {
+  const handleGenerateResult = useCallback((genResult, transcript, opId, modeOverride) => {
     if (opId !== undefined && opId !== opIdRef.current) return
-    // Read the live mode: a spoken "code mode, …" may have switched it moments ago.
-    const mode = modeRef.current
+    // Read the live mode: a spoken "code mode, …" may have switched it moments ago. Regenerating
+    // a result made in another mode passes that mode instead.
+    const mode = modeOverride || modeRef.current
+    if (genResult.success) setResultMode(mode)
     if (mode === 'dictate') {
       if (genResult.success) acceptDictation(genResult, transcript)
       else transitionRef.current(STATES.ERROR, { message: genResult.error || "Didn't catch anything" })
@@ -292,6 +304,7 @@ export default function App() {
     isExpandedRef,
     generatedPromptRef,
     modeRef,
+    resultModeRef,
     isIterated,
     originalTranscript,
     setThinkTranscript,
@@ -386,6 +399,7 @@ Return ONLY valid JSON:
     originalTranscript,
     setThinkTranscript,
     modeRef,
+    resultModeRef,
     polishToneRef,
     handleGenerateResultRef,
     opIdRef,
@@ -480,12 +494,16 @@ Return ONLY valid JSON:
             onPause={() => (stateRef.current === STATES.PAUSED ? resumeRecording() : pauseRecording())}
             onStop={stopRecording}
             onStopIterate={stopIterating}
-            onRegenerate={handleRegenerate}
+            // Reworking a prompt made from a dictation makes it a prompt of its own; the dictation
+            // is still in history.
+            onRegenerate={() => { clearDictation(); handleRegenerate() }}
             onReset={() => transition(STATES.IDLE)}
-            onIterate={handleIterate}
+            onIterate={() => { clearDictation(); handleIterate() }}
             isIterated={isIterated.current}
             setGeneratedPrompt={setGeneratedPrompt}
-            isPolishMode={mode === 'polish'}
+            isPolishMode={(resultMode || mode) === 'polish'}
+            resultMode={resultMode}
+            micQuiet={micQuiet}
             polishResult={polishResult}
             polishTone={polishTone}
             onPolishToneChange={handlePolishToneChange}
@@ -495,7 +513,13 @@ Return ONLY valid JSON:
             onSwitchToVoice={() => transition(STATES.IDLE)}
             onTypePrompt={() => transition(STATES.TYPING)}
             onReuse={(entry) => {
+              isIterated.current = false
               originalTranscript.current = entry.transcript
+              // A dictation comes back with its "As a prompt" switch; anything else comes back as
+              // the result in its own mode, ready to iterate or regenerate.
+              if (entry.mode === 'dictate') { openDictation(entry.prompt); return }
+              clearDictation()
+              setResultMode(entry.mode)
               setGeneratedPrompt(entry.prompt)
               if (entry.mode === 'polish') {
                 setPolishResult({ polished: entry.prompt, changes: entry.polishChanges || [] })

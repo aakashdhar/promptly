@@ -5,12 +5,13 @@ import { saveToHistory } from '../utils/history.js'
 // the words as spoken (tidied locally, never rewritten) and, once asked for, a prompt built
 // from them in your chosen prompt style. The result card switches between the two without
 // asking Claude again.
-export default function useDictation({ STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript }) {
+export default function useDictation({ STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript, setResultMode = () => {} }) {
   const [dictation, setDictation] = useState(null) // { text, removed }
   const [resultView, setResultView] = useState('dictation') // 'dictation' | 'prompt'
   const [promptStyle, setPromptStyle] = useState('balanced')
   const promptVersionRef = useRef(null)
   const dictationRef = useRef(null)
+  const promptVersionStyleRef = useRef(null)
 
   const refreshPromptStyle = useCallback(() => {
     window.electronAPI?.getPreferences?.().then((p) => { if (p?.promptStyle) setPromptStyle(p.promptStyle) })
@@ -24,8 +25,21 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
     setDictation(next)
     setResultView('dictation')
     setGeneratedPrompt(next.text)
+    setResultMode('dictate')
     window.electronAPI?.setLastPrompt?.(next.text)
     saveToHistory({ transcript, prompt: next.text, mode: 'dictate' })
+    transitionRef.current(STATES.PROMPT_READY)
+  }
+
+  // A dictation reopened from history: shown as it was, with "As a prompt" one tap away.
+  function openDictation(text) {
+    const next = { text, removed: [] }
+    dictationRef.current = next
+    promptVersionRef.current = null
+    setDictation(next)
+    setResultView('dictation')
+    setGeneratedPrompt(text)
+    setResultMode('dictate')
     transitionRef.current(STATES.PROMPT_READY)
   }
 
@@ -33,6 +47,7 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
     if (!dictationRef.current) return
     setGeneratedPrompt(dictationRef.current.text)
     setResultView('dictation')
+    setResultMode('dictate')
     window.electronAPI?.setLastPrompt?.(dictationRef.current.text)
   }
 
@@ -43,6 +58,7 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
     if (promptVersionRef.current) {
       setGeneratedPrompt(promptVersionRef.current)
       setResultView('prompt')
+      setResultMode(promptVersionStyleRef.current)
       window.electronAPI.setLastPrompt(promptVersionRef.current)
       return
     }
@@ -62,8 +78,10 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
       return
     }
     promptVersionRef.current = result.prompt
+    promptVersionStyleRef.current = style
     setGeneratedPrompt(result.prompt)
     setResultView('prompt')
+    setResultMode(style)
     window.electronAPI.setLastPrompt(result.prompt)
     saveToHistory({ transcript: source.text, prompt: result.prompt, mode: style })
     transitionRef.current(STATES.PROMPT_READY)
@@ -86,5 +104,5 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
     setResultView('dictation')
   }
 
-  return { dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation, refreshPromptStyle }
+  return { dictation, resultView, promptStyle, acceptDictation, showDictation, makePrompt, promptFromTyping, clearDictation, refreshPromptStyle, openDictation }
 }
