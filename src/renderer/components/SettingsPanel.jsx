@@ -209,7 +209,7 @@ export default function SettingsPanel({ onClose }) {
               ))}
             </div>
             <label htmlFor="settings-promptStyle" style={{ display: 'block', fontSize: 12, color: 'rgba(var(--ink),0.85)', margin: '12px 0 5px' }}>
-              "Make it a prompt" writes a
+              "Make it a prompt" uses
             </label>
             <select
               id="settings-promptStyle"
@@ -217,8 +217,22 @@ export default function SettingsPanel({ onClose }) {
               onChange={e => savePrefs({ promptStyle: e.target.value })}
               style={{ ...inputStyle(null), fontFamily: 'inherit', cursor: 'pointer' }}
             >
-              {(prefs.promptStyles || []).map(o => <option key={o.value} value={o.value}>{o.label} prompt</option>)}
+              {(prefs.promptStyles || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label htmlFor="settings-promptDetail" style={{ ...sectionLabel, display: 'block' }}>Prompt detail</label>
+            <select
+              id="settings-promptDetail"
+              value={prefs.promptDetail}
+              onChange={e => savePrefs({ promptDetail: e.target.value })}
+              style={{ ...inputStyle(null), fontFamily: 'inherit', cursor: 'pointer' }}
+            >
+              <option value="detailed">Detailed: requirements, edge cases and success criteria</option>
+              <option value="quick">Quick: just the essentials, for small requests</option>
+            </select>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 5, lineHeight: 1.5 }}>For Prompt, Code and Design.</div>
           </div>
 
           {prefs.speech?.builtIn && <SpeechSection speech={prefs.speech} onSave={savePrefs} />}

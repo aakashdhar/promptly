@@ -50,6 +50,8 @@ export default function App() {
   const [thinkingAccentColor, setThinkingAccentColor] = useState('')
   const [thinkingPhase, setThinkingPhase] = useState(1)
   const [emailOutput, setEmailOutput] = useState(null)
+  const emailOutputRef = useRef(null)
+  emailOutputRef.current = emailOutput
   const [emailSaved, setEmailSaved] = useState(false)
   const [transcriptionError, setTranscriptionError] = useState(null)
   const [generationError, setGenerationError] = useState(null)
@@ -180,7 +182,6 @@ export default function App() {
   } = useImageBuilder({
     STATES,
     transitionRef,
-    isExpandedRef,
     originalTranscript,
     setThinkTranscript,
     setThinkingLabel,
@@ -308,57 +309,72 @@ export default function App() {
     isIterated,
     originalTranscript,
     setThinkTranscript,
-    setGeneratedPrompt,
     startTimer,
     stopTimer,
+    contextRef,
+    // Email refines the draft on screen; Polish keeps its tone; everything else refines the prompt.
+    getIterationBase: () => {
+      const shown = resultModeRef.current || modeRef.current
+      if (stateRef.current === STATES.EMAIL_READY && emailOutputRef.current) {
+        const e = emailOutputRef.current
+        return { mode: 'email', prompt: e.body, email: { subject: e.subject, body: e.body }, transcript: originalTranscript.current, returnState: STATES.EMAIL_READY }
+      }
+      return { mode: shown, prompt: generatedPromptRef.current, transcript: originalTranscript.current, tone: shown === 'polish' ? polishToneRef.current : undefined, returnState: STATES.PROMPT_READY }
+    },
+    onRevised: (genResult, iterText, base) => {
+      if (base.mode === 'email') { acceptRevisedEmail(genResult, iterText); return }
+      originalTranscript.current = iterText
+      if (base.mode === 'polish') {
+        const parsed = parsePolishOutput(genResult.prompt)
+        setPolishResult(parsed)
+        setGeneratedPrompt(parsed.polished)
+        window.electronAPI?.setLastPrompt?.(parsed.polished)
+        saveToHistory({ transcript: iterText, prompt: parsed.polished, mode: 'polish', polishChanges: parsed.changes, isIteration: true, basedOn: base.prompt.slice(0, 100) })
+      } else {
+        setGeneratedPrompt(genResult.prompt)
+        window.electronAPI?.setLastPrompt?.(genResult.prompt)
+        saveToHistory({ transcript: iterText, prompt: genResult.prompt, mode: base.mode, isIteration: true, basedOn: base.prompt.slice(0, 100) })
+      }
+      transitionRef.current(STATES.PROMPT_READY)
+    },
   })
+
+  // A revised email (from Iterate or a tone chip) replaces the draft and is kept in history.
+  function acceptRevisedEmail(result, change) {
+    try {
+      const parsed = parseEmailOutput(result.prompt)
+      setEmailOutput(parsed)
+      setEmailSaved(false)
+      emailHistoryIdRef.current = saveToHistory({ transcript: `${originalTranscript.current}\n\nChange: ${change}`, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email', isIteration: true })
+      window.electronAPI?.setLastPrompt?.(parsed.subject + '\n\n' + parsed.body)
+      transitionRef.current(STATES.EMAIL_READY)
+    } catch {
+      setGenerationError({ errorType: 'unknown', error: 'Failed to read the revised email', canRetry: true })
+      transitionRef.current(STATES.GENERATION_ERROR)
+    }
+  }
 
   function handleEmailSave() {
     if (emailHistoryIdRef.current) bookmarkHistoryItem(emailHistoryIdRef.current)
     setEmailSaved(true)
   }
 
-  function handleEmailIterate() {
-    setEmailOutput(null)
-    startRecordingRef.current()
-  }
-
+  // A tone chip ("More formal", "Shorter"…) revises the draft the same way a spoken change does.
   async function handleToneAdjust(adjustment) {
     if (!emailOutput) return
     setThinkingLabel('Adjusting tone...')
     setThinkingAccentColor('rgba(20,184,166,0.85)')
+    setThinkTranscript(adjustment)
     transition(STATES.THINKING)
     const opId = ++opIdRef.current
-    const systemPrompt = `You are an expert email writer. Rewrite the following email applying this tone adjustment: ${adjustment}
-
-Original situation: ${originalTranscript.current}
-Current subject: ${emailOutput.subject}
-Current body: ${emailOutput.body}
-
-Keep the same core message and facts.
-Return ONLY valid JSON:
-{
-  "subject": "revised subject if needed",
-  "body": "revised email body",
-  "toneAnalysis": {
-    "recipient": "...",
-    "tone": "...",
-    "coreMessage": "...",
-    "approach": "...",
-    "whyThisTone": "..."
-  }
-}`
-    const result = await window.electronAPI.generatePrompt('', 'email', { overrideSystemPrompt: systemPrompt })
-    if (opId !== opIdRef.current) return
+    const result = await window.electronAPI.generatePrompt(adjustment, 'email', {
+      revise: { email: { subject: emailOutput.subject, body: emailOutput.body }, transcript: originalTranscript.current },
+      ...(contextRef.current && { context: contextRef.current }),
+    })
+    if (opId !== opIdRef.current || result?.cancelled) return
     if (result?.success) {
-      try {
-        const parsed = parseEmailOutput(result.prompt)
-        setEmailOutput(parsed)
-        transitionRef.current(STATES.EMAIL_READY)
-      } catch {
-        setGenerationError({ errorType: 'unknown', error: 'Failed to parse tone adjustment response', canRetry: true })
-        transitionRef.current(STATES.GENERATION_ERROR)
-      }
+      isIterated.current = true
+      acceptRevisedEmail(result, adjustment)
     } else {
       setGenerationError({ errorType: result?.errorType || 'unknown', error: result?.error || 'Tone adjustment failed', canRetry: true })
       transitionRef.current(STATES.GENERATION_ERROR)
@@ -389,6 +405,9 @@ Return ONLY valid JSON:
     setGenerationSlow,
     contextRef,
   })
+
+  const abortRef = useRef(null)
+  abortRef.current = handleAbort
 
   const typedDictationRef = useRef(null)
   typedDictationRef.current = promptFromTyping
@@ -426,6 +445,7 @@ Return ONLY valid JSON:
 
   useKeyboardShortcuts({
     STATES,
+    abortRef,
     stateRef,
     prevStateRef,
     generatedPromptRef,
@@ -536,7 +556,7 @@ Return ONLY valid JSON:
             emailOutput={emailOutput}
             emailSaved={emailSaved}
             onEmailSave={handleEmailSave}
-            onEmailIterate={handleEmailIterate}
+            onEmailIterate={handleIterate}
             onToneAdjust={handleToneAdjust}
             onAbort={handleAbort}
             transcriptionErrorProps={{ ...transcriptionError, onRetry: handleRetryTranscription, onOpenSettings: openSettings }}

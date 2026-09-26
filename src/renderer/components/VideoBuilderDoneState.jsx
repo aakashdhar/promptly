@@ -64,7 +64,7 @@ export default function VideoBuilderDoneState({
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(52,199,89,0.9)' }} />
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(251,146,60,0.9)' }} />
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(var(--ink),0.95)' }}>Video prompt ready</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -95,9 +95,9 @@ export default function VideoBuilderDoneState({
           </div>
 
           <div>
-            <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: '0 0 6px 0', fontWeight: 600 }}>Optimised for</p>
+            <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: '0 0 6px 0', fontWeight: 600 }}>Written for</p>
             <span style={{ ...ORANGE_CHIP, display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px' }}>
-              veo-3.1-generate-preview
+              Google Veo 3.1
             </span>
           </div>
         </div>

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import MODES from '../../../shared/modes.json'
+import { MODES, DEFAULT_MODE, resolveModeKey } from '../utils/modes.js'
 
-const MODE_LABELS = Object.fromEntries(MODES.modes.map((m) => [m.key, m.label]))
-const DEFAULT_MODE = MODES.defaultMode
+const MODE_LABELS = Object.fromEntries(MODES.map((m) => [m.key, m.label]))
 
 export default function useMode() {
-  // A mode saved by an older version may no longer exist (e.g. "do" from 2.6.0): use the default.
+  // A mode saved by an older version may have been merged into another (Balanced → Prompt) or
+  // no longer exist at all (e.g. "do" from 2.6.0): use its replacement, or the default.
   const [mode, setModeState] = useState(() => {
-    const stored = localStorage.getItem('mode')
+    const stored = resolveModeKey(localStorage.getItem('mode'))
     return stored && MODE_LABELS[stored] ? stored : DEFAULT_MODE
   })
 

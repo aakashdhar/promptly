@@ -24,8 +24,15 @@ function fillTemplate(template, values) {
   return template.replace(pattern, (_match, key) => String(values[key]));
 }
 
+// Retired keys (balanced, detailed, chain, refine…) still come in from history entries, saved
+// settings and spoken mode names; they resolve to the mode that replaced them.
+function resolveModeKey(key) {
+  return (MODES.aliases || {})[key] || key;
+}
+
 function getMode(key) {
-  return MODES.modes.find((m) => m.key === key) || MODES.modes.find((m) => m.key === MODES.defaultMode);
+  const resolved = resolveModeKey(key);
+  return MODES.modes.find((m) => m.key === resolved) || MODES.modes.find((m) => m.key === MODES.defaultMode);
 }
 
 // Where the prompt will be used, from the app that was in front when recording started.
@@ -61,13 +68,13 @@ function destinationFor(bundleId) {
   return DESTINATIONS.find((d) => d.match.test(bundleId)) || null;
 }
 
-// Extra context placed just before the transcript: where the prompt is going (template modes
-// only), the user's own notes (how they write, or about them), text they selected, and words
+// Extra context placed just before the transcript: where the prompt is going (modes marked
+// destination), the user's own notes (how they write, or about them), text they selected, and words
 // to spell exactly. Empty when there is none, so
 // prompts without context are unchanged.
 function buildContextBlock(mode, context = {}) {
   const parts = [];
-  const destination = mode.kind === 'template' ? destinationFor(context.bundleId) : null;
+  const destination = mode.destination ? destinationFor(context.bundleId) : null;
   if (destination) parts.push(`Where this prompt will be used: ${destination.guidance}`);
   if (context.voiceNotes) {
     parts.push(`Write it the way this user writes. Their own notes on their style:\n<how_i_write>\n${context.voiceNotes}\n</how_i_write>\nFollow these unless the user asks for something different this time.`);
@@ -87,23 +94,41 @@ function buildContextBlock(mode, context = {}) {
   return parts.length ? parts.join('\n\n') + '\n\n' : '';
 }
 
+// How much the prompt-writing modes (Prompt, Code, Design) put in. Detailed is the default:
+// the full brief, with edge cases and success criteria. Quick is for small, simple requests.
+const DETAIL_LEVELS = {
+  detailed: '- Be thorough. Spell out every requirement precisely, cover the edge cases and open questions that follow from what was said, and give success criteria Claude can check its work against. Aim for the care a senior specialist puts into a brief for important work, without padding.',
+  quick: '- Keep it tight: the goal, the essential requirements and the output format, in as few lines as do the job. Leave out sections that would only restate the obvious.',
+};
+
+const titleCase = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 function buildModePrompt(transcript, modeKey, options = {}) {
   const mode = getMode(modeKey);
   const context = buildContextBlock(mode, options.context);
-  if (mode.kind === 'standalone') {
-    const tone = options.tone || 'formal';
-    return fillTemplate(loadPrompt(mode.key), {
-      TRANSCRIPT: transcript,
-      TONE: tone.charAt(0).toUpperCase() + tone.slice(1),
-      CONTEXT: context,
+  const tone = options.tone || 'formal';
+  return fillTemplate(loadPrompt(mode.key), {
+    TRANSCRIPT: transcript,
+    TONE: titleCase(tone),
+    CONTEXT: context,
+    DETAIL: DETAIL_LEVELS[options.detail] || DETAIL_LEVELS.detailed,
+  });
+}
+
+// Iterate: a result plus a spoken change → the result with the change applied, in the same
+// shape (a prompt, POLISHED/CHANGES text, or email JSON).
+function buildRevisePrompt({ modeKey, previous = '', instruction = '', transcript = '', email = null, tone = 'formal', context = {} }) {
+  const mode = getMode(modeKey);
+  const block = buildContextBlock(mode, context);
+  if (mode.key === 'email') {
+    return fillTemplate(loadPrompt('email-revise'), {
+      TRANSCRIPT: transcript, SUBJECT: email?.subject || '', BODY: email?.body || previous, INSTRUCTION: instruction, CONTEXT: block,
     });
   }
-  return fillTemplate(loadPrompt('template'), {
-    MODE_NAME: mode.promptName,
-    MODE_INSTRUCTION: mode.instruction,
-    TRANSCRIPT: transcript,
-    CONTEXT: context,
-  });
+  if (mode.key === 'polish') {
+    return fillTemplate(loadPrompt('polish-revise'), { PREVIOUS: previous, INSTRUCTION: instruction, TONE: titleCase(tone), CONTEXT: block });
+  }
+  return fillTemplate(loadPrompt('revise'), { PREVIOUS: previous, INSTRUCTION: instruction, CONTEXT: block });
 }
 
 // Asks Claude to draft "How you write" notes from writing samples or from the user's edits.
@@ -117,8 +142,26 @@ function buildLearnStylePrompt({ current = '', samples = '', edits = '' } = {}) 
   });
 }
 
+// The builder modes' Claude calls: each step's prompt file and the values it takes. Values come
+// from the renderer already formatted (JSON of the answers, the chip options…).
+const BUILDER_STEPS = {
+  'image-analyse': ['TRANSCRIPT'],
+  'image-variations': ['TRANSCRIPT', 'EXISTING'],
+  'image-assemble': ['VARIATION', 'ANSWERS', 'AVOID'],
+  'video-analyse': ['TRANSCRIPT', 'OPTIONS'],
+  'video-assemble': ['TRANSCRIPT', 'ANSWERS'],
+  'workflow-analyse': ['TRANSCRIPT'],
+  'workflow-assemble': ['ANALYSIS', 'PLACEHOLDERS'],
+};
+
+function buildBuilderPrompt(step, values = {}) {
+  const keys = BUILDER_STEPS[step];
+  if (!keys) return null;
+  return fillTemplate(loadPrompt(step), Object.fromEntries(keys.map((k) => [k, typeof values[k] === 'string' ? values[k] : ''])));
+}
+
 function buildEvalPrompt(transcript, prompt) {
   return fillTemplate(loadPrompt('eval'), { TRANSCRIPT: transcript, PROMPT: prompt });
 }
 
-module.exports = { MODES, DESTINATIONS, fillTemplate, getMode, loadPrompt, buildModePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };
+module.exports = { BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };

@@ -8,7 +8,7 @@ import { saveToHistory } from '../utils/history.js'
 export default function useDictation({ STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript, setResultMode = () => {} }) {
   const [dictation, setDictation] = useState(null) // { text, removed }
   const [resultView, setResultView] = useState('dictation') // 'dictation' | 'prompt'
-  const [promptStyle, setPromptStyle] = useState('balanced')
+  const [promptStyle, setPromptStyle] = useState('prompt')
   const promptVersionRef = useRef(null)
   const dictationRef = useRef(null)
   const promptVersionStyleRef = useRef(null)

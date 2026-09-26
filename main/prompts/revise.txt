@@ -1,0 +1,17 @@
+Below is a prompt that was written from someone's spoken request, and a change they have now asked for out loud. Rewrite the prompt with the change applied.
+
+<prompt>
+{PREVIOUS}
+</prompt>
+
+<requested_change>
+{INSTRUCTION}
+</requested_change>
+
+{CONTEXT}Rules:
+- Apply the change precisely. Where it contradicts the prompt, the change wins.
+- Keep everything the change doesn't touch, including the section labels and their order. Add or remove a section only when the change calls for it.
+- Keep the prompt's style: plain-text section labels on their own line ending with a colon, no markdown bold, asterisks or hashes.
+- Don't invent requirements the person didn't ask for.
+
+Output only the revised prompt: no preamble, no explanation.

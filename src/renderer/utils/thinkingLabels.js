@@ -1,16 +1,26 @@
+import { resolveModeKey } from './modes.js'
+
 const sequences = {
-  balanced: [
-    'Structuring your prompt...',
-    'Adding context and constraints...',
-    'Refining the output format...',
+  prompt: [
+    'Working out what you need...',
+    'Writing the requirements...',
+    'Adding success criteria...',
     'Almost ready...',
     'Taking a moment longer than usual...',
   ],
-  refine: [
-    'Analysing your prompt...',
-    'Identifying improvements...',
-    'Refining the structure...',
+  code: [
+    'Reading your task...',
+    'Writing the brief...',
+    'Adding how to verify it...',
     'Almost ready...',
+    'Taking a moment longer than usual...',
+  ],
+  design: [
+    'Reading your design idea...',
+    'Writing the brief...',
+    'Checking what stays the same...',
+    'Almost ready...',
+    'Taking a moment longer than usual...',
   ],
   polish: [
     'Reading your draft...',
@@ -31,7 +41,7 @@ const sequences = {
   ],
   image_2: [
     'Assembling your prompt...',
-    'Optimising for Nano Banana...',
+    'Optimising for Nano Banana and ChatGPT...',
     'Almost ready...',
   ],
   video_1: [
@@ -59,13 +69,9 @@ const sequences = {
 const BUILDER_MODES = ['image', 'video', 'workflow']
 
 const ACCENTS = {
-  balanced:  'rgba(10,132,255,0.85)',
-  detailed:  'rgba(10,132,255,0.85)',
-  concise:   'rgba(10,132,255,0.85)',
-  chain:     'rgba(10,132,255,0.85)',
+  prompt:    'rgba(10,132,255,0.85)',
   code:      'rgba(10,132,255,0.85)',
-  design:    'rgba(10,132,255,0.85)',
-  refine:    'rgba(168,85,247,0.85)',
+  design:    'rgba(168,85,247,0.85)',
   polish:    'rgba(48,209,88,0.85)',
   email:     'rgba(20,184,166,0.85)',
   image:     'rgba(139,92,246,0.85)',
@@ -74,10 +80,11 @@ const ACCENTS = {
 }
 
 export function getLabelSequence(mode, phase = 1) {
-  const key = BUILDER_MODES.includes(mode) ? `${mode}_${phase}` : mode
-  return sequences[key] || sequences['balanced']
+  const m = resolveModeKey(mode)
+  const key = BUILDER_MODES.includes(m) ? `${m}_${phase}` : m
+  return sequences[key] || sequences.prompt
 }
 
 export function getModeAccent(mode) {
-  return ACCENTS[mode] || ACCENTS['balanced']
+  return ACCENTS[resolveModeKey(mode)] || ACCENTS.prompt
 }

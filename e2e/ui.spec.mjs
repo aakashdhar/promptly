@@ -15,22 +15,33 @@ test.describe.configure({ retries: 1 })
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'test-results', 'ui')
 
-const PROMPT = `Role:
-You are a senior full-stack engineer who has shipped internal tools for support teams.
-
-Task:
-Build a small internal dashboard that pulls support tickets from Zendesk every five minutes, groups them by product area, and highlights anything waiting more than four hours.
+const PROMPT = `Goal:
+Build a small internal dashboard that pulls support tickets from Zendesk every five minutes, groups them by product area, and highlights anything that has been waiting more than four hours, so the support lead can see at a glance where customers are stuck.
 
 Context:
-The support team lead wants a daily summary email at 9am. Tickets live in the Zendesk instance at https://betacraft-support.zendesk.com/api/v2/tickets/recent.json?include=users,organizations and the repo is at ~/Documents/GitHub-personal/support-dashboard/apps/web/src/features/tickets.
+The support team lead wants a daily summary email at 9am. Tickets come from https://betacraft-support.zendesk.com/api/v2/tickets/recent.json?include=users,organizations and the code lives in ~/Documents/GitHub-personal/support-dashboard/apps/web/src/features/tickets.
+
+Requirements:
+- Sync tickets every five minutes; a failed sync retries on the next run rather than stopping.
+- Group by product area, with a count per group.
+- Flag tickets waiting more than four hours at the top of each group.
 
 Constraints:
 - Next.js 15 with the App Router, Postgres through Drizzle, deployed on Vercel.
 - Keep the design simple: tables and a couple of counters, no charts.
-- Don't store customer email addresses.
+- Don't store customer email addresses; the team only needs ticket details.
+
+Steps:
+1. Write the sync job and check it against a sample Zendesk response.
+2. Build the grouped table and the four-hour flag.
+3. Add the 9am summary email.
 
 Output format:
-A short project plan, then the code for the ticket sync job with tests.`
+A short plan, then the code for each step with its tests.
+
+Success criteria:
+- A ticket waiting 4 hours and 1 minute is flagged; one at 3 hours 59 is not.
+- No email addresses end up in the database.`
 
 // A stand-in for the Claude CLI that answers each Promptly request with realistic content.
 function writeFakeClaude(dir) {
@@ -221,8 +232,8 @@ for (const theme of ['dark', 'light']) {
     await page.getByRole('tab', { name: 'As a prompt' }).click()
     await expect(page.getByRole('tab', { name: 'As a prompt' })).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
     await check(page, 'dictation-as-prompt', { settle: 800 })
-    await switchMode(app, page, 'balanced')
-    await expect(page.locator('#mode-pill')).toHaveText('Balanced')
+    await switchMode(app, page, 'prompt')
+    await expect(page.locator('#mode-pill')).toHaveText('Prompt')
 
     await page.keyboard.press('Meta+?')
     await check(page, 'shortcuts')
@@ -340,7 +351,7 @@ for (const theme of ['dark', 'light']) {
         if (Math.abs(e[side] - want[side]) > 1.5) found.push(`  [${theme}/${name}] padding    ${side} is ${e[side].toFixed(1)} px, should be ${want[side]} px`)
       }
     }
-    await pillState({ state: 'recording', mode: 'Balanced', context: { appName: 'Visual Studio Code', selectedText: 'x' } })
+    await pillState({ state: 'recording', mode: 'Prompt', context: { appName: 'Visual Studio Code', selectedText: 'x' } })
     await check(pill, 'pill-recording')
     await pillPadding('pill-recording')
     // Hover shows where the words are going (a long app name included) and a cancel button.
@@ -352,10 +363,10 @@ for (const theme of ['dark', 'light']) {
     await check(pill, 'pill-quiet', { settle: 700 })
     await pillPadding('pill-quiet')
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('pill.html')).webContents.send('mic-quiet', false))
-    await pillState({ state: 'recording', paused: true, mode: 'Balanced' })
+    await pillState({ state: 'recording', paused: true, mode: 'Prompt' })
     await check(pill, 'pill-paused', { settle: 700 })
     await pillPadding('pill-paused')
-    await pillState({ state: 'thinking', mode: 'Balanced' })
+    await pillState({ state: 'thinking', mode: 'Prompt' })
     await check(pill, 'pill-thinking')
     await pillPadding('pill-thinking')
     await pillState({ state: 'copied', copied: true })

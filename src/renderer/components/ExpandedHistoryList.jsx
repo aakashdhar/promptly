@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { getHistory, deleteHistoryItem, clearHistory, searchHistory, pairDictations } from '../utils/history.js'
 import { getModeTagStyle, readableColor } from '../utils/promptUtils.js'
-import MODE_REGISTRY from '../../../shared/modes.json'
+import { modeLabel } from '../utils/modes.js'
 
-const MODE_LABELS = Object.fromEntries(MODE_REGISTRY.modes.map((m) => [m.key, m.label]))
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 
 const iconBtn = (active) => ({
@@ -225,7 +224,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                       </span>
                     )}
                     <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '5px', background: tagStyle.background, color: readableColor(tagStyle.color), whiteSpace: 'nowrap' }}>
-                      {MODE_LABELS[entry.mode] || entry.mode}
+                      {modeLabel(entry.mode) || entry.mode}
                     </span>
                   </span>
                 </div>

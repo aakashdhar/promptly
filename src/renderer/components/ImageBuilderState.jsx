@@ -392,6 +392,7 @@ export default function ImageBuilderState({
             <ParamRow key={field} tab="technical" field={field} options={opts} answers={ans} defaults={def}
               onParamChange={onParamChange} onRemoveDefault={onRemoveDefault} />
           ))}
+          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: '10px 0 2px' }}>For Midjourney only. Nano Banana and ChatGPT ignore these.</div>
           {Object.entries(TECHNICAL_NUMERIC_PARAMS).map(([field, opts]) => (
             <NumericParamRow key={field} tab="technical" field={field} options={opts} answers={ans} defaults={def}
               onParamChange={onParamChange} onRemoveDefault={onRemoveDefault} />
@@ -425,7 +426,7 @@ export default function ImageBuilderState({
               padding: '2px 7px', borderRadius: '5px', fontSize: '11px',
               background: 'rgba(139,92,246,0.12)', border: '0.5px solid rgba(139,92,246,0.25)',
               color: 'color-mix(in oklab, rgb(196,168,255) var(--accent-text-strength), rgb(var(--ink)))',
-            }}>Nano Banana</span>
+            }}>Nano Banana · ChatGPT</span>
             {unfilled > 0 && (
               <span style={{
                 padding: '2px 7px', borderRadius: '5px', fontSize: '11px',
@@ -495,7 +496,7 @@ export default function ImageBuilderState({
               fontSize: '11px', textTransform: 'uppercase', letterSpacing: '.08em',
               color: 'var(--text-tertiary)',
             }}>
-              Nano Banana Pro presets
+              Presets
             </span>
             <button type="button" onClick={() => setShowAllPresets(v => !v)} style={{
               background: 'none', border: 'none', padding: 0,

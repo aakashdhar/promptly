@@ -37,12 +37,47 @@ describe('fillTemplate', () => {
 describe('mode prompts', () => {
   const transcript = 'build me a todo app'
 
-  it('fills template modes with their name and instruction', () => {
-    const out = buildModePrompt(transcript, 'chain')
-    expect(out).toContain('Mode: Chain of Thought')
-    expect(out).toContain('reason step-by-step')
-    expect(out).toContain(`"${transcript}"`)
-    expect(out).not.toMatch(/\{(MODE_NAME|MODE_INSTRUCTION|TRANSCRIPT)\}/)
+  it('writes detailed prompts by default, quick ones when asked, with the transcript in tags', () => {
+    const out = buildModePrompt(transcript, 'prompt')
+    expect(out).toContain(`<transcript>\n${transcript}\n</transcript>`)
+    expect(out).toContain('Be thorough.')
+    expect(out).toContain('Success criteria:')
+    expect(out).toContain('Never open with a generic "You are an expert…" line')
+    expect(buildModePrompt(transcript, 'prompt', { detail: 'quick' })).toContain('Keep it tight')
+    for (const key of ['prompt', 'code', 'design']) expect(buildModePrompt(transcript, key)).not.toMatch(/\{[A-Z_]+\}/)
+  })
+
+  it('keeps retired modes working: Balanced, Detailed, Concise and Chain are Prompt; Refine is Design', () => {
+    for (const old of ['balanced', 'detailed', 'concise', 'chain']) expect(getMode(old).key).toBe('prompt')
+    expect(getMode('refine').key).toBe('design')
+    expect(buildModePrompt(transcript, 'chain')).toBe(buildModePrompt(transcript, 'prompt'))
+  })
+
+  it('gives Code a verification section and Design both new-page and change briefs', () => {
+    const code = buildModePrompt('the upload retry is broken', 'code')
+    expect(code).toContain('Verification:')
+    expect(code).toContain('reproduce it first')
+    const design = buildModePrompt('make the header smaller', 'design')
+    expect(design).toContain('Keep unchanged:')
+    expect(design).toContain('one self-contained HTML file')
+    expect(design).toContain('Never invent brand colours')
+  })
+
+  it('revises a result in its own shape: prompt, polish or email', () => {
+    const { buildRevisePrompt } = require('../main/prompts.js')
+    expect(buildRevisePrompt({ modeKey: 'prompt', previous: 'Goal:\nA', instruction: 'make it shorter' })).toContain('<prompt>\nGoal:\nA\n</prompt>')
+    expect(buildRevisePrompt({ modeKey: 'polish', previous: 'Hi', instruction: 'warmer', tone: 'casual' })).toContain('Tone: Casual')
+    const email = buildRevisePrompt({ modeKey: 'email', email: { subject: 'Launch', body: 'Hi team' }, instruction: 'more formal', transcript: 'tell the team', context: { voiceNotes: 'Sign off Cheers' } })
+    expect(email).toContain('Subject: Launch')
+    expect(email).toContain('<how_i_write>')
+    for (const out of [email]) expect(out).not.toMatch(/\{[A-Z_]+\}/)
+  })
+
+  it('builds each builder step from its prompt file', () => {
+    const { buildBuilderPrompt, BUILDER_STEPS } = require('../main/prompts.js')
+    for (const step of Object.keys(BUILDER_STEPS)) expect(buildBuilderPrompt(step, {})).not.toMatch(/\{[A-Z_]+\}/)
+    expect(buildBuilderPrompt('video-analyse', { TRANSCRIPT: 'a boat', OPTIONS: '- aspectRatio (one of): "16:9 landscape"' })).toContain('"16:9 landscape"')
+    expect(buildBuilderPrompt('nope', {})).toBeNull()
   })
 
   it('applies the polish tone', () => {
@@ -54,13 +89,9 @@ describe('mode prompts', () => {
     expect(getMode('nope').key).toBe(MODES.defaultMode)
   })
 
-  it('has a prompt file for every standalone mode and an instruction for every template mode', () => {
+  it('has a prompt file for every mode that calls Claude', () => {
     for (const mode of MODES.modes) {
       if (mode.kind === 'standalone') expect(() => buildModePrompt('x', mode.key)).not.toThrow()
-      if (mode.kind === 'template') {
-        expect(mode.promptName).toBeTruthy()
-        expect(mode.instruction).toBeTruthy()
-      }
     }
   })
 
@@ -488,10 +519,11 @@ describe('destination and selection context', () => {
     expect(destinationFor('com.apple.finder')).toBeNull()
   })
 
-  it('adds destination guidance to template modes only', () => {
-    const prompt = buildModePrompt('fix the flaky test', 'balanced', { context: { bundleId: 'com.apple.Terminal', appName: 'Terminal' } })
+  it('adds destination guidance to Prompt, Code and Design only', () => {
+    const prompt = buildModePrompt('fix the flaky test', 'prompt', { context: { bundleId: 'com.apple.Terminal', appName: 'Terminal' } })
     expect(prompt).toContain('AI coding agent')
-    expect(prompt.indexOf('AI coding agent')).toBeLessThan(prompt.indexOf('The user said:'))
+    expect(prompt.indexOf('AI coding agent')).toBeLessThan(prompt.indexOf('<transcript>'))
+    expect(buildModePrompt('x', 'design', { context: { bundleId: 'com.apple.Terminal' } })).toContain('AI coding agent')
     expect(buildModePrompt('x', 'polish', { context: { bundleId: 'com.apple.Terminal' } })).not.toContain('AI coding agent')
   })
 
@@ -500,8 +532,8 @@ describe('destination and selection context', () => {
     expect(prompt).toContain('<selected_text>\nWe are going to be doing a launch\n</selected_text>')
     expect(prompt).toContain('selected this text in Notes')
     expect(prompt).toContain('Spell these names and terms exactly as written: Promptly.')
-    expect(buildContextBlock({ kind: 'template' }, {})).toBe('')
-    expect(buildModePrompt('x', 'balanced')).toBe(buildModePrompt('x', 'balanced', { context: {} }))
+    expect(buildContextBlock({ kind: 'standalone', destination: true }, {})).toBe('')
+    expect(buildModePrompt('x', 'prompt')).toBe(buildModePrompt('x', 'prompt', { context: {} }))
   })
 })
 

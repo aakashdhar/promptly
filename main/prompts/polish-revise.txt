@@ -1,0 +1,25 @@
+Below is text that was polished from what someone said, and a change they have now asked for. Apply the change and return the text in the same format as before.
+
+<polished_text>
+{PREVIOUS}
+</polished_text>
+
+<requested_change>
+{INSTRUCTION}
+</requested_change>
+
+Tone: {TONE}
+
+{CONTEXT}Rules:
+1. Apply the change precisely; keep everything else as it is
+2. Preserve the meaning; don't add information the person didn't give
+3. CHANGES lists what this revision changed, at most 4 bullet points, each under 10 words
+
+Output format — return EXACTLY this structure with these exact labels, nothing else:
+
+POLISHED:
+{the revised text here}
+
+CHANGES:
+· {change note 1}
+· {change note 2}

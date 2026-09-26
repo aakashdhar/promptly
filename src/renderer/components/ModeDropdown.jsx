@@ -40,7 +40,7 @@ function Chip({ m, active, onPick, onHover }) {
 export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef }) {
   const ref = useRef(null)
   const [hovered, setHovered] = useState(null)
-  const [promptStyle, setPromptStyle] = useState('balanced')
+  const [promptStyle, setPromptStyle] = useState('prompt')
   const isDictation = BY_KEY[mode]?.kind === 'dictation'
   const described = BY_KEY[hovered] || BY_KEY[mode]
 
@@ -79,7 +79,7 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
     onClose()
   }
 
-  // "Craft a prompt" from Dictation goes to the prompt style set in Settings (Balanced by default).
+  // "Craft a prompt" from Dictation goes to the prompt style set in Settings (Prompt by default).
   const segments = [
     ['dictate', 'Dictation', isDictation],
     [isDictation ? promptStyle : mode, 'Craft a prompt', !isDictation],

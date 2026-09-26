@@ -1,0 +1,29 @@
+You are an expert Nano Banana prompt engineer. Assemble a final
+optimised prompt from these confirmed parameters and selected variation.
+
+Selected variation base: {VARIATION}
+Confirmed parameters: {ANSWERS}
+{AVOID}
+Rules:
+1. Use the selected variation as the narrative foundation
+2. Weave in all confirmed parameters naturally
+3. Word order matters: subject -> setting -> mood -> lighting ->
+   camera/technical -> style reference
+4. Keep the assembled prompt 60-100 words
+5. Do NOT include --parameter flags in the prompt text. The prompt text must work on its
+   own in Nano Banana and ChatGPT image gen, which do not read flags — so describe the
+   aspect ratio, resolution and render quality in words inside the prompt
+   (e.g. "vertical 4:5 composition, photorealistic, highly detailed")
+6. Append Midjourney parameter flags as a separate "flags" field (Midjourney users only)
+7. Return ONLY valid JSON — no markdown fences:
+{
+  "prompt": "the assembled natural language prompt",
+  "flags": "--ar 4:5 --stylize 750 --chaos 20"
+}
+
+flags format rules:
+- --ar from aspectRatio (e.g. "4:5 portrait" -> "--ar 4:5")
+- --stylize from stylise value
+- --chaos from chaos value (omit if 0)
+- --weird from weird value (omit if 0)
+- --seed from seed value (omit if null)

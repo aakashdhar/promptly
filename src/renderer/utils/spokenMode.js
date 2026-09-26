@@ -1,12 +1,13 @@
-import MODES from '../../../shared/modes.json'
+import { MODES, MODE_ALIASES } from './modes.js'
 
 // Lets people pick a mode by saying it first: "code mode, add a retry to the upload job" or
 // "email mode: tell the team the release moved to Friday". Returns the mode and the rest of
 // what was said, or null when the transcript doesn't start with a mode.
 const ALIASES = Object.fromEntries([
-  ...MODES.modes.map((m) => [m.label.toLowerCase(), m.key]),
-  ...MODES.modes.map((m) => [m.key.toLowerCase(), m.key]),
-  ['chain of thought', 'chain'],
+  ...MODES.map((m) => [m.label.toLowerCase(), m.key]),
+  ...MODES.map((m) => [m.key.toLowerCase(), m.key]),
+  // Names of retired modes still work: "chain of thought mode, …" makes a Prompt.
+  ...Object.entries(MODE_ALIASES),
 ])
 
 const NAMES = Object.keys(ALIASES).sort((a, b) => b.length - a.length).map((n) => n.replace(/ /g, '\\s+'))

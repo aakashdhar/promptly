@@ -27,6 +27,8 @@ Rules:
 5. CHANGES must be brief observations, not explanations
 6. If the input is already clean, say so in CHANGES: "· Text was already well-formed"
 7. Output ONLY the two sections above — no preamble, no sign-off
+8. If the user selected text, that text is what to polish, and what they said tells you how to change it; the same rules apply to it
+9. Follow the user's own writing notes when they are given
 
 {CONTEXT}The user said:
 "{TRANSCRIPT}"

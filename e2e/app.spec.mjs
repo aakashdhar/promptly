@@ -45,8 +45,23 @@ if printf '%s' "$input" | grep -q "write short style notes"; then
 - Signs off with "Cheers, Sam"'
   exit 0
 fi
-last=$(printf '%s' "$input" | tail -n 1 | tr -d '"')
-out=$(printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s' "$last")
+# The request: a spoken change (Iterate), or the <transcript> of a prompt mode, or the last line.
+tagged() { printf '%s' "$input" | awk -v t="$1" '$0 ~ "</" t ">" {f=0} f {print} $0 ~ "<" t ">" {f=1}' | tail -n 1; }
+last=$(tagged requested_change)
+[ -z "$last" ] && last=$(tagged transcript)
+[ -z "$last" ] && last=$(printf '%s' "$input" | tail -n 1 | tr -d '"')
+# Polish and Email answer in their own formats.
+if printf '%s' "$input" | grep -q "expert email writer"; then
+  node -e 'console.log(JSON.stringify({subject:"About "+process.argv[1],body:"Hi team,\\n\\n"+process.argv[1]+"\\n\\nThanks",toneAnalysis:{recipient:"Team",tone:"Friendly",coreMessage:process.argv[1],approach:"Direct",whyThisTone:"Internal"}}))' "$last"
+  exit 0
+fi
+if printf '%s' "$input" | grep -q "n8n workflow engineer. Analyse"; then cat "$FAKE_DIR/workflow-analysis.json"; exit 0; fi
+if printf '%s' "$input" | grep -q "Generate a complete, valid n8n workflow JSON"; then cat "$FAKE_DIR/workflow.json"; exit 0; fi
+if printf '%s' "$input" | grep -q "POLISHED:"; then
+  out=$(printf 'POLISHED:\\n%s (polished)\\n\\nCHANGES:\\n· Tidied the wording' "$last")
+else
+  out=$(printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s' "$last")
+fi
 if [[ " $* " == *" stream-json "* ]]; then
   # Stream in two halves so tests can watch text arrive.
   half=$(( \${#out} / 2 ))
@@ -60,6 +75,8 @@ fi
 touch "$FAKE_DIR/call-$n.done"
 `)
   fs.chmodSync(claude, 0o755)
+  fs.writeFileSync(path.join(dir, 'workflow-analysis.json'), JSON.stringify({ workflowName: 'Form to Slack', trigger: 'A form is sent', nodes: [{ id: 1, name: 'Webhook', type: 'n8n-nodes-base.webhook', purpose: 'Receives the form', parameters: { path: 'PATH' }, placeholders: ['path'] }, { id: 2, name: 'Post to Slack', type: 'n8n-nodes-base.slack', purpose: 'Tells the team', parameters: { channel: 'CHANNEL' }, placeholders: ['channel'] }], connections: 'linear 1→2', connectionsMap: { Webhook: ['Post to Slack'] } }))
+  fs.writeFileSync(path.join(dir, 'workflow.json'), '```json\n' + JSON.stringify({ name: 'Form to Slack', nodes: [{ name: 'Webhook', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [240, 300], parameters: { path: 'forms' } }], connections: {} }) + '\n```')
   // Fake built-in engine (whisper-cli + model): only accepts WAV, like the real one.
   const engineDir = path.join(dir, 'engine')
   fs.mkdirSync(engineDir)
@@ -99,9 +116,9 @@ rl.on('close', () => process.exit(0))
   return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir, helper }
 }
 
-// mode: most tests below are about prompt modes, so they start in Balanced; pass mode: null to
+// mode: most tests below are about prompt modes, so they start in Prompt; pass mode: null to
 // start the way a fresh install does (Dictation).
-async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'balanced', speechModel = null } = {}) {
+async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'prompt', speechModel = null } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -196,8 +213,8 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
   const stdin = fs.readFileSync(path.join(fakeDir, first.replace('.args', '.stdin')), 'utf8')
   expect(args).toContain('--model')
   expect(args.join(' ')).not.toContain('todo app')
-  expect(stdin).toContain('Mode: Balanced')
-  expect(stdin).toContain('"make a todo app with dark mode"')
+  expect(stdin).toContain('You turn a rough, spoken request into a prompt for Claude')
+  expect(stdin).toContain('<transcript>\nmake a todo app with dark mode\n</transcript>')
 })
 
 test('⌘T opens the typing box from Settings too, but never interrupts a recording', async () => {
@@ -499,7 +516,7 @@ test('hold to talk from Terminal: destination, selection and dictionary shape th
   expect(stdin).toContain('AI coding agent')
   expect(stdin).toContain('<selected_text>\nTypeError: cannot read properties of undefined\n</selected_text>')
   expect(stdin).toContain('Spell these names and terms exactly as written: Supabase, Promptly.')
-  expect(stdin).toContain('"fix this error in the upload job"')
+  expect(stdin).toContain('<transcript>\nfix this error in the upload job\n</transcript>')
   // The dictionary also biases transcription.
   expect(fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8')).toContain('--prompt Supabase, Promptly')
 })
@@ -530,8 +547,8 @@ test('saying a mode first switches to it', async () => {
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
   })
   const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
-  expect(stdin).toContain('Mode: Code')
-  expect(stdin).toContain('"Add retries to the upload job"')
+  expect(stdin).toContain('task brief for an AI coding agent')
+  expect(stdin).toContain('<transcript>\nAdd retries to the upload job\n</transcript>')
   expect(await page.evaluate(() => localStorage.getItem('mode'))).toBe('code')
 })
 
@@ -677,8 +694,8 @@ test('"Make it a prompt" from the pill turns the dictation into a prompt, and ba
     await expect.poll(() => mainWindow(app).then((w) => w.visible)).toBe(true)
     await expect(page.getByRole('tab', { name: 'As a prompt' })).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
     const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
-    expect(stdin).toContain('Mode: Balanced')
-    expect(stdin).toContain('"a script that renames my screenshots by date"')
+    expect(stdin).toContain('You turn a rough, spoken request into a prompt for Claude')
+    expect(stdin).toContain('<transcript>\na script that renames my screenshots by date\n</transcript>')
     await expect.poll(() => readClipboard(app)).toContain('Task:')
 
     // Back to the words as spoken, and to the prompt again, without asking Claude twice.
@@ -707,7 +724,7 @@ test('typing in Dictation mode makes a prompt in the style chosen in Settings', 
   await typeAndSubmit(page, 'retry failed uploads three times')
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
   const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
-  expect(stdin).toContain('Optimise this prompt for code generation')
+  expect(stdin).toContain('task brief for an AI coding agent')
 })
 
 test('a prompt made from a dictation can be regenerated, in the style it was made in', async () => {
@@ -721,7 +738,7 @@ test('a prompt made from a dictation can be regenerated, in the style it was mad
   await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(before + 1)
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
   const stdin = await lastStdin(fakeDir)
-  expect(stdin).toContain('Optimise this prompt for code generation')
+  expect(stdin).toContain('task brief for an AI coding agent')
   await expect(page.getByRole('button', { name: '↻ Iterate' })).toBeVisible()
 })
 
@@ -745,7 +762,7 @@ test('an older prompt reopened from history can be regenerated in its own mode, 
   await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(before + 1)
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
   const stdin = await lastStdin(fakeDir)
-  expect(stdin).toContain('Optimise this prompt for code generation')
+  expect(stdin).toContain('task brief for an AI coding agent')
   expect(stdin).toContain('add pagination to the orders api')
 })
 
@@ -954,3 +971,74 @@ test('"Best accuracy" downloads once, is used for transcription, and takes the l
   }
 })
 
+
+test('Polish: the tone switch redoes it, and Iterate shows the new text (not the old one)', async () => {
+  ctx = await launch({ mode: 'polish' })
+  const { app, page, fakeDir } = ctx
+  await typeAndSubmit(page, 'so we ship it on friday')
+  await expect(page.locator('#prompt-output')).toHaveText('so we ship it on friday (polished)', { timeout: 15000 })
+  await expect(page.getByText('Tidied the wording')).toBeVisible()
+
+  await page.getByRole('radio', { name: 'Casual' }).click()
+  await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+  expect(await lastStdin(fakeDir)).toContain('Tone: Casual')
+
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), 'make it warmer')
+  await page.getByRole('button', { name: '↻ Iterate' }).click()
+  await expect.poll(() => appState(app)).toBe('ITERATING')
+  await page.waitForTimeout(800)
+  await page.getByRole('button', { name: 'Stop' }).click()
+  await expect(page.locator('#prompt-output')).toHaveText('make it warmer (polished)', { timeout: 15000 })
+  const stdin = await lastStdin(fakeDir)
+  expect(stdin).toContain('<polished_text>\nso we ship it on friday (polished)\n</polished_text>')
+  expect(stdin).toContain('Tone: Casual')
+})
+
+test('Email: a tone chip revises the draft with your writing notes, and the revision is kept in history', async () => {
+  ctx = await launch({ mode: 'email' })
+  const { app, page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ voiceNotes: 'Sign off with Cheers, Sam' }))
+  await typeAndSubmit(page, 'the release moves to friday')
+  await expect.poll(() => appState(app), { timeout: 15000 }).toBe('EMAIL_READY')
+
+  await page.getByRole('button', { name: 'More formal' }).click()
+  await page.getByRole('button', { name: /Apply adjustment/ }).click()
+  await expect.poll(() => calls(fakeDir).length, { timeout: 15000 }).toBe(2)
+  await expect.poll(() => appState(app), { timeout: 15000 }).toBe('EMAIL_READY')
+  await expect(page.getByText('About More formal').first()).toBeVisible()
+  const stdin = await lastStdin(fakeDir)
+  expect(stdin).toContain('<requested_change>\nMore formal\n</requested_change>')
+  expect(stdin).toContain('Subject: About the release moves to friday')
+  expect(stdin).toContain('Sign off with Cheers, Sam')
+  const history = await page.evaluate(() => JSON.parse(localStorage.getItem('promptly_history') || '[]'))
+  expect(history.filter((h) => h.mode === 'email')).toHaveLength(2)
+  expect(history[0].prompt).toContain('About More formal')
+})
+
+test('Workflow: the n8n JSON is kept in history and copied, not just a summary line', async () => {
+  ctx = await launch({ mode: 'workflow' })
+  const { app, page } = ctx
+  await withClipboard(app, async () => {
+    await typeAndSubmit(page, 'when a form is sent post it in slack')
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('WORKFLOW_BUILDER')
+    await page.getByRole('button', { name: /Confirm & generate JSON/ }).click()
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('WORKFLOW_BUILDER_DONE')
+    const history = await page.evaluate(() => JSON.parse(localStorage.getItem('promptly_history') || '[]'))
+    const saved = JSON.parse(history[0].prompt)
+    expect(saved).toMatchObject({ name: 'Form to Slack', nodes: [{ type: 'n8n-nodes-base.webhook' }] })
+    await expect.poll(() => readClipboard(app)).toContain('"name": "Form to Slack"')
+  })
+})
+
+test('Esc while a builder is working cancels it for good', async () => {
+  ctx = await launch({ mode: 'workflow' })
+  const { app, page, fakeDir } = ctx
+  fs.writeFileSync(path.join(fakeDir, 'delay'), '3')
+  await typeAndSubmit(page, 'when a form is sent post it in slack')
+  await expect.poll(() => appState(app), { timeout: 15000 }).toBe('THINKING')
+  await expect.poll(() => calls(fakeDir).length).toBeGreaterThan(0)
+  await page.keyboard.press('Escape')
+  await expect.poll(() => appState(app)).toBe('IDLE')
+  await page.waitForTimeout(3500)
+  expect(await appState(app)).toBe('IDLE')
+})

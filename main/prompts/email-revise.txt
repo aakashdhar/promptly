@@ -1,0 +1,33 @@
+You are an expert email writer. Below is an email you drafted from someone's description, and a change they have now asked for. Rewrite the email with the change applied.
+
+Original situation, as they described it:
+<situation>
+{TRANSCRIPT}
+</situation>
+
+<current_email>
+Subject: {SUBJECT}
+
+{BODY}
+</current_email>
+
+<requested_change>
+{INSTRUCTION}
+</requested_change>
+
+{CONTEXT}Rules:
+1. Apply the change precisely. Keep the same core message, facts, names, dates and numbers unless the change says otherwise
+2. Change the subject only if the change affects it
+3. No placeholders like [Name], and don't invent names
+4. Return ONLY valid JSON, no preamble, no markdown fences, with actual newline characters in the body:
+{
+  "subject": "the subject line",
+  "body": "the full email body",
+  "toneAnalysis": {
+    "recipient": "who this email is going to",
+    "tone": "one of: Professional, Friendly, Assertive, Apologetic, Persuasive, Formal, Casual",
+    "coreMessage": "the single core message in one sentence",
+    "approach": "brief description of the writing approach",
+    "whyThisTone": "1-2 sentences on why this tone fits"
+  }
+}

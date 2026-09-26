@@ -44,7 +44,8 @@ export default function WorkflowBuilderState({
   function handleInputCommit(nodeId, paramKey) {
     const key = `${nodeId}-${paramKey}`
     const val = (inputValues[key] || '').trim()
-    if (val) onFillPlaceholder(nodeId, paramKey, val)
+    // Emptying a filled value clears it, back to an unfilled placeholder.
+    if (val || filledPlaceholders[key]) onFillPlaceholder(nodeId, paramKey, val)
     setActiveInput(null)
   }
 
@@ -338,7 +339,7 @@ export default function WorkflowBuilderState({
                       <span style={{ fontSize: 11, color: 'var(--text-tertiary)', minWidth: 80, paddingTop: 1 }}>
                         {key}
                       </span>
-                      {isPlaceholder && !filledVal ? (
+                      {isActive || (isPlaceholder && !filledVal) ? (
                         isActive ? (
                           <input
                             autoFocus

@@ -13,6 +13,7 @@ import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
 import ExpandedErrorContent from './ExpandedErrorContent.jsx'
 import EmailReadyState from './EmailReadyState.jsx'
 import EvalPanel from './EvalPanel.jsx'
+import { resolveModeKey, isScorable } from '../utils/modes.js'
 import RibbonCanvas from './RibbonCanvas.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
@@ -77,8 +78,8 @@ export default function ExpandedDetailPanel({
   const [entryExported, setEntryExported] = useState(false)
   const [evalCache, setEvalCache] = useState({})
 
-  const isRefine = mode === 'refine'
-  const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
+  const entryMode = resolveModeKey(selected?.mode)
+  const labelColor = entryMode === 'design' ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
 
   const isContentState = currentState === 'TYPING' || currentState === 'PROMPT_READY'
     || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
@@ -326,7 +327,7 @@ export default function ExpandedDetailPanel({
           </div>
 
           {/* Eval scorecard for history entry */}
-          {selected.transcript && (
+          {selected.transcript && isScorable(entryMode) && (
             <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
               <EvalPanel
                 key={selected.id}
@@ -466,6 +467,8 @@ export default function ExpandedDetailPanel({
           onRegenerate={onRegenerate}
           onReset={onReset}
           isIterated={isIterated}
+          polishTone={polishTone}
+          onPolishToneChange={onPolishToneChange}
         />
       )}
 
@@ -505,8 +508,8 @@ export default function ExpandedDetailPanel({
           onDialogueChange={videoBuilderProps.onDialogueChange}
           onSettingChange={videoBuilderProps.onSettingChange}
           onConfirm={videoBuilderProps.onConfirm}
-          onCopyNow={videoBuilderProps.onCopyNow}
           onReiterate={videoBuilderProps.onReiterate}
+          onStartOver={videoBuilderProps.onStartOver}
         />
       )}
 

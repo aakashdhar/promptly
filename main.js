@@ -10,7 +10,7 @@ const { createConfigStore } = require('./main/config');
 const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
 const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath, makeClaudeEnv } = require('./main/binaries');
-const { DEFAULT_MODEL, createClaudeRunner, parseJsonOutput } = require('./main/llm');
+const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, parseJsonOutput } = require('./main/llm');
 const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
 const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
 const { createQuietDetector } = require('./main/audio-level');
@@ -19,7 +19,7 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor } = require('./main/prompts');
-const { MODES, getMode, buildModePrompt, buildEvalPrompt, buildLearnStylePrompt } = require('./main/prompts');
+const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, buildLearnStylePrompt, DETAIL_LEVELS } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
 const { tidyDictation } = require('./main/dictation');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
@@ -87,7 +87,7 @@ function windowBackground() {
 
 // Models offered in Settings. Aliases always resolve to the latest model of that family.
 const MODEL_OPTIONS = [
-  { value: DEFAULT_MODEL, label: 'Sonnet 4.6 (default)' },
+  { value: DEFAULT_MODEL, label: 'Sonnet 5 (default)' },
   { value: 'sonnet', label: 'Latest Sonnet' },
   { value: 'opus', label: 'Latest Opus' },
   { value: 'haiku', label: 'Latest Haiku (fastest)' },
@@ -120,18 +120,24 @@ function winSend(channel, payload) {
   win.webContents.send(channel, payload);
 }
 
+// The model in Settings; one saved while an older model was the default follows the new default.
+function claudeModel() {
+  const stored = config.read().claudeModel;
+  return !stored || RETIRED_DEFAULTS.includes(stored) ? DEFAULT_MODEL : stored;
+}
+
 // Claude and Whisper processes behind the current operation, so an abort can stop them.
 const activeChildren = new Set();
 const claude = createClaudeRunner({
   getClaudePath: () => claudePath,
-  getModel: () => config.read().claudeModel || DEFAULT_MODEL,
+  getModel: claudeModel,
   onSlow: () => winSend('generation-slow-warning'),
   children: activeChildren,
 });
 // The eval scorecard runs alongside the prompt screen; aborting a new prompt must not kill it.
 const evalClaude = createClaudeRunner({
   getClaudePath: () => claudePath,
-  getModel: () => config.read().claudeModel || DEFAULT_MODEL,
+  getModel: claudeModel,
 });
 // "Best accuracy" speech model, downloaded on request into userData/models.
 // Tests serve a small stand-in model locally with PROMPTLY_SPEECH_MODEL.
@@ -185,7 +191,7 @@ function resetAudioTmpDir() {
 // ── Generation ────────────────────────────────────────────────────────────────
 
 // The prompt styles "Make it a prompt" can use: every mode that turns speech into a prompt.
-const PROMPT_STYLES = MODES.modes.filter((m) => m.kind === 'template' || m.key === 'design' || m.key === 'refine');
+const PROMPT_STYLES = MODES.modes.filter((m) => m.promptStyle);
 
 // Edits the user makes to results, for "Suggest updates from your edits" in Settings.
 const editLog = createEditLog(path.join(app.getPath('userData'), 'style-edits.json'));
@@ -278,9 +284,13 @@ async function runGeneratePrompt({ transcript, mode, options = {} }) {
     dictionary: dictionaryWords(),
     otherLanguages: (accurateSpeech()?.language || 'en') !== 'en',
   };
-  const prompt = options.overrideSystemPrompt || buildModePrompt(transcript, mode, { ...options, context });
+  const stored = config.read();
+  // Iterate sends the current result and the spoken change; everything else is a fresh request.
+  const prompt = options.revise
+    ? buildRevisePrompt({ modeKey: mode, ...options.revise, instruction: transcript, tone: options.tone, context })
+    : buildModePrompt(transcript, mode, { ...options, detail: stored.promptDetail, context });
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
-  const streams = !options.overrideSystemPrompt && mode !== 'email';
+  const streams = modeConf.key !== 'email';
   let lastSent = 0;
   const onDelta = streams ? (text) => {
     const now = Date.now();
@@ -911,7 +921,8 @@ app.whenReady().then(async () => {
       aboutMe: stored.aboutMe || '',
       editCount: editLog.count(),
       autoCopy: stored.autoCopy !== false,
-      promptStyle: PROMPT_STYLES.some((m) => m.key === stored.promptStyle) ? stored.promptStyle : 'balanced',
+      promptStyle: PROMPT_STYLES.some((m) => m.key === resolveModeKey(stored.promptStyle)) ? resolveModeKey(stored.promptStyle) : 'prompt',
+      promptDetail: DETAIL_LEVELS[stored.promptDetail] ? stored.promptDetail : 'detailed',
       promptStyles: PROMPT_STYLES.map(({ key, label }) => ({ value: key, label })),
       dictationTypeIn: stored.dictationTypeIn !== false,
       dictationRemoveFillers: stored.dictationRemoveFillers !== false,
@@ -930,6 +941,7 @@ app.whenReady().then(async () => {
     if (typeof prefs.dictionary === 'string') patch.dictionary = prefs.dictionary.slice(0, 5000);
     if (typeof prefs.autoCopy === 'boolean') patch.autoCopy = prefs.autoCopy;
     if (typeof prefs.promptStyle === 'string' && PROMPT_STYLES.some((m) => m.key === prefs.promptStyle)) patch.promptStyle = prefs.promptStyle;
+    if (DETAIL_LEVELS[prefs.promptDetail]) patch.promptDetail = prefs.promptDetail;
     if (typeof prefs.dictationTypeIn === 'boolean') patch.dictationTypeIn = prefs.dictationTypeIn;
     if (typeof prefs.dictationRemoveFillers === 'boolean') patch.dictationRemoveFillers = prefs.dictationRemoveFillers;
     if (typeof prefs.dictationSymbols === 'boolean') patch.dictationSymbols = prefs.dictationSymbols;
@@ -1065,7 +1077,12 @@ app.whenReady().then(async () => {
     return runGeneratePrompt(lastGenerateRequest);
   });
 
-  ipcMain.handle('generate-raw', (_event, { systemPrompt }) => claude.run(systemPrompt));
+  // Image, Video and Workflow: one step of a builder, from its prompt file in main/prompts.
+  ipcMain.handle('builder-step', (_event, { step, values } = {}) => {
+    const prompt = buildBuilderPrompt(String(step || ''), values || {});
+    if (!prompt) return { success: false, error: 'Unknown builder step', errorType: 'unknown' };
+    return claude.run(prompt, { timeoutMs: 120000, slowWarningMs: 45000 });
+  });
 
   // Replays the last generate-prompt request with the same mode and options
   // (tone, email override), so a retry produces what the original call would have.
@@ -1150,13 +1167,13 @@ app.whenReady().then(async () => {
 
 
   ipcMain.handle('show-mode-menu', (_event, { currentMode }) => {
+    // Grouped the same way as the window's mode menu: Dictation, prompt styles, specialists.
+    const item = ({ key, label }) => ({ label, type: 'checkbox', checked: resolveModeKey(currentMode) === key, click: () => { winSend('mode-selected', key); } });
+    const group = (title, list) => [{ type: 'separator' }, { label: title, enabled: false }, ...list.map(item)];
     const menu = Menu.buildFromTemplate([
-      ...MODES.modes.map(({ key, label }) => ({
-        label,
-        type: 'checkbox',
-        checked: currentMode === key,
-        click: () => { winSend('mode-selected', key); },
-      })),
+      ...MODES.modes.filter((m) => m.kind === 'dictation').map(item),
+      ...group('Prompt style', MODES.modes.filter((m) => m.group === 'general' && m.kind !== 'dictation')),
+      ...group('Specialist', MODES.modes.filter((m) => m.group === 'specialist')),
       { type: 'separator' },
       {
         label: 'Keyboard shortcuts ⌘?',
@@ -1295,7 +1312,7 @@ app.whenReady().then(async () => {
       claudePath: claudePath || stored.claudePath || '',
       whisperPath: whisperPath || stored.whisperPath || '',
       ffmpegPath: ffmpegPath || stored.ffmpegPath || '',
-      claudeModel: stored.claudeModel || DEFAULT_MODEL,
+      claudeModel: claudeModel(),
       modelOptions: MODEL_OPTIONS,
       // With the built-in engine, the Whisper and ffmpeg paths are only a fallback.
       speechBuiltIn: whisper.engine()?.type === 'bundled',

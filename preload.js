@@ -31,8 +31,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   transcribeAudio: (arrayBuffer) =>
     ipcRenderer.invoke('transcribe-audio', arrayBuffer),
 
-  generateRaw: (systemPrompt) =>
-    ipcRenderer.invoke('generate-raw', { systemPrompt }),
+  builderStep: (step, values) =>
+    ipcRenderer.invoke('builder-step', { step, values }),
   evaluatePrompt: (args) => ipcRenderer.invoke('evaluate-prompt', args),
 
   saveFile: (opts) =>

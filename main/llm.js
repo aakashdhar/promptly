@@ -3,7 +3,9 @@
 const { spawn } = require('child_process');
 const { makeClaudeEnv } = require('./binaries');
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+const DEFAULT_MODEL = 'claude-sonnet-5';
+// Earlier defaults. Settings saved while one of these was the default follow the new default.
+const RETIRED_DEFAULTS = ['claude-sonnet-4-6'];
 
 // Replaces Claude Code's agent system prompt: Promptly only needs text in, text out.
 const SYSTEM_PROMPT = "Follow the user's instructions exactly and output only what they ask for.";
@@ -157,4 +159,4 @@ function parseJsonOutput(raw) {
   }
 }
 
-module.exports = { DEFAULT_MODEL, createClaudeRunner, createStreamParser, classifyError, parseJsonOutput };
+module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createStreamParser, classifyError, parseJsonOutput };

@@ -1,3 +1,5 @@
+import { resolveModeKey } from './modes.js'
+
 export function parseSections(text) {
   if (!text) return []
   const lines = text.split('\n')
@@ -67,7 +69,13 @@ export function parseWorkflowAnalysis(raw) {
   if (!Array.isArray(parsed.nodes)) return null
   const nodes = parsed.nodes
     .filter((n) => n && typeof n === 'object' && (typeof n.id === 'number' || isText(n.id)) && isText(n.name))
-    .map((n) => ({ ...n, placeholders: Array.isArray(n.placeholders) ? n.placeholders.filter((p) => typeof p === 'string') : [] }))
+    .map((n) => {
+      const placeholders = Array.isArray(n.placeholders) ? n.placeholders.filter((p) => typeof p === 'string') : []
+      // A placeholder with no parameter row would count as "to fill" with nowhere to fill it.
+      const parameters = { ...(n.parameters && typeof n.parameters === 'object' ? n.parameters : {}) }
+      for (const p of placeholders) if (!(p in parameters)) parameters[p] = p.toUpperCase()
+      return { ...n, parameters, placeholders }
+    })
   if (nodes.length === 0) return null
   return { ...parsed, nodes }
 }
@@ -97,6 +105,13 @@ export function buildImagePromptText(raw) {
   return isText(parsed.flags) ? `${parsed.prompt.trim()}\n\n${parsed.flags.trim()}` : parsed.prompt.trim()
 }
 
+// The other way: the prompt, and the Midjourney flags when its last paragraph is flags.
+export function splitImagePrompt(text) {
+  const src = (text || '').trim()
+  const m = src.match(/\n\n(--[a-z][\s\S]*)$/)
+  return m ? { prompt: src.slice(0, m.index).trim(), flags: m[1].trim() } : { prompt: src, flags: '' }
+}
+
 export function parseImageAnalysisOutput(raw) {
   if (!raw) return null
   try { return parseJsonObject(raw) } catch { return null }
@@ -122,10 +137,11 @@ export function evalVerdict(delta) {
   return '↓ Raw was clearer'
 }
 
-export function getModeTagStyle(mode) {
+export function getModeTagStyle(modeKey) {
+  const mode = resolveModeKey(modeKey)
   if (mode === 'dictate') return { background: 'rgba(var(--ink),0.07)', color: 'var(--text-secondary)' }
   if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'refine' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgb(167,139,250) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'design' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgb(167,139,250) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'color-mix(in oklab, rgb(45,212,191) var(--accent-text-strength), rgb(var(--ink)))' }
   return { background: 'rgba(10,132,255,0.1)', color: 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))' }

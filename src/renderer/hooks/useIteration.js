@@ -1,6 +1,5 @@
 import { useRef, useCallback } from 'react'
 import { recordingToWav, MIC_CONSTRAINTS } from '../utils/audio.js'
-import { saveToHistory } from '../utils/history.js'
 
 export default function useIteration({
   STATES,
@@ -12,14 +11,21 @@ export default function useIteration({
   isIterated,
   originalTranscript,
   setThinkTranscript,
-  setGeneratedPrompt,
   startTimer,
   stopTimer,
+  getIterationBase,
+  onRevised,
+  contextRef,
 }) {
   const iterRecorderRef = useRef(null)
   const iterChunksRef = useRef([])
   const iterIsProcessingRef = useRef(false)
   const iterationBase = useRef(null)
+  // The callbacks below are made once; these always point at App's latest functions.
+  const getIterationBaseRef = useRef(getIterationBase)
+  getIterationBaseRef.current = getIterationBase
+  const onRevisedRef = useRef(onRevised)
+  onRevisedRef.current = onRevised
 
   const handleIterate = useCallback(async () => {
     try {
@@ -32,7 +38,9 @@ export default function useIteration({
       stream.getAudioTracks().forEach((track) => track.addEventListener('ended', () => {
         if (iterRecorderRef.current === recorder) stopIteratingRef.current?.()
       }))
-      iterationBase.current = { transcript: originalTranscript.current, prompt: generatedPromptRef.current, mode: resultModeRef?.current || modeRef.current }
+      // What's being refined: the prompt or polished text on screen, or the email draft. App
+      // knows which (getIterationBase); the default is the prompt on screen.
+      iterationBase.current = getIterationBaseRef.current?.() || { transcript: originalTranscript.current, prompt: generatedPromptRef.current, mode: resultModeRef?.current || modeRef.current, returnState: STATES.PROMPT_READY }
       isIterated.current = false
       recorder.start()
       stopTimer()
@@ -66,44 +74,27 @@ export default function useIteration({
         return
       }
       const iterText = transcribeResult.transcript.trim()
+      const base = iterationBase.current
       if (!iterText) {
-        transitionRef.current(STATES.PROMPT_READY)
+        transitionRef.current(base.returnState || STATES.PROMPT_READY)
         return
       }
       setThinkTranscript(iterText)
       transitionRef.current(STATES.THINKING)
 
-      const iterationSystemPrompt = `You are an expert Claude prompt engineer. You have a previously generated prompt and the user has spoken a refinement.
-
-Your job is to produce an improved version of the original prompt that incorporates the user's new input precisely.
-
-Rules:
-1. Output ONLY the improved prompt. No preamble. No explanation.
-2. Preserve everything from the original prompt that the user did not ask to change.
-3. Apply the user's new input as precisely as possible.
-4. Keep the same structure and section labels as the original prompt.
-5. If the new input contradicts the original, the new input wins.
-6. Do not add new sections unless the new input clearly calls for them.
-
-Original prompt:
-${iterationBase.current.prompt}
-
-User's new input:
-"${iterText}"
-
-Mode: ${iterationBase.current.mode}`
-
-      const genResult = await window.electronAPI.generateRaw(iterationSystemPrompt)
+      // main/prompts/revise*.txt: the result on screen plus the spoken change, in the same shape.
+      const genResult = await window.electronAPI.generatePrompt(iterText, base.mode, {
+        revise: { previous: base.prompt, email: base.email || null, transcript: base.transcript },
+        ...(base.tone && { tone: base.tone }),
+        ...(contextRef?.current && { context: contextRef.current }),
+      })
       if (genResult?.cancelled) return
       if (!genResult.success) {
         transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
         return
       }
       isIterated.current = true
-      originalTranscript.current = iterText
-      setGeneratedPrompt(genResult.prompt)
-      saveToHistory({ transcript: iterText, prompt: genResult.prompt, mode: iterationBase.current.mode, isIteration: true, basedOn: iterationBase.current.prompt.slice(0, 100) })
-      transitionRef.current(STATES.PROMPT_READY)
+      onRevisedRef.current(genResult, iterText, base)
     }
     // Already stopped on its own (the microphone went away): finish now; otherwise on stop.
     if (recorder.state === 'inactive') finish()
@@ -122,7 +113,7 @@ Mode: ${iterationBase.current.mode}`
     iterChunksRef.current = []
     iterIsProcessingRef.current = false
     stopTimer()
-    transitionRef.current(STATES.PROMPT_READY)
+    transitionRef.current(iterationBase.current?.returnState || STATES.PROMPT_READY)
   }, [])
 
   return { iterationBase, handleIterate, stopIterating, dismissIterating }

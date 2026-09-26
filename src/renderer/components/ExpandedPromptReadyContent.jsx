@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react'
 import { parseSections, readableColor } from '../utils/promptUtils.js'
 import EvalPanel from './EvalPanel.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
-import MODE_REGISTRY from '../../../shared/modes.json'
+import { MODES, resolveModeKey, isScorable } from '../utils/modes.js'
 
 // Modes whose result is text Claude wrote from what you said, so it can be iterated on or
 // regenerated. Dictations are your own words; builders have their own start-over flows.
-const REWORKABLE = new Set(MODE_REGISTRY.modes.filter((m) => m.kind === 'template' || m.kind === 'standalone').map((m) => m.key))
+const REWORKABLE = new Set(MODES.filter((m) => m.kind === 'standalone').map((m) => m.key))
+const POLISH_TONES = [['formal', 'Formal'], ['casual', 'Casual']]
 
 // "um ×2, uh": the only words a dictation drops, listed so nothing is changed silently.
 function describeRemoved(removed) {
@@ -31,13 +32,16 @@ export default function ExpandedPromptReadyContent({
   onShowDictation,
   onMakePrompt,
   displayMode,
+  polishTone = 'formal',
+  onPolishToneChange,
 }) {
   // What's on screen: a dictation (your words), a polish, or a prompt (possibly made from a
   // dictation, which keeps the switch back to "As I said it").
-  const shownMode = displayMode || mode
+  const shownMode = resolveModeKey(displayMode || mode)
   const isDictation = shownMode === 'dictate'
   const canRework = !isDictation && REWORKABLE.has(shownMode)
   const plainText = isDictation || isPolishMode
+  const canScore = !plainText && isScorable(shownMode)
   const [isEditing, setIsEditing] = useState(false)
   const [editHovered, setEditHovered] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
@@ -45,8 +49,7 @@ export default function ExpandedPromptReadyContent({
   const promptRef = useRef(null)
   const preEditValue = useRef('')
 
-  const isRefine = shownMode === 'refine'
-  const labelColor = isRefine ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
+  const labelColor = shownMode === 'design' ? 'rgba(168,85,247,0.85)' : 'rgba(100,170,255,0.55)'
 
   useEffect(() => {
     setIsEditing(false)
@@ -78,8 +81,7 @@ export default function ExpandedPromptReadyContent({
   }, [isEditing])
 
   function handleCopy() {
-    const text = isPolishMode ? (polishResult?.polished || generatedPrompt) : generatedPrompt
-    if (window.electronAPI) window.electronAPI.copyToClipboard(text)
+    if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPrompt)
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 1800)
   }
@@ -99,7 +101,7 @@ export default function ExpandedPromptReadyContent({
     }
   }
 
-  const evalPrompt = isPolishMode ? (polishResult?.polished || generatedPrompt) : generatedPrompt
+  const evalPrompt = generatedPrompt
 
   const sections = parseSections(generatedPrompt)
   const mid = Math.ceil(sections.length / 2)
@@ -144,6 +146,29 @@ export default function ExpandedPromptReadyContent({
           )}
         </>}
         right={<>
+          {/* Polish can be redone in the other tone with one click. */}
+          {isPolishMode && onPolishToneChange && (
+            <div role="radiogroup" aria-label="Tone" style={{ display: 'inline-flex', gap: '2px', padding: '2px', marginRight: '6px', borderRadius: '9px', background: 'rgba(var(--ink),0.06)', border: '0.5px solid rgba(var(--ink),0.1)' }}>
+              {POLISH_TONES.map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={polishTone === key}
+                  onClick={() => { if (polishTone !== key) onPolishToneChange(key) }}
+                  style={{
+                    height: '26px', padding: '0 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: '12.5px', fontWeight: polishTone === key ? 600 : 400, whiteSpace: 'nowrap',
+                    background: polishTone === key ? 'var(--surface)' : 'transparent',
+                    boxShadow: polishTone === key ? '0 1px 2px rgba(0,0,0,0.12)' : 'none',
+                    color: polishTone === key ? 'rgba(var(--ink),0.95)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           {canRework && <button type="button" onClick={onIterate} style={{ ...ghostBtn, color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))', fontWeight: 500 }}>↻ Iterate</button>}
           {canRework && <button type="button" onClick={onRegenerate} style={ghostBtn}>Regenerate</button>}
           <button type="button" onClick={onReset} style={ghostBtn}>Reset</button>
@@ -167,7 +192,7 @@ export default function ExpandedPromptReadyContent({
         ) : plainText ? (
           // Dictation and polished text read as written, not as prompt sections.
           <div style={{ fontSize: '15px', lineHeight: '1.8', color: 'rgba(var(--ink),0.95)', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>
-            {isPolishMode ? (polishResult?.polished || generatedPrompt) : generatedPrompt}
+            {generatedPrompt}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
@@ -211,7 +236,7 @@ export default function ExpandedPromptReadyContent({
         </div>
       )}
 
-      {!plainText && (
+      {canScore && (
         <div style={{ padding: scoreOpen ? '0 24px 12px' : 0, flexShrink: 0, maxHeight: '46%', overflowY: 'auto' }}>
           <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} open={scoreOpen} hideToggle />
         </div>
@@ -234,7 +259,7 @@ export default function ExpandedPromptReadyContent({
         >
           {isEditing ? 'Save' : 'Edit'}
         </button>
-        {!plainText && (
+        {canScore && (
           <button type="button" onClick={() => setScoreOpen((v) => !v)} aria-expanded={scoreOpen} style={ghostBtn}>
             {scoreOpen ? 'Hide score' : '↗ Score this prompt'}
           </button>

@@ -14,6 +14,7 @@ const RESTARTABLE_STATES = ['IDLE', 'SHORTCUTS', 'PROMPT_READY', 'EMAIL_READY', 
 
 export default function useKeyboardShortcuts({
   STATES,
+  abortRef,
   stateRef,
   prevStateRef,
   generatedPromptRef,
@@ -89,6 +90,10 @@ export default function useKeyboardShortcuts({
           transitionRef.current(prevStateRef.current || STATES.IDLE)
         } else if (stateRef.current === STATES.SETTINGS) {
           closeSettings()
+        } else if (stateRef.current === STATES.THINKING && abortRef?.current) {
+          // Same as Cancel: stop Claude/Whisper and ignore whatever they'd have returned, so a
+          // builder can't pull the window back into its screen later.
+          abortRef.current()
         } else if (stateRef.current !== STATES.IDLE) {
           transitionRef.current(STATES.IDLE)
         }

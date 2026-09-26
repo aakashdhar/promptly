@@ -1,0 +1,38 @@
+You are an expert Nano Banana prompt engineer. Based on this image
+idea: {TRANSCRIPT}
+
+Generate exactly 3 distinct prompt variations. Each variation should
+interpret the idea differently — different creative angle, different
+emphasis, different mood, while staying true to the core subject.
+
+Return ONLY valid JSON — no preamble, no markdown fences:
+{
+  "variations": [
+    {
+      "id": 1,
+      "prompt": "complete ready-to-use Nano Banana prompt text",
+      "focus": "one short phrase describing the creative angle"
+    },
+    {
+      "id": 2,
+      "prompt": "...",
+      "focus": "..."
+    },
+    {
+      "id": 3,
+      "prompt": "...",
+      "focus": "..."
+    }
+  ]
+}
+
+Rules for each variation:
+- Write complete, ready-to-use prompts (not fragments)
+- 40-80 words per prompt
+- Each variation must be meaningfully different from the others
+- Include subject, setting, mood, lighting, and technical style
+- Do NOT include --parameter flags in the prompt text
+- Variation 1: closest to what user described, warm/natural
+- Variation 2: more dramatic/editorial interpretation
+- Variation 3: most cinematic/artistic interpretation
+{EXISTING}Respond ONLY with the JSON object

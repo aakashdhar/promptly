@@ -48,7 +48,7 @@ describe('getModeTagStyle', () => {
     expect(style.color).toContain('100,220,130')
   })
 
-  it('returns purple tones for refine mode', () => {
+  it('returns purple tones for design mode (and Refine, now part of it)', () => {
     const style = getModeTagStyle('refine')
     expect(style.background).toContain('139,92,246')
     expect(style.color).toContain('167,139,250')
@@ -60,14 +60,8 @@ describe('getModeTagStyle', () => {
     expect(style.color).toContain('167,139,250')
   })
 
-  it('returns blue tones for design mode', () => {
-    const style = getModeTagStyle('design')
-    expect(style.background).toContain('10,132,255')
-    expect(style.color).toContain('100,170,255')
-  })
-
   it('returns blue tones for standard prose modes', () => {
-    for (const mode of ['balanced', 'code', 'detailed', 'concise', 'chain']) {
+    for (const mode of ['prompt', 'code', 'balanced', 'detailed', 'concise', 'chain']) {
       const style = getModeTagStyle(mode)
       expect(style.background).toContain('10,132,255')
       expect(style.color).toContain('100,170,255')
@@ -309,7 +303,8 @@ describe('structured output validation', () => {
   it('accepts usable workflow nodes and drops malformed ones', () => {
     const raw = '```json\n' + JSON.stringify({ name: 'wf', nodes: [{ id: 1, name: 'Webhook', placeholders: ['url', 3] }, 'junk', { id: 2 }] }) + '\n```'
     const r = parseWorkflowAnalysis(raw)
-    expect(r.nodes).toEqual([{ id: 1, name: 'Webhook', placeholders: ['url'] }])
+    // A placeholder without a parameter row gets one, so it can be filled in.
+    expect(r.nodes).toEqual([{ id: 1, name: 'Webhook', placeholders: ['url'], parameters: { url: 'URL' } }])
   })
 
   it('returns null for workflows with no usable nodes', () => {
@@ -351,7 +346,9 @@ describe('detectSpokenMode', () => {
     const { detectSpokenMode } = await import('../src/renderer/utils/spokenMode.js')
     expect(detectSpokenMode('Code mode, add retries to the upload job')).toEqual({ mode: 'code', text: 'Add retries to the upload job' })
     expect(detectSpokenMode('email mode: tell the team the release moved')).toEqual({ mode: 'email', text: 'Tell the team the release moved' })
-    expect(detectSpokenMode('Chain of thought mode. Why is the build slow?')).toEqual({ mode: 'chain', text: 'Why is the build slow?' })
+    // Retired names still work, and land in the mode that replaced them.
+    expect(detectSpokenMode('Chain of thought mode. Why is the build slow?')).toEqual({ mode: 'prompt', text: 'Why is the build slow?' })
+    expect(detectSpokenMode('Prompt mode, plan the offsite')).toEqual({ mode: 'prompt', text: 'Plan the offsite' })
     expect(detectSpokenMode('switch to polish mode we are going to ship friday')).toEqual({ mode: 'polish', text: 'We are going to ship friday' })
   })
 
