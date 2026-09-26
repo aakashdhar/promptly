@@ -10,6 +10,8 @@ import VideoBuilderState from './VideoBuilderState.jsx'
 import VideoBuilderDoneState from './VideoBuilderDoneState.jsx'
 import WorkflowBuilderState from './WorkflowBuilderState.jsx'
 import WorkflowBuilderDoneState from './WorkflowBuilderDoneState.jsx'
+import HarnessPlanState from './HarnessPlanState.jsx'
+import HarnessFilesState from './HarnessFilesState.jsx'
 import ExpandedErrorContent from './ExpandedErrorContent.jsx'
 import EmailReadyState from './EmailReadyState.jsx'
 import EvalPanel from './EvalPanel.jsx'
@@ -50,6 +52,7 @@ export default function ExpandedDetailPanel({
   imageBuilderProps,
   videoBuilderProps,
   workflowBuilderProps,
+  harnessBuilderProps,
   emailOutput,
   emailSaved,
   onEmailSave,
@@ -85,6 +88,7 @@ export default function ExpandedDetailPanel({
     || currentState === 'IMAGE_BUILDER' || currentState === 'IMAGE_BUILDER_DONE'
     || currentState === 'VIDEO_BUILDER' || currentState === 'VIDEO_BUILDER_DONE'
     || currentState === 'WORKFLOW_BUILDER' || currentState === 'WORKFLOW_BUILDER_DONE'
+    || currentState === 'HARNESS_BUILDER' || currentState === 'HARNESS_BUILDER_DONE'
     || currentState === 'EMAIL_READY'
     || currentState === 'TRANSCRIPTION_ERROR'
     || currentState === 'GENERATION_ERROR'
@@ -410,7 +414,7 @@ export default function ExpandedDetailPanel({
               <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 <span className="working-hop" aria-hidden="true"><i /><i /><i /></span>
                 {!thinkTranscript ? 'Transcribing'
-                  : ['image', 'video', 'workflow'].includes(mode) ? (thinkingCurrentLabel || 'Working')
+                  : ['image', 'video', 'workflow', 'harness'].includes(mode) ? (thinkingCurrentLabel || 'Working')
                   : thinkingLabel || (mode === 'dictate' ? 'Finishing up' : 'Writing your prompt')}
                 <span style={{ fontFamily: "'SF Mono', ui-monospace, Menlo, monospace", fontWeight: 400, fontSize: '12px', color: 'var(--text-secondary)' }}>{thinkingElapsed}s</span>
                 {recordingContext?.appName && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>for {recordingContext.appName}</span>}
@@ -561,6 +565,29 @@ export default function ExpandedDetailPanel({
           onCopy={workflowBuilderProps.onCopy}
           isCopied={workflowBuilderProps.isCopied}
           isExpanded
+        />
+      )}
+
+      {currentState === 'HARNESS_BUILDER' && harnessBuilderProps && (
+        <HarnessPlanState
+          plan={harnessBuilderProps.plan}
+          answers={harnessBuilderProps.answers}
+          onAnswer={harnessBuilderProps.onAnswer}
+          onConfirm={harnessBuilderProps.onConfirm}
+          onReiterate={harnessBuilderProps.onReiterate}
+          onStartOver={harnessBuilderProps.onStartOver}
+        />
+      )}
+
+      {currentState === 'HARNESS_BUILDER_DONE' && harnessBuilderProps && (
+        <HarnessFilesState
+          plan={harnessBuilderProps.plan}
+          files={harnessBuilderProps.files}
+          savedTo={harnessBuilderProps.savedTo}
+          onBackToPlan={harnessBuilderProps.onBackToPlan}
+          onStartOver={harnessBuilderProps.onStartOver}
+          onSaveToProject={harnessBuilderProps.onSaveToProject}
+          onCopy={harnessBuilderProps.onCopy}
         />
       )}
 

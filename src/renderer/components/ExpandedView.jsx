@@ -7,10 +7,10 @@ import ShortcutsPanel from './ShortcutsPanel.jsx'
 
 // Builders lay out two columns of their own; below this width the history list would squeeze
 // them, so it steps aside (⌘H still opens history).
-const BUILDER_STATES = new Set(['IMAGE_BUILDER', 'VIDEO_BUILDER', 'WORKFLOW_BUILDER', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'EMAIL_READY'])
+const BUILDER_STATES = new Set(['IMAGE_BUILDER', 'VIDEO_BUILDER', 'WORKFLOW_BUILDER', 'HARNESS_BUILDER', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'HARNESS_BUILDER_DONE', 'EMAIL_READY'])
 const ROOMY_WIDTH = 1180
 // A finished result: picking a history entry replaces it on the right.
-const RESTING_STATES = new Set(['PROMPT_READY', 'EMAIL_READY', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR'])
+const RESTING_STATES = new Set(['PROMPT_READY', 'EMAIL_READY', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'HARNESS_BUILDER_DONE', 'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR'])
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth)
@@ -53,6 +53,7 @@ export default function ExpandedView({
   imageBuilderProps,
   videoBuilderProps,
   workflowBuilderProps,
+  harnessBuilderProps,
   emailOutput,
   emailSaved,
   onEmailSave,
@@ -216,6 +217,7 @@ export default function ExpandedView({
           imageBuilderProps={imageBuilderProps}
           videoBuilderProps={videoBuilderProps}
           workflowBuilderProps={workflowBuilderProps}
+          harnessBuilderProps={harnessBuilderProps}
           emailOutput={emailOutput}
           emailSaved={emailSaved}
           onEmailSave={onEmailSave}

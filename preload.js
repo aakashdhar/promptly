@@ -263,6 +263,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   learnStyle: (samples) =>
     ipcRenderer.invoke('learn-style', { samples }),
 
+  wordSuggestions: () =>
+    ipcRenderer.invoke('word-suggestions'),
+
+  dismissWordSuggestion: (from) =>
+    ipcRenderer.invoke('dismiss-word-suggestion', { from }),
+
+  harnessPlan: (transcript, context) =>
+    ipcRenderer.invoke('harness-plan', { transcript, context }),
+
+  harnessFiles: (transcript, plan, answers) =>
+    ipcRenderer.invoke('harness-files', { transcript, plan, answers }),
+
+  saveHarness: (files) =>
+    ipcRenderer.invoke('save-harness', { files }),
+
   downloadSpeechModel: () =>
     ipcRenderer.invoke('download-speech-model'),
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
 import YouSection from './YouSection.jsx'
 import SpeechSection from './SpeechSection.jsx'
+import YourWordsSection from './YourWordsSection.jsx'
 
 // Settings, one short tab at a time: icon tabs down the side, and in each tab sections of rows
 // (the setting and a line about it on the left, its control on the right). Changes save as you
@@ -121,7 +122,6 @@ export default function SettingsPanel({ onClose }) {
   const [saveMsgColor, setSaveMsgColor] = useState('rgba(var(--ink),0.35)')
   const [themeVal, setThemeVal] = useState('system')
   const [prefs, setPrefs] = useState(null)
-  const [dictionaryDraft, setDictionaryDraft] = useState('')
   const [speechBuiltIn, setSpeechBuiltIn] = useState(false)
   const [modelVal, setModelVal] = useState('')
   const [modelOptions, setModelOptions] = useState([])
@@ -129,7 +129,7 @@ export default function SettingsPanel({ onClose }) {
   useEffect(() => {
     if (!window.electronAPI) return
     window.electronAPI.getThemeSetting?.().then(({ theme }) => setThemeVal(theme))
-    window.electronAPI.getPreferences?.().then((p) => { setPrefs(p); setDictionaryDraft(p.dictionary || '') })
+    window.electronAPI.getPreferences?.().then(setPrefs)
     const unsubAccess = window.electronAPI.onAccessibilityChanged?.((accessibility) => setPrefs((p) => p && { ...p, accessibility }))
     window.electronAPI.getStoredPaths().then(({ claudePath, whisperPath, ffmpegPath, claudeModel, modelOptions: options, speechBuiltIn: builtIn }) => {
       setSpeechBuiltIn(!!builtIn)
@@ -292,19 +292,9 @@ export default function SettingsPanel({ onClose }) {
             <Switch id="settings-dictationSymbols" label="Write money and percentages as symbols" checked={!!prefs.dictationSymbols} onChange={v => savePrefs({ dictationSymbols: v })} />
           </Row>
         </Section>
-        <Section title="Dictionary">
-          <div style={{ display: 'grid', gap: 6, padding: '10px 0' }}>
-            <label htmlFor="settings-dictionary" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>Names and terms to spell right</label>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Used when transcribing and when writing prompts. Separate them with commas.</span>
-            <textarea
-              id="settings-dictionary"
-              value={dictionaryDraft}
-              onChange={e => setDictionaryDraft(e.target.value)}
-              onBlur={() => dictionaryDraft !== prefs.dictionary && savePrefs({ dictionary: dictionaryDraft })}
-              placeholder="e.g. Supabase, Kubernetes, Aakash"
-              rows={3}
-              style={{ padding: '8px 10px', borderRadius: 8, border: '0.5px solid rgba(var(--ink),0.16)', background: 'rgba(var(--ink),0.05)', color: 'rgba(var(--ink),0.95)', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.5, outline: 'none', userSelect: 'text', WebkitAppRegion: 'no-drag' }}
-            />
+        <Section title="Your words">
+          <div style={{ padding: '10px 0' }}>
+            <YourWordsSection dictionary={prefs.dictionary} onSave={(dictionary) => savePrefs({ dictionary })} bare />
           </div>
         </Section>
       </>

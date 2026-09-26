@@ -58,7 +58,7 @@ function isUnknownOptionError(stderr) {
 function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onSlow = () => {}, children = new Set(), spawnImpl = spawn }) {
   let leanFlagsSupported = true;
 
-  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta }) {
+  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta, thinking = true }) {
     const streaming = lean && typeof onDelta === 'function';
     const parser = streaming ? createStreamParser(onDelta) : null;
     return new Promise((resolve) => {
@@ -68,7 +68,10 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         return;
       }
       const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
-      const child = spawnImpl(claudePath, args, { env: makeClaudeEnv(claudePath) });
+      // The CLI thinks before answering by default; for a long answer that can add minutes
+      // without making it better, so callers can turn it off.
+      const env = thinking ? makeClaudeEnv(claudePath) : { ...makeClaudeEnv(claudePath), MAX_THINKING_TOKENS: '0' };
+      const child = spawnImpl(claudePath, args, { env });
       children.add(child);
       let stdout = '';
       let stderr = '';
@@ -123,11 +126,12 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
   }
 
   // onDelta(textSoFar) streams the answer as it's written (skipped on CLIs without the flags).
-  async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta } = {}) {
-    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, onDelta });
+  // thinking: false skips extended thinking for this call.
+  async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta, thinking = true } = {}) {
+    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, onDelta, thinking });
     if (!result.success && leanFlagsSupported && isUnknownOptionError(result.stderr || '')) {
       leanFlagsSupported = false;
-      return strip(await runOnce(prompt, { timeoutMs, slowWarningMs, lean: false }));
+      return strip(await runOnce(prompt, { timeoutMs, slowWarningMs, lean: false, thinking }));
     }
     return strip(result);
   }

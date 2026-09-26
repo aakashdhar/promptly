@@ -8,6 +8,7 @@ import useIteration from './hooks/useIteration.js'
 import useImageBuilder from './hooks/useImageBuilder.js'
 import useVideoBuilder from './hooks/useVideoBuilder.js'
 import useWorkflowBuilder from './hooks/useWorkflowBuilder.js'
+import useHarnessBuilder from './hooks/useHarnessBuilder.js'
 import useOperationHandlers from './hooks/useOperationHandlers.js'
 import useTextInput from './hooks/useTextInput.js'
 import useDictation from './hooks/useDictation.js'
@@ -34,6 +35,8 @@ const STATES = {
   VIDEO_BUILDER_DONE: 'VIDEO_BUILDER_DONE',
   WORKFLOW_BUILDER: 'WORKFLOW_BUILDER',
   WORKFLOW_BUILDER_DONE: 'WORKFLOW_BUILDER_DONE',
+  HARNESS_BUILDER: 'HARNESS_BUILDER',
+  HARNESS_BUILDER_DONE: 'HARNESS_BUILDER_DONE',
   EMAIL_READY: 'EMAIL_READY',
   TRANSCRIPTION_ERROR: 'TRANSCRIPTION_ERROR',
   GENERATION_ERROR: 'GENERATION_ERROR',
@@ -126,7 +129,7 @@ export default function App() {
     setCurrentState(newState)
     if (payload.message) setErrorMessage(payload.message)
     if (newState === STATES.THINKING) {
-      const builderStates = [STATES.IMAGE_BUILDER, STATES.VIDEO_BUILDER, STATES.WORKFLOW_BUILDER]
+      const builderStates = [STATES.IMAGE_BUILDER, STATES.VIDEO_BUILDER, STATES.WORKFLOW_BUILDER, STATES.HARNESS_BUILDER]
       setThinkingPhase(builderStates.includes(fromState) ? 2 : 1)
     }
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
@@ -219,6 +222,22 @@ export default function App() {
     startRecordingRef,
   })
 
+  const {
+    isReiteratingRef: isHarnessReiteratingRef,
+    runHarnessPlan,
+    handleHarnessStartOver,
+    harnessBuilderProps,
+  } = useHarnessBuilder({
+    STATES,
+    transitionRef,
+    originalTranscript,
+    setThinkTranscript,
+    setThinkingLabel,
+    setThinkingAccentColor,
+    startRecordingRef,
+    contextRef,
+  })
+
   const handleGenerateResult = useCallback((genResult, transcript, opId, modeOverride) => {
     if (opId !== undefined && opId !== opIdRef.current) return
     // Read the live mode: a spoken "code mode, …" may have switched it moments ago. Regenerating
@@ -268,6 +287,12 @@ export default function App() {
       runWorkflowAnalysis(originalTranscript.current, isReiterate)
       return
     }
+    if (mode === 'harness') {
+      const isReiterate = isHarnessReiteratingRef.current
+      isHarnessReiteratingRef.current = false
+      runHarnessPlan(originalTranscript.current, isReiterate)
+      return
+    }
     if (mode === 'email') {
       try {
         const parsed = parseEmailOutput(genResult.prompt)
@@ -296,7 +321,7 @@ export default function App() {
       saveToHistory({ transcript, prompt: genResult.prompt, mode })
     }
     transitionRef.current(STATES.PROMPT_READY)
-  }, [mode, runPreSelection, runVideoPreSelection, runWorkflowAnalysis])
+  }, [mode, runPreSelection, runVideoPreSelection, runWorkflowAnalysis, runHarnessPlan])
   handleGenerateResultRef.current = handleGenerateResult
 
   const { handleIterate, stopIterating, dismissIterating } = useIteration({
@@ -400,6 +425,7 @@ export default function App() {
     handleImageStartOver,
     handleVideoStartOver,
     handleWorkflowStartOver,
+    handleHarnessStartOver,
     setEmailOutput,
     setTranscriptionSlow,
     setGenerationSlow,
@@ -510,7 +536,7 @@ export default function App() {
             duration={duration}
             generatedPrompt={generatedPrompt}
             thinkTranscript={thinkTranscript}
-            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE || s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE || s === STATES.EMAIL_READY) startRecording() }}
+            onStart={() => { const s = stateRef.current; if (s === STATES.IDLE || s === STATES.PROMPT_READY || s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE || s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE || s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE || s === STATES.HARNESS_BUILDER || s === STATES.HARNESS_BUILDER_DONE || s === STATES.EMAIL_READY) startRecording() }}
             onPause={() => (stateRef.current === STATES.PAUSED ? resumeRecording() : pauseRecording())}
             onStop={stopRecording}
             onStopIterate={stopIterating}
@@ -553,6 +579,7 @@ export default function App() {
             imageBuilderProps={imageBuilderProps}
             videoBuilderProps={videoBuilderProps}
             workflowBuilderProps={workflowBuilderProps}
+            harnessBuilderProps={harnessBuilderProps}
             emailOutput={emailOutput}
             emailSaved={emailSaved}
             onEmailSave={handleEmailSave}

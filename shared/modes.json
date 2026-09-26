@@ -11,6 +11,7 @@
     {"key": "image", "label": "Image", "group": "specialist", "kind": "builder", "desc": "Image prompt for Nano Banana and ChatGPT, with optional Midjourney flags", "dot": "rgba(139,92,246,0.9)"},
     {"key": "video", "label": "Video", "group": "specialist", "kind": "builder", "desc": "Video prompt for Google Veo — camera, style, sound and dialogue", "dot": "rgba(251,146,60,0.9)"},
     {"key": "workflow", "label": "Workflow", "group": "specialist", "kind": "builder", "desc": "Plain English → importable n8n JSON", "dot": "rgba(34,197,94,0.9)"},
+    {"key": "harness", "label": "Harness", "group": "specialist", "kind": "builder", "desc": "Describe a job → a loop Claude Code runs until it's done", "dot": "rgba(242,155,203,0.9)", "profile": "about"},
     {"key": "email", "label": "Email", "group": "specialist", "kind": "standalone", "desc": "Speak the situation → ready-to-send email with tone", "dot": "rgba(20,184,166,0.9)", "profile": "voice"}
   ]
 }

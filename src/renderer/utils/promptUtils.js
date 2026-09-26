@@ -142,6 +142,7 @@ export function getModeTagStyle(modeKey) {
   if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'design' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgb(167,139,250) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }
+  if (mode === 'harness') return { background: 'rgba(242,155,203,0.12)', color: 'color-mix(in oklab, rgb(242,155,203) var(--accent-text-strength), rgb(var(--ink)))' }
   if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'color-mix(in oklab, rgb(45,212,191) var(--accent-text-strength), rgb(var(--ink)))' }
   return { background: 'rgba(10,132,255,0.1)', color: 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))' }
 }

@@ -5,6 +5,7 @@ import { test, _electron as electron, expect } from '@playwright/test'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { HARNESS_LOOP, HARNESS_PIPELINE, HARNESS_FILES } from './harness-fixtures.mjs'
 import { auditLayout, formatIssues } from './layout-audit.mjs'
 
 // These walk the real window for a minute each. If someone is using the Mac at the same time,
@@ -71,6 +72,7 @@ function writeFakeClaude(dir) {
     gap: 'Neither says where the Zendesk API token comes from.',
     intentDrift: 'none', intentDriftLabel: 'Intent preserved',
   })
+  Object.assign(answers, { harnessLoop: HARNESS_LOOP, harnessPipeline: HARNESS_PIPELINE, harnessFiles: HARNESS_FILES })
   const answersFile = path.join(dir, 'answers.json')
   fs.writeFileSync(answersFile, JSON.stringify(answers))
   const claude = path.join(dir, 'claude')
@@ -100,6 +102,8 @@ process.stdin.on('end', () => {
       : has('n8n workflow engineer. Analyse') ? a.workflowAnalysis
       : has('Generate a complete, valid n8n workflow JSON') ? a.workflowJson
       : has('You judge how well a request would work') ? a.eval
+      : has('You design harnesses') ? (has('TypeScript') ? a.harnessPipeline : a.harnessLoop)
+      : has('You write harnesses for Claude Code') ? a.harnessFiles
       : a.prompt
     if (args.includes('stream-json')) console.log(JSON.stringify({ type: 'result', is_error: false, result: out }))
     else process.stdout.write(out + '\\n')
@@ -214,7 +218,7 @@ for (const theme of ['dark', 'light']) {
     test.setTimeout(240000)
     fs.mkdirSync(OUT, { recursive: true })
     const found = []
-    const { app, dir } = await launch(theme)
+    const { app, dir } = await launch(theme, { config: { dictionary: 'Supabase\nZendesk\nKubernetes\nN10 → n8n' } })
     const check = recorder(theme, found, app)
     const page = await mainPage(app)
     page.__theme = theme
@@ -248,11 +252,18 @@ for (const theme of ['dark', 'light']) {
     await page.keyboard.press('Meta+?')
     await check(page, 'shortcuts')
     await page.keyboard.press('Escape')
+    // Two edits that fixed the same word: Your words offers to fix it automatically.
+    fs.writeFileSync(path.join(dir, 'userData', 'style-edits.json'), JSON.stringify([
+      { mode: 'balanced', before: 'Sync the Zen desk tickets', after: 'Sync the Zendesk tickets', at: '' },
+      { mode: 'dictate', before: 'Ask Zen desk support', after: 'Ask Zendesk support', at: '' },
+    ]))
     await page.keyboard.press('Meta+/')
     await check(page, 'settings')
-    // Every tab, then You: drafting "How you write" from pasted writing.
+    // Every tab (Dictation offers the Zendesk fix in Your words), then You: drafting "How you
+    // write" from pasted writing.
     for (const tab of ['Dictation', 'Speech', 'Prompts', 'Setup']) {
       await page.getByRole('tab', { name: tab }).click()
+      if (tab === 'Dictation') await expect(page.getByRole('group', { name: 'Suggested fix' })).toBeVisible()
       await check(page, `settings-${tab.toLowerCase()}`)
     }
     await page.getByRole('tab', { name: 'You' }).click()
@@ -345,6 +356,26 @@ for (const theme of ['dark', 'light']) {
     await typeAndSubmit(page, 'when someone fills in the typeform add a row to google sheets and post in slack')
     await expect.poll(() => appState(app), { timeout: 15000 }).toBe('WORKFLOW_BUILDER')
     await check(page, 'workflow-builder', { settle: 800 })
+
+    // Harness: a loop, its files, and a pipeline.
+    await switchMode(app, page, 'harness')
+    await typeAndSubmit(page, 'every night fix the failing tests one at a time')
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER')
+    await check(page, 'harness-plan', { settle: 800 })
+    await page.getByRole('button', { name: 'Fill in Test command' }).click()
+    await page.getByRole('textbox', { name: 'Test command' }).fill('npm test')
+    await check(page, 'harness-gap-typing', { settle: 300 })
+    await page.keyboard.press('Enter')
+    await page.getByRole('button', { name: 'Write the files' }).click()
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER_DONE')
+    await check(page, 'harness-files', { settle: 600 })
+    await page.getByRole('button', { name: 'Start over' }).click()
+    await typeAndSubmit(page, 'move this repo to TypeScript with three agents in parallel')
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER')
+    await check(page, 'harness-pipeline', { settle: 800 })
+    await sizeWindow(app, 1280, 800)
+    await check(page, 'harness-pipeline-large', { settle: 600 })
+    await sizeWindow(app, 940, 600)
 
     // The floating pill.
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 // something (recording, Claude writing, filling in a builder). A result on screen is already
 // in history, so starting a new request loses nothing.
 export const CAN_START_TYPING = new Set([
-  'IDLE', 'PROMPT_READY', 'EMAIL_READY', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE',
+  'IDLE', 'PROMPT_READY', 'EMAIL_READY', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'HARNESS_BUILDER_DONE',
   'ERROR', 'TRANSCRIPTION_ERROR', 'GENERATION_ERROR', 'SETTINGS', 'SHORTCUTS',
 ])
 

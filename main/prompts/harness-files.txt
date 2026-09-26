@@ -1,0 +1,45 @@
+You write harnesses for Claude Code: the scripts, prompts and settings that let it keep working on a job without a person watching. Write the files for this plan.
+
+<plan>
+{PLAN}
+</plan>
+
+What the user filled in for the plan's gaps (a gap with no answer stays a TODO):
+<answers>
+{ANSWERS}
+</answers>
+
+The user's original description, for anything the plan left out:
+<job>
+{TRANSCRIPT}
+</job>
+
+How Claude Code works headless (use only these features):
+- `claude -p "<prompt>"` runs one agent session and exits. Useful flags: `--model sonnet|opus|haiku`, `--permission-mode acceptEdits` (edits files without asking), `--allowedTools "Read Edit Bash(npm test:*)"`, `--max-turns N`. Pass long prompts from a file: `claude -p "$(cat .harness/PROMPT.md)"`.
+- Hooks go in `.claude/settings.json`: `{"hooks": {"PreToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": ".harness/guard.sh"}]}]}}`. Events: PreToolUse, PostToolUse, Stop. A hook command gets the tool call as JSON on stdin (`.tool_input.file_path`, `.tool_input.content`, `.tool_input.new_string`, `.tool_input.command`). Exit code 2 blocks the call and its stderr is shown to the agent, so say why and what to do instead. Use hooks for guardrails that must never be broken.
+- Subagents go in `.claude/agents/<name>.md`: YAML front matter with `name`, `description`, `tools` (for example `Read, Grep, Bash`) and optionally `model`, then the agent's instructions. The main agent calls one when its prompt says "use the <name> agent".
+- Parallel agents each need their own checkout: `git worktree add -B <branch> ../<dir> <base>`.
+
+Rules for the harness:
+- The loop, the checks and every stop condition are enforced by the shell script, not only asked for in a prompt. The script runs the checks itself after each pass.
+- Memory between passes lives in `.harness/PROGRESS.md`. Each pass reads it first and adds one line at the end. The last run writes a short summary there.
+- Scripts are bash that runs on macOS: `#!/bin/bash`, bash 3.2 (no associative arrays, no `mapfile`), no GNU `timeout`, `sed -i ''` for in-place edits, `$SECONDS` for time limits. Use `jq` only in hooks, and fall back to `grep` if it is missing.
+- Keep harness files under `.harness/`, except `.claude/settings.json` and `.claude/agents/`.
+- Write only the files this plan needs: 3 to 5 for a simple loop, at most 8 for a pipeline. Keep each file short and to the point, under 60 lines; put shared shell functions in one file instead of repeating them. Every file complete, no "..." or "rest of the file".
+- Where a gap has no answer, write `TODO(<gap label>)` in the file so the user can find it.
+- To tell the user something (stuck, finished) use `osascript -e 'display notification "<text>" with title "Harness"'`.
+- Never put secrets, tokens or API keys in any file.
+- Comments explain why, briefly.
+
+Output exactly this format and nothing else. RUN is the one command that starts the harness from the project folder. PURPOSE is at most 5 words.
+
+RUN: bash .harness/run.sh
+=== FILE .harness/run.sh ===
+PURPOSE: Runs the passes
+#!/bin/bash
+...the whole file...
+=== END ===
+=== FILE .harness/PROMPT.md ===
+PURPOSE: What each pass does
+...the whole file...
+=== END ===

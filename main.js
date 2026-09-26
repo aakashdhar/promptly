@@ -19,9 +19,11 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor } = require('./main/prompts');
-const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, buildLearnStylePrompt, DETAIL_LEVELS } = require('./main/prompts');
+const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
 const { tidyDictation } = require('./main/dictation');
+const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
+const harness = require('./main/harness');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
 
 // End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
@@ -66,6 +68,7 @@ const MENU_BAR_ICON_STATE = {
   IMAGE_BUILDER: 'builder', IMAGE_BUILDER_DONE: 'builder',
   VIDEO_BUILDER: 'builder', VIDEO_BUILDER_DONE: 'builder',
   WORKFLOW_BUILDER: 'builder', WORKFLOW_BUILDER_DONE: 'builder',
+  HARNESS_BUILDER: 'builder', HARNESS_BUILDER_DONE: 'builder',
 };
 
 // Built-in speech-to-text (whisper.cpp + model), built by scripts/fetch-whisper.sh.
@@ -196,8 +199,14 @@ const PROMPT_STYLES = MODES.modes.filter((m) => m.promptStyle);
 // Edits the user makes to results, for "Suggest updates from your edits" in Settings.
 const editLog = createEditLog(path.join(app.getPath('userData'), 'style-edits.json'));
 
+// Your words: names Whisper and Claude should spell right, and corrections for words Whisper
+// keeps mishearing, applied to every transcript.
 function dictionaryWords() {
-  return String(config.read().dictionary || '').split(/[\n,]/).map((w) => w.trim()).filter(Boolean).slice(0, 200);
+  return hintWords(parseWords(config.read().dictionary));
+}
+
+function correctTranscript(transcript) {
+  return applyCorrections(transcript, parseWords(config.read().dictionary).corrections);
 }
 
 function speechPrefs() {
@@ -994,6 +1003,18 @@ app.whenReady().then(async () => {
     return { recorded, editCount: editLog.count() };
   });
 
+  // Corrections the user keeps making by hand ("N10" → "n8n"), offered for Your words.
+  ipcMain.handle('word-suggestions', () => {
+    const stored = config.read();
+    return suggestCorrections(editLog.list(), parseWords(stored.dictionary), stored.dismissedWords || []);
+  });
+
+  ipcMain.handle('dismiss-word-suggestion', (_event, { from } = {}) => {
+    const word = String(from || '').trim().slice(0, 100);
+    if (word) config.update({ dismissedWords: [...(config.read().dismissedWords || []), word].slice(-100) });
+    return { ok: true };
+  });
+
   ipcMain.handle('clear-edits', () => {
     editLog.clear();
     return { editCount: 0 };
@@ -1084,6 +1105,71 @@ app.whenReady().then(async () => {
     return claude.run(prompt, { timeoutMs: 120000, slowWarningMs: 45000 });
   });
 
+  // ── Harness mode ──
+
+  ipcMain.handle('harness-plan', async (_event, { transcript, context = {} } = {}) => {
+    const stored = config.read();
+    const block = buildContextBlock(getMode('harness'), { ...context, ...profileFor(getMode('harness'), stored), dictionary: dictionaryWords() });
+    const result = await claude.run(harness.buildPlanPrompt(String(transcript || ''), block), { timeoutMs: 120000, slowWarningMs: 45000 });
+    if (!result.success) return result;
+    const plan = harness.parsePlan(result.prompt);
+    return plan ? { success: true, plan } : { success: false, error: "Couldn't map that into a harness. Try describing it again.", errorType: 'parse' };
+  });
+
+  ipcMain.handle('harness-files', async (_event, { transcript, plan, answers } = {}) => {
+    if (!plan || typeof plan !== 'object') return { success: false, error: 'No plan to write', errorType: 'unknown' };
+    // Thinking is off here: with it on, a pipeline's files took minutes longer and came out no
+    // better. The window still shows each file as it's finished.
+    let lastSent = 0;
+    const onDelta = (text) => {
+      const now = Date.now();
+      if (now - lastSent < 250) return;
+      lastSent = now;
+      winSend('generation-delta', { text: harness.progressText(text) });
+    };
+    const result = await claude.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
+    if (!result.success) return result;
+    const parsed = harness.parseFiles(result.prompt);
+    return parsed ? { success: true, ...parsed } : { success: false, error: "Couldn't read the files Claude wrote. Try again.", errorType: 'parse' };
+  });
+
+  // Saves the harness into a project folder the user picks. Existing files are only replaced
+  // after they confirm; an existing .claude/settings.json gets the new hooks added, not replaced.
+  ipcMain.handle('save-harness', async (_event, { files } = {}) => {
+    const list = Array.isArray(files) ? files.filter((f) => f && harness.safeRelativePath(f.path)) : [];
+    if (!list.length) return { ok: false, error: 'Nothing to save' };
+    let dir = IS_E2E ? process.env.PROMPTLY_SAVE_DIR : null;
+    if (!dir) {
+      const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+        title: 'Save the harness',
+        message: 'Choose the project folder the harness will work in',
+        buttonLabel: 'Save here',
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      if (canceled || !filePaths?.[0]) return { ok: false, cancelled: true };
+      dir = filePaths[0];
+    }
+    const clash = harness.existingFiles(dir, list);
+    if (clash.length && !IS_E2E) {
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'warning',
+        buttons: ['Replace', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1,
+        message: `Replace ${clash.length === 1 ? 'a file' : `${clash.length} files`} in ${path.basename(dir)}?`,
+        detail: clash.join('\n'),
+      });
+      if (response !== 0) return { ok: false, cancelled: true };
+    }
+    try {
+      const written = harness.writeFiles(dir, list);
+      log.info('Saved harness', { dir, files: written.length });
+      return { ok: true, dir, written };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
   // Replays the last generate-prompt request with the same mode and options
   // (tone, email override), so a retry produces what the original call would have.
   ipcMain.handle('retry-generation', () => {
@@ -1131,7 +1217,7 @@ app.whenReady().then(async () => {
     try {
       fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
       lastTempAudioPath = tmpFile;
-      const transcript = await whisper.transcribe(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 });
+      const transcript = correctTranscript(await whisper.transcribe(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 }));
       safeUnlink(tmpFile);
       lastTempAudioPath = null;
       return { success: true, transcript };
@@ -1148,7 +1234,7 @@ app.whenReady().then(async () => {
     try { if (!fs.existsSync(lastTempAudioPath)) return noAudio; } catch { return noAudio; }
     if (!whisper.engine()) return { success: false, error: 'Speech-to-text is not available — reinstall Promptly' };
     try {
-      const transcript = await whisper.transcribe(lastTempAudioPath, { timeoutMs: 90000, slowWarningMs: 20000 });
+      const transcript = correctTranscript(await whisper.transcribe(lastTempAudioPath, { timeoutMs: 90000, slowWarningMs: 20000 }));
       safeUnlink(lastTempAudioPath);
       lastTempAudioPath = null;
       return { success: true, transcript };

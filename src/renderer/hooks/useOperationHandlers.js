@@ -15,6 +15,7 @@ export default function useOperationHandlers({
   handleImageStartOver,
   handleVideoStartOver,
   handleWorkflowStartOver,
+  handleHarnessStartOver,
   setEmailOutput,
   setTranscriptionSlow,
   setGenerationSlow,
@@ -37,6 +38,7 @@ export default function useOperationHandlers({
     if (s === STATES.IMAGE_BUILDER || s === STATES.IMAGE_BUILDER_DONE) { handleImageStartOver(); return }
     if (s === STATES.VIDEO_BUILDER || s === STATES.VIDEO_BUILDER_DONE) { handleVideoStartOver(); return }
     if (s === STATES.WORKFLOW_BUILDER || s === STATES.WORKFLOW_BUILDER_DONE) { handleWorkflowStartOver(); return }
+    if (s === STATES.HARNESS_BUILDER || s === STATES.HARNESS_BUILDER_DONE) { handleHarnessStartOver(); return }
     if (s === STATES.EMAIL_READY) { setEmailOutput(null); transitionRef.current(STATES.IDLE); return }
     transitionRef.current(STATES.IDLE)
   }

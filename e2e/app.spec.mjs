@@ -6,6 +6,7 @@ import fs from 'fs'
 import http from 'http'
 import os from 'os'
 import path from 'path'
+import { HARNESS_LOOP, HARNESS_FILES } from './harness-fixtures.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 
@@ -40,6 +41,7 @@ if printf '%s' "$input" | grep -q "Assemble a final"; then
   printf '%s' '{"prompt":"A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic","flags":"--ar 4:5 --stylize 750 --chaos 20"}'
   exit 0
 fi
+if printf '%s' "$input" | grep -q "You design harnesses"; then cat "$FAKE_DIR/harness-plan.json"; exit 0; fi
 if printf '%s' "$input" | grep -q "write short style notes"; then
   printf '%s' '- Short sentences
 - Signs off with "Cheers, Sam"'
@@ -57,7 +59,9 @@ if printf '%s' "$input" | grep -q "expert email writer"; then
 fi
 if printf '%s' "$input" | grep -q "n8n workflow engineer. Analyse"; then cat "$FAKE_DIR/workflow-analysis.json"; exit 0; fi
 if printf '%s' "$input" | grep -q "Generate a complete, valid n8n workflow JSON"; then cat "$FAKE_DIR/workflow.json"; exit 0; fi
-if printf '%s' "$input" | grep -q "POLISHED:"; then
+if printf '%s' "$input" | grep -q "You write harnesses for Claude Code"; then
+  out=$(cat "$FAKE_DIR/harness-files.txt")
+elif printf '%s' "$input" | grep -q "POLISHED:"; then
   out=$(printf 'POLISHED:\\n%s (polished)\\n\\nCHANGES:\\n· Tidied the wording' "$last")
 else
   out=$(printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s' "$last")
@@ -77,6 +81,8 @@ touch "$FAKE_DIR/call-$n.done"
   fs.chmodSync(claude, 0o755)
   fs.writeFileSync(path.join(dir, 'workflow-analysis.json'), JSON.stringify({ workflowName: 'Form to Slack', trigger: 'A form is sent', nodes: [{ id: 1, name: 'Webhook', type: 'n8n-nodes-base.webhook', purpose: 'Receives the form', parameters: { path: 'PATH' }, placeholders: ['path'] }, { id: 2, name: 'Post to Slack', type: 'n8n-nodes-base.slack', purpose: 'Tells the team', parameters: { channel: 'CHANNEL' }, placeholders: ['channel'] }], connections: 'linear 1→2', connectionsMap: { Webhook: ['Post to Slack'] } }))
   fs.writeFileSync(path.join(dir, 'workflow.json'), '```json\n' + JSON.stringify({ name: 'Form to Slack', nodes: [{ name: 'Webhook', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [240, 300], parameters: { path: 'forms' } }], connections: {} }) + '\n```')
+  fs.writeFileSync(path.join(dir, 'harness-plan.json'), HARNESS_LOOP)
+  fs.writeFileSync(path.join(dir, 'harness-files.txt'), HARNESS_FILES)
   // Fake built-in engine (whisper-cli + model): only accepts WAV, like the real one.
   const engineDir = path.join(dir, 'engine')
   fs.mkdirSync(engineDir)
@@ -118,7 +124,7 @@ rl.on('close', () => process.exit(0))
 
 // mode: most tests below are about prompt modes, so they start in Prompt; pass mode: null to
 // start the way a fresh install does (Dictation).
-async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'prompt', speechModel = null } = {}) {
+async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'prompt', speechModel = null, env = {} } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -146,6 +152,7 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
       FAKE_DIR: fakeDir,
       TMPDIR: tmpDir,
       ...(speechModel && { PROMPTLY_SPEECH_MODEL: JSON.stringify(speechModel) }),
+      ...env,
     },
   })
   if (!setupComplete) return { app, dir, fakeDir, tmpDir }
@@ -499,9 +506,9 @@ test('the app menu keeps the Edit commands macOS needs for copy and paste', asyn
 test('hold to talk from Terminal: destination, selection and dictionary shape the prompt', async () => {
   ctx = await launch({ withHelper: true })
   const { app, page, fakeDir } = ctx
-  await page.evaluate(() => window.electronAPI.setPreferences({ dictionary: 'Supabase, Promptly' }))
+  await page.evaluate(() => window.electronAPI.setPreferences({ dictionary: 'Supabase, Promptly\nN10 → n8n' }))
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.hide()))
-  fs.writeFileSync(path.join(fakeDir, 'transcript'), 'fix this error in the upload job')
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), 'fix this error in the N10 upload job')
 
   await withClipboard(app, async () => {
     await app.evaluate(() => globalThis.__promptlyE2E.hotkey('down'))
@@ -515,10 +522,11 @@ test('hold to talk from Terminal: destination, selection and dictionary shape th
   const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
   expect(stdin).toContain('AI coding agent')
   expect(stdin).toContain('<selected_text>\nTypeError: cannot read properties of undefined\n</selected_text>')
-  expect(stdin).toContain('Spell these names and terms exactly as written: Supabase, Promptly.')
-  expect(stdin).toContain('<transcript>\nfix this error in the upload job\n</transcript>')
-  // The dictionary also biases transcription.
-  expect(fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8')).toContain('--prompt Supabase, Promptly')
+  expect(stdin).toContain('Spell these names and terms exactly as written: Supabase, Promptly, n8n.')
+  // A fix in Your words corrects what Whisper heard before anything else sees it.
+  expect(stdin).toContain('<transcript>\nfix this error in the n8n upload job\n</transcript>')
+  // Your words also bias transcription.
+  expect(fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8')).toContain('--prompt Supabase, Promptly, n8n')
 })
 
 test('a quick tap then another tap works as toggle with the helper too', async () => {
@@ -1045,4 +1053,57 @@ test('Esc while a builder is working cancels it for good', async () => {
   await expect.poll(() => appState(app)).toBe('IDLE')
   await page.waitForTimeout(3500)
   expect(await appState(app)).toBe('IDLE')
+})
+
+test('Harness mode: a spoken job becomes a plan with gaps to fill, then files saved into a project', async () => {
+  const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-harness-'))
+  ctx = await launch({ mode: 'harness', env: { PROMPTLY_SAVE_DIR: saveDir } })
+  const { app, page, fakeDir } = ctx
+  try {
+    await typeAndSubmit(page, 'every night fix the failing tests one at a time and never touch the migrations')
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER')
+    expect(await lastStdin(fakeDir)).toContain('every night fix the failing tests one at a time and never touch the migrations')
+
+    // The plan: the loop, what stops it, and two gaps.
+    await expect(page.getByText('Nightly test fixer')).toBeVisible()
+    await expect(page.getByRole('img', { name: /A loop: Pick, then Fix, then Check, then Record/ })).toBeVisible()
+    await expect(page.getByText('A test still fails after 3 tries')).toBeVisible()
+    await expect(page.getByText('2 to fill')).toBeVisible()
+
+    // Filling a gap.
+    await page.getByRole('button', { name: 'Fill in Test command' }).click()
+    await page.getByRole('textbox', { name: 'Test command' }).fill('npm test')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('1 to fill')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Test command: npm test. Change' })).toBeVisible()
+
+    // The files, written with the answers; the unanswered gap is left for a TODO.
+    await page.getByRole('button', { name: 'Write the files' }).click()
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('HARNESS_BUILDER_DONE')
+    const stdin = await lastStdin(fakeDir)
+    expect(stdin).toContain('Test command: npm test')
+    expect(stdin).toContain('Work on branch: (no answer)')
+    expect(stdin).toContain('"name": "Nightly test fixer"')
+    await expect(page.getByText('3 files')).toBeVisible()
+    await expect(page.getByText('bash .harness/loop.sh')).toBeVisible()
+    await page.getByRole('tab', { name: /PROGRESS\.md/ }).click()
+    await expect(page.getByText('| Test | Try | Change | Result |')).toBeVisible()
+
+    // Saved into the project, scripts executable; it's in history too.
+    await page.getByRole('button', { name: 'Save to project…' }).click()
+    await expect(page.getByRole('button', { name: '✓ Saved' })).toBeVisible()
+    expect(fs.statSync(path.join(saveDir, '.harness/loop.sh')).mode & 0o111).toBeTruthy()
+    expect(fs.readFileSync(path.join(saveDir, '.harness/PROMPT.md'), 'utf8')).toContain('## Each pass')
+    const history = await page.evaluate(() => JSON.parse(localStorage.getItem('promptly_history') || '[]'))
+    expect(history[0]).toMatchObject({ mode: 'harness' })
+    expect(history[0].prompt).toContain('=== .harness/loop.sh ===')
+
+    // Back to the plan keeps the answers; Start over clears it.
+    await page.getByRole('button', { name: 'Back to plan' }).click()
+    await expect(page.getByText('1 to fill')).toBeVisible()
+    await page.getByRole('button', { name: 'Start over' }).click()
+    await expect.poll(() => appState(app)).toBe('IDLE')
+  } finally {
+    fs.rmSync(saveDir, { recursive: true, force: true })
+  }
 })

@@ -159,6 +159,27 @@ describe('createClaudeRunner', () => {
     expect(args).toContain('--no-session-persistence')
   })
 
+  it('turns extended thinking off only when asked', async () => {
+    const envOf = (opts) => new Promise((resolve) => {
+      const claude = createClaudeRunner({
+        getClaudePath: () => '/x/claude',
+        spawnImpl: (_cmd, _args, { env }) => {
+          resolve(env)
+          const { EventEmitter } = require('events')
+          const child = new EventEmitter()
+          child.stdout = new EventEmitter(); child.stderr = new EventEmitter()
+          child.stdin = { on() {}, end() {} }
+          child.kill = () => {}
+          setTimeout(() => child.emit('close', 1))
+          return child
+        },
+      })
+      claude.run('hi', opts)
+    })
+    expect((await envOf({ thinking: false })).MAX_THINKING_TOKENS).toBe('0')
+    expect((await envOf({})).MAX_THINKING_TOKENS).toBeUndefined()
+  })
+
   it('retries without the lean flags on an older CLI', async () => {
     const r = await runner('old-cli').run('hi')
     expect(r).toEqual({ success: true, prompt: 'ok-without-lean-flags' })

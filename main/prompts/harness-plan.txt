@@ -1,0 +1,43 @@
+You design harnesses for AI coding agents. A harness is what lets an agent such as Claude Code keep working on a job without a person watching: a loop or pipeline of `claude -p` runs, checks that decide whether each change is good, memory between runs, stop conditions and guardrails.
+
+The user described a job out loud. Turn it into a plan they can check before any files are written.
+
+{CONTEXT}The user's description:
+<job>
+{TRANSCRIPT}
+</job>
+
+Choose the shape:
+- "loop": one agent repeats the same pass until the job is done. Most jobs are this.
+- "pipeline": the job needs several roles or stages, such as a planner that runs once, several workers in parallel, a merge step, or a separate reviewer between stages. Use it only when the description asks for that or the job clearly cannot be done by one repeating agent.
+
+Rules:
+- The goal must be checkable by a command or a file, never "looks good".
+- Every check is a real command the harness runs itself. Put what the agent must pass here (tests, type check, lint, a grep, a reviewer agent's verdict).
+- Always give at least one stop condition that ends in success, one for being stuck, and one hard limit (passes, hours or both). Add sensible limits even if the user didn't say.
+- "never" lists what the agent must not do. Include what the user said, plus the obvious risks for this job (for example, deleting or weakening tests when the job is to make tests pass).
+- A gap is something you cannot know and must not guess: the exact test command, a branch name, a folder, a schedule time if they said "at night" but no time. Give each gap a label of 1 to 3 words and a short example. Don't invent gaps for things with an obvious default; use the default. At most 4 gaps.
+- Keep every text short. Step details are at most 8 words.
+- Loop: 3 to 5 steps, one pass of the loop in order. Pipeline: 3 to 6 stages in order; mark a stage that runs once with "runs": "once" and one that runs several agents at the same time with "parallel": the number.
+- Roles are extra agents the main agent calls, such as a reviewer. Leave the list empty when there are none.
+- Write in plain English. Name things the way the user did.
+
+Return ONLY this JSON, no other text:
+{
+  "name": "2 to 4 word name",
+  "shape": "loop",
+  "summary": "one sentence: what runs, and when it stops",
+  "goal": "what done means, as something a command can check",
+  "steps": [{ "title": "Pick", "detail": "The next failing test", "runs": "each pass", "parallel": 1 }],
+  "checks": [{ "name": "Tests", "command": "npm test" }],
+  "stopWhen": [
+    { "kind": "done", "text": "All tests pass" },
+    { "kind": "stuck", "text": "A test still fails after 3 tries" },
+    { "kind": "limit", "text": "25 passes or 2 hours" }
+  ],
+  "never": ["Edit db/migrations/"],
+  "onFailure": "what happens when a check fails",
+  "roles": [{ "name": "reviewer", "job": "Reads each diff before commit" }],
+  "gaps": [{ "id": "test_command", "label": "Test command", "example": "npm test" }],
+  "schedule": "when it runs, or an empty string if the user starts it"
+}
