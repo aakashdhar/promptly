@@ -623,6 +623,7 @@ test('edits you make are remembered, and Settings drafts your style notes from t
   await page.keyboard.press('Escape')
   await expect.poll(() => appState(app)).toBe('IDLE')
   await page.keyboard.press('Meta+/')
+  await page.getByRole('tab', { name: 'You' }).click()
   await page.getByRole('button', { name: 'Suggest from my 1 edit' }).click()
   await expect(page.getByText('Suggested notes')).toBeVisible({ timeout: 15000 })
   const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
@@ -640,6 +641,7 @@ test('Settings drafts your style notes from pasted writing', async () => {
   ctx = await launch()
   const { page, fakeDir } = ctx
   await page.keyboard.press('Meta+/')
+  await page.getByRole('tab', { name: 'You' }).click()
   await page.getByRole('button', { name: 'Learn from my writing' }).click()
   await page.locator('#settings-samples').fill('Hi all, quick one: the release moves to Friday. Nothing else changes. Cheers, Sam')
   await page.getByRole('button', { name: 'Draft my notes' }).click()
@@ -947,12 +949,13 @@ test('"Best accuracy" downloads once, is used for transcription, and takes the l
     })
     const { app, page, fakeDir } = ctx
     await page.keyboard.press('Meta+/')
+    await page.getByRole('tab', { name: 'Speech' }).click()
     await page.getByRole('button', { name: /^Download \(/ }).click()
     // Downloading switches to it and offers the language.
     await expect(page.getByRole('radio', { name: /Best accuracy/ })).toHaveAttribute('aria-checked', 'true', { timeout: 10000 })
     await page.locator('#settings-speechLanguage').selectOption('hi')
     expect((await page.evaluate(() => window.electronAPI.getPreferences())).speech).toMatchObject({ model: 'accurate', language: 'hi', installed: true })
-    await page.getByRole('button', { name: '← Back' }).click()
+    await page.getByRole('button', { name: 'Done' }).click()
 
     await dictateFromAnotherApp(app, page, fakeDir, 'यार, इस रिपोर्ट को छोटा कर दो')
     const args = fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8')
@@ -963,6 +966,7 @@ test('"Best accuracy" downloads once, is used for transcription, and takes the l
     // Removing it goes back to the built-in model.
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('dist-renderer')).show())
     await page.keyboard.press('Meta+/')
+    await page.getByRole('tab', { name: 'Speech' }).click()
     await page.getByRole('button', { name: /Remove the download/ }).click()
     await expect(page.getByRole('radio', { name: /Standard/ })).toHaveAttribute('aria-checked', 'true')
     expect((await page.evaluate(() => window.electronAPI.getPreferences())).speech).toMatchObject({ model: 'standard', installed: false })

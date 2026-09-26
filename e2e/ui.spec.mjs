@@ -62,6 +62,15 @@ function writeFakeClaude(dir) {
     workflowAnalysis: '{"workflowName":"New Typeform response to Slack and Google Sheets","trigger":"A new Typeform response arrives","nodes":[{"id":1,"name":"Typeform Trigger","type":"n8n-nodes-base.typeformTrigger","purpose":"Starts the workflow on each new response","operation":"onFormSubmit","parameters":{"formId":"FORM_ID"},"placeholders":["formId"],"credentialType":"typeformApi"},{"id":2,"name":"Append to Google Sheets","type":"n8n-nodes-base.googleSheets","purpose":"Adds the answers as a new row","operation":"append","parameters":{"spreadsheetId":"SPREADSHEET_ID","sheetName":"SHEET_NAME"},"placeholders":["spreadsheetId","sheetName"],"credentialType":"googleSheetsOAuth2Api"},{"id":3,"name":"Post to Slack","type":"n8n-nodes-base.slack","purpose":"Tells the team a response came in","operation":"postMessage","parameters":{"channel":"CHANNEL"},"placeholders":["channel"],"credentialType":"slackApi"}],"connections":"linear 1→2→3","connectionsMap":{"Typeform Trigger":["Append to Google Sheets"],"Append to Google Sheets":["Post to Slack"]},"credentialsNeeded":["typeformApi","googleSheetsOAuth2Api","slackApi"],"placeholderCount":4}',
     workflowJson: '{"name":"New Typeform response to Slack and Google Sheets","nodes":[{"parameters":{"formId":"abc123"},"name":"Typeform Trigger","type":"n8n-nodes-base.typeformTrigger","typeVersion":1,"position":[250,300]}],"connections":{}}',
   }
+  answers.eval = JSON.stringify({
+    rawScore: 58, promptlyScore: 86,
+    rawReasons: ['+ Names Zendesk, the five-minute sync and the four-hour flag', '- Conversational and loosely structured', '- No output format or way to check the result'],
+    promptlyReasons: ['+ Clear goal, requirements and success criteria', '+ Keeps every number the user gave', '- Assumes the Zendesk API token already exists'],
+    critique: 'Well structured and checkable, though it still assumes access to the Zendesk API is already set up.',
+    dimensions: { clarity: { raw: 60, structured: 88 }, specificity: { raw: 45, structured: 85 }, context: { raw: 55, structured: 80 }, actionability: { raw: 40, structured: 90 } },
+    gap: 'Neither says where the Zendesk API token comes from.',
+    intentDrift: 'none', intentDriftLabel: 'Intent preserved',
+  })
   const answersFile = path.join(dir, 'answers.json')
   fs.writeFileSync(answersFile, JSON.stringify(answers))
   const claude = path.join(dir, 'claude')
@@ -90,6 +99,7 @@ process.stdin.on('end', () => {
       : has('Assemble the following parameters') ? a.videoPrompt
       : has('n8n workflow engineer. Analyse') ? a.workflowAnalysis
       : has('Generate a complete, valid n8n workflow JSON') ? a.workflowJson
+      : has('You judge how well a request would work') ? a.eval
       : a.prompt
     if (args.includes('stream-json')) console.log(JSON.stringify({ type: 'result', is_error: false, result: out }))
     else process.stdout.write(out + '\\n')
@@ -240,7 +250,12 @@ for (const theme of ['dark', 'light']) {
     await page.keyboard.press('Escape')
     await page.keyboard.press('Meta+/')
     await check(page, 'settings')
-    // Settings → You: drafting "How you write" from pasted writing.
+    // Every tab, then You: drafting "How you write" from pasted writing.
+    for (const tab of ['Dictation', 'Speech', 'Prompts', 'Setup']) {
+      await page.getByRole('tab', { name: tab }).click()
+      await check(page, `settings-${tab.toLowerCase()}`)
+    }
+    await page.getByRole('tab', { name: 'You' }).click()
     await page.getByRole('button', { name: 'Learn from my writing' }).click()
     await page.locator('#settings-samples').fill('Hi all, quick one: the release moves to Friday so we can finish load testing. Nothing else changes. Cheers, Sam')
     await page.getByRole('button', { name: 'Draft my notes' }).click()
@@ -268,6 +283,13 @@ for (const theme of ['dark', 'light']) {
     await check(page, 'prompt-ready', { settle: 800 })
     await scrollAll(page)
     await check(page, 'prompt-ready-bottom')
+    // Score this prompt: the scores, one line per dimension, the reasons and what's missing.
+    await page.getByRole('button', { name: '↗ Score this prompt' }).click()
+    await expect(page.getByRole('region', { name: 'Prompt score' }).getByText('Still missing')).toBeVisible({ timeout: 15000 })
+    await check(page, 'prompt-score', { settle: 900 })
+    await sizeWindow(app, 1280, 800)
+    await check(page, 'prompt-score-large', { settle: 600 })
+    await sizeWindow(app, 940, 600)
 
     // History: ⌘H searches it; picking an entry shows it again.
     await page.keyboard.press('Escape')

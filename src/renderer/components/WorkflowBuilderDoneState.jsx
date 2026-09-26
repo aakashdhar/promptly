@@ -1,4 +1,3 @@
-import EvalPanel from './EvalPanel.jsx'
 
 export default function WorkflowBuilderDoneState({
   transcript,
@@ -293,9 +292,6 @@ export default function WorkflowBuilderDoneState({
         >
           {isCopied ? 'Copied!' : 'Copy JSON'}
         </button>
-      </div>
-      <div style={{ padding: '8px 0 4px' }}>
-        <EvalPanel transcript={transcript} prompt={workflowJson || ''} />
       </div>
     </div>
   )

@@ -26,7 +26,7 @@ function fitRows(text, min) {
   return Math.min(10, Math.max(min, lines + 1))
 }
 
-export default function YouSection({ prefs, onSave, onEditCount }) {
+export default function YouSection({ prefs, onSave, onEditCount, bare = false }) {
   const [voiceDraft, setVoiceDraft] = useState(prefs.voiceNotes || '')
   const [aboutDraft, setAboutDraft] = useState(prefs.aboutMe || '')
   const [showSamples, setShowSamples] = useState(false)
@@ -61,7 +61,7 @@ export default function YouSection({ prefs, onSave, onEditCount }) {
 
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={sectionLabel}>You</div>
+      {!bare && <div style={sectionLabel}>You</div>}
 
       <label htmlFor="settings-voice" style={fieldLabel}>
         How you write <span style={hint}>used for Polish and Email</span>

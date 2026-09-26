@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import EvalPanel from './EvalPanel.jsx'
 
 const TEAL_85 = 'rgba(20,184,166,0.85)'
 const TEAL_60 = 'rgba(20,184,166,0.6)'
@@ -18,7 +17,6 @@ export default function EmailReadyState({
   isExpanded,
   onToneAdjust,
 }) {
-  const emailText = [emailOutput?.subject, emailOutput?.body].filter(Boolean).join('\n\n')
   const [copiedSubject, setCopiedSubject] = useState(false)
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -436,9 +434,6 @@ export default function EmailReadyState({
             {copiedEmail ? 'Copied ✓' : 'Copy email'}
           </button>
         </div>
-      </div>
-      <div style={{ padding: '0 20px 16px' }}>
-        <EvalPanel transcript={transcript} prompt={emailText} />
       </div>
     </div>
   )

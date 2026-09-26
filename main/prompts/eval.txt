@@ -1,44 +1,56 @@
-You are a rigorous prompt quality evaluator. Score two versions of the same user request.
+You judge how well a request would work if handed to Claude. Compare two versions of the same request.
 
-INPUT A: The user's original spoken input, unedited.
-INPUT B: A reformatted version produced by an AI assistant.
+A is what the person said, word for word.
+B is the prompt an assistant wrote from it.
 
-Score each 0–100 on how well an AI model would understand the intent and produce a high-quality, accurate response. Evaluate on:
-- Intent clarity: Is the goal unambiguous and actionable?
-- Specificity: Are requirements concrete, not vague?
-- Context: Is relevant background included?
-- Constraints: Are preferences, limits, or edge cases specified?
-- Output guidance: Does it define what a good response looks like?
+<a_what_they_said>
+{TRANSCRIPT}
+</a_what_they_said>
 
-Be honest and strict. INPUT B is NOT automatically better. Penalise it if it:
-- Adds verbose framing or filler that contributes nothing
-- Dilutes or subtly shifts the user's actual intent
-- Is longer without being more precise or useful
-- Over-structures a simple request that was already clear
+<b_the_prompt>
+{PROMPT}
+</b_the_prompt>
 
-If INPUT A communicates the intent more directly and concisely, score it higher.
+Score each version from 0 to 100 on how likely Claude is to understand the intent and produce a result the person would be happy with. Judge each version on its own; don't assume B is better.
 
-INPUT A:
-"{TRANSCRIPT}"
+What makes a request strong:
+- The goal and the deliverable are unambiguous.
+- Requirements are concrete: names, numbers, formats and limits the person gave are all there.
+- The context needed to do the job well is there, including why it's needed and who it's for.
+- It says what a good result looks like, so Claude can check its own work (success criteria, a way to verify).
+- Anything that had to be guessed is marked as an assumption rather than stated as fact.
 
-INPUT B:
-"{PROMPT}"
+What makes a request weaker:
+- Details the person gave are missing, or things they didn't ask for were added.
+- The intent has shifted, even slightly.
+- Length without precision: filler, repetition, headings that hold nothing.
+- A generic role line ("You are an expert…") that adds nothing specific.
 
-Respond ONLY with valid JSON, no markdown fences, no explanation:
-{"rawScore":72,"promptlyScore":85,"rawReasons":["Missing output format and length constraints","Intent clear but role context absent","No examples to anchor expected response style"],"promptlyReasons":["Role and output format clearly specified","Adds useful context that narrows the task","Still lacks concrete examples or success criteria"],"critique":"Adds useful structure but the role framing is generic and the core ask needed only one extra constraint to land.","dimensions":{"clarity":{"raw":65,"structured":82},"specificity":{"raw":50,"structured":78},"context":{"raw":70,"structured":86},"actionability":{"raw":68,"structured":80}},"gap":"Neither version specifies the expected output format or length.","intentDrift":"none","intentDriftLabel":"Intent preserved"}
+Score these four dimensions separately for each version, each from 0 to 100:
+- clarity: how unambiguous the goal is
+- specificity: how concrete the requirements are
+- context: how much of the needed background is there
+- actionability: how clearly it defines a good result
 
-Rules:
-- rawReasons: exactly 3 items, each 8–14 words, honest about both weaknesses AND strengths
-- promptlyReasons: exactly 3 items, same length, include real flaws if present
-- critique: one sentence, 10–25 words, honest net verdict on INPUT B — no flattery
-- dimensions: score each of the 4 dimensions independently for INPUT A (raw) and INPUT B (structured) — do NOT derive these from rawScore/promptlyScore; assess each dimension on its own merits
-  - clarity: how unambiguous and readable is the request?
-  - specificity: how concrete and detailed are the requirements?
-  - context: how much relevant background is provided?
-  - actionability: how clearly does it define what a good response looks like?
-- gap: one sentence (max 20 words) naming what BOTH versions fail to address — be specific (not "add more context" — say WHAT context is missing)
-- intentDrift: exactly one of "none" | "minor" | "significant"
-  - "none" = INPUT B fully preserves the user's goal and scope
-  - "minor" = INPUT B introduces small reframing or slight scope shift
-  - "significant" = INPUT B meaningfully changes what was asked or adds unwanted framing
-- intentDriftLabel: 2–4 word phrase matching the drift level (e.g. "Intent preserved" / "Minor reframing" / "Goal shifted" / "Scope changed")
+Return ONLY a JSON object, no preamble and no markdown fences, with exactly these keys. The angle-bracket text describes each value; replace it with your own.
+{
+  "rawScore": <0-100 for A>,
+  "promptlyScore": <0-100 for B>,
+  "rawReasons": ["<3 reasons about A>"],
+  "promptlyReasons": ["<3 reasons about B>"],
+  "critique": "<one sentence, 10-25 words: an honest net verdict on B, no flattery>",
+  "dimensions": {
+    "clarity": { "raw": <0-100>, "structured": <0-100> },
+    "specificity": { "raw": <0-100>, "structured": <0-100> },
+    "context": { "raw": <0-100>, "structured": <0-100> },
+    "actionability": { "raw": <0-100>, "structured": <0-100> }
+  },
+  "gap": "<one sentence, at most 20 words, naming something specific that BOTH versions leave out, or an empty string if nothing important is missing>",
+  "intentDrift": "<none | minor | significant>",
+  "intentDriftLabel": "<2-4 words matching the drift, e.g. Intent preserved, Minor reframing, Goal shifted>"
+}
+
+Rules for the reasons:
+- Exactly 3 for each version, each 6-12 words, in plain English.
+- Start each one with "+ " for a strength or "- " for a weakness. Include weaknesses of B when there are any.
+- Be specific to this request (name the detail), never generic ("could be clearer").

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, evalScoreColor, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
+import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, parseEvalReason, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
 import { formatTime, pairDictations } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
@@ -241,26 +241,12 @@ describe('parsePolishOutput', () => {
   })
 })
 
-describe('evalScoreColor', () => {
-  it('always returns green for promptly', () => {
-    expect(evalScoreColor(30, true)).toBe('rgba(48,209,88,0.85)')
-    expect(evalScoreColor(0, true)).toBe('rgba(48,209,88,0.85)')
-  })
-  it('returns green for raw score >= 80', () => {
-    expect(evalScoreColor(80, false)).toBe('rgba(48,209,88,0.85)')
-    expect(evalScoreColor(100, false)).toBe('rgba(48,209,88,0.85)')
-  })
-  it('returns muted green for raw score 60–79', () => {
-    expect(evalScoreColor(60, false)).toBe('rgba(48,209,88,0.55)')
-    expect(evalScoreColor(79, false)).toBe('rgba(48,209,88,0.55)')
-  })
-  it('returns amber for raw score 40–59', () => {
-    expect(evalScoreColor(40, false)).toBe('rgba(255,159,10,0.85)')
-    expect(evalScoreColor(59, false)).toBe('rgba(255,159,10,0.85)')
-  })
-  it('returns red for raw score < 40', () => {
-    expect(evalScoreColor(39, false)).toBe('rgba(255,69,58,0.85)')
-    expect(evalScoreColor(0, false)).toBe('rgba(255,69,58,0.85)')
+describe('parseEvalReason', () => {
+  it('reads strengths and weaknesses from the leading sign', () => {
+    expect(parseEvalReason('+ Names the 47-day deadline')).toEqual({ sign: '+', text: 'Names the 47-day deadline' })
+    expect(parseEvalReason('- No output format')).toEqual({ sign: '-', text: 'No output format' })
+    expect(parseEvalReason('− No output format')).toEqual({ sign: '-', text: 'No output format' })
+    expect(parseEvalReason('Plain reason')).toEqual({ sign: null, text: 'Plain reason' })
   })
 })
 

@@ -121,12 +121,11 @@ export function parseImageAssemblyOutput(raw) {
   return parseImageAnalysisOutput(raw)
 }
 
-export function evalScoreColor(score, isPromptly) {
-  if (isPromptly) return 'rgba(48,209,88,0.85)'
-  if (score >= 80) return 'rgba(48,209,88,0.85)'
-  if (score >= 60) return 'rgba(48,209,88,0.55)'
-  if (score >= 40) return 'rgba(255,159,10,0.85)'
-  return 'rgba(255,69,58,0.85)'
+// A scorecard reason: "+ names the deadline" is a strength, "- no output format" a weakness.
+export function parseEvalReason(reason) {
+  const m = String(reason || '').match(/^\s*([+\-−–])\s*(.*)$/s)
+  if (!m) return { sign: null, text: String(reason || '').trim() }
+  return { sign: m[1] === '+' ? '+' : '-', text: m[2].trim() }
 }
 
 export function evalVerdict(delta) {

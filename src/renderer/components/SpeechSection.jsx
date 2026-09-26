@@ -45,7 +45,7 @@ function Option({ selected, disabled, onSelect, title, detail, children }) {
   )
 }
 
-export default function SpeechSection({ speech: initial, onSave }) {
+export default function SpeechSection({ speech: initial, onSave, bare = false }) {
   const [speech, setSpeech] = useState(initial)
   const [progress, setProgress] = useState(initial.downloading ? { percent: 0, mbDone: 0, mbTotal: initial.sizeMB } : null)
   const [error, setError] = useState('')
@@ -79,8 +79,8 @@ export default function SpeechSection({ speech: initial, onSave }) {
   const accurate = speech.model === 'accurate' && speech.installed
 
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={sectionLabel}>Speech recognition</div>
+    <div style={{ marginBottom: bare ? 0 : 14 }}>
+      {!bare && <div style={sectionLabel}>Speech recognition</div>}
       <div role="radiogroup" aria-label="Speech recognition" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <Option selected={!accurate} onSelect={() => choose('standard')} title="Standard" detail="Built in and fastest. English only." />
         <Option

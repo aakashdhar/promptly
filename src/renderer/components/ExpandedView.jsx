@@ -147,10 +147,7 @@ export default function ExpandedView({
           background: 'var(--bg)',
           display: 'flex', flexDirection: 'column',
         }}>
-          <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
-          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <SettingsPanel onClose={onCloseSettings} />
-          </div>
+          <SettingsPanel onClose={onCloseSettings} />
         </div>
       )}
       {/* While Settings or Shortcuts cover the window, what's behind them can't be reached by

@@ -95,10 +95,12 @@ describe('mode prompts', () => {
     }
   })
 
-  it('builds the eval prompt with both inputs', () => {
-    const out = buildEvalPrompt('raw words', 'Role: X')
-    expect(out).toContain('"raw words"')
-    expect(out).toContain('"Role: X"')
+  it('builds the eval prompt with both inputs, and no example scores to anchor on', () => {
+    const out = buildEvalPrompt('raw words', 'Goal: X')
+    expect(out).toContain('<a_what_they_said>\nraw words\n</a_what_they_said>')
+    expect(out).toContain('<b_the_prompt>\nGoal: X\n</b_the_prompt>')
+    expect(out).not.toMatch(/"rawScore":\s*\d/)
+    expect(out).toContain('A generic role line')
   })
 })
 
