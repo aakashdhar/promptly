@@ -28,6 +28,10 @@ export default function useIteration({
       iterRecorderRef.current = recorder
       iterChunksRef.current = []
       recorder.ondataavailable = (e) => iterChunksRef.current.push(e.data)
+      // The microphone went away mid-refinement: finish with what was said.
+      stream.getAudioTracks().forEach((track) => track.addEventListener('ended', () => {
+        if (iterRecorderRef.current === recorder) stopIteratingRef.current?.()
+      }))
       iterationBase.current = { transcript: originalTranscript.current, prompt: generatedPromptRef.current, mode: resultModeRef?.current || modeRef.current }
       isIterated.current = false
       recorder.start()
@@ -44,10 +48,10 @@ export default function useIteration({
     if (!recorder || iterIsProcessingRef.current) return
     iterIsProcessingRef.current = true
     stopTimer()
-    recorder.stop()
-    recorder.stream.getTracks().forEach((t) => t.stop())
-
-    recorder.onstop = async () => {
+    const finish = async () => {
+      // Once only: a later stop press or the microphone ending must not run it again.
+      if (iterRecorderRef.current !== recorder) return
+      iterRecorderRef.current = null
       const blob = new Blob(iterChunksRef.current, { type: 'audio/webm' })
       const arrayBuffer = await recordingToWav(blob)
       iterIsProcessingRef.current = false
@@ -101,7 +105,13 @@ Mode: ${iterationBase.current.mode}`
       saveToHistory({ transcript: iterText, prompt: genResult.prompt, mode: iterationBase.current.mode, isIteration: true, basedOn: iterationBase.current.prompt.slice(0, 100) })
       transitionRef.current(STATES.PROMPT_READY)
     }
+    // Already stopped on its own (the microphone went away): finish now; otherwise on stop.
+    if (recorder.state === 'inactive') finish()
+    else { recorder.onstop = finish; recorder.stop() }
+    recorder.stream.getTracks().forEach((t) => t.stop())
   }, [])
+  const stopIteratingRef = useRef(null)
+  stopIteratingRef.current = stopIterating
 
   const dismissIterating = useCallback(() => {
     const recorder = iterRecorderRef.current

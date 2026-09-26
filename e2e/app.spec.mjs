@@ -759,6 +759,43 @@ test('a faint speaker is asked to speak up while recording', async () => {
   await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
 })
 
+test('if the microphone drops out mid-recording, what was said is still transcribed and Control still works', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page, fakeDir } = ctx
+  await page.locator('#mode-pill').waitFor()
+  // Keep hold of the microphone stream so the test can end it, like AirPods disconnecting.
+  await page.evaluate(() => {
+    const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    navigator.mediaDevices.getUserMedia = async (c) => { const s = await real(c); window.__micStream = s; return s }
+  })
+  fs.writeFileSync(path.join(fakeDir, 'transcript'), 'everything I said before the mic dropped')
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await page.waitForTimeout(1200)
+  await page.evaluate(() => window.__micStream.getTracks().forEach((t) => { t.stop(); t.dispatchEvent(new Event('ended')) }))
+  await page.waitForTimeout(500)
+  // Control (the hotkey) must still finish the recording rather than do nothing.
+  if (await appState(app) === 'RECORDING') await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app), { timeout: 15000 }).toBe('PROMPT_READY')
+  await expect(page.getByText('everything I said before the mic dropped').first()).toBeVisible()
+})
+
+test('cancelling a recording throws it away instead of transcribing it', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page, fakeDir } = ctx
+  await page.locator('#mode-pill').waitFor()
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await page.waitForTimeout(800)
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('hotkey-cancel')))
+  await expect.poll(() => appState(app)).toBe('IDLE')
+  await page.waitForTimeout(1500)
+  expect(await appState(app)).toBe('IDLE')
+  // The engine runs once at startup on silence (warmup.wav); a recording would be promptly-*.wav.
+  const args = fs.existsSync(path.join(fakeDir, 'whisper-args')) ? fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8') : ''
+  expect(args).not.toMatch(/promptly-\d+\.wav/)
+})
+
 test('the pill can be dragged out of the way, and comes back where you left it', async () => {
   ctx = await launch({ mode: null })
   const { app, fakeDir } = ctx

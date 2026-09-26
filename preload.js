@@ -214,6 +214,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   sendAudioLevel: (level) => ipcRenderer.send('audio-level', level),
 
+  // Writes to ~/Library/Logs/Promptly/main.log, for problems the window runs into.
+  log: (level, message) => ipcRenderer.send('renderer-log', { level, message }),
+
   onMicQuiet: (callback) => {
     const cb = (_event, quiet) => callback(quiet)
     ipcRenderer.on('mic-quiet', cb)

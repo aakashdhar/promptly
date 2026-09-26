@@ -67,3 +67,12 @@ export const MIC_CONSTRAINTS = {
   audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true, channelCount: 1 },
   video: false,
 }
+
+// Rejects if a step hangs, so a stuck decoder can't leave the app waiting forever.
+export function withTimeout(promise, ms, message) {
+  let timer
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms) }),
+  ]).finally(() => clearTimeout(timer))
+}

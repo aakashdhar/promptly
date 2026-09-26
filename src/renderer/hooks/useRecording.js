@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { recordingToWav, MIC_CONSTRAINTS } from '../utils/audio.js'
+import { recordingToWav, MIC_CONSTRAINTS, withTimeout } from '../utils/audio.js'
 import { detectSpokenMode } from '../utils/spokenMode.js'
 
 export default function useRecording({
@@ -66,46 +66,23 @@ export default function useRecording({
     setRecSecs(0)
   }
 
-  const startRecording = useCallback(async () => {
-    // Context (app + selection) for this recording arrives from main just after it starts.
-    if (contextRef) contextRef.current = null
-    stopRequestedRef.current = false
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
-      const recorder = new MediaRecorder(stream)
-      mediaRecorderRef.current = recorder
-      audioChunksRef.current = []
-      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data)
-      recorder.start()
-      transitionRef.current(STATES.RECORDING)
-      startTimer()
-      startLevelMeter(stream)
-      // Hold-to-talk released before the microphone was ready: stop right away.
-      if (stopRequestedRef.current) {
-        stopRequestedRef.current = false
-        stopRecordingRef.current()
-      }
-    } catch {
-      transitionRef.current(STATES.ERROR, { message: 'Microphone access denied' })
-    }
-  }, [])
-
-  const stopRecording = useCallback(async () => {
-    const recorder = mediaRecorderRef.current
-    if (!recorder || isProcessingRef.current) return
+  // Finishes a recording, whoever ended it: the stop button or hotkey, or the microphone itself
+  // going away (AirPods disconnecting, the input switching), which stops the recorder on its own.
+  // It runs once per recording, so nothing said is lost and the app can't be left "recording".
+  const finishedRef = useRef(new WeakSet())
+  const finishRecording = useCallback(async (recorder) => {
+    if (finishedRef.current.has(recorder) || mediaRecorderRef.current !== recorder) return
+    finishedRef.current.add(recorder)
     isProcessingRef.current = true
-
     stopTimer()
     stopLevelMeter()
     isPausedRef.current = false
-    recorder.stop()
     recorder.stream.getTracks().forEach((t) => t.stop())
-
-    recorder.onstop = async () => {
+    try {
       isIterated.current = false
       setTranscriptionError?.(null)
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-      const arrayBuffer = await recordingToWav(blob)
+      const arrayBuffer = await withTimeout(recordingToWav(blob), 20000, 'Preparing the recording took too long')
 
       setThinkTranscript('')
       if (modeRef.current === 'email') {
@@ -160,13 +137,65 @@ export default function useRecording({
         ...(contextRef?.current && { context: contextRef.current }),
       })
       onGenerateResult.current(genResult, text, opId)
+    } catch (err) {
+      // Never leave the app stuck: say what happened so the user can try again.
+      window.electronAPI?.log?.('error', `Recording could not be finished: ${err?.message || err}`)
+      isProcessingRef.current = false
+      transitionRef.current(STATES.ERROR, { message: "Couldn't process that recording" })
     }
+  }, [])
+
+  const startRecording = useCallback(async () => {
+    // Context (app + selection) for this recording arrives from main just after it starts.
+    if (contextRef) contextRef.current = null
+    stopRequestedRef.current = false
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
+      const recorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = recorder
+      audioChunksRef.current = []
+      isProcessingRef.current = false
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data)
+      recorder.onstop = () => finishRecording(recorder)
+      // The microphone went away mid-recording: keep what was said and finish.
+      stream.getAudioTracks().forEach((track) => track.addEventListener('ended', () => {
+        if (mediaRecorderRef.current !== recorder || finishedRef.current.has(recorder)) return
+        window.electronAPI?.log?.('warn', 'Microphone stopped mid-recording; finishing with what was recorded')
+        if (recorder.state !== 'inactive') recorder.stop()
+        else finishRecording(recorder)
+      }))
+      recorder.start()
+      transitionRef.current(STATES.RECORDING)
+      startTimer()
+      startLevelMeter(stream)
+      // Hold-to-talk released before the microphone was ready: stop right away.
+      if (stopRequestedRef.current) {
+        stopRequestedRef.current = false
+        stopRecordingRef.current()
+      }
+    } catch {
+      transitionRef.current(STATES.ERROR, { message: 'Microphone access denied' })
+    }
+  }, [])
+
+  const stopRecording = useCallback(async () => {
+    const recorder = mediaRecorderRef.current
+    if (!recorder || isProcessingRef.current || finishedRef.current.has(recorder)) return
+    isProcessingRef.current = true
+    stopTimer()
+    stopLevelMeter()
+    isPausedRef.current = false
+    // Already stopped on its own (the microphone went away): finish with what was recorded.
+    if (recorder.state === 'inactive') finishRecording(recorder)
+    else recorder.stop()
   }, [])
 
   // Stop now, or as soon as recording has actually started (hold-to-talk released early).
   const requestStop = useCallback(() => {
     const recorder = mediaRecorderRef.current
     if (recorder && (recorder.state === 'recording' || recorder.state === 'paused')) stopRecordingRef.current()
+    // Stopped by itself but not finished yet: finish now instead of waiting forever.
+    else if (recorder && !finishedRef.current.has(recorder)) finishRecording(recorder)
     else stopRequestedRef.current = true
   }, [])
 
@@ -175,8 +204,11 @@ export default function useRecording({
     stopRequestedRef.current = false
     const recorder = mediaRecorderRef.current
     if (recorder) {
-      recorder.stream.getTracks().forEach((t) => t.stop())
+      // Dismissed: stopping it must not transcribe it.
       mediaRecorderRef.current = null
+      recorder.onstop = null
+      if (recorder.state !== 'inactive') recorder.stop()
+      recorder.stream.getTracks().forEach((t) => t.stop())
     }
     audioChunksRef.current = []
     isProcessingRef.current = false

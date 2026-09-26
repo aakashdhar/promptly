@@ -445,7 +445,16 @@ async function startFromHotkey() {
 function stopFromHotkey() {
   recordRequestedAt = 0;
   winSend('hotkey-stop');
+  // If the window doesn't finish the recording, record that it didn't, so a stuck recording
+  // can be diagnosed from the log.
+  clearTimeout(stopWatchdog);
+  stopWatchdog = setTimeout(() => {
+    if (currentAppState === 'RECORDING' || currentAppState === 'PAUSED') {
+      log.error('Recording did not stop 10 s after the stop shortcut', { responsive: win && !win.isDestroyed() && !win.webContents.isCrashed() });
+    }
+  }, 10000);
 }
+let stopWatchdog = null;
 
 function cancelFromHotkey() {
   recordRequestedAt = 0;
@@ -732,6 +741,8 @@ function createWindow() {
     });
   }
   win.webContents.on('render-process-gone', (_e, details) => log.error('Renderer process gone', details));
+  win.on('unresponsive', () => log.error('Window stopped responding', { state: currentAppState }));
+  win.on('responsive', () => log.info('Window responding again'));
   win.on('hide', () => {
     clearInterval(pulseInterval);
     pulseInterval = null;
@@ -876,6 +887,11 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.on('mode-changed', (_event, label) => { currentModeLabel = String(label || ''); });
+
+  ipcMain.on('renderer-log', (_event, { level, message } = {}) => {
+    const write = level === 'error' ? log.error : level === 'warn' ? log.warn : log.info;
+    write(`[window] ${String(message || '').slice(0, 2000)}`);
+  });
 
   ipcMain.handle('get-preferences', () => {
     const stored = config.read();
@@ -1309,6 +1325,9 @@ app.whenReady().then(async () => {
   // ── Menu bar state ──
 
   ipcMain.handle('update-menubar-state', (_event, appState) => {
+    if (appState !== currentAppState && (appState === 'RECORDING' || currentAppState === 'RECORDING')) {
+      log.info(`Recording: ${currentAppState} → ${appState}${pillSession ? ' (pill)' : ''}`);
+    }
     currentAppState = appState;
     // Each recording judges the speaker's volume afresh (pausing and resuming carries on).
     if (appState !== 'RECORDING' && appState !== 'PAUSED') {
