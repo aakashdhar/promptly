@@ -2073,3 +2073,12 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Menus (mode, history filter) make what's behind them inert while open.
 ---
 
+---
+## D-PILL-RIBBON — The pill uses the Ribbon too — 2026-09-26
+> After the window got the Ribbon waveform, the product owner asked for it in the pill. Shown live against today's
+>   bars at the same size and 57 px wider; they chose the wider one for a better weave. The pill's 16 bars became a
+>   150 px Ribbon canvas (same three lines, pill-dark colours: white and blue, amber when faint, grey when paused), so
+>   the pill and the window read as one product. The pill window grew to 620 px so the widest state (hover with a long
+>   app name) still fits.
+---
+
