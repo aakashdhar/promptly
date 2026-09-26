@@ -2041,3 +2041,18 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   (`renderer-log`) go to main.log; a stop that hasn't finished 10 s after the shortcut is logged.
 ---
 
+---
+## D-PILL-ISLAND — The floating pill is one capsule ("Island") — 2026-09-26
+> Request: redesign only the pill; one pill (no second one), not crowded, expand on hover. Three directions were shown
+>   live (Island, Orb, Soundbar); the product owner chose Island, asked for more room and consistent padding, and
+>   approved the refined design before it was built.
+> Design: 48 px tall (was 44), always dark over any app. Every state opens with a 32 px round badge; round or filled
+>   shapes (badge, timer chip, buttons, ×) sit 8 px from every edge; a state that ends in words keeps them 20 px from
+>   the edge; 12 px between items; text 14 px. The capsule springs to each state's width while its content cross-fades.
+> States: listening (waveform + timer), hover (mode → app, × cancels), speak up (amber), paused (frozen waveform),
+>   working, typed into <app> + Make it a prompt, prompt copied + Open, something went wrong + Open.
+> Behaviour changes: × on hover cancels the recording (`pill-action` 'cancel'); an error in a pill session now shows in
+>   the pill with Open instead of pulling the window over your app. Make it a prompt still opens the window with the
+>   result. Mode and destination moved from a second text line to the hover state.
+---
+
