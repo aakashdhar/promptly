@@ -500,7 +500,7 @@ let currentModeLabel = '';
 function createPillWindow() {
   // Room for the widest state (hover, with a long app name) and the pill's shadow.
   pillWin = new BrowserWindow({
-    width: 560,
+    width: 620,
     height: 92,
     show: false,
     frame: false,
