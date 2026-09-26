@@ -2116,3 +2116,14 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   no longer shows example numbers (they anchored scores), no longer rewards a generic role line, and rewards what
 >   the new prompts are built on: success criteria, kept details and marked assumptions. Email and Workflow no
 >   longer show a prompt score (the 2.15.0 notes said so, but the panels were still there).
+
+## D-HARNESS — Harness mode, with thinking off for the files step — 2026-09-27
+> Harness mode turns a spoken job into a harness for Claude Code in two steps: a plan the user checks (loop or
+>   pipeline, the checks that judge each change, stop conditions, what it must never do, and gaps it won't guess),
+>   then the files, saved into a project folder the user picks. Built 2026-09-26, parked, then rebased onto 2.16.
+> The files step runs with extended thinking off (MAX_THINKING_TOKENS=0, via `run(…, { thinking: false })` in
+>   main/llm.js). Measured on the same pipeline plan with Sonnet 5: 133 s and 11,830 thinking tokens with it on,
+>   30 s with it off, and both produced a complete, runnable set of files. The owner chose off. Timeout 5 min.
+> Your words replaces the Dictionary box (same setting, one entry per line; commas still read): words to listen for,
+>   "N10 → n8n" fixes applied to every transcript, and suggestions from the user's own repeated edits.
+

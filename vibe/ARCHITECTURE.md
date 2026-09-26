@@ -152,6 +152,10 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 |-----------|---------|---------|
 | renderer → main | `generate-prompt` | Transcript + mode + options (`tone`, `context`, `revise`) → Claude. `revise` = Iterate/email tone chips: the result on screen + the spoken change (main/prompts/revise*.txt). Builder modes pass the transcript through. Stored as the last request for retry |
 | renderer → main | `builder-step` | One Image/Video/Workflow step: step name + values → its prompt file in main/prompts → Claude |
+| renderer → main | `harness-plan` | Harness step 1: the spoken job → a plan (loop or pipeline, checks, stops, never-list, gaps) as JSON, checked by main/harness.js |
+| renderer → main | `harness-files` | Harness step 2: plan + gap answers → the files, streamed file by file; runs with extended thinking off |
+| renderer → main | `save-harness` | Saves the files into a project folder the user picks; asks before replacing, merges .claude/settings.json hooks |
+| renderer → main | `word-suggestions` / `dismiss-word-suggestion` | Your words: fixes the user keeps making by hand, offered once; "Not now" hides one |
 | renderer → main | `retry-generation` | Replays the last `generate-prompt` request with the same mode and options |
 | renderer → main | `cancel-operations` | Kills the Claude/Whisper processes behind the current operation (abort) |
 | renderer → main | `evaluate-prompt` | Eval scorecard: raw vs Promptly output → JSON scores. Runs on its own process set, not cancelled by abort |
@@ -295,6 +299,7 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 | Polish | `polish` | Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; `{TONE}` replaced via `options.tone`; green accent in UI |
 | Image | `image` | Three-phase flow (v2 — 2026-04-30): generate-prompt passthrough → Phase 1 builder-step (Claude pre-fills nested 5-tab schema: subject/lighting/camera/style/technical → imageDefaults) → IMAGE_BUILDER review screen; Phase 1.5 generates 3 prompt variations in background (no await); Phase 2 builder-step (selected variation + confirmed params → assembled natural-language prompt for Nano Banana / ChatGPT, plus optional Midjourney `--ar --stylize --chaos` flags kept separate) → IMAGE_BUILDER_DONE; purple accent in UI |
 | Video | `video` | Two-phase flow: Phase 1 builder-step (Claude pre-selects video params as JSON) → VIDEO_BUILDER review screen → Phase 2 builder-step (Claude assembles a Veo 3.1 natural-language prompt, 4/6/8-second clips) → VIDEO_BUILDER_DONE; orange accent in UI |
+| Harness | `harness` | Two-step flow: harness-plan (Claude plans a loop or pipeline; gaps it can't guess are left to fill) → HARNESS_BUILDER → harness-files (thinking off, streamed) → HARNESS_BUILDER_DONE (files by tab, Save to project…) |
 | Workflow | `workflow` | Two-phase flow: Phase 1 builder-step (Claude maps spoken idea to n8n nodes as JSON → workflowAnalysis) → WORKFLOW_BUILDER review/fill screen → Phase 2 builder-step (Claude outputs complete n8n workflow JSON) → WORKFLOW_BUILDER_DONE; green accent in UI |
 | Email | `email` | Standalone — speak email situation → Claude drafts ready-to-send email (subject + body + tone analysis) as JSON → EMAIL_READY two-column output; always auto-expands (mode-selected IPC triggers handleExpand); output IS the email, no prompt intermediary; teal accent `rgba(20,184,166)` in UI; added FEATURE-EMAIL-MODE |
 
