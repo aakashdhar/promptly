@@ -38,7 +38,7 @@ promptly/
 │   ├── binaries.js     #   claude/whisper/ffmpeg path resolution, makeClaudeEnv
 │   ├── platform/       #   darwin.js — every macOS path/command; index.js picks the platform
 │   ├── prompts.js      #   Builds mode + eval prompts from prompts/*.txt and shared/modes.json
-│   ├── prompts/        #   Prompt text, one file per standalone mode + template.txt + eval.txt
+│   ├── prompts/        #   All prompt text: one file per mode, revise*, builder steps, eval.txt
 │   ├── config.js       #   config.json store with atomic writes
 │   ├── log.js          #   ~/Library/Logs/Promptly/main.log with rotation
 │   └── tray-icon.js    #   Menu bar microphone icon drawing
@@ -150,8 +150,8 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 
 | Direction | Channel | Purpose |
 |-----------|---------|---------|
-| renderer → main | `generate-prompt` | Transcript + mode + options (`tone`, `overrideSystemPrompt`) → Claude. Builder modes pass the transcript through. Stored as the last request for retry |
-| renderer → main | `generate-raw` | Full custom prompt → Claude (builders, iteration) |
+| renderer → main | `generate-prompt` | Transcript + mode + options (`tone`, `context`, `revise`) → Claude. `revise` = Iterate/email tone chips: the result on screen + the spoken change (main/prompts/revise*.txt). Builder modes pass the transcript through. Stored as the last request for retry |
+| renderer → main | `builder-step` | One Image/Video/Workflow step: step name + values → its prompt file in main/prompts → Claude |
 | renderer → main | `retry-generation` | Replays the last `generate-prompt` request with the same mode and options |
 | renderer → main | `cancel-operations` | Kills the Claude/Whisper processes behind the current operation (abort) |
 | renderer → main | `evaluate-prompt` | Eval scorecard: raw vs Promptly output → JSON scores. Runs on its own process set, not cancelled by abort |
@@ -289,23 +289,19 @@ session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =
 
 | Mode | Key | Behaviour |
 |------|-----|-----------|
-| Balanced | default | Standard structured prompt |
-| Detailed | `detailed` | Expanded with edge cases and constraints |
-| Concise | `concise` | Minimal, direct prompt |
-| Chain | `chain` | Multi-step chain-of-thought prompt |
-| Code | `code` | Code-first with language/output format specified |
-| Design | `design` | Standalone 12-section design-director prompt; bypasses PROMPT_TEMPLATE |
-| Refine | `refine` | Standalone 4-section design feedback prompt (Current state, Problem, Desired outcome, Constraints); purple accent in UI; bypasses PROMPT_TEMPLATE |
+| Prompt | `prompt` | Standalone (`prompt.txt`). Rough request → a detailed, well-engineered prompt: Goal, Context, Requirements, Constraints, Steps (when the work has stages), Examples, Output format, Success criteria, Assumptions — only the sections the request needs. No generic role line. Detail level from Settings (Detailed default, Quick). Replaces Balanced, Detailed, Concise and Chain (aliases) |
+| Code | `code` | Standalone (`code.txt`). A task brief for Claude Code: Goal, Context, Requirements, Constraints, Steps, Verification, Done when, Assumptions; approach matched to bug / feature / refactor / investigation |
+| Design | `design` | Standalone (`design.txt`). New page → a brief for working HTML/CSS (content, visual direction, layout, states, accessibility, deliverable); change to an existing page → Current state, Changes (with values), Keep unchanged. Replaces Refine (alias); purple accent |
 | Polish | `polish` | Standalone — clean polished prose + change notes; bypasses PROMPT_TEMPLATE; `{TONE}` replaced via `options.tone`; green accent in UI |
-| Image | `image` | Three-phase flow (v2 — 2026-04-30): generate-prompt passthrough → Phase 1 generate-raw (Claude pre-fills nested 5-tab schema: subject/lighting/camera/style/technical → imageDefaults) → IMAGE_BUILDER review screen; Phase 1.5 generates 3 prompt variations in background (no await); Phase 2 generate-raw (selected variation + confirmed params → assembled natural-language prompt + Nano Banana `--ar --stylize --chaos` flags) → IMAGE_BUILDER_DONE; purple accent in UI |
-| Video | `video` | Two-phase flow: Phase 1 generate-raw (Claude pre-selects video params as JSON) → VIDEO_BUILDER review screen → Phase 2 generate-raw (Claude assembles Veo 3.1 natural-language prompt) → VIDEO_BUILDER_DONE; orange accent in UI |
-| Workflow | `workflow` | Two-phase flow: Phase 1 generate-raw (Claude maps spoken idea to n8n nodes as JSON → workflowAnalysis) → WORKFLOW_BUILDER review/fill screen → Phase 2 generate-raw (Claude outputs complete n8n workflow JSON) → WORKFLOW_BUILDER_DONE; green accent in UI |
+| Image | `image` | Three-phase flow (v2 — 2026-04-30): generate-prompt passthrough → Phase 1 builder-step (Claude pre-fills nested 5-tab schema: subject/lighting/camera/style/technical → imageDefaults) → IMAGE_BUILDER review screen; Phase 1.5 generates 3 prompt variations in background (no await); Phase 2 builder-step (selected variation + confirmed params → assembled natural-language prompt for Nano Banana / ChatGPT, plus optional Midjourney `--ar --stylize --chaos` flags kept separate) → IMAGE_BUILDER_DONE; purple accent in UI |
+| Video | `video` | Two-phase flow: Phase 1 builder-step (Claude pre-selects video params as JSON) → VIDEO_BUILDER review screen → Phase 2 builder-step (Claude assembles a Veo 3.1 natural-language prompt, 4/6/8-second clips) → VIDEO_BUILDER_DONE; orange accent in UI |
+| Workflow | `workflow` | Two-phase flow: Phase 1 builder-step (Claude maps spoken idea to n8n nodes as JSON → workflowAnalysis) → WORKFLOW_BUILDER review/fill screen → Phase 2 builder-step (Claude outputs complete n8n workflow JSON) → WORKFLOW_BUILDER_DONE; green accent in UI |
 | Email | `email` | Standalone — speak email situation → Claude drafts ready-to-send email (subject + body + tone analysis) as JSON → EMAIL_READY two-column output; always auto-expands (mode-selected IPC triggers handleExpand); output IS the email, no prompt intermediary; teal accent `rgba(20,184,166)` in UI; added FEATURE-EMAIL-MODE |
 
 - The mode list (keys, labels, descriptions, colours, kind) lives in `shared/modes.json` and is read by main (prompt building, native menu) and the renderer (`useMode`, `ModeDropdown`). Add or change a mode there.
-- Prompt text lives in `main/prompts/`: `template.txt` for template modes (filled with the registry's `promptName` + `instruction`), `<key>.txt` for standalone modes, `eval.txt` for the scorecard. Placeholders are filled in a single pass (`fillTemplate`).
+- All prompt text lives in `main/prompts/`: `<key>.txt` per mode, `revise.txt` / `polish-revise.txt` / `email-revise.txt` for Iterate, `image-*`, `video-*`, `workflow-*` for the builder steps, `eval.txt` for the scorecard. Placeholders are filled in a single pass (`fillTemplate`).
+- Retired mode keys (`aliases` in modes.json: balanced, detailed, concise, chain → prompt; refine → design) resolve everywhere: history entries, saved settings, spoken names.
 - Mode is chosen from the mode pill dropdown or right-click / ⌘, (native menu). Persisted in localStorage via `useMode()`.
-- Renderer-side prompts (image/video/workflow builders, iteration, email tone adjust) still live in their hooks.
 ---
 
 ## Testing philosophy

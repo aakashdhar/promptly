@@ -33,7 +33,7 @@ promptly/
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv
 │   ├── platform/        ←   darwin.js holds every macOS path/command
 │   ├── prompts.js       ←   builds prompts from prompts/*.txt + shared/modes.json
-│   ├── prompts/         ←   prompt text, one file per standalone mode, template.txt, eval.txt
+│   ├── prompts/         ←   all prompt text: one file per mode, revise*.txt (Iterate), builder steps, eval.txt
 │   ├── config.js        ←   config.json (atomic writes)
 │   ├── log.js           ←   ~/Library/Logs/Promptly/main.log
 │   └── tray-icon.js     ←   menu bar icon
@@ -107,7 +107,6 @@ npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh)
 ## Known gaps (tracked in the Promptly Roadmap)
 
 - App.jsx still threads refs through ~12 hooks; a reducer/state-machine refactor is planned once e2e covers the expanded view and builders.
-- Renderer-side prompts (image/video/workflow builders, iteration, email tone adjust) still live in hooks, not `main/prompts/`.
 - Requires Claude Code (by design, D-CLI-ONLY); setup installs or signs in to it from inside the app.
 - Self-signed, shared personally: first open needs System Settings → Open Anyway (no Apple Developer account; notarization and auto-update are backlogged).
 

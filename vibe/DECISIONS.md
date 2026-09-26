@@ -2082,3 +2082,26 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   app name) still fits.
 ---
 
+
+## D-MODES-UPGRADE — Fewer, stronger modes; Sonnet 5 by default — 2026-09-26
+> After a full audit of every mode, the product owner approved: merge Balanced, Detailed, Concise and Chain into one
+>   **Prompt** mode; rework **Code** as a task brief for Claude Code; aim **Design** at working web pages (HTML/CSS)
+>   and fold **Refine** into it for changes to existing pages; fix Polish, Email, Image, Video and Workflow; keep Image
+>   and Video. The default model moves from Sonnet 4.6 to **Sonnet 5**.
+> - **Prompt style.** The shared template forced a generic "Role: You are an expert…" and the same five headings on
+>   every request. The new prompts give the task, its context and reasons, requirements, constraints, stages (Chain's
+>   original purpose, built in when the work has them), examples, output format, success criteria and marked
+>   assumptions, using only the sections a request needs. A role appears only when a perspective changes the result.
+>   Detail stays the default (Settings → Prompt detail: Detailed / Quick); the owner valued Detailed and Balanced output.
+> - **Aliases.** Retired keys (balanced, detailed, concise, chain → prompt; refine → design) resolve in main and the
+>   renderer, so history entries, saved settings and spoken names keep working. Sonnet 4.6 saved as the model follows
+>   the new default.
+> - **All prompt text in main/prompts.** Iterate (revise*.txt), email tone chips and every builder step
+>   (`builder-step` channel) moved out of the renderer; `generate-raw` and `overrideSystemPrompt` are gone. Iterate now
+>   revises Polish and Email in their own formats with the user's notes, and revisions are saved to history.
+> - **Builders.** Image labels say what reads what (Nano Banana / ChatGPT; Midjourney-only settings marked; flags never
+>   auto-copied) and a failed read is an error, not an empty builder. Video matches Veo 3.1 today (4/6/8-second clips,
+>   720p/1080p, 4K upscaled, 16:9 or 9:16); unfinished image-reference stubs removed; Save really saves. Workflow keeps
+>   the n8n JSON in history (was a summary line), auto-copies it, lets filled values be edited, and uses node versions
+>   that import cleanly.
+> - Score this prompt shows only for prompts (not Polish, Email or Workflow JSON). Esc during work cancels like Cancel.
