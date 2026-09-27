@@ -125,6 +125,19 @@ rl.on('close', () => process.exit(0))
 
 // mode: most tests below are about prompt modes, so they start in Prompt; pass mode: null to
 // start the way a fresh install does (Dictation).
+// Waits until the window's app has reported its mode more than `before` times: it does that from
+// the same effects that subscribe to hotkeys and keys, so after this no key press is lost.
+async function untilMounted(app, before) {
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.modeReports()), { timeout: 20000 }).toBeGreaterThan(before)
+}
+
+// A reload remounts the app; a test must not press anything until it has.
+async function reload(app, page) {
+  const before = await app.evaluate(() => globalThis.__promptlyE2E.modeReports())
+  await page.reload()
+  await untilMounted(app, before)
+}
+
 async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'prompt', speechModel = null, env = {} } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
@@ -165,12 +178,12 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
   // The window can be visible before React has mounted and subscribed to hotkeys and keys; a
   // test that presses something straight away would lose the event (seen on slower CI machines).
   // The page reports its mode from the same effects that subscribe, so wait for a new report.
-  const reportsBefore = mode ? await app.evaluate(() => globalThis.__promptlyE2E.modeReports()) : 0
   if (mode) {
     await page.evaluate((m) => localStorage.setItem('mode', m), mode)
-    await page.reload()
+    await reload(app, page)
+  } else {
+    await untilMounted(app, 0)
   }
-  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.modeReports()), { timeout: 20000 }).toBeGreaterThan(reportsBefore)
   await expect(page.locator('#mode-pill')).toBeVisible({ timeout: 20000 })
   return { app, page, dir, fakeDir, tmpDir }
 }
@@ -485,7 +498,7 @@ test('fix-11 + fix-15: image builder shows the assembly labels and copies the pr
   ctx = await launch()
   const { app, page, fakeDir } = ctx
   await page.evaluate(() => localStorage.setItem('mode', 'image'))
-  await page.reload()
+  await reload(app, page)
   await expect.poll(() => appState(app), { timeout: 10000 }).toBe('IDLE')
   await typeAndSubmit(page, 'a calm red fox in a snowy forest')
 
@@ -614,7 +627,7 @@ test('setup offers hold to talk when the helper is available, and notices when i
 
 test('your notes shape results: "About you" for prompts, "How you write" for Polish', async () => {
   ctx = await launch()
-  const { page, fakeDir } = ctx
+  const { app, page, fakeDir } = ctx
   await page.evaluate(() => window.electronAPI.setPreferences({ voiceNotes: '- Short sentences', aboutMe: 'PM at a fintech; TypeScript and Postgres' }))
   await typeAndSubmit(page, 'a dashboard for failed payments')
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
@@ -623,7 +636,7 @@ test('your notes shape results: "About you" for prompts, "How you write" for Pol
   expect(stdin).not.toContain('how_i_write')
 
   await page.evaluate(() => localStorage.setItem('mode', 'polish'))
-  await page.reload()
+  await reload(app, page)
   await expect(page.locator('#mode-pill')).toHaveText('Polish', { timeout: 10000 })
   await typeAndSubmit(page, 'so um can you send me the numbers')
   await expect.poll(() => calls(fakeDir).length).toBe(2)
@@ -770,15 +783,15 @@ test('a prompt made from a dictation can be regenerated, in the style it was mad
 
 test('an older prompt reopened from history can be regenerated in its own mode, whatever mode is selected now', async () => {
   ctx = await launch()
-  const { page, fakeDir } = ctx
+  const { app, page, fakeDir } = ctx
   await page.evaluate(() => localStorage.setItem('mode', 'code'))
-  await page.reload()
+  await reload(app, page)
   await expect(page.locator('#mode-pill')).toHaveText('Code', { timeout: 10000 })
   await typeAndSubmit(page, 'add pagination to the orders api')
   await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
   // Switch to Dictation, then go back to the Code prompt in history.
   await page.evaluate(() => localStorage.setItem('mode', 'dictate'))
-  await page.reload()
+  await reload(app, page)
   await expect(page.locator('#mode-pill')).toContainText('Dictation', { timeout: 10000 })
   await page.locator('[data-history-entry]', { hasText: 'add pagination' }).first().click()
   await page.getByRole('button', { name: 'Open to refine' }).click()
@@ -901,7 +914,7 @@ test('history can be hidden and stays hidden; a dictation and the prompt made fr
   await page.getByRole('button', { name: 'Hide history' }).click()
   await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.config().historyHidden)).toBe(true)
   await expect(page.getByRole('button', { name: 'Show history' })).toBeVisible()
-  await page.reload()
+  await reload(app, page)
   await expect(page.getByRole('button', { name: 'Show history' })).toBeVisible({ timeout: 10000 })
   // ⌃⌘S brings it back.
   await page.keyboard.press('Control+Meta+s')
@@ -916,7 +929,7 @@ test('history can be hidden and stays hidden; a dictation and the prompt made fr
       { id: 'd0', timestamp: now - 5000, transcript: 'note for Deepak', prompt: 'note for Deepak', mode: 'dictate' },
     ]))
   })
-  await page.reload()
+  await reload(app, page)
   const rows = page.locator('[data-history-entry]')
   await expect(rows).toHaveCount(2, { timeout: 10000 })
   await expect(rows.first()).toContainText('plan the launch email')

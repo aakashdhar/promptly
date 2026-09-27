@@ -199,8 +199,11 @@ async function typeAndSubmit(page, text) {
 
 async function switchMode(app, page, mode) {
   await page.evaluate((m) => localStorage.setItem('mode', m), mode)
+  const before = await app.evaluate(() => globalThis.__promptlyE2E.modeReports())
   await page.reload()
   await page.waitForLoadState('domcontentloaded')
+  // Remounted and subscribed again before the next key press (see mainPage).
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.modeReports()), { timeout: 20000 }).toBeGreaterThan(before)
   await page.emulateMedia({ colorScheme: page.__theme })
   await page.waitForTimeout(900)
 }
