@@ -443,6 +443,17 @@
     G.from('.steps-line path', { drawSVG: '0%', ease: 'none', scrollTrigger: { trigger: '.steps-wrap', start: 'top 80%', end: 'bottom 55%', scrub: true } });
     G.from('.steps li', { y: 40, opacity: 0, duration: 1, ease: 'expo.out', stagger: 0.15, scrollTrigger: { trigger: '.steps-wrap', start: 'top 80%' } });
 
+    /* ---------- how it's made: the pipeline draws, stages light up, numbers count ---------- */
+    G.from('.pipe-line path', { drawSVG: '0%', ease: 'none', scrollTrigger: { trigger: '.pipe-wrap', start: 'top 80%', end: 'bottom 50%', scrub: true } });
+    G.from('.pipe li', { y: 36, opacity: 0, duration: 0.9, ease: 'expo.out', stagger: 0.12, scrollTrigger: { trigger: '.pipe-wrap', start: 'top 80%' } });
+    G.from('.pipe-dot', { scale: 0, duration: 0.7, ease: 'back.out(3)', stagger: 0.12, scrollTrigger: { trigger: '.pipe-wrap', start: 'top 78%' } });
+    $$('.made-stats dd').forEach((dd) => {
+      const to = +dd.dataset.count, o = { v: 0 };
+      dd.textContent = '0';
+      G.to(o, { v: to, duration: 1.6, ease: 'power3.out', scrollTrigger: { trigger: '.made-stats', start: 'top 85%' }, onUpdate: () => { dd.textContent = Math.round(o.v); } });
+    });
+    G.from('.made-stats div', { y: 24, opacity: 0, duration: 0.8, ease: 'expo.out', stagger: 0.06, scrollTrigger: { trigger: '.made-stats', start: 'top 85%' } });
+
     /* ---------- FAQ: smooth open and close ---------- */
     $$('.qa details').forEach((d) => {
       const sum = d.querySelector('summary'), body = d.querySelector('p');

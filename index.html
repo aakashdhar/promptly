@@ -35,6 +35,7 @@
       <a href="#film">Film</a>
       <a href="#score">Score</a>
       <a href="#privacy">Privacy</a>
+      <a href="#made">How it’s made</a>
       <a href="#faq">FAQ</a>
     </nav>
     <a class="btn btn-small magnetic" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly.dmg">Download</a>
@@ -424,6 +425,43 @@
         <li><h3>Double-tap Control and talk</h3><p>A small pill shows while you talk: recording, thinking, done. Prefer another key? Option+Space, hold Right Option, or hold Fn/Globe.</p></li>
       </ol>
     </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT'S MADE ============ -->
+<section class="made-with" id="made" aria-labelledby="made-title">
+  <div class="wrap">
+    <div class="made-head">
+      <h2 id="made-title" class="split-head">Built with the vibe skills.</h2>
+      <p class="sub">Promptly was planned, built, reviewed and shipped with <a href="https://github.com/aakashdhar/vibe-skill">vibe-*</a>, an open set of Claude Code skills I wrote. Every feature starts as a written spec and a task list, and nothing moves to the next phase until a review gate passes.</p>
+    </div>
+
+    <div class="pipe-wrap">
+      <svg class="pipe-line" viewBox="0 0 1000 2" preserveAspectRatio="none" aria-hidden="true"><path d="M0 1 H1000"/></svg>
+      <ol class="pipe">
+        <li style="--c:#7C8677"><span class="pipe-dot"></span><code>brainstorm:</code><h3>Brief</h3><p>Who it’s for, what the first version does, and what it deliberately doesn’t.</p></li>
+        <li style="--c:#7B3FB8"><span class="pipe-dot"></span><code>architect:</code><h3>Rules</h3><p>The structure and rules every later change is checked against.</p></li>
+        <li style="--c:#2A3FC9"><span class="pipe-dot"></span><code>feature:</code><h3>Spec first</h3><p>A spec with acceptance criteria, a plan and a task list, before any code.</p></li>
+        <li style="--c:#0E7C86"><span class="pipe-dot"></span><code>next</code><h3>Build</h3><p>One task at a time. Tests after each one; code and docs committed separately.</p></li>
+        <li style="--c:#E0569A"><span class="pipe-dot"></span><code>review:</code><h3>Gate</h3><p>No phase moves on with a serious finding still open.</p></li>
+        <li style="--c:#3D7A1F"><span class="pipe-dot"></span><code>release</code><h3>Ship</h3><p>A signed build, a GitHub release, and this page’s download updated.</p></li>
+      </ol>
+    </div>
+
+    <dl class="made-stats">
+      <div><dt>Commits since 18 April 2026</dt><dd data-count="687">687</dd></div>
+      <div><dt>Feature specs written first</dt><dd data-count="38">38</dd></div>
+      <div><dt>Spec reviews</dt><dd data-count="20">20</dd></div>
+      <div><dt>Code review gates</dt><dd data-count="29">29</dd></div>
+      <div><dt>Bug fixes with a written diagnosis</dt><dd data-count="12">12</dd></div>
+      <div><dt>Automated tests</dt><dd data-count="216">216</dd></div>
+      <div><dt>Releases</dt><dd data-count="31">31</dd></div>
+    </dl>
+
+    <p class="made-links">
+      <a class="btn btn-ghost" href="https://github.com/aakashdhar/vibe-skill">See the vibe skills on GitHub</a>
+      <a class="text-link" href="https://aakashdhar.me/blog/vibe-framework.html">Why I built a skill framework instead of writing better prompts</a>
+    </p>
   </div>
 </section>
 
