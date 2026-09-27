@@ -164,4 +164,34 @@ function buildEvalPrompt(transcript, prompt) {
   return fillTemplate(loadPrompt('eval'), { TRANSCRIPT: transcript, PROMPT: prompt });
 }
 
-module.exports = { BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };
+// The scorecard as the window will render it: numbers, short string lists and strings only.
+// Claude occasionally returns a reason list as one string or an object where a string goes;
+// rendering those as-is would crash the window. Returns null without the two scores.
+const EVAL_DIMENSIONS = ['clarity', 'specificity', 'context', 'actionability'];
+function normalizeEval(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  const str = (v) => (typeof v === 'string' ? v : '');
+  const reasons = (v) => (Array.isArray(v) ? v : typeof v === 'string' ? [v] : []).filter((r) => typeof r === 'string' && r.trim()).slice(0, 6);
+  const rawScore = num(parsed.rawScore);
+  const promptlyScore = num(parsed.promptlyScore);
+  if (rawScore === null || promptlyScore === null) return null;
+  const dimensions = {};
+  for (const key of EVAL_DIMENSIONS) {
+    const d = parsed.dimensions?.[key];
+    if (d && num(d.raw) !== null && num(d.structured) !== null) dimensions[key] = { raw: d.raw, structured: d.structured };
+  }
+  return {
+    rawScore,
+    promptlyScore,
+    rawReasons: reasons(parsed.rawReasons),
+    promptlyReasons: reasons(parsed.promptlyReasons),
+    critique: str(parsed.critique),
+    gap: str(parsed.gap),
+    intentDrift: ['none', 'minor', 'significant'].includes(parsed.intentDrift) ? parsed.intentDrift : '',
+    intentDriftLabel: str(parsed.intentDriftLabel),
+    ...(Object.keys(dimensions).length && { dimensions }),
+  };
+}
+
+module.exports = { normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };

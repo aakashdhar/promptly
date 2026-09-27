@@ -12,7 +12,7 @@ export default function WorkflowBuilderDoneState({
   isExpanded,
 }) {
   const nodes = workflowAnalysis?.nodes || []
-  const workflowName = workflowAnalysis?.workflowName || 'Workflow'
+  const workflowName = (typeof workflowAnalysis?.workflowName === 'string' && workflowAnalysis.workflowName) || 'Workflow'
 
   function renderHighlightedJson(json) {
     if (!json) return null

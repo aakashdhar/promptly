@@ -120,8 +120,8 @@ PYEOF
 ok "CHECK 7: every Claude process uses makeClaudeEnv"
 
 # CHECK 8 — settings button present in ExpandedTransportBar
-count=$(grep -c "onOpenSettings" src/renderer/components/ExpandedTransportBar.jsx 2>/dev/null || echo 0)
-[ "$count" -lt 1 ] && fail "Settings button not found in ExpandedTransportBar.jsx. Users cannot open settings."
+grep -q "onOpenSettings" src/renderer/components/ExpandedTransportBar.jsx 2>/dev/null \
+  || fail "Settings button not found in ExpandedTransportBar.jsx. Users cannot open settings."
 ok "CHECK 8: settings button present in ExpandedTransportBar"
 
 # CHECK 9 — all 3 path fields present in SettingsPanel
@@ -133,7 +133,7 @@ ok "CHECK 9: all 3 path fields present in SettingsPanel"
 
 # CHECK 10 — ffmpegPath wired in all 3 path IPC handlers
 for handler in "save-paths" "get-stored-paths" "recheck-paths"; do
-  block=$(grep -A 15 "'${handler}'" main.js)
+  block=$(grep -A 15 "'${handler}'" main.js || true)
   echo "$block" | grep -q "ffmpegPath" || fail "ffmpegPath not wired in ${handler} IPC handler."
 done
 ok "CHECK 10: ffmpegPath wired in all 3 path IPC handlers"

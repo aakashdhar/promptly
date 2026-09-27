@@ -5,11 +5,13 @@ import os from 'os'
 import path from 'path'
 
 const require = createRequire(import.meta.url)
-const { fillTemplate, buildModePrompt, buildEvalPrompt, getMode, MODES } = require('../main/prompts.js')
+const { fillTemplate, buildModePrompt, buildEvalPrompt, normalizeEval, getMode, MODES } = require('../main/prompts.js')
 const { createClaudeRunner, parseJsonOutput, classifyError } = require('../main/llm.js')
 const { createConfigStore } = require('../main/config.js')
 const { createLogger } = require('../main/log.js')
-const { resolveFfmpegPath, makeClaudeEnv } = require('../main/binaries.js')
+const { resolveFfmpegPath, makeClaudeEnv, terminate } = require('../main/binaries.js')
+const darwin = require('../main/platform/darwin.js')
+const { spawn } = require('child_process')
 const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv, findBundledEngine, cleanTranscript, silentWav, createWhisperRunner } = require('../main/whisper.js')
 const { getClaudeStatus, installScript, loginScript, shellQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
 const { drawMicIconPng, isTemplateState } = require('../main/tray-icon.js')
@@ -239,6 +241,18 @@ describe('config store', () => {
     expect(fs.readdirSync(path.dirname(file))).toEqual(['config.json'])
     fs.writeFileSync(file, '{not json')
     expect(store.read()).toEqual({})
+  })
+
+  it('moves an unreadable file aside instead of writing over it', () => {
+    const file = path.join(tmp, 'cfg-corrupt', 'config.json')
+    const seen = []
+    const store = createConfigStore(file, { onCorrupt: (b) => seen.push(b) })
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, '{"claudePath": "/x/claude",}')
+    store.update({ windowBounds: { x: 1 } })
+    expect(store.read()).toEqual({ windowBounds: { x: 1 } })
+    expect(seen).toHaveLength(1)
+    expect(fs.readFileSync(seen[0], 'utf8')).toBe('{"claudePath": "/x/claude",}')
   })
 })
 
@@ -733,5 +747,53 @@ describe('Double-tap Control', () => {
     expect(hotkeyWords('double-control', { helperActive: false })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap Control', needsAccess: true, fallback: 'Press ⌥ Space' })
     expect(hotkeyWords('option-space', { helperActive: true }).action).toBe('Hold ⌥ Space')
     expect(hotkeyWords('option-space', { helperActive: false })).toMatchObject({ action: 'Press ⌥ Space', needsAccess: false })
+  })
+})
+
+describe('eval scorecard shape', () => {
+  it('keeps only what the panel can render', () => {
+    const r = normalizeEval({
+      rawScore: 40, promptlyScore: 80, rawReasons: '+ one reason', promptlyReasons: ['+ a', 5, '', '- b'],
+      critique: { text: 'x' }, gap: 'Missing audience', intentDrift: 'huge', intentDriftLabel: 'Kept',
+      dimensions: { clarity: { raw: 30, structured: 90 }, context: { raw: 'high' }, extra: { raw: 1, structured: 2 } },
+    })
+    expect(r).toEqual({
+      rawScore: 40, promptlyScore: 80, rawReasons: ['+ one reason'], promptlyReasons: ['+ a', '- b'],
+      critique: '', gap: 'Missing audience', intentDrift: '', intentDriftLabel: 'Kept',
+      dimensions: { clarity: { raw: 30, structured: 90 } },
+    })
+  })
+
+  it('rejects answers without both scores', () => {
+    expect(normalizeEval({ rawScore: 40 })).toBeNull()
+    expect(normalizeEval({ rawScore: '40', promptlyScore: 80 })).toBeNull()
+    expect(normalizeEval(null)).toBeNull()
+  })
+})
+
+describe('terminate', () => {
+  it('forces a process that ignores SIGTERM', async () => {
+    const child = spawn(process.execPath, ['-e', "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"])
+    await new Promise((r) => setTimeout(r, 300))
+    const exited = new Promise((r) => child.on('exit', (_code, signal) => r(signal)))
+    terminate(child, 200)
+    expect(await exited).toBe('SIGKILL')
+  })
+
+  it('does nothing for a process that already exited', async () => {
+    const child = spawn(process.execPath, ['-e', ''])
+    await new Promise((r) => child.on('exit', r))
+    expect(() => terminate(child)).not.toThrow()
+  })
+})
+
+describe('harness launch agents', () => {
+  it('finds only the jobs Promptly created', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-home-'))
+    const dir = darwin.launchAgentsDir(home)
+    fs.mkdirSync(dir, { recursive: true })
+    for (const f of ['com.promptly.harness.site-1a2b3c4d.plist', 'com.other.app.plist', 'com.promptly.harness.x.txt']) fs.writeFileSync(path.join(dir, f), '')
+    expect(darwin.harnessLaunchAgents(home)).toEqual([{ label: 'com.promptly.harness.site-1a2b3c4d', plistPath: path.join(dir, 'com.promptly.harness.site-1a2b3c4d.plist') }])
+    expect(darwin.harnessLaunchAgents(path.join(home, 'missing'))).toEqual([])
   })
 })

@@ -3,6 +3,7 @@
 // Everything that knows where macOS keeps things. A win32.js with the same exports
 // is all a Windows port needs on the main-process side.
 
+const fs = require('fs');
 const path = require('path');
 const { exec, execFile } = require('child_process');
 
@@ -146,8 +147,19 @@ async function loadLaunchAgent(plistPath, label) {
   return launchctl(['bootstrap', guiDomain(), plistPath]);
 }
 
-function unloadLaunchAgent(label) {
-  return launchctl(['bootout', `${guiDomain()}/${label}`]);
+// A job that isn't loaded counts as stopped.
+async function unloadLaunchAgent(label) {
+  const r = await launchctl(['bootout', `${guiDomain()}/${label}`]);
+  return r.ok || /no such process|could not find/i.test(r.error) ? { ok: true } : r;
+}
+
+// Every harness job Promptly created, for uninstall.
+function harnessLaunchAgents(home) {
+  const dir = launchAgentsDir(home);
+  try {
+    return fs.readdirSync(dir).filter((f) => /^com\.promptly\.harness\..+\.plist$/.test(f))
+      .map((f) => ({ label: f.slice(0, -'.plist'.length), plistPath: path.join(dir, f) }));
+  } catch { return []; }
 }
 
 module.exports = {
@@ -155,6 +167,7 @@ module.exports = {
   launchAgentsDir,
   loadLaunchAgent,
   unloadLaunchAgent,
+  harnessLaunchAgents,
   PATH_DELIMITER,
   DEFAULT_PATH,
   SSL_ENV,

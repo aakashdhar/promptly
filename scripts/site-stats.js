@@ -16,11 +16,14 @@ const dirCount = (dir, keep = () => true) => new Set(run('git', ['ls-files', '--
   .map((f) => f.slice(dir.length + 1).split('/')[0]).filter((f) => !f.startsWith('.') && keep(f))).size;
 
 function unitTests() {
-  // vitest's JSON report has the total; the suite takes a few seconds.
-  try { return JSON.parse(run('npx', ['vitest', 'run', '--reporter=json'])).numTotalTests; } catch (err) {
+  // vitest's JSON report has the total; the suite takes a few seconds. A failing suite isn't
+  // counted: the site keeps its previous number rather than advertise tests that don't pass.
+  let report;
+  try { report = JSON.parse(run('npx', ['vitest', 'run', '--reporter=json'])); } catch (err) {
     const out = err.stdout && err.stdout.toString();
-    return out ? JSON.parse(out).numTotalTests : null;
+    try { report = out ? JSON.parse(out) : null; } catch { report = null; }
   }
+  return report && !report.numFailedTests ? report.numTotalTests : null;
 }
 
 function e2eTests() {

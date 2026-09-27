@@ -17,8 +17,9 @@ export default function WorkflowBuilderState({
   const [inputValues, setInputValues] = useState({})
 
   const nodes = workflowAnalysis?.nodes || []
-  const workflowName = workflowAnalysis?.workflowName || 'Workflow'
-  const connections = workflowAnalysis?.connections || ''
+  const workflowName = (typeof workflowAnalysis?.workflowName === 'string' && workflowAnalysis.workflowName) || 'Workflow'
+  // n8n-style connections come back as an object sometimes; only a short text label is shown here.
+  const connections = typeof workflowAnalysis?.connections === 'string' ? workflowAnalysis.connections : ''
 
   const totalPlaceholders = nodes.reduce((sum, node) => {
     const blanks = (!node.name || !node.type) ? 1 : 0

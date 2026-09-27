@@ -17,19 +17,16 @@ step() { echo ""; echo "▸ $1"; }
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
+# Every step below already ends in `|| fail`; this also stops on any step added without one.
+# (Not -u: nvm.sh, sourced above, isn't safe under it.)
+set -eo pipefail
+
 # ── preflight ──────────────────────────────────────────────────────────────────
 command -v node >/dev/null 2>&1 || fail "node not found — install Node.js or ensure nvm is configured"
 command -v npx  >/dev/null 2>&1 || fail "npx not found — ensure npm is installed alongside node"
 
-# ── health checks ─────────────────────────────────────────────────────────────
-echo "Running preflight checks..."
-bash scripts/preflight.sh || exit 1
-echo "Running splash assertions..."
-node scripts/assert-splash.js || exit 1
-echo "All checks passed. Proceeding with build."
-
 # ── arg check ──────────────────────────────────────────────────────────────────
-VERSION="$1"
+VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
   echo "Usage: bash scripts/release.sh <version>"
   echo "       e.g.  bash scripts/release.sh 1.3.0"
@@ -40,7 +37,20 @@ if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
   fail "Version must be semver (e.g. 1.3.0), got: $VERSION"
 fi
 
+# The checks below use paths relative to the repo, so run from there wherever this was started.
 cd "$ROOT_DIR"
+
+# ── health checks ─────────────────────────────────────────────────────────────
+echo "Running preflight checks..."
+bash scripts/preflight.sh || exit 1
+echo "Running splash assertions..."
+node scripts/assert-splash.js || exit 1
+# A signed DMG is only built from code that passes lint and the unit tests.
+echo "Running lint..."
+npm run lint --silent > /tmp/promptly-lint.log 2>&1 || { cat /tmp/promptly-lint.log; fail "Lint failed"; }
+echo "Running unit tests..."
+npx vitest run > /tmp/promptly-test.log 2>&1 || { tail -40 /tmp/promptly-test.log; fail "Unit tests failed"; }
+echo "All checks passed. Proceeding with build."
 
 echo ""
 echo "═══════════════════════════════════════════"
@@ -48,6 +58,20 @@ echo "  Promptly release — v$VERSION"
 echo "═══════════════════════════════════════════"
 
 # ── 1. Bump version in package.json ───────────────────────────────────────────
+# If any later step fails, package.json and index.html go back to how they were, so a failed
+# release can't leave the app and the site on different versions.
+BACKUP_DIR="$(mktemp -d)"
+cp package.json index.html "$BACKUP_DIR/"
+RELEASED=0
+restore_on_failure() {
+  if [ "$RELEASED" != 1 ]; then
+    cp "$BACKUP_DIR/package.json" "$BACKUP_DIR/index.html" "$ROOT_DIR/" 2>/dev/null \
+      && echo "  ↺ Restored package.json and index.html"
+  fi
+  rm -rf "$BACKUP_DIR"
+}
+trap restore_on_failure EXIT
+
 step "Updating package.json to v$VERSION"
 node -e "
   const fs = require('fs');
@@ -163,9 +187,11 @@ sed -i '' -E \
   -e "s/Download for Mac \([0-9]+ MB\)/Download for Mac ($SIZE_MB MB)/" \
   index.html || fail "Could not update index.html"
 grep -q "Promptly $VERSION for macOS" index.html || fail "index.html doesn't show v$VERSION"
+grep -q "Download for Mac ($SIZE_MB MB)" index.html || fail "index.html doesn't show the new size ($SIZE_MB MB)"
 ok "Site shows v$VERSION, $SIZE_MB MB"
 # "Built with the vibe skills": commits, specs, reviews, bugs, tests and releases, recounted.
 node scripts/site-stats.js || fail "Could not update the site's numbers"
+RELEASED=1
 
 # ── done ──────────────────────────────────────────────────────────────────────
 echo ""

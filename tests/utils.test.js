@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, parseEvalReason, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
-import { formatTime, pairDictations } from '../src/renderer/utils/history.js'
+import { formatTime, pairDictations, saveToHistory, getHistory, searchHistory, bookmarkHistoryItem } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
 
@@ -293,6 +293,12 @@ describe('structured output validation', () => {
     expect(r.nodes).toEqual([{ id: 1, name: 'Webhook', placeholders: ['url'], parameters: { url: 'URL' } }])
   })
 
+  it('keeps only text in the workflow fields the screen renders as text', () => {
+    const r = parseWorkflowAnalysis(JSON.stringify({ nodes: [{ id: 1, name: 'A', type: { x: 1 }, purpose: ['p'], credentialType: 5 }, { id: 2, name: 'B', type: 'n8n-nodes-base.set', purpose: 'Set' }] }))
+    expect(r.nodes[0]).toEqual({ id: 1, name: 'A', credentialType: null, parameters: {}, placeholders: [] })
+    expect(r.nodes[1]).toMatchObject({ type: 'n8n-nodes-base.set', purpose: 'Set' })
+  })
+
   it('returns null for workflows with no usable nodes', () => {
     expect(parseWorkflowAnalysis('{"nodes":"oops"}')).toBeNull()
     expect(parseWorkflowAnalysis('{"nodes":[]}')).toBeNull()
@@ -374,3 +380,53 @@ describe('pairDictations', () => {
   })
 })
 
+
+describe('history storage', () => {
+  // A localStorage stand-in that refuses writes past `limit` characters, like a full quota.
+  function fakeStorage(limit = Infinity) {
+    const data = {}
+    return {
+      getItem: (k) => (k in data ? data[k] : null),
+      setItem: (k, v) => {
+        if (String(v).length > limit) { const e = new Error('quota'); e.name = 'QuotaExceededError'; throw e }
+        data[k] = String(v)
+      },
+      removeItem: (k) => { delete data[k] },
+    }
+  }
+  const realStorage = globalThis.localStorage
+  afterEach(() => { globalThis.localStorage = realStorage })
+
+  it('drops the oldest entries instead of throwing when storage is full', () => {
+    globalThis.localStorage = fakeStorage(3000)
+    for (let i = 0; i < 40; i++) {
+      expect(() => saveToHistory({ transcript: `idea ${i}`, prompt: 'x'.repeat(200), mode: 'prompt' })).not.toThrow()
+    }
+    const kept = getHistory()
+    expect(kept.length).toBeGreaterThan(0)
+    expect(kept.length).toBeLessThan(40)
+    expect(kept[0].transcript).toBe('idea 39')
+  })
+
+  it('keeps bookmarked entries while older plain ones can go', () => {
+    globalThis.localStorage = fakeStorage()
+    const first = saveToHistory({ transcript: 'keep me', prompt: 'p', mode: 'prompt' })
+    bookmarkHistoryItem(first)
+    globalThis.localStorage.setItem = ((set) => (k, v) => {
+      if (String(v).length > 2500) throw new Error('quota')
+      set(k, v)
+    })(globalThis.localStorage.setItem)
+    for (let i = 0; i < 30; i++) saveToHistory({ transcript: `t${i}`, prompt: 'y'.repeat(150), mode: 'prompt' })
+    expect(getHistory().some((h) => h.transcript === 'keep me')).toBe(true)
+  })
+
+  it('ignores stored data that is not a list of entries', () => {
+    globalThis.localStorage = fakeStorage()
+    globalThis.localStorage.setItem('promptly_history', 'null')
+    expect(getHistory()).toEqual([])
+    globalThis.localStorage.setItem('promptly_history', JSON.stringify([null, { id: 1, prompt: 'hello' }, 'x']))
+    expect(getHistory()).toEqual([{ id: 1, prompt: 'hello' }])
+    expect(searchHistory('hel')).toHaveLength(1)
+    expect(() => saveToHistory({ prompt: 'no transcript', mode: 'prompt' })).not.toThrow()
+  })
+})

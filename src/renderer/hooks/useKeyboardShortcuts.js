@@ -90,9 +90,11 @@ export default function useKeyboardShortcuts({
           transitionRef.current(prevStateRef.current || STATES.IDLE)
         } else if (stateRef.current === STATES.SETTINGS) {
           closeSettings()
-        } else if (stateRef.current === STATES.THINKING && abortRef?.current) {
+        } else if ((stateRef.current === STATES.THINKING || stateRef.current === STATES.PAUSED ||
+                    stateRef.current === STATES.ITERATING) && abortRef?.current) {
           // Same as Cancel: stop Claude/Whisper and ignore whatever they'd have returned, so a
-          // builder can't pull the window back into its screen later.
+          // builder can't pull the window back into its screen later. A paused or refining
+          // recorder must be released too, or the mic stays on behind an idle screen.
           abortRef.current()
         } else if (stateRef.current !== STATES.IDLE) {
           transitionRef.current(STATES.IDLE)

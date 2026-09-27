@@ -74,7 +74,11 @@ export function parseWorkflowAnalysis(raw) {
       // A placeholder with no parameter row would count as "to fill" with nowhere to fill it.
       const parameters = { ...(n.parameters && typeof n.parameters === 'object' ? n.parameters : {}) }
       for (const p of placeholders) if (!(p in parameters)) parameters[p] = p.toUpperCase()
-      return { ...n, parameters, placeholders }
+      // These are rendered as text; anything else Claude puts there would crash the screen.
+      const node = { ...n, parameters, placeholders }
+      for (const key of ['type', 'purpose']) if (key in node && typeof node[key] !== 'string') delete node[key]
+      if ('credentialType' in node && typeof node.credentialType !== 'string') node.credentialType = null
+      return node
     })
   if (nodes.length === 0) return null
   return { ...parsed, nodes }

@@ -1,7 +1,7 @@
 'use strict';
 
 const { spawn } = require('child_process');
-const { makeClaudeEnv } = require('./binaries');
+const { makeClaudeEnv, terminate } = require('./binaries');
 
 const DEFAULT_MODEL = 'claude-sonnet-5';
 // Earlier defaults. Settings saved while one of these was the default follow the new default.
@@ -86,7 +86,7 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
       };
       const slowTimer = slowWarningMs ? setTimeout(onSlow, slowWarningMs) : null;
       const killTimer = setTimeout(() => {
-        child.kill();
+        terminate(child);
         finish({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
       }, timeoutMs);
       child.stdout.on('data', (d) => {
@@ -142,9 +142,7 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
   }
 
   function cancelAll() {
-    for (const child of children) {
-      try { child.kill(); } catch { /* already exited */ }
-    }
+    for (const child of children) terminate(child);
     children.clear();
   }
 

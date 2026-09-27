@@ -19,7 +19,7 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor } = require('./main/prompts');
-const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS } = require('./main/prompts');
+const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
 const { tidyDictation } = require('./main/dictation');
 const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
@@ -54,7 +54,9 @@ const log = createLogger(IS_E2E ? path.join(process.env.PROMPTLY_USER_DATA, 'log
 process.on('uncaughtException', (err) => log.error('Uncaught exception:', err));
 process.on('unhandledRejection', (reason) => log.error('Unhandled rejection:', reason instanceof Error ? reason : String(reason)));
 
-const config = createConfigStore(path.join(app.getPath('userData'), 'config.json'));
+const config = createConfigStore(path.join(app.getPath('userData'), 'config.json'), {
+  onCorrupt: (backup) => log.warn(`config.json could not be read; moved it to ${backup} and started from defaults`),
+});
 
 const BUNDLE_ID = 'io.betacraft.promptly';
 const SHORTCUT_PRIMARY = 'Alt+Space';
@@ -367,10 +369,16 @@ async function handleUninstall() {
     cancelId: 0,
     title: 'Uninstall Promptly',
     message: 'Uninstall Promptly?',
-    detail: 'This will remove Promptly and all its data:\n\n• Application bundle\n• App data and preferences\n• Logs\n• Microphone permission entry\n\nThis cannot be undone.',
+    detail: 'This will remove Promptly and all its data:\n\n• Application bundle\n• App data and preferences\n• Logs\n• Microphone permission entry\n• Scheduled harnesses\n\nThis cannot be undone.',
   });
   if (response === 0) return { cancelled: true };
 
+  // Scheduled harnesses would otherwise keep running every day with Promptly gone.
+  for (const { label, plistPath } of platform.harnessLaunchAgents(os.homedir())) {
+    const stopped = await platform.unloadLaunchAgent(label);
+    if (!stopped.ok) { log.warn('Uninstall: could not stop harness schedule', { label, error: stopped.error }); continue; }
+    try { fs.rmSync(plistPath, { force: true }); } catch { /* ignore */ }
+  }
   for (const p of platform.uninstallDataPaths(os.homedir(), BUNDLE_ID)) {
     try { fs.rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
   }
@@ -814,6 +822,11 @@ function finishSetup() {
 app.on('before-quit', () => {
   isQuitting = true;
   helper.stop();
+  // Nothing Promptly started should outlive it: a harness step can run for minutes on the
+  // user's Claude quota, and Whisper keeps the CPU busy.
+  claude.cancelAll();
+  evalClaude.cancelAll();
+  speechModels.cancel();
 });
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -1107,6 +1120,9 @@ app.whenReady().then(async () => {
 
   // ── Harness mode ──
 
+  // The files and run command are kept here, as Claude wrote them. Saving and scheduling use
+  // this copy, never what the window sends back, because launchd runs `run` through bash.
+  let lastHarnessFiles = null; // { run, schedule, files } from the last harness-files result
   let lastSavedHarness = null; // { dir, run } from the last Save to project…
   // Tests keep their launchd jobs inside the throwaway profile, never in the real LaunchAgents.
   const harnessPlistPath = (dir) => path.join(
@@ -1125,6 +1141,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('harness-files', async (_event, { transcript, plan, answers } = {}) => {
     if (!plan || typeof plan !== 'object') return { success: false, error: 'No plan to write', errorType: 'unknown' };
+    lastHarnessFiles = null;
     // Thinking is off here: with it on, a pipeline's files took minutes longer and came out no
     // better. The window still shows each file as it's finished.
     let lastSent = 0;
@@ -1137,13 +1154,15 @@ app.whenReady().then(async () => {
     const result = await claude.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
     if (!result.success) return result;
     const parsed = harness.parseFiles(result.prompt);
+    lastHarnessFiles = parsed;
     return parsed ? { success: true, ...parsed } : { success: false, error: "Couldn't read the files Claude wrote. Try again.", errorType: 'parse' };
   });
 
   // Saves the harness into a project folder the user picks. Existing files are only replaced
   // after they confirm; an existing .claude/settings.json gets the new hooks added, not replaced.
-  ipcMain.handle('save-harness', async (_event, { files, run } = {}) => {
-    const list = Array.isArray(files) ? files.filter((f) => f && harness.safeRelativePath(f.path)) : [];
+  // The window's copy of files and run is ignored; the arguments stay for the IPC contract.
+  ipcMain.handle('save-harness', async () => {
+    const list = (lastHarnessFiles?.files || []).filter((f) => f && harness.safeRelativePath(f.path));
     if (!list.length) return { ok: false, error: 'Nothing to save' };
     let dir = IS_E2E ? process.env.PROMPTLY_SAVE_DIR : null;
     if (!dir) {
@@ -1171,7 +1190,7 @@ app.whenReady().then(async () => {
     try {
       const written = harness.writeFiles(dir, list);
       log.info('Saved harness', { dir, files: written.length });
-      lastSavedHarness = { dir, run: String(run || '').trim() };
+      lastSavedHarness = { dir, run: String(lastHarnessFiles.run || '').trim() };
       const alreadyScheduled = fs.existsSync(harnessPlistPath(dir));
       return { ok: true, dir, written, alreadyScheduled };
     } catch (err) {
@@ -1193,6 +1212,8 @@ app.whenReady().then(async () => {
     const pathEnv = [claudeDir, platform.SCHEDULE_PATH].filter(Boolean).join(platform.PATH_DELIMITER);
     try {
       fs.mkdirSync(path.dirname(plistPath), { recursive: true });
+      // launchd won't create the log's folder, and without it every scheduled run's output is lost.
+      fs.mkdirSync(path.join(dir, '.harness'), { recursive: true });
       fs.writeFileSync(plistPath, harness.launchAgentPlist({ label, dir, run, schedule: sched, pathEnv }));
     } catch (err) {
       return { ok: false, error: err.message };
@@ -1206,7 +1227,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('unschedule-harness', async () => {
     if (!lastSavedHarness) return { ok: false, error: 'No saved harness' };
     const label = harness.agentLabel(lastSavedHarness.dir);
-    if (!IS_E2E) await platform.unloadLaunchAgent(label);
+    const unloaded = IS_E2E ? { ok: true } : await platform.unloadLaunchAgent(label);
+    // Keep the plist while the job may still be loaded, so a retry can find and stop it.
+    if (!unloaded.ok) return { ok: false, error: `macOS didn't stop the schedule: ${unloaded.error}` };
     try { fs.rmSync(harnessPlistPath(lastSavedHarness.dir), { force: true }); } catch (err) { return { ok: false, error: err.message }; }
     log.info('Removed harness schedule', { dir: lastSavedHarness.dir, label });
     return { ok: true };
@@ -1221,10 +1244,7 @@ app.whenReady().then(async () => {
 
   // Stops in-flight Claude and Whisper processes when the user aborts.
   ipcMain.handle('cancel-operations', () => {
-    for (const child of activeChildren) {
-      try { child.kill(); } catch { /* already exited */ }
-    }
-    activeChildren.clear();
+    claude.cancelAll(); // the set is shared with Whisper, so this stops both
     return { ok: true };
   });
 
@@ -1233,10 +1253,8 @@ app.whenReady().then(async () => {
     const result = await evalClaude.run(buildEvalPrompt(transcript, prompt), { timeoutMs: 30000, slowWarningMs: 0 });
     if (!result.success) return { success: false };
     try {
-      const parsed = parseJsonOutput(result.prompt);
-      if (typeof parsed.rawScore === 'number' && typeof parsed.promptlyScore === 'number') {
-        return { success: true, data: parsed };
-      }
+      const data = normalizeEval(parseJsonOutput(result.prompt));
+      if (data) return { success: true, data };
     } catch (err) {
       log.warn('Eval response was not valid JSON', err.message);
     }

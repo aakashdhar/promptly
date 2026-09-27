@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { execFile, spawn } = require('child_process');
 const platform = require('./platform');
-const { PYTHON_WHISPER } = require('./binaries');
+const { PYTHON_WHISPER, terminate } = require('./binaries');
 
 // ── Built-in engine (whisper.cpp, shipped in the app) ─────────────────────────
 // scripts/fetch-whisper.sh builds these into vendor/whisper/; electron-builder copies that
@@ -170,7 +170,7 @@ function createWhisperRunner({
       const slowTimer = slowWarningMs ? setTimeout(onSlow, slowWarningMs) : null;
       const killTimer = setTimeout(() => {
         timedOut = true;
-        child.kill();
+        terminate(child);
       }, timeoutMs);
     });
   }

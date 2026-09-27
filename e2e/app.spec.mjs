@@ -833,6 +833,25 @@ test('cancelling a recording throws it away instead of transcribing it', async (
   expect(args).not.toMatch(/promptly-\d+\.wav/)
 })
 
+test('Esc on a paused recording throws it away and turns the microphone off', async () => {
+  ctx = await launch({ mode: null })
+  const { app, page, fakeDir } = ctx
+  await page.locator('#mode-pill').waitFor()
+  await page.evaluate(() => {
+    const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    navigator.mediaDevices.getUserMedia = async (c) => { const s = await real(c); window.__micStream = s; return s }
+  })
+  await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
+  await expect.poll(() => appState(app)).toBe('RECORDING')
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('shortcut-pause')))
+  await expect.poll(() => appState(app)).toBe('PAUSED')
+  await page.keyboard.press('Escape')
+  await expect.poll(() => appState(app)).toBe('IDLE')
+  await expect.poll(() => page.evaluate(() => window.__micStream.getTracks().every((t) => t.readyState === 'ended'))).toBe(true)
+  const args = fs.existsSync(path.join(fakeDir, 'whisper-args')) ? fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8') : ''
+  expect(args).not.toMatch(/promptly-\d+\.wav/)
+})
+
 test('the pill: its cancel button throws the recording away, and an error stays in the pill with Open', async () => {
   ctx = await launch({ mode: null })
   const { app, page, fakeDir } = ctx

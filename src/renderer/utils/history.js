@@ -1,9 +1,29 @@
 const HISTORY_KEY = 'promptly_history'
 const MAX_ENTRIES = 100
 
+// Saving history must never break the flow that called it: a result Claude already wrote
+// is on screen whether or not it fits in storage. When storage is full, the oldest
+// entries (bookmarked ones last) are dropped until it fits.
+function store(history) {
+  let list = history
+  for (;;) {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list))
+      return true
+    } catch {
+      if (list.length <= 1) return false
+      const drop = Math.max(1, Math.ceil(list.length / 4))
+      const plain = list.filter(h => !h.bookmarked)
+      // Oldest are at the end; unbookmarked ones go first.
+      const gone = new Set((plain.length >= drop ? plain : list).slice(-drop))
+      list = list.filter(h => !gone.has(h))
+    }
+  }
+}
+
 export function saveToHistory({ transcript, prompt, mode, isIteration = false, basedOn = null, polishChanges = null }) {
   const history = getHistory()
-  const words = transcript.split(' ')
+  const words = String(transcript ?? '').split(' ')
   const title = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '')
   const entry = { id: Date.now(), title, transcript, prompt, mode, timestamp: new Date().toISOString() }
   if (isIteration) entry.isIteration = true
@@ -11,17 +31,20 @@ export function saveToHistory({ transcript, prompt, mode, isIteration = false, b
   if (polishChanges) entry.polishChanges = polishChanges
   history.unshift(entry)
   if (history.length > MAX_ENTRIES) history.splice(MAX_ENTRIES)
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  store(history)
   return entry.id
 }
 
+// Whatever is stored is trusted only as far as it's an array of entries with an id.
 export function getHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]') }
+  let parsed
+  try { parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]') }
   catch { return [] }
+  return Array.isArray(parsed) ? parsed.filter(h => h && typeof h === 'object' && h.id != null) : []
 }
 
 export function deleteHistoryItem(id) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(getHistory().filter(h => h.id !== id)))
+  store(getHistory().filter(h => h.id !== id))
 }
 
 export function clearHistory() {
@@ -31,11 +54,8 @@ export function clearHistory() {
 export function searchHistory(query) {
   if (!query.trim()) return getHistory()
   const q = query.toLowerCase()
-  return getHistory().filter(h =>
-    h.transcript.toLowerCase().includes(q) ||
-    h.prompt.toLowerCase().includes(q) ||
-    h.mode.toLowerCase().includes(q)
-  )
+  const has = (v) => String(v ?? '').toLowerCase().includes(q)
+  return getHistory().filter(h => has(h.transcript) || has(h.prompt) || has(h.mode))
 }
 
 export function bookmarkHistoryItem(id) {
@@ -43,7 +63,7 @@ export function bookmarkHistoryItem(id) {
   const idx = history.findIndex(h => h.id === id)
   if (idx === -1) return
   history[idx].bookmarked = !history[idx].bookmarked
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  store(history)
   return history[idx].bookmarked
 }
 
@@ -53,7 +73,7 @@ export function rateHistoryItem(id, rating, tag) {
   if (idx === -1) return
   history[idx].rating = rating
   history[idx].ratingTag = tag ?? null
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  store(history)
 }
 
 export function formatTime(iso) {
