@@ -313,6 +313,8 @@ function NumericParamRow({ tab, field, options, answers, defaults, onParamChange
 
 
 // ─── Main component ───────────────────────────────────────────────────────────
+const PRESET_COUNT = PRESET_CATEGORIES.reduce((n, c) => n + c.presets.length, 0)
+
 export default function ImageBuilderState({
   transcript,
   imageDefaults,
@@ -503,7 +505,7 @@ export default function ImageBuilderState({
               fontSize: '11px', color: 'var(--text-tertiary)', cursor: 'pointer',
               WebkitAppRegion: 'no-drag',
             }}>
-              {showAllPresets ? 'Show less ↑' : 'Show all 48 →'}
+              {showAllPresets ? 'Show less ↑' : `Show all ${PRESET_COUNT} →`}
             </button>
           </div>
           {(showAllPresets ? PRESET_CATEGORIES : PRESET_CATEGORIES.slice(0, 2)).map(cat => (

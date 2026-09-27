@@ -52,7 +52,8 @@ function makeClaudeEnv(binPath, env = process.env) {
   let resolvedDir = originalDir;
   try { resolvedDir = path.dirname(fs.realpathSync(binPath)); } catch { /* use original */ }
   const base = env.PATH || platform.DEFAULT_PATH;
-  const dirs = [originalDir, resolvedDir].filter((d, i, a) => a.indexOf(d) === i && !base.includes(d));
+  const present = new Set(base.split(platform.PATH_DELIMITER));
+  const dirs = [originalDir, resolvedDir].filter((d, i, a) => a.indexOf(d) === i && !present.has(d));
   // Claude Code reads its login from the keychain and reports "logged out" when USER is unset.
   let username = '';
   try { username = os.userInfo().username; } catch { /* leave unset */ }

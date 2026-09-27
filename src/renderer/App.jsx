@@ -95,9 +95,6 @@ export default function App() {
   })
 
   const { openHistory, openSettings, closeSettings } = useWindowLayout({ prevStateRef, stateRef, transitionRef, STATES })
-  // There is only the window now (the pill covers talking from other apps). Hooks written for
-  // both layouts still read this; it is always true.
-  const isExpandedRef = useRef(true)
 
   // POLISH-001: animate between states
   function animateToState(newState) {
@@ -177,7 +174,6 @@ export default function App() {
     opIdRef,
     isIterated,
     originalTranscript,
-    isExpandedRef,
     setTranscriptionError,
     contextRef,
     setMode,
@@ -256,7 +252,9 @@ export default function App() {
     isHarnessReiteratingRef.current = false
   }
 
-  const handleGenerateResult = useCallback((genResult, transcript, opId, modeOverride) => {
+  // Only ever called through handleGenerateResultRef, so it is rebuilt each render on purpose:
+  // the ref always points at the version that sees the latest builder callbacks.
+  function handleGenerateResult(genResult, transcript, opId, modeOverride) {
     if (opId !== undefined && opId !== opIdRef.current) return
     // Read the live mode: a spoken "code mode, …" may have switched it moments ago. Regenerating
     // a result made in another mode passes that mode instead.
@@ -268,19 +266,12 @@ export default function App() {
       return
     }
     if (!genResult.success) {
-      if (isExpandedRef.current) {
-        setGenerationError({
-          error: genResult.error || '',
-          errorType: genResult.errorType || (genResult.timedOut ? 'timeout' : 'unknown'),
-          canRetry: true,
-        })
-        transitionRef.current(STATES.GENERATION_ERROR)
-      } else {
-        const msg = genResult.errorType === 'auth'
-          ? 'Claude Code is signed out. Sign in from Settings (⌘/)'
-          : "Couldn't write the prompt"
-        transitionRef.current(STATES.ERROR, { message: msg })
-      }
+      setGenerationError({
+        error: genResult.error || '',
+        errorType: genResult.errorType || (genResult.timedOut ? 'timeout' : 'unknown'),
+        canRetry: true,
+      })
+      transitionRef.current(STATES.GENERATION_ERROR)
       return
     }
     if (mode === 'image') {
@@ -339,13 +330,12 @@ export default function App() {
       saveToHistory({ transcript, prompt: genResult.prompt, mode })
     }
     transitionRef.current(STATES.PROMPT_READY)
-  }, [mode, runPreSelection, runVideoPreSelection, runWorkflowAnalysis, runHarnessPlan])
+  }
   handleGenerateResultRef.current = handleGenerateResult
 
   const { handleIterate, stopIterating, dismissIterating } = useIteration({
     STATES,
     transitionRef,
-    isExpandedRef,
     generatedPromptRef,
     modeRef,
     resultModeRef,
@@ -480,7 +470,7 @@ export default function App() {
     if (!window.electronAPI) return
     window.electronAPI.getTheme().then(({ dark }) => {
       document.body.classList.toggle('light', !dark)
-    })
+    }).catch(() => { /* keep the default theme; onThemeChanged still applies later changes */ })
     const unsubTheme = window.electronAPI.onThemeChanged(({ dark }) => {
       document.body.classList.toggle('light', !dark)
     })
@@ -504,7 +494,6 @@ export default function App() {
     openHistory,
     openSettings,
     closeSettings,
-    isExpandedRef,
     requestStop,
     dismissRecording: handleDismiss,
   })

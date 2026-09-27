@@ -105,6 +105,7 @@ let relevantModifiers: CGEventFlags = [.maskCommand, .maskControl, .maskAlternat
 var hotkey = Hotkey()
 var hotkeyDown = false
 var eventTap: CFMachPort?
+var eventTapSource: CFRunLoopSource?
 
 func flag(for keyCode: Int64) -> CGEventFlags? {
     switch keyCode {
@@ -169,7 +170,14 @@ func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
 }
 
 func installTap() -> Bool {
-    if eventTap != nil { return true }
+    // After Accessibility is turned off and on again the old tap can be dead; only a live one
+    // counts, otherwise it is replaced.
+    if let tap = eventTap {
+        if CFMachPortIsValid(tap) { return true }
+        if let source = eventTapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
+        eventTap = nil
+        eventTapSource = nil
+    }
     let mask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
         | (1 << CGEventType.leftMouseDown.rawValue) | (1 << CGEventType.rightMouseDown.rawValue) | (1 << CGEventType.otherMouseDown.rawValue)
     guard let tap = CGEvent.tapCreate(
@@ -184,6 +192,7 @@ func installTap() -> Bool {
     CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
     CGEvent.tapEnable(tap: tap, enable: true)
     eventTap = tap
+    eventTapSource = source
     return true
 }
 

@@ -4,7 +4,6 @@ import { recordingToWav, MIC_CONSTRAINTS, withTimeout } from '../utils/audio.js'
 export default function useIteration({
   STATES,
   transitionRef,
-  isExpandedRef,
   generatedPromptRef,
   modeRef,
   resultModeRef,

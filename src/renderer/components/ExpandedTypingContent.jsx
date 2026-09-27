@@ -127,7 +127,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           style={{
             height: '40px', padding: '0 32px',
             background: 'linear-gradient(135deg, rgba(10,132,255,0.92), rgba(10,100,220,0.92))',
-            color: 'white', border: 'none', borderRadius: '10px',
+            color: 'var(--on-accent)', border: 'none', borderRadius: '10px',
             fontSize: '13px', fontWeight: 600, fontFamily: 'inherit',
             boxShadow: '0 2px 16px rgba(10,132,255,0.3)',
             cursor: typingText.trim() ? 'pointer' : 'default',

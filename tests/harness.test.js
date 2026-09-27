@@ -23,6 +23,10 @@ describe('Your words', () => {
     expect(hintWords(parseWords('Promptly\nN10 → n8n\nn8n'))).toEqual(['Promptly', 'n8n'])
   })
 
+  it('inserts a correction as typed, even with $ in it', () => {
+    expect(applyCorrections('the price', [{ from: 'price', to: '$& cost $1' }])).toBe('the $& cost $1')
+  })
+
   it('fixes whole words in any case, and leaves longer words alone', () => {
     const { corrections } = parseWords('N10 → n8n\nclod code → Claude Code')
     expect(applyCorrections('We have, for the N10 version, and the n10 one.', corrections)).toBe('We have, for the n8n version, and the n8n one.')

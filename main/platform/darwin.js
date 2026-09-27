@@ -138,6 +138,12 @@ async function removeInstalledApp(bundlePath) {
   }
 }
 
+// System Settings panes Promptly sends people to.
+const PRIVACY_SETTINGS = {
+  accessibility: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility',
+  microphone: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone',
+};
+
 // ── Scheduled harnesses (launchd) ──
 
 // launchd starts jobs with a bare PATH; the harness needs claude, git, node and Homebrew tools.
@@ -177,6 +183,7 @@ function harnessLaunchAgents(home) {
 }
 
 module.exports = {
+  PRIVACY_SETTINGS,
   SCHEDULE_PATH,
   launchAgentsDir,
   loadLaunchAgent,

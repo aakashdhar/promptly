@@ -34,7 +34,8 @@ echo ""
 echo -n "  Quitting Promptly... "
 osascript -e "quit app \"$APP_NAME\"" 2>/dev/null || true
 sleep 1
-pkill -f "Promptly" 2>/dev/null || true
+# Only processes running from the app bundle (not, say, an editor with a "Promptly" folder open).
+pkill -f "$APP_PATH/" 2>/dev/null || true
 echo "✓"
 
 # Step 2 — remove app bundle

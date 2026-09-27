@@ -57,7 +57,7 @@ ok "CHECK 3: claude responds READY in non-login shell"
 # CHECK 4 — built-in speech engine is built (users no longer install Whisper, Python or ffmpeg)
 WHISPER_DIR="vendor/whisper"
 [ -x "$WHISPER_DIR/whisper-cli" ] || fail "Built-in speech engine missing. Run: bash scripts/fetch-whisper.sh"
-ARCHS=$(lipo -archs "$WHISPER_DIR/whisper-cli" 2>/dev/null)
+ARCHS=$(lipo -archs "$WHISPER_DIR/whisper-cli" 2>/dev/null) || fail "whisper-cli isn't a readable binary. Run: npm run fetch-whisper"
 echo "$ARCHS" | grep -q arm64 && echo "$ARCHS" | grep -q x86_64 \
   || fail "whisper-cli is not universal (has: $ARCHS). Rebuild with scripts/fetch-whisper.sh"
 ok "CHECK 4: whisper-cli built ($ARCHS)"
@@ -123,7 +123,6 @@ for path in files:
                 print(f"FAIL: Claude process at {path}:{i+1} does not use makeClaudeEnv(). This will break on nvm/non-standard installs.")
                 sys.exit(1)
 PYEOF
-[ $? -ne 0 ] && exit 1
 ok "CHECK 7: every Claude process uses makeClaudeEnv"
 
 # CHECK 8 — settings button present in ExpandedTransportBar

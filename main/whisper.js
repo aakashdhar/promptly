@@ -161,6 +161,8 @@ function createWhisperRunner({
         if (err) {
           const wrapped = new Error(stderr || err.message || 'Whisper failed');
           if (timedOut) wrapped.timedOut = true;
+          // Killed by a cancel (not our own timeout): callers must not treat this as "no words".
+          else if (err.signal) wrapped.stopped = true;
           reject(wrapped);
           return;
         }
@@ -192,10 +194,16 @@ function createWhisperRunner({
     const slowWarningMs = opts.slowWarningMs && Math.max(opts.slowWarningMs, seconds * (accurate ? 200 : 60));
     const once = async (withVad) => segmentsToText(await run(cli, bundledArgs({ ...base, vad: withVad ? vad : null }), { env: process.env, ...opts, timeoutMs, slowWarningMs }));
 
+    const started = Date.now();
     const text = await once(!!vad);
     if (!vad || !looksIncomplete(text, seconds)) return text;
     // Too few words for the length: try again without voice detection and keep the fuller one.
-    const again = await once(false).catch(() => '');
+    // It gets what's left of the time budget, not a second full one, and a cancel stays a cancel.
+    const left = timeoutMs - (Date.now() - started);
+    if (left < 5000) return text;
+    const again = await run(cli, bundledArgs({ ...base, vad: null }), { env: process.env, ...opts, timeoutMs: left, slowWarningMs: 0 })
+      .then(segmentsToText)
+      .catch((err) => { if (err.stopped) throw err; return ''; });
     return again.split(/\s+/).length > text.split(/\s+/).length ? again : text;
   }
 
@@ -245,7 +253,9 @@ function createWhisperRunner({
     return new Promise((resolve) => {
       const [cmd, args] = whisperCommand(getWhisperPath(), [os.devNull, '--model', WHISPER_MODEL]);
       const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], env: makeWhisperEnv(getFfmpegPath()) });
+      children.add(child); // so a cancel stops the download too
       let stderrBuf = '';
+      const lastLines = []; // the last few non-progress lines, for the error message
       let settled = false;
       const finish = (result) => { if (!settled) { settled = true; resolve(result); } };
       child.stderr.on('data', (d) => {
@@ -256,11 +266,16 @@ function createWhisperRunner({
         for (const line of lines) {
           const progress = parseTqdmLine(line);
           if (progress) onProgress(progress);
+          else if (line.trim()) { lastLines.push(line.trim()); if (lastLines.length > 5) lastLines.shift(); }
         }
       });
       child.stdout.on('data', () => {});
-      child.on('close', (code) => finish(code === 0 ? { success: true } : { success: false, error: stderrBuf.trim() || 'Download failed' }));
-      child.on('error', (err) => finish({ success: false, error: err.message || 'Download failed' }));
+      child.on('close', (code) => {
+        children.delete(child);
+        const detail = [...lastLines, stderrBuf.trim()].filter(Boolean).join('\n');
+        finish(code === 0 ? { success: true } : { success: false, error: detail || 'Download failed' });
+      });
+      child.on('error', (err) => { children.delete(child); finish({ success: false, error: err.message || 'Download failed' }); });
     });
   }
 

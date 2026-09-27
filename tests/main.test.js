@@ -205,6 +205,37 @@ describe('createClaudeRunner', () => {
     expect(r.prompt).toBe('costs ₹500')
   })
 
+  function fakeChild(script) {
+    const { PassThrough } = require('stream')
+    const { EventEmitter } = require('events')
+    return () => {
+      const child = new EventEmitter()
+      child.stdout = new PassThrough(); child.stderr = new PassThrough()
+      child.stdin = { on() {}, end() {} }
+      child.kill = () => {}
+      setTimeout(() => script(child))
+      return child
+    }
+  }
+
+  it('reads a streamed result that ends without a newline', async () => {
+    const claude = createClaudeRunner({
+      getClaudePath: () => '/x/claude',
+      spawnImpl: fakeChild((c) => { c.stdout.end(JSON.stringify({ type: 'result', result: 'done', is_error: false })); setTimeout(() => c.emit('close', 0), 10) }),
+    })
+    expect(await claude.run('hi', { onDelta: () => {} })).toEqual({ success: true, prompt: 'done' })
+  })
+
+  it('reports a crash as an error, not as a cancel', async () => {
+    const claude = createClaudeRunner({
+      getClaudePath: () => '/x/claude',
+      spawnImpl: fakeChild((c) => c.emit('exit', null, 'SIGSEGV')),
+    })
+    const r = await claude.run('hi')
+    expect(r.cancelled).toBeUndefined()
+    expect(r.error).toMatch(/SIGSEGV/)
+  })
+
   it('retries without the lean flags on an older CLI', async () => {
     const r = await runner('old-cli').run('hi')
     expect(r).toEqual({ success: true, prompt: 'ok-without-lean-flags' })
@@ -264,6 +295,16 @@ describe('config store', () => {
     expect(fs.readdirSync(path.dirname(file))).toEqual(['config.json'])
     fs.writeFileSync(file, '{not json')
     expect(store.read()).toEqual({})
+  })
+
+  it('sees its own writes and edits made by hand, and hands out copies', () => {
+    const file = path.join(tmp, 'cfg-cache', 'config.json')
+    const store = createConfigStore(file)
+    store.update({ a: { n: 1 } })
+    const copy = store.read(); copy.a.n = 99
+    expect(store.read()).toEqual({ a: { n: 1 } })
+    fs.writeFileSync(file, JSON.stringify({ a: { n: 2 }, edited: true }))
+    expect(store.read()).toEqual({ a: { n: 2 }, edited: true })
   })
 
   it('moves an unreadable file aside instead of writing over it', () => {
@@ -814,6 +855,22 @@ describe('terminate', () => {
     const child = spawn(process.execPath, ['-e', ''])
     await new Promise((r) => child.on('exit', r))
     expect(() => terminate(child)).not.toThrow()
+  })
+})
+
+describe('small main-process edges', () => {
+  it('adds the claude folder to PATH unless that exact folder is already there', () => {
+    const env = makeClaudeEnv('/opt/x/bin/claude', { PATH: '/opt/x/bin2:/usr/bin' })
+    expect(env.PATH.split(':')).toContain('/opt/x/bin')
+    const same = makeClaudeEnv('/opt/x/bin/claude', { PATH: '/opt/x/bin:/usr/bin' })
+    expect(same.PATH.split(':').filter((d) => d === '/opt/x/bin')).toHaveLength(1)
+  })
+
+  it('never throws while logging odd values', () => {
+    const logger = createLogger(path.join(tmp, 'logs-odd'))
+    const loop = {}; loop.self = loop
+    expect(() => logger.info('x', loop, 10n, undefined)).not.toThrow()
+    expect(fs.readFileSync(logger.file, 'utf8')).toMatch(/\[info\] x \[object Object\] 10 undefined/)
   })
 })
 

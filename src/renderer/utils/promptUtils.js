@@ -32,17 +32,36 @@ export function parseSections(text) {
   return sections
 }
 
-// Claude often wraps JSON in ```json fences, sometimes with preamble. Strip fences, then
-// fall back to the outermost {...}. Throws if no JSON object can be parsed.
+// Each balanced {...} in the text, in order, skipping braces inside strings.
+function* jsonObjectCandidates(text) {
+  for (let start = text.indexOf('{'); start >= 0; start = text.indexOf('{', start + 1)) {
+    let depth = 0
+    let inString = false
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i]
+      if (inString) {
+        if (ch === '\\') i++
+        else if (ch === '"') inString = false
+      } else if (ch === '"') inString = true
+      else if (ch === '{') depth++
+      else if (ch === '}' && --depth === 0) { yield text.slice(start, i + 1); break }
+    }
+  }
+}
+
+// Claude often wraps JSON in ```json fences, sometimes with a line before or after it (which
+// may itself contain a brace). Strip fences, then take the first balanced {...} that parses.
+// Throws if no JSON object can be parsed.
 export function parseJsonObject(raw) {
   const stripped = (raw || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
   let parsed
   try {
     parsed = JSON.parse(stripped)
   } catch {
-    const match = stripped.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('No parseable JSON object in response')
-    parsed = JSON.parse(match[0])
+    for (const candidate of jsonObjectCandidates(stripped)) {
+      try { parsed = JSON.parse(candidate); break } catch { /* try the next one */ }
+    }
+    if (parsed === undefined) throw new Error('No parseable JSON object in response')
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Response is not a JSON object')
   return parsed

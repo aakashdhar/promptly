@@ -24,6 +24,9 @@ function createStreamParser(onDelta) {
   let result = null;
   function feed(chunk) {
     buffer += chunk;
+    drain();
+  }
+  function drain() {
     let newline;
     while ((newline = buffer.indexOf('\n')) >= 0) {
       const line = buffer.slice(0, newline).trim();
@@ -40,7 +43,11 @@ function createStreamParser(onDelta) {
       if (event.type === 'result') result = event;
     }
   }
-  return { feed, text: () => text, result: () => result };
+  // The process has ended: a last line without a newline (often the result) still counts.
+  function flush() {
+    if (buffer.trim()) { buffer += '\n'; drain(); }
+  }
+  return { feed, flush, text: () => text, result: () => result };
 }
 
 function classifyError(stderr, stdout) {
@@ -57,6 +64,8 @@ function isUnknownOptionError(stderr) {
 // argument, so it never shows up in `ps` and isn't bound by command-line length limits.
 function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onSlow = () => {}, children = new Set(), spawnImpl = spawn }) {
   let leanFlagsSupported = true;
+  // Processes this runner stopped on purpose; any other signal is a crash, not a cancel.
+  const stoppedByUs = new WeakSet();
 
   function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta, thinking = true }) {
     const streaming = lean && typeof onDelta === 'function';
@@ -86,6 +95,7 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
       };
       const slowTimer = slowWarningMs ? setTimeout(onSlow, slowWarningMs) : null;
       const killTimer = setTimeout(() => {
+        stoppedByUs.add(child);
         terminate(child);
         finish({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
       }, timeoutMs);
@@ -102,10 +112,13 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
       // A killed process may leave grandchildren holding its stdout open, which delays
       // 'close' indefinitely; 'exit' fires as soon as the process itself is gone.
       child.on('exit', (_code, signal) => {
-        if (signal) finish({ success: false, error: 'Cancelled', errorType: 'cancelled', cancelled: true });
+        if (!signal) return;
+        if (stoppedByUs.has(child)) finish({ success: false, error: 'Cancelled', errorType: 'cancelled', cancelled: true });
+        else finish({ success: false, error: `Claude stopped unexpectedly (${signal}) — try again`, errorType: 'unknown' });
       });
       child.on('close', (code) => {
         if (parser) {
+          parser.flush();
           const result = parser.result();
           if (result && !result.is_error && code === 0) {
             const out = String(result.result ?? parser.text()).trim();
@@ -145,11 +158,26 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
   }
 
   function cancelAll() {
-    for (const child of children) terminate(child);
+    for (const child of children) { stoppedByUs.add(child); terminate(child); }
     children.clear();
   }
 
-  return { run, cancelAll };
+  // The CLI's version line, or null. Kept here so every claude process starts the same way.
+  function version() {
+    const claudePath = getClaudePath();
+    if (!claudePath) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const child = spawnImpl(claudePath, ['--version'], { env: makeClaudeEnv(claudePath) });
+      let out = '';
+      const timer = setTimeout(() => terminate(child), 5000);
+      child.stdout?.setEncoding?.('utf8');
+      child.stdout?.on('data', (d) => { out += String(d); });
+      child.on('error', () => { clearTimeout(timer); resolve(null); });
+      child.on('close', (code) => { clearTimeout(timer); resolve(code === 0 ? out.trim() || null : null); });
+    });
+  }
+
+  return { run, cancelAll, version };
 }
 
 // Claude often wraps JSON in ```json fences; strip them before parsing.

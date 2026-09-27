@@ -2,6 +2,7 @@
 // Run with: npm run test:e2e (builds the renderer first).
 import { test, expect, _electron as electron } from '@playwright/test'
 import crypto from 'crypto'
+import { execFileSync } from 'child_process'
 import fs from 'fs'
 import http from 'http'
 import os from 'os'
@@ -202,6 +203,15 @@ async function typeAndSubmit(page, text) {
 }
 
 let ctx
+// Several tests copy and paste through the real clipboard; put back what the developer had.
+let clipboardBefore = null
+test.beforeAll(() => {
+  try { clipboardBefore = execFileSync('pbpaste', { encoding: 'utf8' }) } catch { clipboardBefore = null }
+})
+test.afterAll(() => {
+  if (clipboardBefore !== null) try { execFileSync('pbcopy', { input: clipboardBefore }) } catch { /* nothing to restore */ }
+})
+
 test.afterEach(async () => {
   await ctx?.app.close()
   if (ctx?.dir) fs.rmSync(ctx.dir, { recursive: true, force: true })

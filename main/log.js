@@ -7,6 +7,13 @@ const MAX_BYTES = 1024 * 1024;
 
 // Appends timestamped lines to <dir>/main.log, keeping one rotated main.old.log.
 // No dependency on Electron, so it can be unit-tested and used before app is ready.
+// Circular objects and BigInts make JSON.stringify throw; a log line must never do that.
+function format(a) {
+  if (a instanceof Error) return `${a.message}\n${a.stack}`;
+  if (typeof a === 'string') return a;
+  try { return JSON.stringify(a) ?? String(a); } catch { return String(a); }
+}
+
 function createLogger(dir) {
   const file = path.join(dir, 'main.log');
 
@@ -17,7 +24,7 @@ function createLogger(dir) {
   }
 
   function write(level, args) {
-    const text = args.map((a) => (a instanceof Error ? `${a.message}\n${a.stack}` : typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+    const text = args.map(format).join(' ');
     const line = `${new Date().toISOString()} [${level}] ${text}\n`;
     try {
       fs.mkdirSync(dir, { recursive: true });

@@ -1,6 +1,7 @@
 import { FIELD_LABELS } from './ImageBuilderState.constants.js'
 import { splitImagePrompt } from '../utils/promptUtils.js'
 import useCopy from '../hooks/useCopy.js'
+import ParamSummary from './ParamSummary.jsx'
 
 function flattenAnswers(answers) {
   if (!answers || typeof answers !== 'object') return []
@@ -82,18 +83,7 @@ export default function ImageBuilderDoneState({
         </div>
 
         {/* Right column: param summary */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflowY: 'auto' }}>
-          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
-          {answeredEntries.length === 0 && (
-            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No parameters selected</p>
-          )}
-          {answeredEntries.map(([label, value]) => (
-            <div key={label} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(196,168,255) var(--accent-text-strength), rgb(var(--ink)))', minWidth: '90px', flexShrink: 0 }}>{label}</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{value}</span>
-            </div>
-          ))}
-        </div>
+        <ParamSummary entries={answeredEntries} accent="196,168,255" />
       </div>
 
       {/* Action row */}
@@ -114,7 +104,7 @@ export default function ImageBuilderDoneState({
           style={{
             padding: '7px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
             background: copied ? '#1B7F3F' : '#7440E0',
-            border: 'none', color: 'white', cursor: 'pointer', transition: 'background 200ms ease',
+            border: 'none', color: 'var(--on-accent)', cursor: 'pointer', transition: 'background 200ms ease',
           }}
         >{copied ? 'Copied ✓' : 'Copy prompt'}</button>
       </div>

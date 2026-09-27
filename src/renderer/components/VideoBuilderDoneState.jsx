@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useCopy from '../hooks/useCopy.js'
+import ParamSummary from './ParamSummary.jsx'
 
 const ORANGE_CHIP = {
   background: 'rgba(251,146,60,0.08)',
@@ -99,18 +100,7 @@ export default function VideoBuilderDoneState({
         </div>
 
         {/* Right column: param breakdown */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: 0, overflowY: 'auto' }}>
-          <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', margin: 0, fontWeight: 600 }}>Parameters applied</p>
-          {answeredEntries.length === 0 && (
-            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No parameters selected</p>
-          )}
-          {answeredEntries.map(([key, value]) => (
-            <div key={key} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '11px', color: 'color-mix(in oklab, rgb(251,146,60) var(--accent-text-strength), rgb(var(--ink)))', minWidth: '90px', textTransform: 'capitalize', flexShrink: 0 }}>{paramLabel(key)}</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatParamValue(value)}</span>
-            </div>
-          ))}
-        </div>
+        <ParamSummary entries={answeredEntries.map(([key, value]) => [paramLabel(key), formatParamValue(value)])} accent="251,146,60" />
       </div>
 
       {/* Action row */}
@@ -134,7 +124,7 @@ export default function VideoBuilderDoneState({
             background: copied
               ? 'rgba(52,199,89,0.7)'
               : 'linear-gradient(135deg, rgba(251,146,60,0.85) 0%, rgba(234,88,12,0.8) 100%)',
-            border: 'none', color: 'white', cursor: 'pointer',
+            border: 'none', color: 'var(--on-accent)', cursor: 'pointer',
             transition: 'background 200ms ease', fontFamily: 'inherit',
           }}
         >{copied ? 'Copied ✓' : 'Copy prompt'}</button>

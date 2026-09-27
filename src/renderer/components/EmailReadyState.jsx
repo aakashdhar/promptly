@@ -292,7 +292,7 @@ export default function EmailReadyState({
               height: 32,
               padding: '0 16px',
               background: 'rgba(20,184,166,0.75)',
-              color: 'white',
+              color: 'var(--on-accent)',
               border: 'none',
               borderRadius: 8,
               fontSize: 12,

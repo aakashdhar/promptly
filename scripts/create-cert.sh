@@ -12,10 +12,13 @@ fi
 echo "Creating self-signed code signing certificate..."
 
 PASS="promptlysigning"
-TMPDIR=$(mktemp -d)
-KEY="$TMPDIR/promptly.key"
-CRT="$TMPDIR/promptly.crt"
-P12="$TMPDIR/promptly.p12"
+# A private work folder (not $TMPDIR, which other tools read), removed however the script ends,
+# so the private key never stays on disk.
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+KEY="$WORK/promptly.key"
+CRT="$WORK/promptly.crt"
+P12="$WORK/promptly.p12"
 
 # Generate key and certificate
 openssl genrsa -out "$KEY" 2048 2>/dev/null
@@ -48,14 +51,13 @@ security import "$P12" \
   -T /usr/bin/codesign \
   -T /usr/bin/security
 
-# Allow codesign to access without password prompt
+# Allow codesign to access without password prompt. This needs the login keychain's password;
+# with a non-empty one it fails, and macOS asks once on the first signing instead.
 security set-key-partition-list \
   -S apple-tool:,apple:,codesign: \
   -s -k "" \
-  ~/Library/Keychains/login.keychain-db 2>/dev/null || true
-
-# Cleanup
-rm -rf "$TMPDIR"
+  ~/Library/Keychains/login.keychain-db >/dev/null 2>&1 \
+  || echo "  (codesign will ask for keychain access once on the first release — choose Always Allow)"
 
 echo "✓ Certificate '$CERT_NAME' created and imported"
 echo ""

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, parseEvalReason, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
+import { parseJsonObject, parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOutput, parseImageAssemblyOutput, parseEvalReason, evalVerdict, parseWorkflowAnalysis, parseVideoDefaults, buildImagePromptText, readableColor } from '../src/renderer/utils/promptUtils.js'
 import { formatTime, pairDictations, saveToHistory, getHistory, searchHistory, bookmarkHistoryItem } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
@@ -465,5 +465,20 @@ describe('thinking labels', () => {
   it('gives builders their own per-step labels and everything else a sequence', () => {
     expect(getLabelSequence('image', 1)).not.toEqual(getLabelSequence('prompt'))
     expect(getLabelSequence('nope').length).toBeGreaterThan(0)
+  })
+})
+
+describe('parseJsonObject', () => {
+  it('finds the object even when the text around it has braces', () => {
+    const raw = 'Here you go {as asked}:\n{"subject": "Hi {name}", "body": "B"}\nHope that helps :}'
+    expect(parseJsonObject(raw)).toEqual({ subject: 'Hi {name}', body: 'B' })
+  })
+
+  it('handles escaped quotes inside strings', () => {
+    expect(parseJsonObject('x {"a": "say \\"}\\" ok"} y')).toEqual({ a: 'say "}" ok' })
+  })
+
+  it('still throws when there is no object', () => {
+    expect(() => parseJsonObject('no json here')).toThrow()
   })
 })

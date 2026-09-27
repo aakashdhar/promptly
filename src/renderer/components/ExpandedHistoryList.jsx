@@ -3,6 +3,7 @@ import { getHistory, deleteHistoryItem, clearHistory, searchHistory, pairDictati
 import { getModeTagStyle, readableColor } from '../utils/promptUtils.js'
 import { modeLabel } from '../utils/modes.js'
 import { pressable } from '../utils/pressable.js'
+import ThumbIcon from './ThumbIcon.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 
@@ -154,8 +155,8 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                     <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)' }}>Rating</span>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       <Choice on={activeFilter === 'all'} onClick={() => setActiveFilter('all')}>Any</Choice>
-                      <Choice on={activeFilter === 'up'} onClick={() => setActiveFilter('up')}>👍</Choice>
-                      <Choice on={activeFilter === 'down'} onClick={() => setActiveFilter('down')}>👎</Choice>
+                      <Choice on={activeFilter === 'up'} onClick={() => setActiveFilter('up')}><ThumbIcon up label="Rated good" /></Choice>
+                      <Choice on={activeFilter === 'down'} onClick={() => setActiveFilter('down')}><ThumbIcon up={false} label="Rated not good" /></Choice>
                       <Choice on={activeFilter === 'unrated'} onClick={() => setActiveFilter('unrated')}>Unrated</Choice>
                     </div>
                   </div>
@@ -239,7 +240,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                       <path d="M1 1h8v9.5L5 8.5 1 10.5V1Z" stroke="rgba(255,189,46,0.8)" strokeWidth="1.2" strokeLinejoin="round" />
                     </svg>
                   )}
-                  {entry.rating && <span style={{ fontSize: '11px', flexShrink: 0 }}>{entry.rating === 'up' ? '👍' : '👎'}</span>}
+                  {entry.rating && <span style={{ display: 'inline-flex', flexShrink: 0, color: 'var(--text-secondary)' }}><ThumbIcon up={entry.rating === 'up'} size={11} label={entry.rating === 'up' ? 'Rated good' : 'Rated not good'} /></span>}
                 </div>
 
                 {/* Delete: shown on hover, in the badge's place. */}

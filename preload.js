@@ -82,8 +82,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('download-whisper-model'),
 
   onWhisperDownloadProgress: (callback) => {
-    ipcRenderer.on('whisper-download-progress', (_e, data) => callback(data));
-    return () => ipcRenderer.removeAllListeners('whisper-download-progress');
+    const cb = (_e, data) => callback(data)
+    ipcRenderer.on('whisper-download-progress', cb)
+    return () => ipcRenderer.removeListener('whisper-download-progress', cb)
   },
 
   // main → renderer (on: event listener registration)

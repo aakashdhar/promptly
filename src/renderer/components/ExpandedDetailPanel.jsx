@@ -21,6 +21,7 @@ import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
 import useCopy from '../hooks/useCopy.js'
 import { pressable } from '../utils/pressable.js'
+import ThumbIcon from './ThumbIcon.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 
@@ -287,8 +288,9 @@ export default function ExpandedDetailPanel({
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {['up', 'down'].map(r => (
-                  <button key={r} onClick={() => handleRate(r)} style={{
+                  <button key={r} type="button" aria-pressed={selected.rating === r} onClick={() => handleRate(r)} style={{
                     width: '28px', height: '28px', borderRadius: '7px',
+                    color: selected.rating === r ? readableColor(r === 'up' ? 'rgb(48,209,88)' : 'rgb(255,69,58)') : 'var(--text-secondary)',
                     fontSize: '13px', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontFamily: 'inherit', transition: 'all 150ms',
@@ -299,7 +301,7 @@ export default function ExpandedDetailPanel({
                       ? (r === 'up' ? 'rgba(48,209,88,0.35)' : 'rgba(255,59,48,0.35)')
                       : 'rgba(var(--ink),0.1)'}`,
                   }}>
-                    {r === 'up' ? '👍' : '👎'}
+                    <ThumbIcon up={r === 'up'} size={14} label={r === 'up' ? 'Good result' : 'Not a good result'} />
                   </button>
                 ))}
               </div>
@@ -312,7 +314,7 @@ export default function ExpandedDetailPanel({
                   const activeStyle = isPositive
                     ? { bg: 'rgba(48,209,88,0.12)', border: 'rgba(48,209,88,0.3)', text: 'rgba(100,220,130,0.85)' }
                     : { bg: 'rgba(255,59,48,0.10)', border: 'rgba(255,59,48,0.3)', text: 'rgba(255,100,90,0.85)' }
-                  const inactiveStyle = { bg: 'rgba(var(--ink),0.04)', border: 'rgba(var(--ink),0.08)', text: 'rgba(var(--ink),0.35)' }
+                  const inactiveStyle = { bg: 'rgba(var(--ink),0.04)', border: 'rgba(var(--ink),0.08)', text: 'var(--text-tertiary)' }
                   const s = isActiveTag ? activeStyle : inactiveStyle
                   return (
                     <span key={tag} {...pressable(() => handleTag(tag))} aria-pressed={isActiveTag} style={{
@@ -364,7 +366,7 @@ export default function ExpandedDetailPanel({
                 flex: 1, height: '40px', borderRadius: '9px',
                 fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                 background: 'linear-gradient(135deg,rgba(10,132,255,0.92),rgba(10,100,220,0.92))',
-                border: 'none', color: 'white',
+                border: 'none', color: 'var(--on-accent)',
                 boxShadow: '0 2px 14px rgba(10,132,255,0.35)',
               }}
             >

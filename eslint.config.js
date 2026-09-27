@@ -45,6 +45,16 @@ module.exports = [
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
+    // Product site (plain browser script; GSAP and Lenis come from the CDN tags in index.html)
+    files: ['site/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'script',
+      globals: { ...globals.browser, ScrollTrigger: 'readonly', SplitText: 'readonly', Flip: 'readonly', MotionPathPlugin: 'readonly', DrawSVGPlugin: 'readonly', Lenis: 'readonly' },
+    },
+    rules: baseRules,
+  },
+  {
     // React renderer
     files: ['src/**/*.{js,jsx}'],
     plugins: { react, 'react-hooks': reactHooks },

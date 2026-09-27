@@ -15,7 +15,6 @@ export default function useRecording({
   opIdRef,
   isIterated,
   originalTranscript,
-  isExpandedRef,
   setTranscriptionError,
   contextRef,
   setMode,
@@ -111,21 +110,17 @@ export default function useRecording({
       const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer)
       // The user aborted (or started something else) while Whisper was running.
       if (opId !== opIdRef.current) return
-      if (!transcribeResult.success) {
-        if (isExpandedRef?.current) {
-          setTranscriptionError?.({
-            error: transcribeResult.error || 'Unknown transcription error',
-            timedOut: !!transcribeResult.timedOut,
-            canRetry: true,
-          })
-          transitionRef.current(STATES.TRANSCRIPTION_ERROR)
-        } else {
-          transitionRef.current(STATES.ERROR, { message: "Couldn't transcribe that" })
-        }
+      if (!transcribeResult?.success) {
+        setTranscriptionError?.({
+          error: transcribeResult?.error || 'Unknown transcription error',
+          timedOut: !!transcribeResult?.timedOut,
+          canRetry: true,
+        })
+        transitionRef.current(STATES.TRANSCRIPTION_ERROR)
         return
       }
 
-      let text = transcribeResult.transcript.trim()
+      let text = String(transcribeResult.transcript || '').trim()
       if (!text) {
         transitionRef.current(STATES.IDLE)
         return
@@ -151,7 +146,8 @@ export default function useRecording({
       // Never leave the app stuck: say what happened so the user can try again.
       window.electronAPI?.log?.('error', `Recording could not be finished: ${err?.message || err}`)
       isProcessingRef.current = false
-      transitionRef.current(STATES.ERROR, { message: "Couldn't process that recording" })
+      // Only if this recording is still what's on screen (not dismissed or superseded).
+      if (mediaRecorderRef.current === recorder) transitionRef.current(STATES.ERROR, { message: "Couldn't process that recording" })
     }
   }, [])
 

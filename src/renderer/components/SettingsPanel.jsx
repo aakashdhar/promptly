@@ -119,7 +119,7 @@ export default function SettingsPanel({ onClose }) {
   const [whisperStatus, setWhisperStatus] = useState(null)
   const [ffmpegStatus, setFfmpegStatus] = useState(null)
   const [saveMsg, setSaveMsg] = useState('')
-  const [saveMsgColor, setSaveMsgColor] = useState('rgba(var(--ink),0.35)')
+  const [saveMsgColor, setSaveMsgColor] = useState('var(--text-tertiary)')
   const [themeVal, setThemeVal] = useState('system')
   const [prefs, setPrefs] = useState(null)
   const [speechBuiltIn, setSpeechBuiltIn] = useState(false)
@@ -200,7 +200,7 @@ export default function SettingsPanel({ onClose }) {
   }
 
   async function handleSaveRecheck() {
-    setSaveMsgColor('rgba(var(--ink),0.35)')
+    setSaveMsgColor('var(--text-tertiary)')
     setSaveMsg('Saving...')
     let result
     try {

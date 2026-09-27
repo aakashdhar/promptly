@@ -7,14 +7,26 @@ const path = require('path');
 // into place, so a crash mid-write can never leave a truncated config behind.
 // A file that exists but won't parse (a hand edit with a stray comma) is moved aside before
 // anything writes over it, so the user's paths, dictionary and notes can be recovered.
+// read() is called several times per request, so the parsed file is kept and only read again
+// when its modification time or size changes (an edit by hand is still picked up). Callers get
+// their own copy, so changing it can't change what the next caller sees.
 function createConfigStore(filePath, { onCorrupt } = {}) {
+  let cache = null; // { mtimeMs, size, data }
+
   function read() {
+    let stat;
+    try { stat = fs.statSync(filePath); } catch { cache = null; return {}; }
+    if (cache && cache.mtimeMs === stat.mtimeMs && cache.size === stat.size) return structuredClone(cache.data);
     let text;
     try { text = fs.readFileSync(filePath, 'utf8'); } catch { return {}; }
     try {
       const data = JSON.parse(text);
-      if (data && typeof data === 'object' && !Array.isArray(data)) return data;
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
+        return structuredClone(data);
+      }
     } catch { /* handled below */ }
+    cache = null;
     const backup = `${filePath}.corrupt-${Date.now()}`;
     try { fs.renameSync(filePath, backup); onCorrupt?.(backup); } catch { /* keep going with defaults */ }
     return {};
@@ -25,6 +37,7 @@ function createConfigStore(filePath, { onCorrupt } = {}) {
     const tmp = `${filePath}.${process.pid}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
     fs.renameSync(tmp, filePath);
+    cache = null;
   }
 
   function update(patch) {

@@ -15,7 +15,7 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
   const promptVersionStyleRef = useRef(null)
 
   const refreshPromptStyle = useCallback(() => {
-    window.electronAPI?.getPreferences?.().then((p) => { if (p?.promptStyle) setPromptStyle(p.promptStyle) })
+    window.electronAPI?.getPreferences?.().then((p) => { if (p?.promptStyle) setPromptStyle(p.promptStyle) }).catch(() => {})
   }, [])
   useEffect(() => { refreshPromptStyle() }, [refreshPromptStyle])
 

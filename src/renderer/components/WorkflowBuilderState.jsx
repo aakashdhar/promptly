@@ -2,6 +2,12 @@ import { useState } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
 import { pressable } from '../utils/pressable.js'
 
+// n8n parameters can be nested objects (options, headers); show them as JSON, not "[object Object]".
+function paramText(val) {
+  if (val && typeof val === 'object') { try { return JSON.stringify(val) } catch { return '' } }
+  return String(val ?? '')
+}
+
 export default function WorkflowBuilderState({
   transcript,
   workflowAnalysis,
@@ -305,7 +311,7 @@ export default function WorkflowBuilderState({
                     <button
                       onClick={() => onDeleteNode(node.id)}
                       onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,69,58,0.7)' }}
-                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(var(--ink),0.2)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-tertiary)' }}
                       style={{
                         fontSize: 14, lineHeight: 1,
                         color: 'var(--text-tertiary)',
@@ -371,7 +377,7 @@ export default function WorkflowBuilderState({
                               WebkitAppRegion: 'no-drag',
                             }}
                           >
-                            {String(val).replace(/_/g, ' ')} ✎
+                            {paramText(val).replace(/_/g, ' ')} ✎
                           </span>
                         )
                       ) : filledVal ? (
@@ -389,11 +395,11 @@ export default function WorkflowBuilderState({
                         </span>
                       ) : isExpression(val) ? (
                         <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }}>
-                          {String(val)}
+                          {paramText(val)}
                         </span>
                       ) : (
                         <span style={{ fontSize: 11, color: 'rgba(var(--ink),0.8)' }}>
-                          {String(val)}
+                          {paramText(val)}
                         </span>
                       )}
                     </div>

@@ -111,7 +111,7 @@ export default function OperationErrorPanel({
         )}
         <button
           onClick={onRetry}
-          style={{ flex: 2, height: '38px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: 'linear-gradient(135deg,rgba(168,85,247,0.85),rgba(124,58,237,0.85))', border: 'none', color: 'white', boxShadow: '0 2px 14px rgba(139,92,246,0.3)', transition: 'opacity 150ms' }}
+          style={{ flex: 2, height: '38px', borderRadius: '9px', fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: 'linear-gradient(135deg,rgba(168,85,247,0.85),rgba(124,58,237,0.85))', border: 'none', color: 'var(--on-accent)', boxShadow: '0 2px 14px rgba(139,92,246,0.3)', transition: 'opacity 150ms' }}
           onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >

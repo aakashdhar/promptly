@@ -23,10 +23,11 @@ export function useThinkingProgress({ mode, phase, isActive }) {
       setElapsed(prev => prev + 1)
     }, 1000)
 
+    let fadeTimer = null
     const labelInterval = setInterval(() => {
       if (labelIdx >= labels.length - 1) return
       setLabelOpacity(0)
-      setTimeout(() => {
+      fadeTimer = setTimeout(() => {
         labelIdx += 1
         setCurrentLabel(labels[labelIdx])
         setLabelOpacity(1)
@@ -36,6 +37,7 @@ export function useThinkingProgress({ mode, phase, isActive }) {
     return () => {
       clearInterval(elapsedInterval)
       clearInterval(labelInterval)
+      clearTimeout(fadeTimer) // or a stale label lands after thinking has ended
     }
   }, [isActive, mode, phase])
 

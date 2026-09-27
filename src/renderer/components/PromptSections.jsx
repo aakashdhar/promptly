@@ -1,37 +1,18 @@
-import { readableColor } from '../utils/promptUtils.js'
+import { parseSections, readableColor } from '../utils/promptUtils.js'
 
-export default function PromptSections({ prompt, labelColor = 'rgba(100,170,255,0.7)', textSize = '14px', textColor = 'rgba(var(--ink),0.85)' }) {
-  if (!prompt) return null
-  const lines = prompt.split('\n')
-  const elements = []
-  let i = 0
-  while (i < lines.length) {
-    const line = lines[i].trim()
-    if (!line) { i++; continue }
-    const isLabel = /^[A-Za-z][A-Za-z\s/]*:\s*$/.test(line)
-    if (isLabel) {
-      elements.push(
-        <div key={`label-${i}`} style={{
-          fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          color: readableColor(labelColor),
-          marginBottom: '6px', marginTop: elements.length ? '18px' : 0,
-          display: 'block',
-        }}>
-          {line.replace(':', '').trim()}
+// A prompt's labelled sections ("Role:", "Task:"…), laid out the same way for a fresh result and
+// for one reopened from history. Pass `prompt` to split it here, or `sections` already split.
+export default function PromptSections({ prompt, sections, labelColor = 'rgba(100,170,255,0.7)', textSize = '14px', textColor = 'rgba(var(--ink),0.95)' }) {
+  const list = sections || parseSections(prompt)
+  if (!list.length) return null
+  return list.map((s, i) => (
+    <div key={`${i}-${s.label || ''}`} style={{ marginBottom: i < list.length - 1 ? '18px' : 0 }}>
+      {s.label && (
+        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
+          {s.label}
         </div>
-      )
-    } else {
-      elements.push(
-        <div key={`text-${i}`} style={{
-          fontSize: textSize, color: readableColor(textColor), userSelect: 'text', cursor: 'text',
-          lineHeight: 1.75, marginBottom: '4px',
-        }}>
-          {line}
-        </div>
-      )
-    }
-    i++
-  }
-  return elements
+      )}
+      <div style={{ fontSize: textSize, color: textColor, lineHeight: '1.8', whiteSpace: 'pre-wrap', userSelect: 'text', cursor: 'text' }}>{s.body}</div>
+    </div>
+  ))
 }

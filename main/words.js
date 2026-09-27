@@ -39,7 +39,8 @@ function applyCorrections(text, corrections) {
   let out = String(text || '');
   for (const { from, to } of corrections) {
     const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(from)}(?![\\p{L}\\p{N}])`, 'giu');
-    out = out.replace(pattern, to);
+    // A function, so a "$&" or "$1" the user typed is inserted as written.
+    out = out.replace(pattern, () => to);
   }
   return out;
 }

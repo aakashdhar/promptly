@@ -9,9 +9,9 @@ const { execFile } = require('child_process');
 const { createConfigStore } = require('./main/config');
 const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
-const { PYTHON_WHISPER, resolveClaudePath, resolveWhisperPath, resolveFfmpegPath, makeClaudeEnv } = require('./main/binaries');
+const { resolveClaudePath, resolveWhisperPath, resolveFfmpegPath } = require('./main/binaries');
 const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, parseJsonOutput } = require('./main/llm');
-const { createWhisperRunner, findDownloadedModel } = require('./main/whisper');
+const { createWhisperRunner, findDownloadedModel, whisperCommand } = require('./main/whisper');
 const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
 const { createQuietDetector } = require('./main/audio-level');
 const claudeSetup = require('./main/claude-setup');
@@ -153,11 +153,16 @@ const speechModels = createSpeechModels({
   model: IS_E2E && process.env.PROMPTLY_SPEECH_MODEL ? JSON.parse(process.env.PROMPTLY_SPEECH_MODEL) : undefined,
 });
 
+// The saved speech language if it's one Promptly offers, otherwise English.
+function speechLanguage(stored) {
+  return SPEECH_LANGUAGES.some((l) => l.value === stored.speechLanguage) ? stored.speechLanguage : 'en';
+}
+
 // The accurate model is used when it's chosen and downloaded; otherwise the built-in one.
 function accurateSpeech() {
   const stored = config.read();
   const file = stored.speechModel === 'accurate' ? speechModels.installedPath() : null;
-  return file ? { path: file, language: SPEECH_LANGUAGES.some((l) => l.value === stored.speechLanguage) ? stored.speechLanguage : 'en' } : null;
+  return file ? { path: file, language: speechLanguage(stored) } : null;
 }
 
 const whisper = createWhisperRunner({
@@ -218,7 +223,7 @@ function speechPrefs() {
   return {
     builtIn: whisper.engine()?.type === 'bundled',
     model: stored.speechModel === 'accurate' ? 'accurate' : 'standard',
-    language: accurateSpeech()?.language || (SPEECH_LANGUAGES.some((l) => l.value === stored.speechLanguage) ? stored.speechLanguage : 'en'),
+    language: accurateSpeech()?.language || speechLanguage(stored),
     languages: SPEECH_LANGUAGES,
     installed: !!speechModels.installedPath(),
     downloading: speechModels.isDownloading(),
@@ -304,14 +309,19 @@ async function runGeneratePrompt({ transcript, mode, options = {} }) {
     : buildModePrompt(transcript, mode, { ...options, detail: stored.promptDetail, context });
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
   const streams = modeConf.key !== 'email';
-  let lastSent = 0;
-  const onDelta = streams ? (text) => {
-    const now = Date.now();
-    if (now - lastSent < 80) return;
-    lastSent = now;
-    winSend('generation-delta', { text });
-  } : undefined;
+  const onDelta = streams ? throttledDelta(80) : undefined;
   return claude.run(prompt, { onDelta });
+}
+
+// Streams Claude's answer-so-far to the window at most every `ms` (each send re-renders it).
+function throttledDelta(ms, shape = (text) => text) {
+  let lastSent = 0;
+  return (text) => {
+    const now = Date.now();
+    if (now - lastSent < ms) return;
+    lastSent = now;
+    winSend('generation-delta', { text: shape(text) });
+  };
 }
 
 // ── Menu bar ──────────────────────────────────────────────────────────────────
@@ -335,6 +345,21 @@ function createMenuBarIcon() {
   menuBarTray.on('right-click', () => {
     menuBarTray.popUpContextMenu(buildTrayMenu());
   });
+}
+
+// The icon for what the app is doing now. Recording and generating always show (and pulse);
+// otherwise a hidden window shows the quiet icon.
+function refreshMenuBarIcon() {
+  if (!menuBarTray || menuBarTray.isDestroyed()) return;
+  const state = MENU_BAR_ICON_STATE[currentAppState] || 'idle';
+  if (state === 'recording' || state === 'thinking' || (win && !win.isDestroyed() && win.isVisible())) {
+    updateMenuBarIcon(state);
+  } else {
+    clearInterval(pulseInterval);
+    pulseInterval = null;
+    currentIconState = state;
+    menuBarTray.setImage(createMicIcon('hidden'));
+  }
 }
 
 function updateMenuBarIcon(iconState) {
@@ -410,12 +435,9 @@ function buildTrayMenu() {
       label: 'Copy last prompt',
       click: () => {
         clipboard.writeText(lastGeneratedPrompt);
-        const prevState = currentIconState;
         updateMenuBarIcon('ready');
-        setTimeout(() => {
-          if (!menuBarTray || menuBarTray.isDestroyed()) return;
-          updateMenuBarIcon(prevState === 'ready' ? 'idle' : prevState);
-        }, 1200);
+        // Back to whatever the app is doing by then (a recording may have started meanwhile).
+        setTimeout(() => refreshMenuBarIcon(), 1200);
       },
     });
     template.push({ type: 'separator' });
@@ -425,14 +447,14 @@ function buildTrayMenu() {
       label: win && win.isVisible() ? 'Hide Promptly' : 'Show Promptly',
       click: () => {
         if (!win || win.isDestroyed()) return;
-        if (win.isVisible()) { win.hide(); } else { win.show(); win.focus(); }
+        if (win.isVisible()) win.hide(); else showWindow();
       },
     },
     { type: 'separator' },
     {
       label: 'Path configuration...',
       click: () => {
-        if (win && !win.isDestroyed()) { win.show(); win.focus(); win.webContents.send('open-settings'); }
+        if (win && !win.isDestroyed()) { showWindow(); win.webContents.send('open-settings'); }
       },
     },
     { type: 'separator' },
@@ -445,8 +467,10 @@ function buildTrayMenu() {
 
 // ── Shortcuts ─────────────────────────────────────────────────────────────────
 
+// Brings the main window forward from wherever it is: minimised, hidden or behind others.
 function showWindow() {
   if (!win || win.isDestroyed()) return;
+  if (win.isMinimized()) win.restore();
   if (!win.isVisible()) win.show();
   win.focus();
 }
@@ -459,8 +483,13 @@ function isRecordingState() {
   return currentAppState === 'RECORDING' || currentAppState === 'PAUSED' || Date.now() - recordRequestedAt < 1500;
 }
 
+// True from a hotkey start until that recording ends; the app context arrives up to 1.5 s later
+// and must not put the pill back into "recording" once it has moved on.
+let hotkeyRecordingLive = false;
+
 async function startFromHotkey() {
   recordRequestedAt = Date.now();
+  hotkeyRecordingLive = true;
   lastDictation = null;
   hidePillSoon(0);
   // With the bar hidden, recording shows in the floating pill and the bar stays out of the way.
@@ -479,7 +508,7 @@ async function startFromHotkey() {
       selectedText: ctx.selectedText || null,
     };
     winSend('recording-context', context);
-    if (pillSession) pillSend({ state: 'recording', mode: currentModeLabel, context });
+    if (pillSession && hotkeyRecordingLive) pillSend({ state: 'recording', mode: currentModeLabel, context });
   }
 }
 
@@ -504,7 +533,7 @@ function cancelFromHotkey() {
 
 const holdToTalk = createHoldToTalk({
   isRecording: isRecordingState,
-  onStart: () => { startFromHotkey(); },
+  onStart: () => { startFromHotkey().catch((err) => log.error('Hotkey start failed', err)); },
   onStop: stopFromHotkey,
   onCancel: cancelFromHotkey,
 });
@@ -791,18 +820,8 @@ function createWindow() {
   win.webContents.on('render-process-gone', (_e, details) => log.error('Renderer process gone', details));
   win.on('unresponsive', () => log.error('Window stopped responding', { state: currentAppState }));
   win.on('responsive', () => log.info('Window responding again'));
-  win.on('hide', () => {
-    clearInterval(pulseInterval);
-    pulseInterval = null;
-    if (menuBarTray && !menuBarTray.isDestroyed())
-      menuBarTray.setImage(createMicIcon('hidden'));
-  });
-  win.on('show', () => {
-    clearInterval(pulseInterval);
-    pulseInterval = null;
-    if (menuBarTray && !menuBarTray.isDestroyed())
-      menuBarTray.setImage(createMicIcon('idle'));
-  });
+  win.on('hide', () => refreshMenuBarIcon());
+  win.on('show', () => refreshMenuBarIcon());
   nativeTheme.on('updated', () => {
     for (const w of [win, splashWin]) {
       if (w && !w.isDestroyed()) w.setBackgroundColor(windowBackground());
@@ -859,15 +878,11 @@ app.on('before-quit', () => {
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
+  // Exit now, before this second copy reaches 'ready' and clears the first one's temp audio.
   app.quit();
+  process.exit(0);
 } else {
-  app.on('second-instance', () => {
-    if (win && !win.isDestroyed()) {
-      if (win.isMinimized()) win.restore();
-      if (!win.isVisible()) win.show();
-      win.focus();
-    }
-  });
+  app.on('second-instance', () => showWindow());
 }
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
@@ -1077,7 +1092,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('open-accessibility-settings', () => {
-    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
+    shell.openExternal(platform.PRIVACY_SETTINGS.accessibility).catch((err) => log.warn('Could not open System Settings', err.message));
   });
 
   // ── Theme ──
@@ -1087,7 +1102,7 @@ app.whenReady().then(async () => {
     return { theme: THEMES.includes(theme) ? theme : 'system' };
   });
 
-  ipcMain.handle('set-theme-setting', (_event, { theme }) => {
+  ipcMain.handle('set-theme-setting', (_event, { theme } = {}) => {
     if (!THEMES.includes(theme)) return { ok: false };
     config.update({ theme });
     nativeTheme.themeSource = theme;
@@ -1095,7 +1110,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('splash-open-url', async (_event, url) => {
-    if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url);
+    if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url).catch((err) => log.warn('Could not open link', err.message));
   });
 
   // Asks macOS for microphone access (shows the system prompt the first time).
@@ -1110,7 +1125,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('open-microphone-settings', () => {
-    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
+    shell.openExternal(platform.PRIVACY_SETTINGS.microphone).catch((err) => log.warn('Could not open System Settings', err.message));
   });
 
   ipcMain.handle('check-setup-complete', () => {
@@ -1134,8 +1149,8 @@ app.whenReady().then(async () => {
 
   // ── Generation ──
 
-  ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} }) => {
-    lastGenerateRequest = { transcript, mode: mode || MODES.defaultMode, options };
+  ipcMain.handle('generate-prompt', (_event, { transcript, mode, options = {} } = {}) => {
+    lastGenerateRequest = { transcript: String(transcript ?? ''), mode: mode || MODES.defaultMode, options: options && typeof options === 'object' ? options : {} };
     return runGeneratePrompt(lastGenerateRequest);
   });
 
@@ -1172,13 +1187,7 @@ app.whenReady().then(async () => {
     lastHarnessFiles = null;
     // Thinking is off here: with it on, a pipeline's files took minutes longer and came out no
     // better. The window still shows each file as it's finished.
-    let lastSent = 0;
-    const onDelta = (text) => {
-      const now = Date.now();
-      if (now - lastSent < 250) return;
-      lastSent = now;
-      winSend('generation-delta', { text: harness.progressText(text) });
-    };
+    const onDelta = throttledDelta(250, harness.progressText);
     const result = await claude.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
     if (!result.success) return result;
     const parsed = harness.parseFiles(result.prompt);
@@ -1279,7 +1288,7 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
-  ipcMain.handle('evaluate-prompt', async (_event, { transcript, prompt }) => {
+  ipcMain.handle('evaluate-prompt', async (_event, { transcript, prompt } = {}) => {
     if (!claudePath || !transcript || !prompt) return { success: false };
     const result = await evalClaude.run(buildEvalPrompt(transcript, prompt), { timeoutMs: 30000, slowWarningMs: 0 });
     if (!result.success) return { success: false };
@@ -1351,7 +1360,7 @@ app.whenReady().then(async () => {
   });
 
 
-  ipcMain.handle('show-mode-menu', (_event, { currentMode }) => {
+  ipcMain.handle('show-mode-menu', (_event, { currentMode } = {}) => {
     // Grouped the same way as the window's mode menu: Dictation, prompt styles, specialists.
     const item = ({ key, label }) => ({ label, type: 'checkbox', checked: resolveModeKey(currentMode) === key, click: () => { winSend('mode-selected', key); } });
     const group = (title, list) => [{ type: 'separator' }, { label: title, enabled: false }, ...list.map(item)];
@@ -1374,7 +1383,7 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
-  ipcMain.handle('show-tone-menu', (_event, { currentTone }) => {
+  ipcMain.handle('show-tone-menu', (_event, { currentTone } = {}) => {
     const tones = [
       { key: 'formal', label: 'Formal' },
       { key: 'casual', label: 'Casual' },
@@ -1391,9 +1400,11 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
-  ipcMain.handle('save-file', async (_event, { content, filename }) => {
+  ipcMain.handle('save-file', async (event, { content, filename } = {}) => {
+    if (!fromWindow(event, win)) return { ok: false };
+    if (typeof content !== 'string') return { ok: false, error: 'Nothing to save' };
     const { filePath, canceled } = await dialog.showSaveDialog(win, {
-      defaultPath: filename,
+      defaultPath: typeof filename === 'string' ? path.basename(filename) : 'prompt.txt',
       filters: [
         { name: 'Text',     extensions: ['txt'] },
         { name: 'Markdown', extensions: ['md']  },
@@ -1422,11 +1433,7 @@ app.whenReady().then(async () => {
     }
     claudePath = resolvedPath;
 
-    const version = await new Promise((resolve) => {
-      execFile(resolvedPath, ['--version'], { env: makeClaudeEnv(resolvedPath), timeout: 5000 }, (err, stdout) => {
-        resolve(err ? null : (stdout.trim() || null));
-      });
-    });
+    const version = await evalClaude.version();
 
     const test = await evalClaude.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
     const working = test.success && test.prompt.toLowerCase().includes('ready');
@@ -1447,7 +1454,7 @@ app.whenReady().then(async () => {
     if (!resolvedPath) {
       return { found: false, path: null, error: 'Whisper not found — install via: pip install openai-whisper' };
     }
-    const [cmd, args] = resolvedPath === PYTHON_WHISPER ? ['python3', ['-m', 'whisper', '--help']] : [resolvedPath, ['--help']];
+    const [cmd, args] = whisperCommand(resolvedPath, ['--help']);
     try {
       await new Promise((resolve, reject) => {
         execFile(cmd, args, { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
@@ -1551,6 +1558,8 @@ app.whenReady().then(async () => {
   // ── Menu bar state ──
 
   ipcMain.handle('update-menubar-state', (_event, appState) => {
+    const wasRecording = currentAppState === 'RECORDING' || currentAppState === 'PAUSED';
+    if (wasRecording && appState !== 'RECORDING' && appState !== 'PAUSED') hotkeyRecordingLive = false;
     if (appState !== currentAppState && (appState === 'RECORDING' || currentAppState === 'RECORDING')) {
       log.info(`Recording: ${currentAppState} → ${appState}${pillSession ? ' (pill)' : ''}`);
     }
@@ -1634,7 +1643,9 @@ app.whenReady().then(async () => {
     finishSetup();
   }
   // Compile the GPU speech shaders in the background so the first recording doesn't wait.
-  whisper.warmUp(audioTmpDir).then((gpu) => log.info(`Speech engine warm-up: ${gpu ? 'GPU ready' : 'using CPU'}`));
+  whisper.warmUp(audioTmpDir)
+    .then((gpu) => log.info(`Speech engine warm-up: ${gpu ? 'GPU ready' : 'using CPU'}`))
+    .catch((err) => log.warn('Speech engine warm-up failed', err));
 });
 
 app.on('will-quit', () => {
@@ -1647,9 +1658,4 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('activate', () => {
-  if (win && !win.isDestroyed()) {
-    win.show();
-    win.focus();
-  }
-});
+app.on('activate', () => showWindow());

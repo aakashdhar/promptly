@@ -1,13 +1,18 @@
 import { readableColor } from '../utils/promptUtils.js'
+import useHotkeyWords from '../hooks/useHotkeyWords.js'
 
 export default function ShortcutsPanel({ onClose }) {
+  // The talk key is whatever is chosen in Settings (or ⌥ Space while it needs Accessibility).
+  const words = useHotkeyWords()
+  const talk = words.needsAccess && words.fallback ? words.fallback.replace(/^Press /, '') : words.short
+  const talkKeys = /^double-tap/i.test(talk) ? [talk] : talk.split(' ')
 
   const groups = [
     {
       label: 'Recording',
       color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
-        { desc: 'Start / stop recording', keys: ['⌥', 'Space'] },
+        { desc: 'Start / stop recording', keys: talkKeys },
         { desc: 'Pause / resume recording', keys: ['⌥', 'P'] },
       ]
     },
@@ -27,7 +32,6 @@ export default function ShortcutsPanel({ onClose }) {
       items: [
         { desc: 'Open history', keys: ['⌘', 'H'] },
         { desc: 'Open path settings', keys: ['⌘', '/'] },
-        { desc: 'Show / hide window', keys: ['⌥', 'Space'] },
         { desc: 'Reset to idle', keys: ['Esc'] },
       ]
     }

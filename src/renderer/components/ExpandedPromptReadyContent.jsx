@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { parseSections, readableColor } from '../utils/promptUtils.js'
+import PromptSections from './PromptSections.jsx'
 import EvalPanel from './EvalPanel.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import { MODES, resolveModeKey, isScorable } from '../utils/modes.js'
@@ -194,30 +195,8 @@ export default function ExpandedPromptReadyContent({
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
-            <div>
-              {leftSections.map((s, i) => (
-                <div key={i} style={{ marginBottom: i < leftSections.length - 1 ? '18px' : 0 }}>
-                  {s.label && (
-                    <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
-                      {s.label}
-                    </div>
-                  )}
-                  <div style={{ fontSize: '14px', color: 'rgba(var(--ink),0.95)', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{s.body}</div>
-                </div>
-              ))}
-            </div>
-            <div>
-              {rightSections.map((s, i) => (
-                <div key={i} style={{ marginBottom: i < rightSections.length - 1 ? '18px' : 0 }}>
-                  {s.label && (
-                    <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: readableColor(labelColor), marginBottom: '6px' }}>
-                      {s.label}
-                    </div>
-                  )}
-                  <div style={{ fontSize: '14px', color: 'rgba(var(--ink),0.95)', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{s.body}</div>
-                </div>
-              ))}
-            </div>
+            <div><PromptSections sections={leftSections} labelColor={labelColor} /></div>
+            <div><PromptSections sections={rightSections} labelColor={labelColor} /></div>
           </div>
         )}
       </div>

@@ -320,7 +320,7 @@ export default function VideoBuilderState({
             style={{
               padding: '7px 18px', borderRadius: '8px', fontSize: '13px',
               fontWeight: 600, background: ORANGE.btnConfirm,
-              border: 'none', color: 'white', cursor: 'pointer', fontFamily: 'inherit',
+              border: 'none', color: 'var(--on-accent)', cursor: 'pointer', fontFamily: 'inherit',
             }}
           >Confirm &amp; generate →</button>
         </div>

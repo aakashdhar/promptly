@@ -21,10 +21,10 @@ function Reasons({ title, items }) {
     <div>
       <div style={label}>{title}</div>
       <ul style={{ margin: '6px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: '4px' }}>
-        {items.map((raw) => {
+        {items.map((raw, i) => {
           const { sign, text } = parseEvalReason(raw)
           return (
-            <li key={raw} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', lineHeight: 1.45, color: 'rgba(var(--ink),0.88)' }}>
+            <li key={`${i}-${raw}`} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', lineHeight: 1.45, color: 'rgba(var(--ink),0.88)' }}>
               <span aria-label={sign === '+' ? 'Strength' : sign === '-' ? 'Weakness' : undefined} style={{ width: '12px', flexShrink: 0, textAlign: 'center', fontWeight: 700, color: sign === '+' ? GREEN : sign === '-' ? AMBER : 'var(--text-tertiary)' }}>
                 {sign === '+' ? '+' : sign === '-' ? '−' : '·'}
               </span>
