@@ -40,6 +40,7 @@ promptly/
 ├── shared/modes.json    ← the one mode list (main + renderer)
 ├── preload.js           ← contextBridge → window.electronAPI
 ├── splash.html          ← setup wizard (vanilla HTML/JS, not React)
+├── index.html, site/    ← product site for akashdhar.me/promptly (GitHub Pages, not packaged)
 ├── pill.html            ← floating pill shown while talking from another app
 ├── native/helper/       ← promptly-helper (Swift): hotkey down/up, frontmost app, selected text
 ├── src/renderer/        ← React app: App.jsx state machine, hooks/, components/, utils/

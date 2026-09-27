@@ -2137,3 +2137,14 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   .harness/schedule.log. Main only schedules the folder and command from the last save, never paths sent by the
 >   window. The run command also stays on screen after saving (it used to be replaced by "Saved to").
 
+## D-SITE — A product site in motion, released downloads — 2026-09-27
+> The old landing page (Fraunces/DM Sans) was deleted in the 2026-09-24 refactor, which left akashdhar.me/promptly
+>   broken. The owner reviewed three directions (Instrument, Proof, Switchboard), picked Switchboard, asked for far
+>   more motion, then chose a light palette from three built variants: pistachio background, cobalt primary
+>   (replacing magenta), bottle green and lemon. No cream, no orange anywhere (Video's lane is mustard).
+> Motion: GSAP (ScrollTrigger, SplitText, Flip, MotionPath, DrawSVG) and Lenis, from jsDelivr — a floating field of
+>   real outputs in the hero, a live hold-to-talk console, a sliding word band, pinned horizontal modes, a scrubbed
+>   score, an animated privacy flow, and a 24 s Remotion film. Reduced motion shows end states.
+> Downloads: the signed DMG is published as a GitHub Release (v2.18.0, first release on the repo); the site links to
+>   it directly, so each new release needs the link updated.
+
