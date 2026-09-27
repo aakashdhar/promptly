@@ -153,10 +153,25 @@ CUSTOM_DMGBUILD_PATH="$ROOT_DIR/scripts/dmgbuild-wrapper.sh" build_dmg \
 [ -f "$DMG_PATH" ] || fail "DMG not found at $DMG_PATH"
 ok "DMG created → $DMG_PATH"
 
+# ── 8. Product site: version and download size ────────────────────────────────
+# The download buttons point at releases/latest/download/Promptly.dmg, which never changes;
+# only the version and size shown on the page do. scripts/publish-release.sh uploads the DMG.
+step "Updating the product site (index.html)"
+SIZE_MB=$(( ($(stat -f%z "$DMG_PATH") + 500000) / 1000000 ))  # decimal MB, as Finder shows
+sed -i '' -E \
+  -e "s/Promptly [0-9]+\.[0-9]+\.[0-9]+ for macOS/Promptly $VERSION for macOS/" \
+  -e "s/Download for Mac \([0-9]+ MB\)/Download for Mac ($SIZE_MB MB)/" \
+  index.html || fail "Could not update index.html"
+grep -q "Promptly $VERSION for macOS" index.html || fail "index.html doesn't show v$VERSION"
+ok "Site shows v$VERSION, $SIZE_MB MB"
+
 # ── done ──────────────────────────────────────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  ✓ Release complete — v$VERSION"
 echo "  Output: $DMG_PATH"
 echo "═══════════════════════════════════════════"
+echo ""
+echo "Next: commit package.json + index.html, push, then publish the download:"
+echo "  bash scripts/publish-release.sh $VERSION [notes.md]"
 echo ""
