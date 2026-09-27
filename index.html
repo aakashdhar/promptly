@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Promptly — say it once, it lands in the right format</title>
+<meta name="description" content="Promptly is a Mac menu-bar app. Hold a key and talk from any app: Dictation types your words where your cursor is, Craft turns them into a prompt, a task brief, an n8n workflow or a video prompt with Claude.">
+<link rel="canonical" href="https://akashdhar.me/promptly/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://akashdhar.me/promptly/">
+<meta property="og:title" content="Promptly — say it once, it lands in the right format">
+<meta property="og:description" content="A Mac menu-bar app: hold a key and talk. Dictation types your words; Craft turns them into prompts, task briefs, n8n workflows, Veo shots and harnesses with Claude.">
+<meta property="og:image" content="https://akashdhar.me/promptly/site/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F3F7EC">
+<link rel="icon" href="site/assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="progress" aria-hidden="true"><span></span></div>
+
+<header class="top" id="top-bar">
+  <div class="wrap top-in">
+    <a class="brand" href="#top" aria-label="Promptly home">
+      <img src="site/assets/icon.png" alt="" width="28" height="28">
+      <span>Promptly</span>
+    </a>
+    <nav aria-label="Sections">
+      <a href="#try">Try it</a>
+      <a href="#makes">What it makes</a>
+      <a href="#film">Film</a>
+      <a href="#score">Score</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-small magnetic" href="https://github.com/aakashdhar/promptly/releases/download/v2.18.0/Promptly-2.18.0-signed.dmg">Download</a>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO: a field of real outputs, floating ============ -->
+<section class="hero" id="top" aria-labelledby="hero-title">
+  <div class="field-layer" id="field" aria-hidden="true">
+    <div class="chip d3" style="--x:8%;--y:16%;--c:#2A3FC9"><i></i><span class="ck">Goal</span>Build a small internal dashboard that pulls support tickets from Zendesk…</div>
+    <div class="chip d1" style="--x:71%;--y:12%;--c:#3D7A1F"><i></i>Typeform Trigger <b>→</b> Google Sheets <b>→</b> Slack</div>
+    <div class="chip d2" style="--x:84%;--y:38%;--c:#B89400"><i></i><span class="ck">Veo 3.1</span>slow push-in at dawn · 16:9 · 1080p</div>
+    <div class="chip d1 chip-num" style="--x:4%;--y:44%;--c:#2A3FC9"><i></i><span class="ck">Score</span>58 <b>›</b> 86</div>
+    <div class="chip d2" style="--x:12%;--y:74%;--c:#E0569A"><i></i><span class="ck">daily 02:00</span>Nightly test fixer</div>
+    <div class="chip d3" style="--x:76%;--y:72%;--c:#0E7C86"><i></i><span class="ck">Subject</span>Invoice for March, a week later than planned</div>
+    <div class="chip d3" style="--x:60%;--y:93%;--c:#A0287A"><i></i><code>--ar 3:2 --style raw</code></div>
+    <div class="chip d2" style="--x:24%;--y:91%;--c:#4B6F8F"><i></i><span class="ck">Done when</span><code>npm test</code> passes</div>
+    <div class="chip d1" style="--x:74%;--y:23%;--c:#7B3FB8"><i></i>Cards stack in one column below 640 px</div>
+    <div class="chip d2 chip-num" style="--x:88%;--y:58%;--c:#7C8677"><i></i><span class="ck">Audio sent</span>0 B</div>
+  </div>
+
+  <div class="wrap hero-in">
+    <p class="hero-kicker" data-rise>A Mac menu-bar app for people who talk to AI all day</p>
+    <h1 id="hero-title" class="hero-title">Say it once.<br>It lands in the right format.</h1>
+    <p class="lede" data-rise>Hold a key and talk from any app. Dictation types your words where your cursor is, untouched. Craft hands them to Claude and brings back the finished thing: a prompt, a task brief, an n8n workflow, a Veo shot, a harness that runs overnight.</p>
+    <div class="hero-cta" data-rise>
+      <a class="btn magnetic" href="https://github.com/aakashdhar/promptly/releases/download/v2.18.0/Promptly-2.18.0-signed.dmg">Download for Mac</a>
+      <a class="btn btn-ghost" href="#try">Try it on this page</a>
+    </div>
+  </div>
+  <div class="scroll-cue" aria-hidden="true"><span></span></div>
+</section>
+
+<!-- ============ TRY IT ============ -->
+<section class="try" id="try" aria-labelledby="try-title">
+  <div class="wrap try-grid">
+    <div class="try-copy">
+      <h2 id="try-title" class="split-head">Hold the button. Talk. Let go.</h2>
+      <p>Same words, different destination. Pick where your line goes, then hold the button (or <kbd>Space</kbd> while it’s focused). In the app it’s a double-tap of <kbd>⌃</kbd>, from anywhere on your Mac.</p>
+    </div>
+
+    <div class="stage" id="stage" style="--lane:#2A3FC9">
+      <svg class="wires" id="wires" aria-hidden="true"></svg>
+      <div class="console">
+        <button class="talk" id="talk" type="button">
+          <span class="talk-dot" aria-hidden="true"></span>
+          <span class="talk-label" id="talkLabel">Hold to talk</span>
+        </button>
+        <p class="line" id="line"><span id="lineText">so for the support dashboard, um, I want it to pull tickets from zendesk every five minutes, group them by product area, and flag anything that’s been waiting more than like four hours, and the support lead wants a summary email at 9</span><span class="caret" aria-hidden="true"></span></p>
+      </div>
+
+      <div class="switches" id="switches" role="group" aria-label="Where your words go">
+        <span class="sw-thumb" id="swThumb" aria-hidden="true"></span>
+        <button type="button" class="sw" data-lane="dictation" aria-pressed="false" style="--c:#7C8677"><span class="sw-dot"></span>Dictation</button>
+        <button type="button" class="sw" data-lane="prompt" aria-pressed="true" style="--c:#2A3FC9"><span class="sw-dot"></span>Prompt</button>
+        <button type="button" class="sw" data-lane="code" aria-pressed="false" style="--c:#4B6F8F"><span class="sw-dot"></span>Code</button>
+        <button type="button" class="sw" data-lane="workflow" aria-pressed="false" style="--c:#3D7A1F"><span class="sw-dot"></span>Workflow</button>
+        <button type="button" class="sw" data-lane="video" aria-pressed="false" style="--c:#B89400"><span class="sw-dot"></span>Video</button>
+        <button type="button" class="sw" data-lane="harness" aria-pressed="false" style="--c:#E0569A"><span class="sw-dot"></span>Harness</button>
+      </div>
+
+      <div class="dock" id="dock">
+        <article class="art art-prompt" data-kind="prompt">
+          <header class="art-head">
+            <span class="art-dot" aria-hidden="true"></span>
+            <h2 class="art-kind">Structured prompt</h2>
+            <span class="art-dest">ready to paste into any AI</span>
+            <span class="score-chip ln" title="Score: what you said 58, the prompt 86"><span class="s-was">58</span> <span aria-hidden="true">›</span> <span class="s-now">86</span></span>
+          </header>
+          <dl class="fields">
+            <div class="f f-wide ln"><dt>Goal</dt><dd>Build a small internal dashboard that pulls support tickets from Zendesk every five minutes, groups them by product area, and highlights anything that has been waiting more than four hours, so the support lead can see at a glance where customers are stuck.</dd></div>
+            <div class="f ln"><dt>Context</dt><dd>The support team lead wants a daily summary email at 9am.</dd></div>
+            <div class="f ln"><dt>Steps</dt><dd><ol><li>Write the sync job and check it against a sample Zendesk response.</li><li>Build the grouped table and the four-hour flag.</li><li>Add the 9am summary email.</li></ol></dd></div>
+            <div class="f ln"><dt>Output format</dt><dd>A short plan, then the code for each step with its tests.</dd></div>
+            <div class="f ln"><dt>Success criteria</dt><dd>A ticket waiting 4 hours and 1 minute is flagged; one at 3 hours 59 is not. No email addresses end up in the database.</dd></div>
+            <div class="f f-wide ln"><dt>Assumptions (check)</dt><dd>Zendesk API token is available as an environment variable.</dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <div class="packet" id="packet" aria-hidden="true"><span class="packet-dot"></span><span id="packetText"></span></div>
+      <p class="sr-only" id="status" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<!-- Hero artefact templates -->
+<template id="t-dictation">
+  <article class="art art-dictation" data-kind="dictation">
+    <header class="art-head">
+      <span class="art-dot" aria-hidden="true"></span>
+      <h2 class="art-kind">Your words, typed</h2>
+      <span class="art-dest">into whatever has your cursor</span>
+    </header>
+    <div class="field">
+      <div class="field-bar"><span>Notes</span><span>Support dashboard</span></div>
+      <p class="field-text"><span class="typed" data-full="So for the support dashboard, um, I want it to pull tickets from Zendesk every five minutes, group them by product area, and flag anything that’s been waiting more than like four hours, and the support lead wants a summary email at 9."></span><span class="caret" aria-hidden="true"></span></p>
+    </div>
+    <p class="art-note ln">Nothing rewritten, no Claude call. Turn on the um/uh tidy and the “um” goes; nothing else changes.</p>
+  </article>
+</template>
+
+<template id="t-code">
+  <article class="art art-code" data-kind="code">
+    <header class="art-head">
+      <span class="art-dot" aria-hidden="true"></span>
+      <h2 class="art-kind">Task brief for Claude Code</h2>
+      <span class="art-dest">example output</span>
+    </header>
+    <dl class="fields">
+      <div class="f f-wide ln"><dt>Task</dt><dd>Add a sync job that pulls Zendesk tickets every five minutes and stores them grouped by product area, with a flag on anything waiting more than four hours.</dd></div>
+      <div class="f ln"><dt>Done when</dt><dd><code>npm test</code> passes. A ticket at 4h 01m is flagged, one at 3h 59m is not.</dd></div>
+      <div class="f ln"><dt>Verify first</dt><dd>Run the sync against a saved sample Zendesk response before touching the live API.</dd></div>
+      <div class="f ln"><dt>Don’t</dt><dd>Hard-code the API token, or store customer email addresses.</dd></div>
+      <div class="f ln"><dt>Later, not now</dt><dd>The 9am summary email is a separate task.</dd></div>
+    </dl>
+  </article>
+</template>
+
+<template id="t-workflow">
+  <article class="art art-workflow" data-kind="workflow">
+    <header class="art-head">
+      <span class="art-dot" aria-hidden="true"></span>
+      <h2 class="art-kind">n8n workflow</h2>
+      <span class="art-dest">importable JSON</span>
+    </header>
+    <ol class="nodes">
+      <li class="node ln"><span class="node-kind">Trigger</span><strong>Typeform Trigger</strong><span>On form submission</span></li>
+      <li class="node ln"><span class="node-kind">Action</span><strong>Append to Google Sheets</strong><span>One row per response</span></li>
+      <li class="node ln"><span class="node-kind">Action</span><strong>Post to Slack</strong><span>Message with the answers</span></li>
+    </ol>
+    <p class="art-file ln"><code>workflow.json</code> <span>3 nodes, 2 connections. Paste it into n8n with ⌘V.</span></p>
+  </article>
+</template>
+
+<template id="t-video">
+  <article class="art art-video" data-kind="video">
+    <header class="art-head">
+      <span class="art-dot" aria-hidden="true"></span>
+      <h2 class="art-kind">Video prompt</h2>
+      <span class="art-dest">for Google Veo 3.1</span>
+    </header>
+    <dl class="fields fields-3">
+      <div class="f ln"><dt>Camera</dt><dd>Slow push-in, medium shot</dd></div>
+      <div class="f ln"><dt>Style</dt><dd>Golden-hour light, teal and orange grade</dd></div>
+      <div class="f ln"><dt>Sound</dt><dd>Gentle ambient gulls and water</dd></div>
+    </dl>
+    <p class="art-quote ln">A slow push-in on a fishing boat leaving a quiet harbour at dawn, medium shot, golden-hour light with a teal and orange grade, 16:9 at 1080p, gentle ambient sound of gulls and water.</p>
+  </article>
+</template>
+
+<template id="t-harness">
+  <article class="art art-harness" data-kind="harness">
+    <header class="art-head">
+      <span class="art-dot" aria-hidden="true"></span>
+      <h2 class="art-kind">Nightly test fixer</h2>
+      <span class="art-dest">a loop Claude Code runs until it’s done</span>
+    </header>
+    <pre class="cron ln"><span class="cron-t">daily 02:00</span>  bash .harness/loop.sh   <span class="cron-c"># scheduled on your Mac</span></pre>
+    <ol class="loop ln" aria-label="Each pass">
+      <li>Pick</li><li>Fix</li><li>Check</li><li>Record</li>
+    </ol>
+    <dl class="fields">
+      <div class="f ln"><dt>Checks</dt><dd><code>npm test</code> after each pass</dd></div>
+      <div class="f ln"><dt>Stops when</dt><dd>All tests pass, a test still fails after 3 tries, or 25 passes or 2 hours</dd></div>
+      <div class="f ln"><dt>Never</dt><dd>Edit <code>db/migrations/</code>. Delete or loosen a test.</dd></div>
+      <div class="f ln"><dt>Writes</dt><dd><code>.harness/loop.sh</code> <code>.harness/PROMPT.md</code> <code>.harness/PROGRESS.md</code></dd></div>
+    </dl>
+  </article>
+</template>
+
+
+
+<!-- ============ TICKER ============ -->
+<section class="ticker" aria-label="What Promptly makes">
+  <div class="tick-row" data-dir="-1">
+    <div class="tick-track">
+      <span>prompts</span><i style="--c:#2A3FC9"></i><span class="o">task briefs</span><i style="--c:#4B6F8F"></i><span>n8n workflows</span><i style="--c:#3D7A1F"></i><span class="o">Veo shots</span><i style="--c:#B89400"></i><span>harnesses</span><i style="--c:#E0569A"></i>
+    </div>
+  </div>
+  <div class="tick-row" data-dir="1">
+    <div class="tick-track">
+      <span class="o">emails</span><i style="--c:#0E7C86"></i><span>design briefs</span><i style="--c:#7B3FB8"></i><span class="o">image prompts</span><i style="--c:#A0287A"></i><span>clean text</span><i style="--c:#2F8F4E"></i><span class="o">your exact words</span><i style="--c:#7C8677"></i>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHAT IT MAKES: horizontal pinned lanes ============ -->
+<section class="makes" id="makes" aria-labelledby="makes-title">
+  <div class="makes-pin">
+    <div class="wrap makes-head">
+      <h2 id="makes-title" class="split-head">Ten destinations. Each gets its own format.</h2>
+      <p>Dictation types what you said. The nine Craft modes send it to Claude and bring back what that destination actually takes.</p>
+      <div class="rail" aria-hidden="true">
+        <span style="--c:#7C8677"></span><span style="--c:#2A3FC9"></span><span style="--c:#4B6F8F"></span><span style="--c:#7B3FB8"></span><span style="--c:#2F8F4E"></span><span style="--c:#0E7C86"></span><span style="--c:#A0287A"></span><span style="--c:#B89400"></span><span style="--c:#3D7A1F"></span><span style="--c:#E0569A"></span>
+      </div>
+    </div>
+    <div class="track-wrap">
+      <ol class="track" id="track">
+          <li class="panel" style="--i:0;--c:#7C8677">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Dictation</h3><p>Your words typed where your cursor is. Nothing rewritten, no AI call.</p></div>
+            <div class="lane-art">
+              <p class="said ln">You said: “can you move standup to ten tomorrow, I’ve got the dentist”</p>
+              <div class="field field-sm ln"><div class="field-bar"><span>Slack</span><span>#team</span></div><p class="field-text">can you move standup to ten tomorrow, I’ve got the dentist<span class="caret" aria-hidden="true"></span></p></div>
+            </div>
+          </li>
+          <li class="panel" style="--i:1;--c:#2A3FC9">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Prompt</h3><p>A rough idea becomes a detailed prompt: goal, context, requirements, constraints, steps, output format, success criteria, assumptions.</p></div>
+            <div class="lane-art">
+              <p class="said ln">You said: “so for the support dashboard, um, I want it to pull tickets from zendesk every five minutes…”</p>
+              <dl class="fields">
+                <div class="f f-wide ln"><dt>Goal</dt><dd>Build a small internal dashboard that pulls support tickets from Zendesk every five minutes, groups them by product area, and highlights anything waiting more than four hours.</dd></div>
+                <div class="f f-wide ln"><dt>Success criteria</dt><dd>A ticket waiting 4 hours and 1 minute is flagged; one at 3 hours 59 is not. No email addresses end up in the database.</dd></div>
+              </dl>
+            </div>
+          </li>
+          <li class="panel" style="--i:2;--c:#4B6F8F">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Code</h3><p>A task brief Claude Code can finish and verify.</p></div>
+            <div class="lane-art">
+              <p class="said ln">Example. You said: “add the four hour flag to the ticket table and make sure it’s tested”</p>
+              <dl class="fields">
+                <div class="f f-wide ln"><dt>Task</dt><dd>Flag tickets waiting more than four hours in the grouped ticket table.</dd></div>
+                <div class="f f-wide ln"><dt>Done when</dt><dd><code>npm test</code> passes with a case at 4h 01m (flagged) and 3h 59m (not flagged).</dd></div>
+              </dl>
+            </div>
+          </li>
+          <li class="panel" style="--i:3;--c:#7B3FB8">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Design</h3><p>A new web page, or changes to one you’ve built, as a brief for working HTML and CSS.</p></div>
+            <div class="lane-art">
+              <p class="said ln">Example. You said: “the pricing cards should stack on phones and match the new header”</p>
+              <dl class="fields">
+                <div class="f ln"><dt>Change</dt><dd>Pricing cards use the header’s type sizes and spacing.</dd></div>
+                <div class="f ln"><dt>On phones</dt><dd>Cards stack in one column below 640 px.</dd></div>
+                <div class="f f-wide ln"><dt>Keep</dt><dd>Current copy and prices. Output working HTML and CSS.</dd></div>
+              </dl>
+            </div>
+          </li>
+          <li class="panel" style="--i:4;--c:#2F8F4E">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Polish</h3><p>Paste rough text, speak the change, get it back clean.</p></div>
+            <div class="lane-art">
+              <p class="said ln">Example. Pasted: “hey so deploy is gonna be late cuz qa found stuff” · You said: “make it calm and clear”</p>
+              <p class="clean ln">The deploy is moving: QA found a few issues and we’re fixing them first. I’ll share the new time today.</p>
+            </div>
+          </li>
+          <li class="panel" style="--i:5;--c:#0E7C86">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Email</h3><p>Speak the situation, get a ready-to-send email in the tone you pick.</p></div>
+            <div class="lane-art">
+              <p class="said ln">Example. You said: “tell Priya the invoice will be a week late, keep it warm”</p>
+              <div class="mail">
+                <p class="ln"><span class="mail-k">Subject</span> Invoice for March, a week later than planned</p>
+                <p class="ln">Hi Priya, a quick heads-up: the March invoice will reach you a week later than we said. Nothing is wrong on our side, it’s just taking longer to close the month. Thanks for bearing with us.</p>
+              </div>
+            </div>
+          </li>
+          <li class="panel" style="--i:6;--c:#A0287A">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Image</h3><p>An image prompt for Nano Banana and ChatGPT, with optional Midjourney flags.</p></div>
+            <div class="lane-art">
+              <p class="said ln">Example. You said: “coffee on a rainy café window, morning, moody greens”</p>
+              <p class="art-quote ln">A cup of black coffee on a rain-streaked café window ledge, soft morning light, shallow depth of field, muted greens.</p>
+              <p class="flags ln"><code>--ar 3:2 --style raw</code> <span>Midjourney flags, optional</span></p>
+            </div>
+          </li>
+          <li class="panel" style="--i:7;--c:#B89400">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Video</h3><p>A video prompt for Google Veo 3.1: camera, style, sound and dialogue.</p></div>
+            <div class="lane-art">
+              <p class="said ln">You said: “a boat leaving the harbour at dawn, slow push in, warm light, gulls”</p>
+              <p class="art-quote ln">A slow push-in on a fishing boat leaving a quiet harbour at dawn, medium shot, golden-hour light with a teal and orange grade, 16:9 at 1080p, gentle ambient sound of gulls and water.</p>
+            </div>
+          </li>
+          <li class="panel" style="--i:8;--c:#3D7A1F">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Workflow</h3><p>Plain English becomes importable n8n workflow JSON.</p></div>
+            <div class="lane-art">
+              <p class="said ln">You said: “when someone fills in the typeform add a row to google sheets and post in slack”</p>
+              <ol class="nodes nodes-sm">
+                <li class="node ln"><strong>Typeform Trigger</strong></li>
+                <li class="node ln"><strong>Append to Google Sheets</strong></li>
+                <li class="node ln"><strong>Post to Slack</strong></li>
+              </ol>
+            </div>
+          </li>
+          <li class="panel" style="--i:9;--c:#E0569A">
+            <div class="lane-head"><span class="lane-dot"></span><h3>Harness</h3><p>Describe a job, get a loop Claude Code runs until it’s done, with checks, stop conditions and an optional schedule on your Mac.</p></div>
+            <div class="lane-art">
+              <p class="said ln">You said: “every night fix the failing tests one at a time and never touch the migrations”</p>
+              <pre class="cron ln"><span class="cron-t">daily 02:00</span>  Pick › Fix › Check › Record</pre>
+              <p class="clean ln">Stops when all tests pass, a test still fails after 3 tries, or after 25 passes or 2 hours. Never edits <code>db/migrations/</code>.</p>
+            </div>
+          </li>
+        </ol>
+    </div>
+  </div>
+  <div class="wrap">
+    <ul class="extras" aria-label="Also in the app">
+      <li><strong>Iterate.</strong> Speak a change to any result, “make it shorter” or “add a test”, and it’s revised.</li>
+      <li><strong>Your words.</strong> Names and terms it should spell right (N10 becomes n8n). It suggests fixes for words you keep correcting.</li>
+      <li><strong>It writes like you.</strong> Optional notes about how you write shape Email and Polish.</li>
+      <li><strong>History.</strong> Everything you’ve said and made, searchable.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ FILM ============ -->
+<section class="film" id="film" aria-labelledby="film-title">
+  <div class="wrap film-head">
+    <h2 id="film-title" class="split-head">Twenty-four seconds, start to finish.</h2>
+    <p>From a double-tap of Control to a scored prompt, five outputs and nothing uploaded but text.</p>
+  </div>
+  <div class="film-frame" id="filmFrame">
+    <video id="filmVideo" muted loop playsinline preload="metadata" poster="site/assets/film-poster.jpg" aria-label="Product film: talking to Promptly and getting a prompt, a workflow, a video prompt and a harness back">
+      <source src="site/assets/film.mp4" type="video/mp4">
+    </video>
+    <button class="film-toggle" id="filmToggle" type="button" aria-pressed="false">Pause</button>
+  </div>
+</section>
+
+<!-- ============ PROOF ============ -->
+<section class="proof" id="score" aria-labelledby="score-title">
+  <div class="proof-pin">
+    <div class="wrap proof-grid">
+      <div>
+        <h2 id="score-title" class="split-head">Scored against what you actually said.</h2>
+        <p class="sub">Any prompt can be scored next to your original words, so you see what improved and what’s still missing. This is the support dashboard line from the top of the page.</p>
+        <p class="total"><span class="total-was">58</span><span class="total-arrow" aria-hidden="true"><span></span></span><span class="total-now" id="totalNow">86</span><span class="sr-only">: what you said scored 58, the prompt scored 86.</span></p>
+        <div class="dumbbells" id="dumbbells" role="list">
+          <div class="db" role="listitem" style="--a:60;--b:88"><span class="db-name">Clarity</span><span class="db-track" aria-hidden="true"><span class="db-seg"></span><span class="db-a"></span><span class="db-b"></span></span><span class="db-num"><span>60</span> › <span class="n" data-to="88">88</span></span></div>
+          <div class="db" role="listitem" style="--a:45;--b:85"><span class="db-name">Specificity</span><span class="db-track" aria-hidden="true"><span class="db-seg"></span><span class="db-a"></span><span class="db-b"></span></span><span class="db-num"><span>45</span> › <span class="n" data-to="85">85</span></span></div>
+          <div class="db" role="listitem" style="--a:55;--b:80"><span class="db-name">Context</span><span class="db-track" aria-hidden="true"><span class="db-seg"></span><span class="db-a"></span><span class="db-b"></span></span><span class="db-num"><span>55</span> › <span class="n" data-to="80">80</span></span></div>
+          <div class="db" role="listitem" style="--a:40;--b:90"><span class="db-name">Actionability</span><span class="db-track" aria-hidden="true"><span class="db-seg"></span><span class="db-a"></span><span class="db-b"></span></span><span class="db-num"><span>40</span> › <span class="n" data-to="90">90</span></span></div>
+        </div>
+        <p class="db-key"><span class="k k-was"></span>What you said <span class="k k-now"></span>The prompt</p>
+        <p class="missing"><span>Still missing</span> Neither says where the Zendesk API token comes from.</p>
+      </div>
+      <figure class="shot">
+        <img src="site/assets/light-prompt-score.png" width="1880" height="1200" loading="lazy" alt="Promptly's window in light mode: the finished prompt, and below it the score panel showing 58 to 86 with bars for Clarity, Specificity, Context and Actionability.">
+        <figcaption>The same result in the app.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRIVACY ============ -->
+<section class="privacy" id="privacy" aria-labelledby="privacy-title">
+  <div class="wrap privacy-grid">
+    <div>
+      <h2 id="privacy-title" class="split-head">Your voice never leaves the Mac.</h2>
+      <p class="sub">Speech is transcribed on your Mac by the built-in whisper.cpp, in 90+ languages. Only the text goes to Claude, through your own Claude Code sign-in. Dictation doesn’t call Claude at all.</p>
+      <h3>No extra bill</h3>
+      <p class="sub">Promptly runs Claude through the Claude Code plan you already pay for. No API keys, no second AI subscription. If Claude Code isn’t set up, Promptly installs it or signs you in from inside the app.</p>
+    </div>
+    <div class="flow">
+      <svg class="flow-svg" id="flowSvg" viewBox="0 0 640 360" role="img" aria-labelledby="flowTitle">
+        <title id="flowTitle">Audio stays inside your Mac and is turned into text there. Only the text travels to Claude on your own account. Promptly has no servers.</title>
+        <rect class="mac" x="12" y="20" width="384" height="320" rx="18"/>
+        <text class="lbl" x="36" y="52">Your Mac</text>
+        <path id="pAudio" class="wire" d="M92 190 C 140 150, 170 150, 214 190"/>
+        <path id="pText" class="wire" d="M270 190 L 336 190"/>
+        <path id="pOut" class="wire wire-out" d="M336 190 C 420 190, 440 130, 488 130"/>
+        <g class="node"><circle cx="70" cy="190" r="26"/><text x="70" y="244" text-anchor="middle">microphone</text></g>
+        <g class="node"><rect x="214" y="166" width="56" height="48" rx="10"/><text x="242" y="244" text-anchor="middle">whisper.cpp</text></g>
+        <g class="node"><circle cx="336" cy="190" r="8" class="dot-text"/><text x="336" y="244" text-anchor="middle">text</text></g>
+        <g class="node claude"><rect x="488" y="100" width="136" height="60" rx="12"/><text x="556" y="126" text-anchor="middle">Claude</text><text x="556" y="146" text-anchor="middle" class="small">your account</text></g>
+        <g class="node none"><rect x="488" y="232" width="136" height="60" rx="12"/><text x="556" y="258" text-anchor="middle">Promptly servers</text><text x="556" y="278" text-anchor="middle" class="small">there aren’t any</text></g>
+        <g id="audioDots"></g>
+        <g id="textDots"></g>
+      </svg>
+      <dl class="readout">
+        <div><dt>Audio sent</dt><dd class="z"><span id="audioBytes">0</span> B</dd></div>
+        <div><dt>Text</dt><dd>to your Claude account only</dd></div>
+        <div><dt>Promptly servers</dt><dd>none</dd></div>
+        <div><dt>AI bill from Promptly</dt><dd>none, uses your Claude Code plan</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SETUP ============ -->
+<section class="setup" id="setup" aria-labelledby="setup-title">
+  <div class="wrap">
+    <h2 id="setup-title" class="split-head">Set up in three steps.</h2>
+    <div class="steps-wrap">
+      <svg class="steps-line" viewBox="0 0 1000 2" preserveAspectRatio="none" aria-hidden="true"><path d="M0 1 H1000"/></svg>
+      <ol class="steps">
+        <li><h3>Download and open it</h3><p>It’s personally signed, so the first open needs System Settings › Privacy &amp; Security › Open Anyway. After that it opens like any app.</p></li>
+        <li><h3>Allow the mic, connect Claude Code</h3><p>Give it the microphone, and Accessibility so it can type into other apps. Setup installs Claude Code or signs you in, right there.</p></li>
+        <li><h3>Double-tap Control and talk</h3><p>A small pill shows while you talk: recording, thinking, done. Prefer another key? Option+Space, hold Right Option, or hold Fn/Globe.</p></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="faq" id="faq" aria-labelledby="faq-title">
+  <div class="wrap faq-grid">
+    <div>
+      <h2 id="faq-title" class="split-head">Before you download.</h2>
+      <p class="sub">The honest parts, up front.</p>
+    </div>
+    <div class="qa">
+      <details>
+        <summary>Does it work on Windows or Linux?</summary>
+        <p>No. Promptly is macOS only.</p>
+      </details>
+      <details>
+        <summary>Do I need a Claude subscription?</summary>
+        <p>Craft needs Claude Code on a Pro or Max plan. Promptly uses that plan, so there’s no extra bill and no API key. Dictation works without calling Claude.</p>
+      </details>
+      <details>
+        <summary>Why does macOS warn me the first time?</summary>
+        <p>The app is personally signed rather than notarised by Apple. Open System Settings › Privacy &amp; Security and choose Open Anyway. You only do this once.</p>
+      </details>
+      <details>
+        <summary>What permissions does it ask for?</summary>
+        <p>The microphone, to hear you. Accessibility, to type the result into the app you’re using. Nothing else.</p>
+      </details>
+      <details>
+        <summary>Does my audio get uploaded anywhere?</summary>
+        <p>No. Transcription runs on your Mac with the built-in whisper.cpp. Only the text of a Craft request goes to Claude, through your own Claude Code sign-in. Promptly has no servers of its own.</p>
+      </details>
+      <details>
+        <summary>Which languages can I speak?</summary>
+        <p>Over 90. There’s an optional “Best accuracy” model you can download in Settings if you want fewer mistakes.</p>
+      </details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot" id="download">
+  <div class="wrap foot-in">
+    <p class="foot-line">Promptly 2.18.0 for macOS. Craft needs Claude Code on a Pro or Max plan.</p>
+    <a class="btn btn-big magnetic" href="https://github.com/aakashdhar/promptly/releases/download/v2.18.0/Promptly-2.18.0-signed.dmg">Download for Mac (234 MB)</a>
+  </div>
+  <div class="wordmark" aria-hidden="true">Promptly</div>
+  <div class="wrap"><p class="made">Made by <a href="https://akashdhar.me">Aakash Dhar</a></p></div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/Flip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/MotionPathPlugin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/DrawSVGPlugin.min.js"></script>
+<script src="site/script.js"></script>
+</body>
+</html>
