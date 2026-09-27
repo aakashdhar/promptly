@@ -60,12 +60,14 @@ function parsePlan(raw) {
   };
 }
 
-// A path the harness may write: relative, inside the project, no parent-directory hops.
+// A path the harness may write: relative, inside the project, no parent-directory hops, and
+// never inside .git (a file there, such as a hook, would run on the user's next commit).
 function safeRelativePath(p) {
   const s = String(p || '').trim().replace(/\\/g, '/');
   if (!s || s.startsWith('/') || s.startsWith('~') || /^[a-z]:/i.test(s)) return null;
   const norm = path.posix.normalize(s);
-  if (norm === '.' || norm.startsWith('..') || norm.split('/').includes('..')) return null;
+  const parts = norm.split('/');
+  if (norm === '.' || norm.startsWith('..') || parts.includes('..') || parts.includes('.git')) return null;
   return norm;
 }
 
@@ -193,18 +195,39 @@ function bundleFiles({ run, files }) {
   return [run ? `Run it with: ${run}` : '', ...files.map((f) => `=== ${f.path} ===\n${f.content}`)].filter(Boolean).join('\n\n');
 }
 
-// Adds the harness's hooks to settings the project already has, instead of replacing them.
+// Adds the harness's settings to what the project already has, instead of replacing it:
+// permission lists are combined, hooks are added (once — saving the same harness again
+// doesn't run each hook twice), and other objects are merged a level deep.
 function mergeSettings(existingText, incomingText) {
   let existing;
   let incoming;
   try { existing = JSON.parse(existingText); } catch { return null; }
   try { incoming = JSON.parse(incomingText); } catch { return null; }
-  if (!existing || typeof existing !== 'object' || !incoming || typeof incoming !== 'object') return null;
-  const merged = { ...existing, ...incoming, hooks: { ...(existing.hooks || {}) } };
-  for (const [event, entries] of Object.entries(incoming.hooks || {})) {
-    merged.hooks[event] = [...(existing.hooks?.[event] || []), ...(Array.isArray(entries) ? entries : [])];
+  const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  if (!isObject(existing) || !isObject(incoming)) return null;
+  const union = (a, b) => {
+    const out = [...(Array.isArray(a) ? a : [])];
+    const seen = new Set(out.map((x) => JSON.stringify(x)));
+    for (const x of Array.isArray(b) ? b : []) if (!seen.has(JSON.stringify(x))) { seen.add(JSON.stringify(x)); out.push(x); }
+    return out;
+  };
+  const merged = { ...existing };
+  for (const [key, value] of Object.entries(incoming)) {
+    if (key === 'hooks' || key === 'permissions') continue;
+    merged[key] = isObject(value) && isObject(existing[key]) ? { ...existing[key], ...value } : value;
   }
-  if (!Object.keys(merged.hooks).length) delete merged.hooks;
+  if (isObject(incoming.permissions)) {
+    const perms = { ...(isObject(existing.permissions) ? existing.permissions : {}) };
+    for (const [key, value] of Object.entries(incoming.permissions)) {
+      perms[key] = Array.isArray(value) ? union(perms[key], value) : value;
+    }
+    merged.permissions = perms;
+  }
+  const hooks = { ...(isObject(existing.hooks) ? existing.hooks : {}) };
+  for (const [event, entries] of Object.entries(isObject(incoming.hooks) ? incoming.hooks : {})) {
+    hooks[event] = union(hooks[event], entries);
+  }
+  if (Object.keys(hooks).length) merged.hooks = hooks; else delete merged.hooks;
   return JSON.stringify(merged, null, 2) + '\n';
 }
 
@@ -230,8 +253,10 @@ function writeFiles(dir, files) {
       content = merged;
     }
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, content, { mode: /\.sh$/.test(rel) || content.startsWith('#!') ? 0o755 : 0o644 });
-    if (/\.sh$/.test(rel) || content.startsWith('#!')) fs.chmodSync(target, 0o755);
+    // mode only applies to new files, so an existing one is chmod'ed too.
+    const executable = /\.sh$/.test(rel) || content.startsWith('#!');
+    fs.writeFileSync(target, content);
+    fs.chmodSync(target, executable ? 0o755 : 0o644);
     written.push(rel);
   }
   return written;

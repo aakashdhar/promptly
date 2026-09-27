@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { runStep } from '../utils/claudeStep.js'
 import { saveToHistory } from '../utils/history.js'
 
 // Dictation and "Make it a prompt". A dictation result keeps both versions of what you said:
@@ -62,15 +63,14 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
       window.electronAPI.setLastPrompt(promptVersionRef.current)
       return
     }
-    const prefs = await window.electronAPI.getPreferences?.()
+    const prefs = await window.electronAPI.getPreferences?.().catch(() => null)
     const style = prefs?.promptStyle || promptStyle
     setPromptStyle(style)
-    const opId = ++opIdRef.current
     setThinkingLabel('Making it a prompt')
     setThinkTranscript(source.text)
     transitionRef.current(STATES.THINKING)
-    const result = await window.electronAPI.generatePrompt(source.text, style, contextRef.current ? { context: contextRef.current } : undefined)
-    if (opId !== opIdRef.current) return
+    const result = await runStep(opIdRef, () => window.electronAPI.generatePrompt(source.text, style, contextRef.current ? { context: contextRef.current } : undefined))
+    if (!result) return
     setThinkingLabel('')
     if (!result?.success) {
       const message = result?.errorType === 'auth' ? 'Claude Code is signed out. Sign in from Settings (⌘/)' : "Couldn't write the prompt"

@@ -16,8 +16,6 @@
     "lint": "eslint .",
     "dist:unsigned": "npm run fetch-whisper && npm run build-helper && npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
     "create-cert": "bash scripts/create-cert.sh",
-    "sign-app": "bash scripts/sign-app.sh",
-    "dist:signed": "bash scripts/build-signed.sh",
     "uninstall": "bash scripts/uninstall.sh",
     "release": "bash scripts/release.sh",
     "preflight": "bash scripts/preflight.sh",

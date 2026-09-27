@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import useCopy from '../hooks/useCopy.js'
 
 const ICONS = {
   error: { color: 'rgba(255,59,48,', svg: (c) => (
@@ -39,18 +39,13 @@ export default function OperationErrorPanel({
   retryLabel = 'Try again ↺',
   onOpenSettings,
 }) {
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
 
   const { color, svg } = ICONS[icon] || ICONS.error
   const iconBg = `${color}0.08)`
   const iconBorder = `${color}0.2)`
 
-  function handleCopy() {
-    if (!fixCode) return
-    if (window.electronAPI) window.electronAPI.copyToClipboard(fixCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
+  function handleCopy() { copy(fixCode) }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 36px', gap: '14px', minHeight: 0 }}>

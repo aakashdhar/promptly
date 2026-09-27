@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { runStep } from '../utils/claudeStep.js'
 import usePolishTone from './useTone.js'
 import { saveToHistory } from '../utils/history.js'
 
@@ -15,7 +16,6 @@ export function parsePolishOutput(raw) {
 
 export default function usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef }) {
   const [polishResult, setPolishResult] = useState(null)
-  const [copied, setCopied] = useState(false)
   const { tone: polishTone, setTone: setPolishToneValue } = usePolishTone()
   const polishToneRef = useRef(polishTone)
 
@@ -29,9 +29,8 @@ export default function usePolishMode({ originalTranscript, transitionRef, setTh
       transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
       return
     }
-    const opId = ++opIdRef.current
-    const genResult = await window.electronAPI.generatePrompt(originalTranscript.current, 'polish', { tone: newTone, ...(contextRef?.current && { context: contextRef.current }) })
-    if (opId !== opIdRef.current) return
+    const genResult = await runStep(opIdRef, () => window.electronAPI.generatePrompt(originalTranscript.current, 'polish', { tone: newTone, ...(contextRef?.current && { context: contextRef.current }) }))
+    if (!genResult) return
     if (!genResult.success) {
       transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
       return
@@ -39,9 +38,11 @@ export default function usePolishMode({ originalTranscript, transitionRef, setTh
     const parsed = parsePolishOutput(genResult.prompt)
     setPolishResult(parsed)
     setGeneratedPrompt(parsed.polished)
+    // Like every other result: auto-copy and the pill's "copy last" get the new tone.
+    window.electronAPI.setLastPrompt?.(parsed.polished)
     saveToHistory({ transcript: originalTranscript.current, prompt: parsed.polished, mode: 'polish', polishChanges: parsed.changes })
     transitionRef.current(STATES.PROMPT_READY)
   }, [])
 
-  return { polishResult, setPolishResult, copied, setCopied, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }
+  return { polishResult, setPolishResult, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange }
 }

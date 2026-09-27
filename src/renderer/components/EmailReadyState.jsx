@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import useCopy from '../hooks/useCopy.js'
 
 const TEAL_85 = 'rgba(20,184,166,0.85)'
 const TEAL_60 = 'rgba(20,184,166,0.6)'
@@ -16,9 +17,11 @@ export default function EmailReadyState({
   isSaved,
   isExpanded,
   onToneAdjust,
+  onBodyChange,
 }) {
-  const [copiedSubject, setCopiedSubject] = useState(false)
-  const [copiedEmail, setCopiedEmail] = useState(false)
+  const { copied, copy } = useCopy(2000)
+  const copiedSubject = copied === 'subject'
+  const copiedEmail = copied === 'email'
   const [isEditing, setIsEditing] = useState(false)
   const [editedBody, setEditedBody] = useState(emailOutput?.body || '')
   const [preEditBody, setPreEditBody] = useState('')
@@ -41,17 +44,9 @@ export default function EmailReadyState({
     setCustomText('')
   }
 
-  function handleCopySubject() {
-    window.electronAPI.copyToClipboard(subject)
-    setCopiedSubject(true)
-    setTimeout(() => setCopiedSubject(false), 2000)
-  }
+  function handleCopySubject() { copy(subject, 'subject') }
 
-  function handleCopyEmail() {
-    window.electronAPI.copyToClipboard(subject + '\n\n' + editedBody)
-    setCopiedEmail(true)
-    setTimeout(() => setCopiedEmail(false), 2000)
-  }
+  function handleCopyEmail() { copy(subject + '\n\n' + editedBody, 'email') }
 
   function handleEditToggle() {
     if (isEditing) {
@@ -59,6 +54,8 @@ export default function EmailReadyState({
         ? (bodyRef.current.innerText || bodyRef.current.textContent)
         : editedBody
       setEditedBody(newText)
+      // The edit is the draft now: Copy, Save, a tone chip and Iterate all start from it.
+      onBodyChange?.(newText)
       // Your edits teach Promptly how you write (Settings → You).
       window.electronAPI?.recordEdit?.('email', preEditBody, newText)
       setIsEditing(false)
@@ -345,12 +342,15 @@ export default function EmailReadyState({
 
           {/* EMAIL BODY */}
           <div style={sectionLabel}>Email Body</div>
+          {/* The editable copy is its own element, mounted fresh for each edit: the browser owns its
+              text while typing, and Escape simply drops it, so screen and state can't disagree. */}
           <div
+            key={isEditing ? 'editing' : 'reading'}
             ref={bodyRef}
             contentEditable={isEditing}
             suppressContentEditableWarning
             onKeyDown={e => {
-              if (e.key === 'Escape') { setEditedBody(preEditBody); setIsEditing(false) }
+              if (e.key === 'Escape') { e.stopPropagation(); setIsEditing(false) }
             }}
             style={{
               fontSize: 13,

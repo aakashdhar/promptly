@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getHistory, deleteHistoryItem, clearHistory, searchHistory, pairDictations } from '../utils/history.js'
 import { getModeTagStyle, readableColor } from '../utils/promptUtils.js'
 import { modeLabel } from '../utils/modes.js'
+import { pressable } from '../utils/pressable.js'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 
@@ -195,7 +196,8 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
               <div
                 key={entry.id}
                 data-history-entry
-                onClick={() => onSelect(entry)}
+                {...pressable(() => onSelect(entry))}
+                onFocus={() => setHoveredId(entry.id)}
                 onMouseEnter={() => setHoveredId(entry.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 style={{
@@ -245,7 +247,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                   type="button"
                   onClick={(e) => handleEntryDelete(entry, e)}
                   aria-label="Delete from history"
-                  tabIndex={hovered ? 0 : -1}
+                  onFocus={() => setHoveredId(entry.id)}
                   style={{
                     position: 'absolute', top: '9px', right: '14px', height: '22px', padding: '0 8px', borderRadius: '6px',
                     fontSize: '11px', color: 'var(--text-secondary)', background: 'rgba(var(--ink),0.07)', border: 'none', cursor: 'pointer',

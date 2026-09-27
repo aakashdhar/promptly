@@ -15,6 +15,8 @@ import useDictation from './hooks/useDictation.js'
 import { useThinkingProgress } from './hooks/useThinkingProgress.js'
 import ExpandedView from './components/ExpandedView.jsx'
 import { saveToHistory, bookmarkHistoryItem } from './utils/history.js'
+import { runStep } from './utils/claudeStep.js'
+import { getModeAccent } from './utils/thinkingLabels.js'
 import { parseEmailOutput } from './utils/promptUtils.js'
 
 const STATES = {
@@ -145,6 +147,10 @@ export default function App() {
 
   const handleGenerateResultRef = useRef(null)
 
+  // A builder's "speak again" marks the next recording as a re-iteration. If that recording is
+  // thrown away (or never starts), the mark must go too, or the next unrelated idea is merged
+  // into the old one. Filled in once the builders exist, below.
+  const discardRecordingRef = useRef(null)
   const {
     recSecs,
     startRecording,
@@ -175,6 +181,7 @@ export default function App() {
     setTranscriptionError,
     contextRef,
     setMode,
+    onDiscardRef: discardRecordingRef,
   })
 
   const {
@@ -190,6 +197,7 @@ export default function App() {
     setThinkingLabel,
     setThinkingAccentColor,
     startRecordingRef,
+    opIdRef,
   })
 
   const {
@@ -205,6 +213,7 @@ export default function App() {
     setThinkingLabel,
     setThinkingAccentColor,
     startRecordingRef,
+    opIdRef,
   })
 
   const {
@@ -220,6 +229,7 @@ export default function App() {
     setThinkingLabel,
     setThinkingAccentColor,
     startRecordingRef,
+    opIdRef,
   })
 
   const {
@@ -236,7 +246,15 @@ export default function App() {
     setThinkingAccentColor,
     startRecordingRef,
     contextRef,
+    opIdRef,
   })
+
+  discardRecordingRef.current = () => {
+    isReiteratingRef.current = false
+    isVideoReiteratingRef.current = false
+    isWorkflowReiteratingRef.current = false
+    isHarnessReiteratingRef.current = false
+  }
 
   const handleGenerateResult = useCallback((genResult, transcript, opId, modeOverride) => {
     if (opId !== undefined && opId !== opIdRef.current) return
@@ -269,7 +287,7 @@ export default function App() {
       const isReiterate = isReiteratingRef.current
       isReiteratingRef.current = false
       setThinkingLabel('Analysing your idea...')
-      setThinkingAccentColor('rgba(139,92,246,0.85)')
+      setThinkingAccentColor(getModeAccent('image'))
       runPreSelection(originalTranscript.current, isReiterate)
       return
     }
@@ -277,7 +295,7 @@ export default function App() {
       const isReiterate = isVideoReiteratingRef.current
       isVideoReiteratingRef.current = false
       setThinkingLabel('Analysing your idea...')
-      setThinkingAccentColor('rgba(251,146,60,0.8)')
+      setThinkingAccentColor(getModeAccent('video'))
       runVideoPreSelection(originalTranscript.current, isReiterate)
       return
     }
@@ -337,6 +355,7 @@ export default function App() {
     startTimer,
     stopTimer,
     contextRef,
+    opIdRef,
     // Email refines the draft on screen; Polish keeps its tone; everything else refines the prompt.
     getIterationBase: () => {
       const shown = resultModeRef.current || modeRef.current
@@ -391,13 +410,12 @@ export default function App() {
     setThinkingAccentColor('rgba(20,184,166,0.85)')
     setThinkTranscript(adjustment)
     transition(STATES.THINKING)
-    const opId = ++opIdRef.current
-    const result = await window.electronAPI.generatePrompt(adjustment, 'email', {
+    const result = await runStep(opIdRef, () => window.electronAPI.generatePrompt(adjustment, 'email', {
       revise: { email: { subject: emailOutput.subject, body: emailOutput.body }, transcript: originalTranscript.current },
       ...(contextRef.current && { context: contextRef.current }),
-    })
-    if (opId !== opIdRef.current || result?.cancelled) return
-    if (result?.success) {
+    }))
+    if (!result) return
+    if (result.success) {
       isIterated.current = true
       acceptRevisedEmail(result, adjustment)
     } else {
@@ -585,6 +603,7 @@ export default function App() {
             onEmailSave={handleEmailSave}
             onEmailIterate={handleIterate}
             onToneAdjust={handleToneAdjust}
+            onEmailBodyChange={(body) => setEmailOutput((prev) => (prev ? { ...prev, body } : prev))}
             onAbort={handleAbort}
             transcriptionErrorProps={{ ...transcriptionError, onRetry: handleRetryTranscription, onOpenSettings: openSettings }}
             transcriptionSlow={transcriptionSlow}

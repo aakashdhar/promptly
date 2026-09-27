@@ -40,8 +40,12 @@ export default function YouSection({ prefs, onSave, onEditCount, bare = false })
     setBusy(true)
     setError('')
     setSuggestion('')
-    const result = await window.electronAPI.learnStyle(fromSamples ? samples : '')
-    setBusy(false)
+    let result = null
+    try {
+      result = await window.electronAPI.learnStyle(fromSamples ? samples : '')
+    } catch { /* reported below */ } finally {
+      setBusy(false)
+    }
     if (result?.success && result.notes) setSuggestion(result.notes)
     else setError(result?.error ? `Couldn't draft notes: ${result.error}` : "Couldn't draft notes. Try again.")
   }

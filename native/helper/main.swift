@@ -205,18 +205,39 @@ func copyAttribute(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
     return AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success ? value : nil
 }
 
+// Chromium-based browsers build their accessibility tree only for AXEnhancedUserInterface.
+// That flag also slows window animations in native apps, so it's set for these alone.
+func isChromiumApp(_ app: NSRunningApplication) -> Bool {
+    guard let url = app.bundleURL?.appendingPathComponent("Contents/Frameworks"),
+          let names = try? FileManager.default.contentsOfDirectory(atPath: url.path) else { return false }
+    // Chrome, Edge, Brave and the rest ship their engine as "<Product> Framework.framework".
+    return names.contains { $0.hasSuffix(" Framework.framework") && $0 != "Electron Framework.framework" }
+}
+
+// A hung front app must not block this thread (it also runs the hotkey tap): AX calls give up
+// after half a second. Promptly itself stops waiting after 1.5 s.
+let axTimeout: Float = 0.5
+
 func selectedText() -> String? {
     guard AXIsProcessTrusted() else { return nil }
     if let app = NSWorkspace.shared.frontmostApplication, !enhancedPids.contains(app.processIdentifier) {
-        // Electron and Chromium apps only build their accessibility tree when asked.
+        // Electron apps only build their accessibility tree when asked (AXManualAccessibility).
         let appElement = AXUIElementCreateApplication(app.processIdentifier)
-        AXUIElementSetAttributeValue(appElement, "AXManualAccessibility" as CFString, kCFBooleanTrue)
-        AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+        AXUIElementSetMessagingTimeout(appElement, axTimeout)
+        let manual = AXUIElementSetAttributeValue(appElement, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+        if manual != .success && isChromiumApp(app) {
+            AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+        }
+        // Forget apps that have quit, so the set doesn't grow for the whole session.
+        enhancedPids = enhancedPids.filter { NSRunningApplication(processIdentifier: $0) != nil }
         enhancedPids.insert(app.processIdentifier)
     }
     let system = AXUIElementCreateSystemWide()
+    AXUIElementSetMessagingTimeout(system, axTimeout)
     guard let focused = copyAttribute(system, kAXFocusedUIElementAttribute) else { return nil }
-    guard let text = copyAttribute(focused as! AXUIElement, kAXSelectedTextAttribute) as? String else { return nil }
+    let focusedElement = focused as! AXUIElement
+    AXUIElementSetMessagingTimeout(focusedElement, axTimeout)
+    guard let text = copyAttribute(focusedElement, kAXSelectedTextAttribute) as? String else { return nil }
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     if trimmed.isEmpty { return nil }
     return String(trimmed.prefix(20000))

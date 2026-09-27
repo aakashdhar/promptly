@@ -6,10 +6,12 @@
 
 // Pure hesitation sounds only. Words like "like", "so" or "you know" can carry meaning, so they
 // always stay.
-const FILLER = /(^|[\s,.;:!?(]|--)(u+m+|u+h+m*|e+r+m+|e+r+|a+h+|h+m+|m+h*m+)(?=$|[\s,.;:!?)])/gi;
+// "Er" only counts when a pause follows it ("Er, yes"), since "err" is also a word ("to err").
+const FILLER = /(^|[\s,.;:!?(]|--)(u+m+|u+h+m*|e+r+m+|e+r+(?=[,.;:!?)]|$)|a+h+|h+m+|m+h*m+)(?=$|[\s,.;:!?)])/gi;
 
-// "new line" / "new paragraph", said on their own, possibly with the punctuation Whisper adds.
-const LINE_COMMAND = /[,;:]?\s*\b(new paragraph|next paragraph|new line|next line)\b[.,!?]?\s*/gi;
+// "new line" / "new paragraph", said on their own: at the start, after a pause (punctuation
+// before it) or followed by one. "a new line of products" is left as said.
+const LINE_COMMAND = /(^|[.,!?;:])?(\s*)\b(new paragraph|next paragraph|new line|next line)\b([.,!?])?\s*/gi;
 
 // Money and percentages said as words become symbols ("12,450 rupees" → "₹12,450",
 // "25 percent" → "25%"). Pounds stay as said: they're as often weight as money. Only the unit word moves; the number and everything else stay as said.
@@ -51,7 +53,12 @@ function tidyDictation(transcript, { removeFillers = true, symbols = true } = {}
 
   if (symbols) text = formatSymbols(text);
 
-  text = text.replace(LINE_COMMAND, (_m, command) => (/paragraph/i.test(command) ? '\n\n' : '\n'));
+  text = text.replace(LINE_COMMAND, (m, before, _space, command, after, offset, whole) => {
+    if (before === undefined && after === undefined && offset + m.length < whole.length) return m;
+    // A full stop before the command ends the sentence and stays; a comma was only the pause.
+    const keep = before && /[.!?]/.test(before) ? before : '';
+    return keep + (/paragraph/i.test(command) ? '\n\n' : '\n');
+  });
 
   text = text
     .replace(/[ \t]{2,}/g, ' ')

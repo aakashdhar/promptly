@@ -335,7 +335,23 @@ function setClaudeReady(ready) {
 
 // Checks Claude Code and shows the matching state. Keeps checking while something is missing,
 // so finishing the install or sign-in in Terminal is picked up without clicking anything.
-async function runScreen1({ quiet = false } = {}) {
+// One check at a time: the poll fires every 3 s, and a check can take longer than that.
+let claudeChecking = false;
+async function runScreen1(opts = {}) {
+  if (claudeChecking) return;
+  claudeChecking = true;
+  try {
+    await checkClaudeScreen(opts);
+  } catch (err) {
+    // Never leave "Checking…" up with no way forward: show the path override.
+    document.getElementById('claude-error-detail').textContent = (err && err.message) || 'The check failed';
+    showState('claude', 's1-notresponding');
+    setClaudeReady(false);
+  } finally {
+    claudeChecking = false;
+  }
+}
+async function checkClaudeScreen({ quiet = false } = {}) {
   if (!quiet) showState('claude', 'claude-checking');
   const status = await api.claudeStatus();
   if (!status.installed && !status.path) {
@@ -367,6 +383,8 @@ async function runScreen1({ quiet = false } = {}) {
       document.getElementById('claude-error-detail').textContent = test.error || '';
       showState('claude', 's1-notresponding');
       setClaudeReady(false);
+      // This check runs a real prompt; don't repeat it every 3 s. "Check again" is on screen.
+      stopClaudePoll();
       return;
     }
   }
@@ -388,8 +406,17 @@ function stopClaudePoll() {
 async function useManualPath(inputId) {
   const value = document.getElementById(inputId).value.trim();
   if (!value) return;
-  const stored = await api.getStoredPaths();
-  await api.savePaths({ claudePath: value, whisperPath: stored.speechBuiltIn ? '' : stored.whisperPath, ffmpegPath: stored.ffmpegPath });
+  const saved = await api.savePaths({ claudePath: value });
+  const row = document.getElementById(inputId).closest('.path-row');
+  let note = row.nextElementSibling;
+  if (!note || !note.classList.contains('path-error')) {
+    note = document.createElement('p');
+    note.className = 'hint path-error';
+    note.setAttribute('role', 'alert');
+    row.after(note);
+  }
+  note.textContent = saved && !saved.ok ? saved.error : '';
+  if (saved && !saved.ok) return;
   await api.recheckPaths();
   runScreen1();
 }
@@ -425,6 +452,7 @@ async function showHold() {
   const status = await api.accessibilityStatus();
   if (status && status.available === false) { finishToDone(); return; }   // no helper in this build
   setHold(status);
+  clearInterval(holdPoll);
   if (!status || !status.trusted) holdPoll = setInterval(async () => setHold(await api.accessibilityStatus()), 2000);
 }
 function finishToDone() { show('done'); animateKeys(); }

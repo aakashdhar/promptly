@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory } from '../utils/history.js'
+import { runStep } from '../utils/claudeStep.js'
 
 export const HARNESS_ACCENT = 'rgba(242,155,203,0.9)'
 
@@ -19,6 +20,7 @@ export default function useHarnessBuilder({
   setThinkingAccentColor,
   startRecordingRef,
   contextRef,
+  opIdRef,
 }) {
   const [harnessPlan, setHarnessPlan] = useState(null)
   const [answers, setAnswers] = useState({})
@@ -40,8 +42,8 @@ export default function useHarnessBuilder({
     transitionRef.current(STATES.THINKING)
 
     const { selectedText, appName } = contextRef?.current || {}
-    const result = await window.electronAPI.harnessPlan(transcript, { selectedText, appName })
-    if (runId !== runIdRef.current || result?.cancelled) return
+    const result = await runStep(opIdRef, () => window.electronAPI.harnessPlan(transcript, { selectedText, appName }))
+    if (runId !== runIdRef.current || !result) return
     if (!result?.success) return fail(result?.error || 'Harness mapping failed. Please try again.')
 
     // Speaking again keeps the answers to gaps the new plan still has.
@@ -55,7 +57,7 @@ export default function useHarnessBuilder({
     setSavedTo('')
     isReiteratingRef.current = false
     transitionRef.current(STATES.HARNESS_BUILDER)
-  }, [STATES, transitionRef, setThinkTranscript, setThinkingLabel, setThinkingAccentColor, contextRef, fail])
+  }, [STATES, transitionRef, setThinkTranscript, setThinkingLabel, setThinkingAccentColor, contextRef, fail, opIdRef])
 
   const writeHarnessFiles = useCallback(async () => {
     if (!harnessPlan || !window.electronAPI?.harnessFiles) return
@@ -65,8 +67,8 @@ export default function useHarnessBuilder({
     setThinkTranscript(originalTranscript.current)
     transitionRef.current(STATES.THINKING)
 
-    const result = await window.electronAPI.harnessFiles(originalTranscript.current, harnessPlan, answers)
-    if (runId !== runIdRef.current || result?.cancelled) return
+    const result = await runStep(opIdRef, () => window.electronAPI.harnessFiles(originalTranscript.current, harnessPlan, answers))
+    if (runId !== runIdRef.current || !result) return
     if (!result?.success) return fail(result?.error || 'Writing the harness failed. Please try again.')
 
     const bundle = { run: result.run, schedule: result.schedule || null, files: result.files }
@@ -76,7 +78,7 @@ export default function useHarnessBuilder({
     setSavedTo('')
     setScheduled('')
     transitionRef.current(STATES.HARNESS_BUILDER_DONE)
-  }, [STATES, transitionRef, originalTranscript, setThinkTranscript, setThinkingLabel, setThinkingAccentColor, harnessPlan, answers, fail])
+  }, [STATES, transitionRef, originalTranscript, setThinkTranscript, setThinkingLabel, setThinkingAccentColor, harnessPlan, answers, fail, opIdRef])
 
   const handleHarnessStartOver = useCallback(() => {
     runIdRef.current++

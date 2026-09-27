@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory } from '../utils/history.js'
+import { runStep } from '../utils/claudeStep.js'
 import { parseImageAnalysisOutput, buildImagePromptText, splitImagePrompt } from '../utils/promptUtils.js'
 import { TECHNICAL_NUMERIC_PARAMS } from '../components/ImageBuilderState.constants.js'
 
@@ -56,6 +57,7 @@ export default function useImageBuilder({
   setThinkingLabel,
   setThinkingAccentColor,
   startRecordingRef,
+  opIdRef,
 }) {
   const [imageDefaults, setImageDefaults] = useState(deepCopy(EMPTY_DEFAULTS))
   const [imageAnswers, setImageAnswers] = useState(deepCopy(EMPTY_DEFAULTS))
@@ -76,10 +78,11 @@ export default function useImageBuilder({
     const runId = runIdRef.current
     setIsGeneratingVariations(true)
     const existing = shown.length ? `- Already shown, so take different angles from these:\n${shown.map((p) => `  • ${p}`).join('\n')}\n` : ''
-    const result = await window.electronAPI.builderStep('image-variations', { TRANSCRIPT: transcript, EXISTING: existing })
+    // Background work beside the builder screen: it must not claim the operation.
+    const result = await runStep(null, () => window.electronAPI.builderStep('image-variations', { TRANSCRIPT: transcript, EXISTING: existing }))
     if (runId !== runIdRef.current) return
     setIsGeneratingVariations(false)
-    if (result?.cancelled || !result.success) return
+    if (!result?.success) return
     const newVars = parseVariations(result.prompt, idOffset)
     if (newVars.length === 0) return
     if (idOffset === 0) {
@@ -97,8 +100,8 @@ export default function useImageBuilder({
       return
     }
 
-    const result = await window.electronAPI.builderStep('image-analyse', { TRANSCRIPT: transcript })
-    if (result?.cancelled) return
+    const result = await runStep(opIdRef, () => window.electronAPI.builderStep('image-analyse', { TRANSCRIPT: transcript }))
+    if (!result) return
     const parsed = result.success ? parsePhase1(result.prompt) : null
     if (!parsed) {
       transitionRef.current(STATES.ERROR, { message: "Couldn't read your image idea. Try again." })
@@ -167,12 +170,12 @@ export default function useImageBuilder({
 
     const activeVar = imageVariations.find(v => v.id === selectedVariation) || imageVariations[0] || null
     const negatives = answers.subject?.negativePrompts || []
-    const result = await window.electronAPI.builderStep('image-assemble', {
+    const result = await runStep(opIdRef, () => window.electronAPI.builderStep('image-assemble', {
       VARIATION: activeVar?.prompt || '',
       ANSWERS: JSON.stringify(answers, null, 2),
       AVOID: negatives.length ? `Avoid these elements: ${negatives.join(', ')}. Do NOT include 'no X' or 'without X' syntax — instead omit those elements entirely.\n` : '',
-    })
-    if (result?.cancelled) return
+    }))
+    if (!result) return
     if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'Could not generate image prompt — try again' })
       return

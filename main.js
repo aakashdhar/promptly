@@ -109,6 +109,8 @@ let pulseInterval = null;
 let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
 let lastTempAudioPath = null;
+let audioSeq = 0;
+const audioInUse = new Set(); // files a transcription is reading right now
 let lastGenerateRequest = null;
 let currentAppState = 'IDLE';
 let shortcutsRegistered = false;
@@ -379,11 +381,23 @@ async function handleUninstall() {
     if (!stopped.ok) { log.warn('Uninstall: could not stop harness schedule', { label, error: stopped.error }); continue; }
     try { fs.rmSync(plistPath, { force: true }); } catch { /* ignore */ }
   }
+  const failed = [];
   for (const p of platform.uninstallDataPaths(os.homedir(), BUNDLE_ID)) {
-    try { fs.rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
+    try { fs.rmSync(p, { recursive: true, force: true }); } catch (err) { failed.push(`${p}: ${err.message}`); }
   }
   await platform.resetMicrophonePermission(BUNDLE_ID);
-  await platform.removeInstalledApp();
+  const bundle = app.isPackaged ? platform.appBundlePath(app.getPath('exe')) : null;
+  const removed = await platform.removeInstalledApp(bundle);
+  if (!removed.ok) failed.push(bundle ? `${bundle}: ${removed.error}` : 'The app itself (not running from an installed copy)');
+  if (failed.length) {
+    log.warn('Uninstall left things behind', failed);
+    await dialog.showMessageBox({
+      type: 'warning',
+      title: 'Uninstall Promptly',
+      message: "Promptly couldn't remove everything",
+      detail: `Remove these yourself in Finder:\n\n${failed.join('\n')}`,
+    });
+  }
   isQuitting = true;
   app.quit();
   return { ok: true };
@@ -422,7 +436,7 @@ function buildTrayMenu() {
       },
     },
     { type: 'separator' },
-    { label: 'Uninstall Promptly...', click: () => { handleUninstall(); } },
+    { label: 'Uninstall Promptly...', click: () => { handleUninstall().catch((err) => log.error('Uninstall failed', err)); } },
     { type: 'separator' },
     { label: 'Quit Promptly', click: () => { isQuitting = true; app.removeAllListeners('window-all-closed'); app.quit(); } }
   );
@@ -809,9 +823,23 @@ async function needsSetup() {
   return !status.installed || status.loggedIn === false;
 }
 
+// An absolute path to a file this user can run.
+function isExecutable(p) {
+  if (!path.isAbsolute(p)) return false;
+  try { return fs.statSync(p).isFile() && (fs.accessSync(p, fs.constants.X_OK), true); } catch { return false; }
+}
+
+// Handlers that write files, change paths or schedule jobs answer only the windows that offer
+// those actions, not whatever page happens to hold the shared preload.
+function fromWindow(event, ...wins) {
+  return wins.some((w) => w && !w.isDestroyed() && event.sender === w.webContents);
+}
+
 function finishSetup() {
   if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
-  if (win && !win.isDestroyed()) { win.show(); win.center(); }
+  // windowBounds() already placed it: where it was left, or centred the first time. Centring
+  // here would move it (and save that) on every launch.
+  if (win && !win.isDestroyed()) win.show();
   registerShortcut();
   // Runs again after the wizard is reopened from Settings; keep a single tray icon.
   if (!menuBarTray || menuBarTray.isDestroyed()) createMenuBarIcon();
@@ -1161,7 +1189,8 @@ app.whenReady().then(async () => {
   // Saves the harness into a project folder the user picks. Existing files are only replaced
   // after they confirm; an existing .claude/settings.json gets the new hooks added, not replaced.
   // The window's copy of files and run is ignored; the arguments stay for the IPC contract.
-  ipcMain.handle('save-harness', async () => {
+  ipcMain.handle('save-harness', async (event) => {
+    if (!fromWindow(event, win)) return { ok: false, error: 'Not allowed' };
     const list = (lastHarnessFiles?.files || []).filter((f) => f && harness.safeRelativePath(f.path));
     if (!list.length) return { ok: false, error: 'Nothing to save' };
     let dir = IS_E2E ? process.env.PROMPTLY_SAVE_DIR : null;
@@ -1201,7 +1230,8 @@ app.whenReady().then(async () => {
   // Runs the harness saved last on a schedule, as a launchd job in the user's LaunchAgents
   // (one per project folder; scheduling again replaces it). Only the folder and command from
   // that save are used, never paths sent by the window.
-  ipcMain.handle('schedule-harness', async (_event, { schedule } = {}) => {
+  ipcMain.handle('schedule-harness', async (event, { schedule } = {}) => {
+    if (!fromWindow(event, win)) return { ok: false, error: 'Not allowed' };
     const sched = harness.checkSchedule(schedule);
     if (!lastSavedHarness?.run) return { ok: false, error: 'Save the harness to a project first' };
     if (!sched) return { ok: false, error: 'Pick when it should run' };
@@ -1224,7 +1254,8 @@ app.whenReady().then(async () => {
     return { ok: true, label: harness.scheduleLabel(sched) };
   });
 
-  ipcMain.handle('unschedule-harness', async () => {
+  ipcMain.handle('unschedule-harness', async (event) => {
+    if (!fromWindow(event, win)) return { ok: false, error: 'Not allowed' };
     if (!lastSavedHarness) return { ok: false, error: 'No saved harness' };
     const label = harness.agentLabel(lastSavedHarness.dir);
     const unloaded = IS_E2E ? { ok: true } : await platform.unloadLaunchAgent(label);
@@ -1264,22 +1295,29 @@ app.whenReady().then(async () => {
   // ── Transcription ──
 
   ipcMain.handle('transcribe-audio', async (_event, arrayBuffer) => {
-    // A new recording replaces the one kept for retry.
-    safeUnlink(lastTempAudioPath);
+    // A new recording replaces the one kept for retry (unless another transcription is reading it).
+    if (lastTempAudioPath && !audioInUse.has(lastTempAudioPath)) safeUnlink(lastTempAudioPath);
     lastTempAudioPath = null;
     if (!whisper.engine()) {
       return { success: false, error: 'Speech-to-text is not available — reinstall Promptly' };
     }
+    const bytes = arrayBuffer instanceof ArrayBuffer ? Buffer.from(arrayBuffer)
+      : ArrayBuffer.isView(arrayBuffer) ? Buffer.from(arrayBuffer.buffer, arrayBuffer.byteOffset, arrayBuffer.byteLength)
+        : null;
+    if (!bytes || !bytes.length) return { success: false, error: 'No audio was recorded — try again' };
     try { fs.mkdirSync(audioTmpDir, { recursive: true }); } catch { /* ignore */ }
     // The renderer sends 16 kHz WAV; anything else (a recording it couldn't decode) keeps webm.
-    const isWav = Buffer.from(arrayBuffer.slice(0, 4)).toString('ascii') === 'RIFF';
-    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}.${isWav ? 'wav' : 'webm'}`);
+    const isWav = bytes.subarray(0, 4).toString('ascii') === 'RIFF';
+    // Two transcriptions can overlap (a recording and a refinement); each owns its own file, and
+    // only the latest one decides which file a retry uses.
+    const tmpFile = path.join(audioTmpDir, `promptly-${Date.now()}-${++audioSeq}.${isWav ? 'wav' : 'webm'}`);
     try {
-      fs.writeFileSync(tmpFile, Buffer.from(arrayBuffer));
+      await fs.promises.writeFile(tmpFile, bytes);
       lastTempAudioPath = tmpFile;
-      const transcript = correctTranscript(await whisper.transcribe(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 }));
+      audioInUse.add(tmpFile);
+      const transcript = correctTranscript(await whisper.transcribe(tmpFile, { timeoutMs: 60000, slowWarningMs: 20000 }).finally(() => audioInUse.delete(tmpFile)));
       safeUnlink(tmpFile);
-      lastTempAudioPath = null;
+      if (lastTempAudioPath === tmpFile) lastTempAudioPath = null;
       return { success: true, transcript };
     } catch (err) {
       // Keep tmpFile on error so retry-transcription can reuse it.
@@ -1306,7 +1344,8 @@ app.whenReady().then(async () => {
 
   // ── Window ──
 
-  ipcMain.handle('copy-to-clipboard', (_event, { text }) => {
+  ipcMain.handle('copy-to-clipboard', (_event, { text } = {}) => {
+    if (typeof text !== 'string') return { success: false };
     clipboard.writeText(text);
     return { success: true };
   });
@@ -1465,14 +1504,29 @@ app.whenReady().then(async () => {
     };
   });
 
-  ipcMain.handle('save-paths', async (_event, { claudePath: cp, whisperPath: wp, ffmpegPath: fp, claudeModel }) => {
+  // A path is only saved if it's a program that exists; every later call runs it. An empty box
+  // clears the saved path, so the next check finds the tool again on its own.
+  ipcMain.handle('save-paths', async (event, { claudePath: cp, whisperPath: wp, ffmpegPath: fp, claudeModel: model } = {}) => {
+    if (!fromWindow(event, win, splashWin)) return { ok: false, error: 'Not allowed' };
     const patch = {};
-    if (cp && cp.trim()) { patch.claudePath = cp.trim(); claudePath = cp.trim(); }
-    if (wp && wp.trim()) { patch.whisperPath = wp.trim(); whisperPath = wp.trim(); }
-    if (fp && fp.trim()) { patch.ffmpegPath = fp.trim(); ffmpegPath = fp.trim(); }
-    if (claudeModel && MODEL_OPTIONS.some((m) => m.value === claudeModel)) patch.claudeModel = claudeModel;
+    const bad = [];
+    const take = (value, key, name, set) => {
+      if (typeof value !== 'string') return;
+      const p = value.trim();
+      if (!p) { patch[key] = undefined; set(null); return; }
+      if (!isExecutable(p)) { bad.push(name); return; }
+      patch[key] = p; set(p);
+    };
+    take(cp, 'claudePath', 'Claude CLI', (p) => { claudePath = p; });
+    take(wp, 'whisperPath', 'Whisper', (p) => { whisperPath = p; });
+    take(fp, 'ffmpegPath', 'ffmpeg', (p) => { ffmpegPath = p; });
+    if (model && MODEL_OPTIONS.some((m) => m.value === model)) patch.claudeModel = model;
     config.update(patch);
-    return { ok: true };
+    // A cleared path is found again straight away, as at startup.
+    if ('claudePath' in patch && !patch.claudePath) claudePath = await resolveClaudePath(undefined);
+    if ('whisperPath' in patch && !patch.whisperPath) whisperPath = await resolveWhisperPath(undefined);
+    if ('ffmpegPath' in patch && !patch.ffmpegPath) ffmpegPath = await resolveFfmpegPath(undefined);
+    return bad.length ? { ok: false, error: `${bad.join(', ')}: not a program at that path` } : { ok: true };
   });
 
   ipcMain.handle('browse-for-binary', async () => {

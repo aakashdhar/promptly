@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { FIELD_LABELS } from './ImageBuilderState.constants.js'
 import { splitImagePrompt } from '../utils/promptUtils.js'
+import useCopy from '../hooks/useCopy.js'
 
 function flattenAnswers(answers) {
   if (!answers || typeof answers !== 'object') return []
@@ -29,16 +29,12 @@ export default function ImageBuilderDoneState({
   onEditAnswers,
   onStartOver,
 }) {
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
 
   const { prompt: promptText, flags } = splitImagePrompt(prompt)
 
   // Nano Banana and ChatGPT don't read --flags, so the main copy is the prompt text alone.
-  function handleCopy(text = promptText) {
-    if (window.electronAPI) window.electronAPI.copyToClipboard(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
+  function handleCopy(text = promptText) { copy(text) }
   const answeredEntries = flattenAnswers(answers)
 
   return (

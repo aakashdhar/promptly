@@ -8,12 +8,16 @@ const { spawn } = require('child_process');
 
 const REQUEST_TIMEOUT_MS = 1500;
 const MAX_RESTARTS = 3;
+// A helper that ran this long before exiting was healthy; its crash starts a fresh count, so
+// three crashes days apart don't switch hold-to-talk off for the rest of the session.
+const HEALTHY_RUN_MS = 60000;
 
 function createHelper({ binaryPath, onHotkey = () => {}, onStatus = () => {}, log, spawnImpl = spawn }) {
   let child = null;
   let buffer = '';
   let nextId = 1;
   let restarts = 0;
+  let startedAt = 0;
   let stopped = false;
   let lastStatus = { trusted: false, tap: false };
   const pending = new Map();
@@ -45,8 +49,15 @@ function createHelper({ binaryPath, onHotkey = () => {}, onStatus = () => {}, lo
       child = null;
       return false;
     }
+    // Leftovers from a crashed helper would swallow the new one's first line.
+    buffer = '';
+    startedAt = Date.now();
+    // Decode as a stream, so a character split across two chunks (₹, Devanagari) stays whole.
+    child.stdout.setEncoding?.('utf8');
+    // A write just after the helper died fails here, not in request()'s try.
+    child.stdin.on?.('error', () => { /* the exit handler resolves what's pending */ });
     child.stdout.on('data', (d) => {
-      buffer += d.toString();
+      buffer += String(d);
       let newline;
       while ((newline = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, newline).trim();
@@ -67,6 +78,7 @@ function createHelper({ binaryPath, onHotkey = () => {}, onStatus = () => {}, lo
       pending.clear();
       if (stopped) return;
       log?.warn(`Helper exited (${signal || code})`);
+      if (Date.now() - startedAt >= HEALTHY_RUN_MS) restarts = 0;
       if (restarts < MAX_RESTARTS) {
         restarts++;
         setTimeout(start, 500 * restarts);

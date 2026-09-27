@@ -169,9 +169,17 @@ export default function SettingsPanel({ onClose }) {
     }
   }
 
+  // Shown at once; if main can't save it, the switch goes back so it never shows a setting
+  // that isn't in effect.
   async function savePrefs(patch) {
-    setPrefs((p) => ({ ...p, ...patch }))
-    await window.electronAPI.setPreferences(patch)
+    let before
+    setPrefs((p) => { before = p; return { ...p, ...patch } })
+    try {
+      const saved = await window.electronAPI.setPreferences(patch)
+      if (saved === false || saved?.ok === false) throw new Error('not saved')
+    } catch {
+      setPrefs((p) => ({ ...p, ...Object.fromEntries(Object.keys(patch).map((k) => [k, before?.[k]])) }))
+    }
   }
 
   async function handleAllowAccessibility() {
@@ -194,9 +202,21 @@ export default function SettingsPanel({ onClose }) {
   async function handleSaveRecheck() {
     setSaveMsgColor('rgba(var(--ink),0.35)')
     setSaveMsg('Saving...')
-    await window.electronAPI.savePaths({ claudePath: claudeVal.trim(), whisperPath: whisperVal.trim(), ffmpegPath: ffmpegVal.trim() })
-    setSaveMsg('Rechecking...')
-    const result = await window.electronAPI.recheckPaths()
+    let result
+    try {
+      const saved = await window.electronAPI.savePaths({ claudePath: claudeVal.trim(), whisperPath: whisperVal.trim(), ffmpegPath: ffmpegVal.trim() })
+      if (saved && !saved.ok) {
+        setSaveMsgColor('rgba(255,59,48,0.7)')
+        setSaveMsg(`${saved.error} — check it and try again`)
+        return
+      }
+      setSaveMsg('Rechecking...')
+      result = await window.electronAPI.recheckPaths()
+    } catch {
+      setSaveMsgColor('rgba(255,59,48,0.7)')
+      setSaveMsg("Couldn't save the paths — try again")
+      return
+    }
     setClaudeStatus(result.claude)
     setWhisperStatus(result.whisper)
     setFfmpegStatus(result.ffmpeg)

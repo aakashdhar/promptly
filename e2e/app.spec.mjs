@@ -408,9 +408,10 @@ test('first-run setup: microphone, then Claude Code sign-in is picked up on its 
 
 test('a missing Claude Code offers the installer', async () => {
   ctx = await launch({ setupComplete: false })
-  const { app } = ctx
+  const { app, fakeDir } = ctx
   const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
-  await setup.evaluate(() => window.electronAPI.savePaths({ claudePath: '/nonexistent/claude' }))
+  // Claude Code goes missing (a saved path to nothing is refused, so remove the program itself).
+  fs.rmSync(path.join(fakeDir, 'claude'))
   await setup.getByRole('button', { name: 'Set up Promptly' }).click()
   await setup.locator('#mic-next').click()
   await expect(setup.getByText("Claude Code isn't installed yet.")).toBeVisible({ timeout: 10000 })
@@ -830,7 +831,7 @@ test('cancelling a recording throws it away instead of transcribing it', async (
   expect(await appState(app)).toBe('IDLE')
   // The engine runs once at startup on silence (warmup.wav); a recording would be promptly-*.wav.
   const args = fs.existsSync(path.join(fakeDir, 'whisper-args')) ? fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8') : ''
-  expect(args).not.toMatch(/promptly-\d+\.wav/)
+  expect(args).not.toMatch(/promptly-[\d-]+\.wav/)
 })
 
 test('Esc on a paused recording throws it away and turns the microphone off', async () => {
@@ -849,7 +850,7 @@ test('Esc on a paused recording throws it away and turns the microphone off', as
   await expect.poll(() => appState(app)).toBe('IDLE')
   await expect.poll(() => page.evaluate(() => window.__micStream.getTracks().every((t) => t.readyState === 'ended'))).toBe(true)
   const args = fs.existsSync(path.join(fakeDir, 'whisper-args')) ? fs.readFileSync(path.join(fakeDir, 'whisper-args'), 'utf8') : ''
-  expect(args).not.toMatch(/promptly-\d+\.wav/)
+  expect(args).not.toMatch(/promptly-[\d-]+\.wav/)
 })
 
 test('the pill: its cancel button throws the recording away, and an error stays in the pill with Open', async () => {

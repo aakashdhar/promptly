@@ -89,8 +89,11 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         terminate(child);
         finish({ success: false, error: 'Claude took too long — try again', timedOut: true, errorType: 'timeout' });
       }, timeoutMs);
+      // Decode as a stream, so a character split across two chunks (₹, Devanagari, emoji) stays whole.
+      child.stdout.setEncoding?.('utf8');
+      child.stderr.setEncoding?.('utf8');
       child.stdout.on('data', (d) => {
-        const chunk = d.toString();
+        const chunk = String(d);
         if (parser) parser.feed(chunk); else stdout += chunk;
       });
       child.stderr.on('data', (d) => { stderr += d.toString(); });

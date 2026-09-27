@@ -55,15 +55,21 @@ export default function SpeechSection({ speech: initial, onSave, bare = false })
   async function download() {
     setError('')
     setProgress({ percent: 0, mbDone: 0, mbTotal: speech.sizeMB })
-    const result = await window.electronAPI.downloadSpeechModel()
-    setProgress(null)
-    if (result.speech) setSpeech(result.speech)
-    if (!result.success && !result.cancelled) setError(result.error || 'Download failed')
+    let result
+    try {
+      result = await window.electronAPI.downloadSpeechModel()
+    } catch {
+      result = { success: false }
+    } finally {
+      setProgress(null)
+    }
+    if (result?.speech) setSpeech(result.speech)
+    if (!result?.success && !result?.cancelled) setError(result?.error || 'Download failed')
   }
 
   async function remove() {
-    const result = await window.electronAPI.removeSpeechModel()
-    if (result.speech) setSpeech(result.speech)
+    const result = await window.electronAPI.removeSpeechModel().catch(() => null)
+    if (result?.speech) setSpeech(result.speech)
   }
 
   function choose(model) {

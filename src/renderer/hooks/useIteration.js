@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react'
-import { recordingToWav, MIC_CONSTRAINTS } from '../utils/audio.js'
+import { recordingToWav, MIC_CONSTRAINTS, withTimeout } from '../utils/audio.js'
 
 export default function useIteration({
   STATES,
@@ -16,6 +16,7 @@ export default function useIteration({
   getIterationBase,
   onRevised,
   contextRef,
+  opIdRef,
 }) {
   const iterRecorderRef = useRef(null)
   const iterChunksRef = useRef([])
@@ -28,8 +29,9 @@ export default function useIteration({
   onRevisedRef.current = onRevised
 
   const handleIterate = useCallback(async () => {
+    let stream = null
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
+      stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
       const recorder = new MediaRecorder(stream)
       iterRecorderRef.current = recorder
       iterChunksRef.current = []
@@ -47,7 +49,9 @@ export default function useIteration({
       startTimer()
       transitionRef.current(STATES.ITERATING)
     } catch {
-      transitionRef.current(STATES.ERROR, { message: 'Microphone access denied' })
+      // Granted but couldn't record: release the microphone.
+      stream?.getTracks().forEach((t) => t.stop())
+      transitionRef.current(STATES.ERROR, { message: stream ? "Couldn't start recording" : 'Microphone access denied' })
     }
   }, [])
 
@@ -60,20 +64,36 @@ export default function useIteration({
       // Once only: a later stop press or the microphone ending must not run it again.
       if (iterRecorderRef.current !== recorder) return
       iterRecorderRef.current = null
+      // Tagged like every other operation: a dismiss or abort bumps opIdRef, and whatever this
+      // refinement returns after that is ignored instead of replacing the screen.
+      const opId = opIdRef ? ++opIdRef.current : 0
+      const current = () => !opIdRef || opId === opIdRef.current
+      try {
+        await refine(current)
+      } catch (err) {
+        window.electronAPI?.log?.('error', `Refinement could not be finished: ${err?.message || err}`)
+        if (current()) transitionRef.current(STATES.ERROR, { message: "Couldn't process that refinement" })
+      } finally {
+        iterIsProcessingRef.current = false
+      }
+    }
+    const refine = async (current) => {
       const blob = new Blob(iterChunksRef.current, { type: 'audio/webm' })
-      const arrayBuffer = await recordingToWav(blob)
+      const arrayBuffer = await withTimeout(recordingToWav(blob), 20000, 'Preparing the recording took too long')
       iterIsProcessingRef.current = false
+      if (!current()) return
 
       if (!window.electronAPI) {
         transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
         return
       }
       const transcribeResult = await window.electronAPI.transcribeAudio(arrayBuffer)
-      if (!transcribeResult.success) {
-        transitionRef.current(STATES.ERROR, { message: transcribeResult.error })
+      if (!current()) return
+      if (!transcribeResult?.success) {
+        transitionRef.current(STATES.ERROR, { message: transcribeResult?.error || "Couldn't transcribe that" })
         return
       }
-      const iterText = transcribeResult.transcript.trim()
+      const iterText = String(transcribeResult.transcript || '').trim()
       const base = iterationBase.current
       if (!iterText) {
         transitionRef.current(base.returnState || STATES.PROMPT_READY)
@@ -88,9 +108,9 @@ export default function useIteration({
         ...(base.tone && { tone: base.tone }),
         ...(contextRef?.current && { context: contextRef.current }),
       })
-      if (genResult?.cancelled) return
-      if (!genResult.success) {
-        transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })
+      if (!current() || genResult?.cancelled) return
+      if (!genResult?.success) {
+        transitionRef.current(STATES.ERROR, { message: genResult?.error || 'Claude error' })
         return
       }
       isIterated.current = true
@@ -105,8 +125,12 @@ export default function useIteration({
   stopIteratingRef.current = stopIterating
 
   const dismissIterating = useCallback(() => {
+    // Whatever a finished refinement is still waiting for (transcription, Claude) is now stale.
+    if (opIdRef) opIdRef.current++
     const recorder = iterRecorderRef.current
     if (recorder) {
+      recorder.onstop = null
+      if (recorder.state !== 'inactive') recorder.stop()
       recorder.stream.getTracks().forEach((t) => t.stop())
       iterRecorderRef.current = null
     }

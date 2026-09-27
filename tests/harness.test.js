@@ -126,6 +126,23 @@ describe('Harness mode', () => {
     expect(harness.mergeSettings('not json', '{}')).toBeNull()
   })
 
+  it('combines permission lists and adds each hook only once', () => {
+    const existing = JSON.stringify({ permissions: { allow: ['Bash(npm test)'], deny: ['Read(.env)'] }, env: { A: '1' }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'a' }] }] } })
+    const incoming = JSON.stringify({ permissions: { allow: ['Bash(npm test)', 'Bash(git status)'] }, env: { B: '2' }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'a' }] }, { hooks: [{ type: 'command', command: 'b' }] }] } })
+    const once = JSON.parse(harness.mergeSettings(existing, incoming))
+    expect(once.permissions).toEqual({ allow: ['Bash(npm test)', 'Bash(git status)'], deny: ['Read(.env)'] })
+    expect(once.env).toEqual({ A: '1', B: '2' })
+    expect(once.hooks.Stop).toHaveLength(2)
+    const twice = JSON.parse(harness.mergeSettings(JSON.stringify(once), incoming))
+    expect(twice).toEqual(once)
+  })
+
+  it('never writes inside .git', () => {
+    expect(harness.safeRelativePath('.git/hooks/pre-commit')).toBeNull()
+    expect(harness.safeRelativePath('sub/.git/config')).toBeNull()
+    expect(harness.safeRelativePath('.github/workflows/ci.yml')).toBe('.github/workflows/ci.yml')
+  })
+
   describe('saving into a project', () => {
     let dir
     beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-')) })

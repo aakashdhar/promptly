@@ -3,6 +3,7 @@ import { parseSections, readableColor } from '../utils/promptUtils.js'
 import EvalPanel from './EvalPanel.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import { MODES, resolveModeKey, isScorable } from '../utils/modes.js'
+import useCopy from '../hooks/useCopy.js'
 
 // Modes whose result is text Claude wrote from what you said, so it can be iterated on or
 // regenerated. Dictations are your own words; builders have their own start-over flows.
@@ -44,7 +45,8 @@ export default function ExpandedPromptReadyContent({
   const canScore = !plainText && isScorable(shownMode)
   const [isEditing, setIsEditing] = useState(false)
   const [editHovered, setEditHovered] = useState(false)
-  const [isCopied, setIsCopied] = useState(false)
+  const { copied, copy, reset: resetCopied } = useCopy()
+  const isCopied = !!copied
   const [scoreOpen, setScoreOpen] = useState(false)
   const promptRef = useRef(null)
   const preEditValue = useRef('')
@@ -53,9 +55,9 @@ export default function ExpandedPromptReadyContent({
 
   useEffect(() => {
     setIsEditing(false)
-    setIsCopied(false)
+    resetCopied()
     setScoreOpen(false)
-  }, [generatedPrompt])
+  }, [generatedPrompt, resetCopied])
 
   useEffect(() => {
     if (isEditing && promptRef.current) {
@@ -80,11 +82,7 @@ export default function ExpandedPromptReadyContent({
     return () => document.removeEventListener('keydown', onKey)
   }, [isEditing])
 
-  function handleCopy() {
-    if (window.electronAPI) window.electronAPI.copyToClipboard(generatedPrompt)
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), 1800)
-  }
+  function handleCopy() { copy(generatedPrompt) }
 
   function handleEdit() {
     if (!isEditing) {

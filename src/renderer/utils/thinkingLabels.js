@@ -1,4 +1,4 @@
-import { resolveModeKey } from './modes.js'
+import { resolveModeKey, modeTone, isBuilderMode } from './modes.js'
 
 const sequences = {
   prompt: [
@@ -77,26 +77,13 @@ const sequences = {
   ],
 }
 
-const BUILDER_MODES = ['image', 'video', 'workflow', 'harness']
-
-const ACCENTS = {
-  prompt:    'rgba(10,132,255,0.85)',
-  code:      'rgba(10,132,255,0.85)',
-  design:    'rgba(168,85,247,0.85)',
-  polish:    'rgba(48,209,88,0.85)',
-  email:     'rgba(20,184,166,0.85)',
-  image:     'rgba(139,92,246,0.85)',
-  video:     'rgba(251,146,60,0.85)',
-  workflow:  'rgba(34,197,94,0.85)',
-  harness:   'rgba(242,155,203,0.9)',
-}
 
 export function getLabelSequence(mode, phase = 1) {
   const m = resolveModeKey(mode)
-  const key = BUILDER_MODES.includes(m) ? `${m}_${phase}` : m
+  const key = isBuilderMode(m) ? `${m}_${phase}` : m
   return sequences[key] || sequences.prompt
 }
 
 export function getModeAccent(mode) {
-  return ACCENTS[resolveModeKey(mode)] || ACCENTS.prompt
+  return `rgba(${modeTone(mode).rgb},0.85)`
 }

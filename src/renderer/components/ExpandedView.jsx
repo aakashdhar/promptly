@@ -59,6 +59,7 @@ export default function ExpandedView({
   onEmailSave,
   onEmailIterate,
   onToneAdjust,
+  onEmailBodyChange,
   onAbort,
   thinkingElapsed,
   thinkingCurrentLabel,
@@ -223,6 +224,7 @@ export default function ExpandedView({
           onEmailSave={onEmailSave}
           onEmailIterate={onEmailIterate}
           onToneAdjust={onToneAdjust}
+          onEmailBodyChange={onEmailBodyChange}
           transcriptionErrorProps={transcriptionErrorProps}
           transcriptionSlow={transcriptionSlow}
           generationErrorProps={generationErrorProps}

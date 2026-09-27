@@ -175,6 +175,27 @@ describe('Best accuracy model download', () => {
   })
 })
 
+describe('Best accuracy model download on a dead connection', () => {
+  let server
+  let base
+  beforeAll(async () => {
+    server = http.createServer((req, res) => { res.writeHead(200, { 'Content-Length': 10000 }); res.write('x'.repeat(100)) })
+    await new Promise((r) => server.listen(0, '127.0.0.1', r))
+    base = `http://127.0.0.1:${server.address().port}`
+  })
+  afterAll(() => { server.closeAllConnections?.(); server.close() })
+
+  it('gives up when nothing arrives for a while, and cleans up', async () => {
+    const dir = path.join(tmp, 'models-stall')
+    const m = createSpeechModels({ dir, stallMs: 300, model: { file: 'model.bin', url: `${base}/x`, sha256: 'f'.repeat(64), bytes: 10000 } })
+    const result = await m.download()
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/stalled/)
+    expect(m.isDownloading()).toBe(false)
+    expect(fs.existsSync(path.join(dir, 'model.bin.part'))).toBe(false)
+  })
+})
+
 describe('dictation symbols', () => {
   it('turns spoken money and percentages into symbols', () => {
     expect(formatSymbols('The invoice for 12,450 rupees is due')).toBe('The invoice for ₹12,450 is due')

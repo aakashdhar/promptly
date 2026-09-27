@@ -24,7 +24,9 @@ const SPEECH_LANGUAGES = [
   { value: 'auto', label: 'Detect automatically' },
 ];
 
-function createSpeechModels({ dir, model = ACCURATE_MODEL }) {
+// stallMs: a connection that sends nothing for this long is dropped, so a silent Wi-Fi
+// drop ends in an error instead of "downloading" forever.
+function createSpeechModels({ dir, model = ACCURATE_MODEL, stallMs = 30000 }) {
   const target = path.join(dir, model.file);
   const partial = `${target}.part`;
   let active = null; // { request, file, cancelled }
@@ -55,6 +57,7 @@ function createSpeechModels({ dir, model = ACCURATE_MODEL }) {
         resolve(res);
       });
       request.on('error', reject);
+      request.setTimeout(stallMs, () => { if (active) active.stalled = true; request.destroy(Object.assign(new Error('The download stalled — check your connection and try again'), { code: 'ESTALLED' })); });
       if (active) active.request = request;
     });
   }
@@ -66,13 +69,15 @@ function createSpeechModels({ dir, model = ACCURATE_MODEL }) {
     if (active) return { success: false, error: 'Already downloading' };
     active = { request: null, cancelled: false };
     const job = active;
+    let res = null;
+    let out = null;
     try {
       fs.mkdirSync(dir, { recursive: true });
-      const res = await get(model.url);
+      res = await get(model.url);
       if (job.cancelled) { res.destroy(); throw new Error('cancelled'); }
       const total = Number(res.headers['content-length']) || model.bytes;
       const hash = crypto.createHash('sha256');
-      const out = fs.createWriteStream(partial);
+      out = fs.createWriteStream(partial);
       let done = 0;
       let lastReport = 0;
       await new Promise((resolve, reject) => {
@@ -86,7 +91,7 @@ function createSpeechModels({ dir, model = ACCURATE_MODEL }) {
           }
         });
         res.on('error', reject);
-        res.on('close', () => { if (!res.complete) reject(new Error(job.cancelled ? 'cancelled' : 'Download interrupted')); });
+        res.on('close', () => { if (!res.complete) reject(new Error(job.cancelled ? 'cancelled' : job.stalled ? 'The download stalled — check your connection and try again' : 'Download interrupted')); });
         out.on('error', reject);
         out.on('finish', resolve);
         res.pipe(out);
@@ -97,8 +102,12 @@ function createSpeechModels({ dir, model = ACCURATE_MODEL }) {
       onProgress({ percent: 100, mbDone: Math.round(total / 1048576), mbTotal: Math.round(total / 1048576) });
       return { success: true };
     } catch (err) {
+      // Close the half-written file before removing it, or its descriptor stays open.
+      if (res && out) res.unpipe(out);
+      out?.destroy();
       try { fs.unlinkSync(partial); } catch { /* nothing to clean */ }
       if (job.cancelled || err.message === 'cancelled') return { success: false, cancelled: true };
+      if (job.stalled) return { success: false, error: 'The download stalled — check your connection and try again' };
       return { success: false, error: err.code === 'ENOTFOUND' || err.code === 'ECONNRESET' ? 'No internet connection' : err.message || 'Download failed' };
     } finally {
       active = null;

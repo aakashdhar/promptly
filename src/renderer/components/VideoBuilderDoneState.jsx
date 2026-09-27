@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import useCopy from '../hooks/useCopy.js'
 
 const ORANGE_CHIP = {
   background: 'rgba(251,146,60,0.08)',
@@ -39,15 +40,10 @@ export default function VideoBuilderDoneState({
   isSaved,
   onSave,
 }) {
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy()
   const [savedFlash, setSavedFlash] = useState(false)
 
-  function handleCopy() {
-    if (onCopy) onCopy()
-    else if (window.electronAPI) window.electronAPI.copyToClipboard(prompt)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
+  function handleCopy() { copy(prompt, 'copied', onCopy ? () => onCopy() : undefined) }
 
   function handleSave() {
     if (isSaved || savedFlash) return

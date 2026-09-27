@@ -5,6 +5,9 @@
 set -euo pipefail
 
 WHISPER_TAG="v1.9.4"
+# The commit that tag pointed to when it was reviewed. A tag can be moved; this code is compiled
+# into the signed app, so the clone must be exactly this commit.
+WHISPER_COMMIT="927cfce34f31707e17f2bff35c349632fb9e2c3a"
 MODEL="ggml-base.en-q5_1.bin"
 MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${MODEL}"
 MODEL_SHA256="4baf70dd0d7c4247ba2b81fafd9c01005ac77c2f9ef064e00dcf195d0e2fdd2f"  # from the repo's Git LFS pointer
@@ -33,7 +36,7 @@ else
     if [ ! -x "$ROOT_DIR/.cache/buildtools/bin/cmake" ]; then
       echo "Installing cmake into .cache/buildtools (build-time only)..."
       python3 -m venv "$ROOT_DIR/.cache/buildtools"
-      "$ROOT_DIR/.cache/buildtools/bin/pip" install --quiet cmake
+      "$ROOT_DIR/.cache/buildtools/bin/pip" install --quiet "cmake==4.4.3"
     fi
     CMAKE="$ROOT_DIR/.cache/buildtools/bin/cmake"
   fi
@@ -41,6 +44,12 @@ else
   SRC="$CACHE/whisper.cpp-$WHISPER_TAG"
   if [ ! -d "$SRC" ]; then
     git clone --quiet --depth 1 --branch "$WHISPER_TAG" https://github.com/ggml-org/whisper.cpp.git "$SRC"
+  fi
+  GOT="$(git -C "$SRC" rev-parse HEAD)"
+  if [ "$GOT" != "$WHISPER_COMMIT" ]; then
+    echo "  ✗ whisper.cpp $WHISPER_TAG is commit $GOT, expected $WHISPER_COMMIT. Not building it."
+    echo "    If the new commit is intended, review it and update WHISPER_COMMIT."
+    exit 1
   fi
 
   # Some Command Line Tools installs can't find libc++ headers on their own; pointing at the

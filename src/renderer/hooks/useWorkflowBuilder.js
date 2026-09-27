@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory, bookmarkHistoryItem } from '../utils/history.js'
+import { runStep } from '../utils/claudeStep.js'
+import useCopy from './useCopy.js'
 import { parseWorkflowAnalysis, parseJsonObject } from '../utils/promptUtils.js'
 
 const GREEN = 'rgba(34,197,94,0.85)'
@@ -12,12 +14,14 @@ export default function useWorkflowBuilder({
   setThinkingLabel,
   setThinkingAccentColor,
   startRecordingRef,
+  opIdRef,
 }) {
   const [workflowAnalysis, setWorkflowAnalysis] = useState(null)
   const [filledPlaceholders, setFilledPlaceholders] = useState({})
   const [workflowJson, setWorkflowJson] = useState('')
   const [isSaved, setIsSaved] = useState(false)
-  const [isCopied, setIsCopied] = useState(false)
+  const { copied, copy: copyJson, reset: resetCopied } = useCopy()
+  const isCopied = !!copied
   const isReiteratingRef = useRef(false)
   const originalNodeCountRef = useRef(0)
   const lastHistoryIdRef = useRef(null)
@@ -34,8 +38,8 @@ export default function useWorkflowBuilder({
     setThinkTranscript(transcript)
     transitionRef.current(STATES.THINKING)
 
-    const result = await window.electronAPI.builderStep('workflow-analyse', { TRANSCRIPT: transcript })
-    if (result?.cancelled) return
+    const result = await runStep(opIdRef, () => window.electronAPI.builderStep('workflow-analyse', { TRANSCRIPT: transcript }))
+    if (!result) return
     if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'Workflow mapping failed. Please try again.' })
       return
@@ -81,8 +85,8 @@ export default function useWorkflowBuilder({
     setThinkTranscript(originalTranscript.current)
     transitionRef.current(STATES.THINKING)
 
-    const result = await window.electronAPI.builderStep('workflow-assemble', { ANALYSIS: JSON.stringify(analysis, null, 2), PLACEHOLDERS: JSON.stringify(placeholders, null, 2) })
-    if (result?.cancelled) return
+    const result = await runStep(opIdRef, () => window.electronAPI.builderStep('workflow-assemble', { ANALYSIS: JSON.stringify(analysis, null, 2), PLACEHOLDERS: JSON.stringify(placeholders, null, 2) }))
+    if (!result) return
     if (!result.success) {
       transitionRef.current(STATES.ERROR, { message: 'JSON assembly failed. Please try again.' })
       return
@@ -103,7 +107,7 @@ export default function useWorkflowBuilder({
 
     setWorkflowJson(jsonStr)
     setIsSaved(false)
-    setIsCopied(false)
+    resetCopied()
     transitionRef.current(STATES.WORKFLOW_BUILDER_DONE)
   }, [STATES, transitionRef, originalTranscript, setThinkTranscript, setThinkingLabel, setThinkingAccentColor])
 
@@ -146,7 +150,7 @@ export default function useWorkflowBuilder({
     setFilledPlaceholders({})
     setWorkflowJson('')
     setIsSaved(false)
-    setIsCopied(false)
+    resetCopied()
     isReiteratingRef.current = false
     transitionRef.current(STATES.IDLE)
   }, [STATES, transitionRef])
@@ -161,12 +165,7 @@ export default function useWorkflowBuilder({
     setIsSaved(!!bookmarkHistoryItem(lastHistoryIdRef.current))
   }, [])
 
-  const handleWorkflowCopy = useCallback(() => {
-    if (!workflowJson) return
-    window.electronAPI?.copyToClipboard?.(workflowJson)
-    setIsCopied(true)
-    setTimeout(() => setIsCopied(false), 1800)
-  }, [workflowJson])
+  const handleWorkflowCopy = useCallback(() => { copyJson(workflowJson) }, [workflowJson, copyJson])
 
   const workflowBuilderProps = {
     transcript: originalTranscript.current,

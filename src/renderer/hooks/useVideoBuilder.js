@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { saveToHistory, bookmarkHistoryItem } from '../utils/history.js'
+import { runStep } from '../utils/claudeStep.js'
 import { parseVideoDefaults } from '../utils/promptUtils.js'
 import { CHIP_ROWS, chipOptionsText } from '../components/VideoBuilderState.constants.js'
 
@@ -57,6 +58,7 @@ export default function useVideoBuilder({
   setThinkingLabel,
   setThinkingAccentColor,
   startRecordingRef,
+  opIdRef,
 }) {
   const [videoDefaults, setVideoDefaults] = useState(deepCopy(EMPTY_DEFAULTS))
   const [videoAnswers, setVideoAnswers] = useState(deepCopy(EMPTY_DEFAULTS))
@@ -81,8 +83,8 @@ export default function useVideoBuilder({
     transitionRef.current(STATES.THINKING)
 
     const mergedAnswers = { ...answers, ...(dialogueText.trim() && { dialogueText }), settingDetail }
-    const genResult = await window.electronAPI.builderStep('video-assemble', { TRANSCRIPT: originalTranscript.current, ANSWERS: JSON.stringify(mergedAnswers, null, 2) })
-    if (genResult?.cancelled) return
+    const genResult = await runStep(opIdRef, () => window.electronAPI.builderStep('video-assemble', { TRANSCRIPT: originalTranscript.current, ANSWERS: JSON.stringify(mergedAnswers, null, 2) }))
+    if (!genResult) return
     if (!genResult.success) {
       transitionRef.current(STATES.ERROR, { message: "Couldn't write the video prompt. Try again." })
       return
@@ -101,8 +103,8 @@ export default function useVideoBuilder({
       return
     }
 
-    const genResult = await window.electronAPI.builderStep('video-analyse', { TRANSCRIPT: transcript, OPTIONS: chipOptionsText() })
-    if (genResult?.cancelled) return
+    const genResult = await runStep(opIdRef, () => window.electronAPI.builderStep('video-analyse', { TRANSCRIPT: transcript, OPTIONS: chipOptionsText() }))
+    if (!genResult) return
     if (!genResult.success) {
       setVideoDefaults(deepCopy(EMPTY_DEFAULTS))
       setVideoAnswers(deepCopy(EMPTY_DEFAULTS))
@@ -196,7 +198,7 @@ export default function useVideoBuilder({
 
   // In VIDEO_BUILDER_DONE: copies assembled prompt
   function handleVideoCopyPrompt() {
-    window.electronAPI?.copyToClipboard?.(videoBuiltPrompt)
+    return window.electronAPI?.copyToClipboard?.(videoBuiltPrompt)
   }
 
   function handleVideoDialogueChange(text) { setVideoDialogueText(text) }

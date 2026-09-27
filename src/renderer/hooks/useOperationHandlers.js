@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react'
+import { runStep } from '../utils/claudeStep.js'
 
 export default function useOperationHandlers({
   STATES,
@@ -45,9 +46,8 @@ export default function useOperationHandlers({
 
   const handleRetryTranscription = useCallback(async () => {
     if (!window.electronAPI) return
-    const opId = ++opIdRef.current
-    const result = await window.electronAPI.retryTranscription()
-    if (opId !== opIdRef.current) return
+    const result = await runStep(opIdRef, () => window.electronAPI.retryTranscription())
+    if (!result) return
     if (!result.success) { transitionRef.current(STATES.IDLE); return }
     const text = result.transcript?.trim()
     if (!text) { transitionRef.current(STATES.IDLE); return }
@@ -57,11 +57,11 @@ export default function useOperationHandlers({
     setTranscriptionSlow(false)
     transitionRef.current(STATES.THINKING)
 
-    const genResult = await window.electronAPI.generatePrompt(text, modeRef.current, {
+    const genResult = await runStep(opIdRef, () => window.electronAPI.generatePrompt(text, modeRef.current, {
       ...(modeRef.current === 'polish' && { tone: polishToneRef.current }),
       ...(contextRef?.current && { context: contextRef.current }),
-    })
-    handleGenerateResultRef.current(genResult, text, opId)
+    }))
+    if (genResult) handleGenerateResultRef.current(genResult, text)
   }, [])
 
   const handleRetryGeneration = useCallback(async () => {
@@ -69,9 +69,8 @@ export default function useOperationHandlers({
     setThinkTranscript(originalTranscript.current)
     setGenerationSlow(false)
     transitionRef.current(STATES.THINKING)
-    const opId = ++opIdRef.current
-    const result = await window.electronAPI.retryGeneration()
-    handleGenerateResultRef.current(result, originalTranscript.current, opId)
+    const result = await runStep(opIdRef, () => window.electronAPI.retryGeneration())
+    if (result) handleGenerateResultRef.current(result, originalTranscript.current)
   }, [])
 
   useEffect(() => {

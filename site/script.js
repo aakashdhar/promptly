@@ -5,7 +5,10 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const G = window.gsap;
-  const motion = !!(G && window.ScrollTrigger && window.SplitText && !reduce);
+  // Every plugin registered below must have loaded; if a CDN file didn't, the page shows its
+  // still end states instead of stopping on a missing name.
+  const motion = !!(G && window.ScrollTrigger && window.SplitText && window.Flip &&
+    window.MotionPathPlugin && window.DrawSVGPlugin && !reduce);
   const hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   if (motion) {

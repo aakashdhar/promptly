@@ -19,6 +19,21 @@ export function modeLabel(key) {
   return modeInfo(key)?.label || ''
 }
 
+// A mode's colours, from its "tone" in shared/modes.json: rgb for tags, the pill and accents;
+// text for coloured words (mixed toward the ink colour per theme). Unknown modes get Prompt's.
+const FALLBACK_TONE = { rgb: '10,132,255', text: '100,170,255' }
+export function modeTone(key) {
+  return modeInfo(key)?.tone || FALLBACK_TONE
+}
+export function modeTextColor(key) {
+  return `color-mix(in oklab, rgb(${modeTone(key).text}) var(--accent-text-strength), rgb(var(--ink)))`
+}
+
+// Modes whose flow is a renderer builder (image, video, workflow, harness).
+export function isBuilderMode(key) {
+  return modeInfo(key)?.kind === 'builder'
+}
+
 // Results that are prompts, so "Score this prompt" means something for them.
 export function isScorable(key) {
   const k = resolveModeKey(key)

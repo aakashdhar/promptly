@@ -1,6 +1,8 @@
 #!/bin/bash
 # Pre-release preflight checks — run before every build.
 # CHECKs 1-6: non-login shell reachability. CHECKs 7-10: codebase assertions.
+#   bash scripts/preflight.sh                  all checks (release.sh runs this)
+#   bash scripts/preflight.sh --codebase-only  CHECKs 7-10 only (CI)
 
 set -euo pipefail
 
@@ -10,6 +12,9 @@ fail() { echo ""; echo "  FAIL: $1"; echo ""; exit 1; }
 echo ""
 echo "── Preflight checks ──────────────────────────────────────────────────────"
 echo ""
+
+# --codebase-only: CHECKs 7-10 alone, which need no Claude sign-in or local tools (CI runs this).
+if [ "${1:-}" != "--codebase-only" ]; then
 
 # CHECK 1 — node reachable in non-login shell (or via nvm, matching makeClaudeEnv's scan)
 NODE=$(env -i HOME="$HOME" /bin/sh -c 'command -v node' 2>/dev/null || true)
@@ -98,6 +103,8 @@ p.stdin.close(); p.kill()
 sys.exit(0 if ok else 1)
 PYHELPER
 ok "CHECK 6b: promptly-helper built ($(lipo -archs vendor/helper/promptly-helper)) and answers"
+
+fi  # end of the local-tool checks
 
 # CHECK 7 — every Claude process (main.js + main/) uses makeClaudeEnv
 python3 - <<'PYEOF'

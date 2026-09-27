@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { exec, execFile } = require('child_process');
+const { execFile } = require('child_process');
 
 const PATH_DELIMITER = ':';
 const DEFAULT_PATH = '/usr/local/bin:/usr/bin:/bin';
@@ -60,21 +60,22 @@ function isShim(binPath) {
   return binPath.includes('.pyenv/shims/');
 }
 
+// Runs a script in the user's login shell (zsh, then bash) and returns the last line it
+// printed. Login profiles can print banners or wait on a prompt, so only the last line counts
+// and the shell gets 5 s.
 function runShell(script) {
-  return new Promise((resolve) => {
-    exec(`zsh -lc '${script}'`, (err, stdout) => {
-      if (!err && stdout.trim()) { resolve(stdout.trim()); return; }
-      exec(`bash -lc '${script}'`, (err2, stdout2) => {
-        resolve(!err2 && stdout2.trim() ? stdout2.trim() : null);
-      });
-    });
+  const lastLine = (out) => String(out || '').trim().split('\n').map((l) => l.trim()).filter(Boolean).pop() || null;
+  const attempt = (shell) => new Promise((resolve) => {
+    execFile(shell, ['-lc', script], { timeout: 5000 }, (err, stdout) => resolve(err ? null : lastLine(stdout)));
   });
+  return attempt('zsh').then((out) => out || attempt('bash'));
 }
 
 // Last-resort lookup through the user's login shell, which a packaged app doesn't inherit.
-function shellWhich(name) {
+async function shellWhich(name) {
   const nvmInit = 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh";';
-  return runShell(`${nvmInit} which ${name}`);
+  const found = await runShell(`${nvmInit} command -v ${name}`);
+  return found && found.startsWith('/') ? found : null;
 }
 
 // pyenv/conda shims need their tool initialised; resolve to the real binary instead.
@@ -117,11 +118,24 @@ function uninstallDataPaths(home, bundleId) {
 }
 
 function resetMicrophonePermission(bundleId) {
-  return new Promise((resolve) => exec(`tccutil reset Microphone ${bundleId}`, () => resolve()));
+  return new Promise((resolve) => execFile('tccutil', ['reset', 'Microphone', bundleId], { timeout: 10000 }, (err) => resolve({ ok: !err })));
 }
 
-function removeInstalledApp() {
-  return new Promise((resolve) => exec('rm -rf "/Applications/Promptly.app"', () => resolve()));
+// The .app bundle Promptly is running from (it may not be in /Applications), or null when
+// running unpackaged. exe is .../Promptly.app/Contents/MacOS/Promptly.
+function appBundlePath(exePath) {
+  const bundle = path.resolve(exePath, '..', '..', '..');
+  return bundle.endsWith('.app') ? bundle : null;
+}
+
+async function removeInstalledApp(bundlePath) {
+  if (!bundlePath) return { ok: false, error: 'Not running from an installed app' };
+  try {
+    await fs.promises.rm(bundlePath, { recursive: true, force: true });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 
 // ── Scheduled harnesses (launchd) ──
@@ -181,5 +195,6 @@ module.exports = {
   whisperModelCacheDirs,
   uninstallDataPaths,
   resetMicrophonePermission,
+  appBundlePath,
   removeInstalledApp,
 };

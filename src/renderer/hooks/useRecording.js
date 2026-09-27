@@ -19,6 +19,7 @@ export default function useRecording({
   setTranscriptionError,
   contextRef,
   setMode,
+  onDiscardRef,
 }) {
   const [recSecs, setRecSecs] = useState(0)
   const mediaRecorderRef = useRef(null)
@@ -28,6 +29,8 @@ export default function useRecording({
   const recTimerRef = useRef(null)
   const levelMeterRef = useRef(null)
   const stopRequestedRef = useRef(false)
+  const startingRef = useRef(false) // waiting for the microphone
+  const startSeqRef = useRef(0) // bumped by a dismiss, so a start still waiting gives up
 
   // Sends the microphone level ~16x a second, for the floating pill's waveform.
   function startLevelMeter(stream) {
@@ -58,6 +61,7 @@ export default function useRecording({
   }
 
   function startTimer() {
+    clearInterval(recTimerRef.current) // never two timers, or the clock runs double speed
     recTimerRef.current = setInterval(() => setRecSecs((s) => s + 1), 1000)
   }
   function pauseTimer() {
@@ -87,6 +91,8 @@ export default function useRecording({
       setTranscriptionError?.(null)
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
       const arrayBuffer = await withTimeout(recordingToWav(blob), 20000, 'Preparing the recording took too long')
+      // Dismissed while it was being prepared: throw it away rather than transcribe it.
+      if (mediaRecorderRef.current !== recorder) return
 
       setThinkTranscript('')
       if (modeRef.current === 'email') {
@@ -150,11 +156,30 @@ export default function useRecording({
   }, [])
 
   const startRecording = useCallback(async () => {
+    // Already waiting for the microphone (start, stop, start in quick succession): one recorder
+    // only, and the latest press wins, so it keeps recording.
+    if (startingRef.current) { stopRequestedRef.current = false; return }
+    startingRef.current = true
     // Context (app + selection) for this recording arrives from main just after it starts.
     if (contextRef) contextRef.current = null
     stopRequestedRef.current = false
+    const seq = ++startSeqRef.current
+    let stream = null
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
+      stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
+    } catch {
+      startingRef.current = false
+      onDiscardRef?.current?.()
+      if (seq === startSeqRef.current) transitionRef.current(STATES.ERROR, { message: 'Microphone access denied' })
+      return
+    }
+    // Cancelled while the microphone was coming up.
+    if (seq !== startSeqRef.current) {
+      stream.getTracks().forEach((t) => t.stop())
+      startingRef.current = false
+      return
+    }
+    try {
       const recorder = new MediaRecorder(stream)
       mediaRecorderRef.current = recorder
       audioChunksRef.current = []
@@ -177,8 +202,14 @@ export default function useRecording({
         stopRequestedRef.current = false
         stopRecordingRef.current()
       }
-    } catch {
-      transitionRef.current(STATES.ERROR, { message: 'Microphone access denied' })
+    } catch (err) {
+      // The microphone was granted but recording couldn't start: release it.
+      stream.getTracks().forEach((t) => t.stop())
+      window.electronAPI?.log?.('error', `Recording could not start: ${err?.message || err}`)
+      onDiscardRef?.current?.()
+      transitionRef.current(STATES.ERROR, { message: "Couldn't start recording" })
+    } finally {
+      startingRef.current = false
     }
   }, [])
 
@@ -204,6 +235,8 @@ export default function useRecording({
   }, [])
 
   const handleDismiss = useCallback(() => {
+    startSeqRef.current++
+    onDiscardRef?.current?.()
     stopLevelMeter()
     stopRequestedRef.current = false
     const recorder = mediaRecorderRef.current

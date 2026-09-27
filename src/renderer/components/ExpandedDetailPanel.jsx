@@ -15,10 +15,12 @@ import HarnessFilesState from './HarnessFilesState.jsx'
 import ExpandedErrorContent from './ExpandedErrorContent.jsx'
 import EmailReadyState from './EmailReadyState.jsx'
 import EvalPanel from './EvalPanel.jsx'
-import { resolveModeKey, isScorable } from '../utils/modes.js'
+import { resolveModeKey, isScorable, isBuilderMode } from '../utils/modes.js'
 import RibbonCanvas from './RibbonCanvas.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
+import useCopy from '../hooks/useCopy.js'
+import { pressable } from '../utils/pressable.js'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 
@@ -58,6 +60,7 @@ export default function ExpandedDetailPanel({
   onEmailSave,
   onEmailIterate,
   onToneAdjust,
+  onEmailBodyChange,
   transcriptionErrorProps,
   transcriptionSlow,
   generationErrorProps,
@@ -77,8 +80,9 @@ export default function ExpandedDetailPanel({
   micQuiet = false,
 }) {
   const hotkey = useHotkeyWords()
-  const [entryCopied, setEntryCopied] = useState(false)
-  const [entryExported, setEntryExported] = useState(false)
+  const { copied: entryCopyKey, copy: copyEntry } = useCopy()
+  const entryCopied = entryCopyKey === 'entry'
+  const entryExported = entryCopyKey === 'export'
   const [evalCache, setEvalCache] = useState({})
 
   const entryMode = resolveModeKey(selected?.mode)
@@ -102,10 +106,7 @@ export default function ExpandedDetailPanel({
   // ── entry detail handlers ──
 
   function handleEntryCopy() {
-    if (!selected) return
-    if (window.electronAPI) window.electronAPI.copyToClipboard(selected.prompt)
-    setEntryCopied(true)
-    setTimeout(() => setEntryCopied(false), 1800)
+    if (selected) copyEntry(selected.prompt, 'entry')
   }
 
   function handleEntryExport() {
@@ -115,9 +116,7 @@ export default function ExpandedDetailPanel({
       '',
       `Prompt:\n${selected.prompt}`,
     ].join('\n')
-    if (window.electronAPI) window.electronAPI.copyToClipboard(text)
-    setEntryExported(true)
-    setTimeout(() => setEntryExported(false), 1800)
+    copyEntry(text, 'export')
   }
 
   function handleEntryReuse() {
@@ -316,7 +315,7 @@ export default function ExpandedDetailPanel({
                   const inactiveStyle = { bg: 'rgba(var(--ink),0.04)', border: 'rgba(var(--ink),0.08)', text: 'rgba(var(--ink),0.35)' }
                   const s = isActiveTag ? activeStyle : inactiveStyle
                   return (
-                    <span key={tag} onClick={() => handleTag(tag)} style={{
+                    <span key={tag} {...pressable(() => handleTag(tag))} aria-pressed={isActiveTag} style={{
                       padding: '3px 10px', borderRadius: '6px',
                       fontSize: '11px', fontWeight: isActiveTag ? 500 : 400,
                       cursor: 'pointer', transition: 'all 150ms',
@@ -414,7 +413,7 @@ export default function ExpandedDetailPanel({
               <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 <span className="working-hop" aria-hidden="true"><i /><i /><i /></span>
                 {!thinkTranscript ? 'Transcribing'
-                  : ['image', 'video', 'workflow', 'harness'].includes(mode) ? (thinkingCurrentLabel || 'Working')
+                  : isBuilderMode(mode) ? (thinkingCurrentLabel || 'Working')
                   : thinkingLabel || (mode === 'dictate' ? 'Finishing up' : 'Writing your prompt')}
                 <span style={{ fontFamily: "'SF Mono', ui-monospace, Menlo, monospace", fontWeight: 400, fontSize: '12px', color: 'var(--text-secondary)' }}>{thinkingElapsed}s</span>
                 {recordingContext?.appName && <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>for {recordingContext.appName}</span>}
@@ -605,6 +604,7 @@ export default function ExpandedDetailPanel({
           isSaved={emailSaved}
           isExpanded={true}
           onToneAdjust={onToneAdjust}
+          onBodyChange={onEmailBodyChange}
         />
       )}
     </div>

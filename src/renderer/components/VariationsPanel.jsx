@@ -1,3 +1,5 @@
+import { pressable } from '../utils/pressable.js'
+
 export default function VariationsPanel({ variations, selectedVariation, isLoading, onSelectVariation, onGenerateMore }) {
   return (
     <div style={{
@@ -41,7 +43,8 @@ export default function VariationsPanel({ variations, selectedVariation, isLoadi
           return (
             <div
               key={v.id}
-              onClick={() => onSelectVariation(v.id)}
+              {...pressable(() => onSelectVariation(v.id))}
+              aria-pressed={isSelected}
               style={{
                 padding: '11px 16px', paddingLeft: isSelected ? '14px' : '16px',
                 borderBottom: '0.5px solid rgba(var(--ink),0.04)',

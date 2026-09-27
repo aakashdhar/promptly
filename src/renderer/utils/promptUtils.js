@@ -1,4 +1,4 @@
-import { resolveModeKey } from './modes.js'
+import { resolveModeKey, modeTone, modeTextColor } from './modes.js'
 
 export function parseSections(text) {
   if (!text) return []
@@ -81,7 +81,11 @@ export function parseWorkflowAnalysis(raw) {
       return node
     })
   if (nodes.length === 0) return null
-  return { ...parsed, nodes }
+  // Ids key the rows, the filled-in values and deletes, and new nodes take max id + 1; text or
+  // repeated ids would break all of that, so anything but unique numbers becomes 1..n.
+  const ids = nodes.map((n) => n.id)
+  const usable = ids.every((id) => Number.isInteger(id) && id > 0) && new Set(ids).size === ids.length
+  return { ...parsed, nodes: usable ? nodes : nodes.map((n, i) => ({ ...n, id: i + 1 })) }
 }
 
 // Keeps only the video builder fields it knows, with the right types; anything else
@@ -143,12 +147,7 @@ export function evalVerdict(delta) {
 export function getModeTagStyle(modeKey) {
   const mode = resolveModeKey(modeKey)
   if (mode === 'dictate') return { background: 'rgba(var(--ink),0.07)', color: 'var(--text-secondary)' }
-  if (mode === 'polish') return { background: 'rgba(48,209,88,0.08)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'design' || mode === 'image') return { background: 'rgba(139,92,246,0.1)', color: 'color-mix(in oklab, rgb(167,139,250) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'workflow') return { background: 'rgba(34,197,94,0.1)', color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'harness') return { background: 'rgba(242,155,203,0.12)', color: 'color-mix(in oklab, rgb(242,155,203) var(--accent-text-strength), rgb(var(--ink)))' }
-  if (mode === 'email') return { background: 'rgba(20,184,166,0.1)', color: 'color-mix(in oklab, rgb(45,212,191) var(--accent-text-strength), rgb(var(--ink)))' }
-  return { background: 'rgba(10,132,255,0.1)', color: 'color-mix(in oklab, rgb(100,170,255) var(--accent-text-strength), rgb(var(--ink)))' }
+  return { background: `rgba(${modeTone(mode).rgb},0.1)`, color: modeTextColor(mode) }
 }
 
 // Coloured text (mode colours are tuned for dark) mixed toward the ink colour by the theme's

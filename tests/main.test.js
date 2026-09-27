@@ -182,6 +182,29 @@ describe('createClaudeRunner', () => {
     expect((await envOf({})).MAX_THINKING_TOKENS).toBeUndefined()
   })
 
+  it('keeps a character that arrives split across two chunks', async () => {
+    const { PassThrough } = require('stream')
+    const { EventEmitter } = require('events')
+    const claude = createClaudeRunner({
+      getClaudePath: () => '/x/claude',
+      spawnImpl: () => {
+        const child = new EventEmitter()
+        child.stdout = new PassThrough(); child.stderr = new PassThrough()
+        child.stdin = { on() {}, end() {} }
+        child.kill = () => {}
+        const text = Buffer.from('costs ₹500')
+        const cut = text.indexOf(Buffer.from('₹')) + 1 // inside the 3-byte ₹
+        setTimeout(() => {
+          child.stdout.write(text.subarray(0, cut))
+          setTimeout(() => { child.stdout.end(text.subarray(cut)); setTimeout(() => child.emit('close', 0), 10) }, 10)
+        })
+        return child
+      },
+    })
+    const r = await claude.run('hi', { onDelta: undefined })
+    expect(r.prompt).toBe('costs ₹500')
+  })
+
   it('retries without the lean flags on an older CLI', async () => {
     const r = await runner('old-cli').run('hi')
     expect(r).toEqual({ success: true, prompt: 'ok-without-lean-flags' })
@@ -680,6 +703,13 @@ describe('Dictation', () => {
 
   it('turns spoken line breaks into real ones', () => {
     expect(tidy('Three things. New line. First the API. New paragraph. Thanks.')).toBe('Three things.\nFirst the API.\n\nThanks.')
+    expect(tidy('Dear team, new line, the build is green')).toBe('Dear team\nthe build is green')
+    expect(tidy('Ship it next line')).toBe('Ship it\n'.trim())
+  })
+
+  it('leaves "new line" alone when it is part of the sentence', () => {
+    expect(tidy('We are launching a new line of products.')).toBe('We are launching a new line of products.')
+    expect(tidy('To err is human.')).toBe('To err is human.')
   })
 
   it('reports what it removed, and can leave fillers in', () => {
@@ -784,6 +814,13 @@ describe('terminate', () => {
     const child = spawn(process.execPath, ['-e', ''])
     await new Promise((r) => child.on('exit', r))
     expect(() => terminate(child)).not.toThrow()
+  })
+})
+
+describe('uninstall', () => {
+  it('finds the .app Promptly runs from, wherever it was installed', () => {
+    expect(darwin.appBundlePath('/Users/x/Applications/Promptly.app/Contents/MacOS/Promptly')).toBe('/Users/x/Applications/Promptly.app')
+    expect(darwin.appBundlePath('/usr/local/bin/electron')).toBeNull()
   })
 })
 

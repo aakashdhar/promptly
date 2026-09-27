@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
+import { pressable } from '../utils/pressable.js'
 
 export default function WorkflowBuilderState({
   transcript,
@@ -359,7 +360,7 @@ export default function WorkflowBuilderState({
                           />
                         ) : (
                           <span
-                            onClick={() => handleChipClick(node.id, key)}
+                            {...pressable(() => handleChipClick(node.id, key), `Fill in ${key}`)}
                             style={{
                               fontSize: 11,
                               color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))',
@@ -375,7 +376,7 @@ export default function WorkflowBuilderState({
                         )
                       ) : filledVal ? (
                         <span
-                          onClick={() => handleChipClick(node.id, key)}
+                          {...pressable(() => handleChipClick(node.id, key), `Change ${key}`)}
                           style={{
                             fontSize: 11, color: 'color-mix(in oklab, rgb(74,222,128) var(--accent-text-strength), rgb(var(--ink)))',
                             background: 'rgba(34,197,94,0.06)',

@@ -1,15 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-
-const MODE_DESCRIPTIONS = {
-  balanced: 'Balanced mode — output includes role, task, context, constraints and output format',
-  code: 'Code mode — output includes role, task, language, architecture, constraints and output format',
-  design: 'Design mode — output includes role, task, visual personality, layout, motion and what to avoid',
-  refine: 'Refine mode — output includes current state, problem, desired outcome and constraints',
-  polish: 'Polish mode — output returns polished prose with a summary of what changed',
-  detailed: 'Detailed mode — output includes persona, examples, step breakdown and full context',
-  concise: 'Concise mode — minimal, direct prompt with no extra structure',
-  chain: 'Chain mode — output includes numbered reasoning steps for complex tasks',
-}
+import { pressable } from '../utils/pressable.js'
+import { modeInfo } from '../utils/modes.js'
 
 export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchToVoice }) {
   const [typingText, setTypingText] = useState('')
@@ -37,7 +28,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
-            onClick={onSwitchToVoice}
+            {...pressable(onSwitchToVoice)}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '5px 12px', borderRadius: '8px',
@@ -103,7 +94,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
         }}>
           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(10,132,255,0.7)', flexShrink: 0 }} />
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            {MODE_DESCRIPTIONS[mode] || `Output will be structured for ${mode} mode`}
+            {modeInfo(mode)?.desc || ''}
           </span>
         </div>
       </div>

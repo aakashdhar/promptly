@@ -3,6 +3,7 @@ import { readableColor } from '../utils/promptUtils.js'
 import { HARNESS_ACCENT, bundleHarness } from '../hooks/useHarnessBuilder.js'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
 import HarnessRunPanel from './HarnessRunPanel.jsx'
+import useCopy from '../hooks/useCopy.js'
 
 const MONO = "'SF Mono', ui-monospace, Menlo, monospace"
 const GREEN = readableColor('rgba(48,209,88,1)')
@@ -13,24 +14,26 @@ const nameOf = (p) => p.slice(p.lastIndexOf('/') + 1)
 
 export default function HarnessFilesState({ plan, files, savedTo, scheduled, alreadyScheduled, onBackToPlan, onStartOver, onSaveToProject, onSchedule, onUnschedule, onCopy }) {
   const [active, setActive] = useState(0)
-  const [copied, setCopied] = useState('')
+  const { copied, copy: copyText } = useCopy(1600)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   if (!files?.files?.length) return null
   const list = files.files
   const file = list[Math.min(active, list.length - 1)]
 
-  function copy(kind) {
-    onCopy(kind === 'all' ? bundleHarness(files) : file.content)
-    setCopied(kind)
-    setTimeout(() => setCopied(''), 1600)
-  }
+  function copy(kind) { copyText(kind === 'all' ? bundleHarness(files) : file.content, kind, onCopy) }
 
   async function save() {
     setSaving(true)
     setSaveError('')
-    const result = await onSaveToProject()
-    setSaving(false)
+    let result
+    try {
+      result = await onSaveToProject()
+    } catch {
+      result = { ok: false }
+    } finally {
+      setSaving(false)
+    }
     if (result && !result.ok && !result.cancelled) setSaveError(result.error || 'Couldn’t save the files')
   }
 

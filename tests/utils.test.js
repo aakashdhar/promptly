@@ -3,6 +3,8 @@ import { parseSections, getModeTagStyle, parseEmailOutput, parseImageAnalysisOut
 import { formatTime, pairDictations, saveToHistory, getHistory, searchHistory, bookmarkHistoryItem } from '../src/renderer/utils/history.js'
 import { parsePolishOutput } from '../src/renderer/hooks/usePolishMode.js'
 import { encodeWav, TARGET_SAMPLE_RATE } from '../src/renderer/utils/audio.js'
+import { setMicLevel, getMicLevel } from '../src/renderer/utils/micLevel.js'
+import { getModeAccent, getLabelSequence } from '../src/renderer/utils/thinkingLabels.js'
 
 describe('parseSections', () => {
   it('returns empty array for empty input', () => {
@@ -74,9 +76,15 @@ describe('getModeTagStyle', () => {
     expect(style.color).toContain('74,222,128')
   })
 
-  it('returns blue tones for video mode', () => {
+  it('returns orange tones for video mode, matching its pill and dot', () => {
     const style = getModeTagStyle('video')
-    expect(style.background).toContain('10,132,255')
+    expect(style.background).toContain('251,146,60')
+  })
+
+  it('takes every mode tag colour from shared/modes.json', () => {
+    for (const key of ['prompt', 'code', 'design', 'polish', 'image', 'video', 'workflow', 'harness', 'email']) {
+      expect(getModeTagStyle(key).background).toMatch(/^rgba\(\d+,\d+,\d+,0\.1\)$/)
+    }
   })
 
   it('returns blue tones for unknown mode', () => {
@@ -299,6 +307,13 @@ describe('structured output validation', () => {
     expect(r.nodes[1]).toMatchObject({ type: 'n8n-nodes-base.set', purpose: 'Set' })
   })
 
+  it('numbers workflow nodes 1..n when Claude uses text or repeated ids', () => {
+    const r = parseWorkflowAnalysis(JSON.stringify({ nodes: [{ id: 'trigger', name: 'A' }, { id: 'trigger', name: 'B' }] }))
+    expect(r.nodes.map((n) => n.id)).toEqual([1, 2])
+    const kept = parseWorkflowAnalysis(JSON.stringify({ nodes: [{ id: 3, name: 'A' }, { id: 7, name: 'B' }] }))
+    expect(kept.nodes.map((n) => n.id)).toEqual([3, 7])
+  })
+
   it('returns null for workflows with no usable nodes', () => {
     expect(parseWorkflowAnalysis('{"nodes":"oops"}')).toBeNull()
     expect(parseWorkflowAnalysis('{"nodes":[]}')).toBeNull()
@@ -428,5 +443,27 @@ describe('history storage', () => {
     expect(getHistory()).toEqual([{ id: 1, prompt: 'hello' }])
     expect(searchHistory('hel')).toHaveLength(1)
     expect(() => saveToHistory({ prompt: 'no transcript', mode: 'prompt' })).not.toThrow()
+  })
+})
+
+describe('mic level', () => {
+  it('keeps the level between 0 and 1, and treats junk as silence', () => {
+    setMicLevel(0.4); expect(getMicLevel()).toBe(0.4)
+    setMicLevel(3); expect(getMicLevel()).toBe(1)
+    setMicLevel(-1); expect(getMicLevel()).toBe(0)
+    setMicLevel('loud'); expect(getMicLevel()).toBe(0)
+  })
+})
+
+describe('thinking labels', () => {
+  it('colours the thinking screen from the mode registry, including retired names', () => {
+    expect(getModeAccent('video')).toBe('rgba(251,146,60,0.85)')
+    expect(getModeAccent('refine')).toBe(getModeAccent('design'))
+    expect(getModeAccent('nope')).toBe(getModeAccent('prompt'))
+  })
+
+  it('gives builders their own per-step labels and everything else a sequence', () => {
+    expect(getLabelSequence('image', 1)).not.toEqual(getLabelSequence('prompt'))
+    expect(getLabelSequence('nope').length).toBeGreaterThan(0)
   })
 })

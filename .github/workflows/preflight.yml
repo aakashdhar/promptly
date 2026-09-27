@@ -10,8 +10,8 @@ jobs:
   preflight:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: npm
@@ -25,23 +25,28 @@ jobs:
         run: npm run build:renderer
       - name: Run splash screen assertions
         run: node scripts/assert-splash.js
-      # CHECK 7 only: the other preflight checks need a logged-in claude CLI and local tools.
-      - name: Check makeClaudeEnv coverage (CHECK 7)
-        run: |
-          python3 - <<'EOF'
-          import sys, glob
-          files = ['main.js'] + sorted(glob.glob('main/**/*.js', recursive=True))
-          for path in files:
-              with open(path) as f:
-                  lines = f.readlines()
-              for i, line in enumerate(lines):
-                  s = line.strip()
-                  if s.startswith('//'):
-                      continue
-                  if ('spawn' in s or 'execFile' in s) and '(claudePath' in s.replace(' ', ''):
-                      window = ''.join(lines[max(0,i-2):min(len(lines),i+4)])
-                      if 'makeClaudeEnv' not in window:
-                          print(f"FAIL: Claude process at {path}:{i+1} does not use makeClaudeEnv()")
-                          sys.exit(1)
-          print("OK: every Claude process uses makeClaudeEnv")
-          EOF
+      # CHECKs 7-10: the codebase assertions (the others need a signed-in Claude and local tools).
+      - name: Preflight codebase checks
+        run: bash scripts/preflight.sh --codebase-only
+
+  e2e:
+    # The real app, driven by Playwright with the fake Claude and Whisper (no network, no sign-in).
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: End-to-end tests
+        run: npm run test:e2e
+      - name: Keep the screenshots and traces of a failed run
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-results
+          path: test-results/
+          retention-days: 7

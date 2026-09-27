@@ -14,6 +14,8 @@ const matches = (src, re) => new Set([...src.matchAll(re)].map((m) => m[1]))
 
 const invoked = matches(preload, /ipcRenderer\.invoke\('([a-z-]+)'/g)
 const handled = matches(main, /ipcMain\.handle\('([a-z-]+)'/g)
+const posted = matches(preload, /ipcRenderer\.send\('([a-z-]+)'/g)
+const received = matches(main, /ipcMain\.on\('([a-z-]+)'/g)
 const listened = matches(preload, /ipcRenderer\.on\('([a-z-]+)'/g)
 const sent = new Set([
   ...matches(main, /winSend\('([a-z-]+)'/g),
@@ -37,10 +39,16 @@ describe('IPC contract', () => {
     expect([...listened].filter((c) => !sent.has(c))).toEqual([])
   })
 
+  it('every one-way message preload sends has a main listener, and the reverse', () => {
+    expect([...posted].filter((c) => !received.has(c))).toEqual([])
+    expect([...received].filter((c) => !posted.has(c))).toEqual([])
+  })
+
   it('every electronAPI method the renderer calls exists in preload', () => {
     const exposed = matches(preload, /^ {2}([a-zA-Z]+):/gm)
     const files = [
       'splash.html',
+      'pill.html',
       ...fs.readdirSync(path.join(root, 'src/renderer'), { recursive: true })
         .filter((f) => /\.(jsx?|html)$/.test(f))
         .map((f) => path.join('src/renderer', f)),
@@ -48,6 +56,8 @@ describe('IPC contract', () => {
     const used = new Set()
     for (const f of files) {
       for (const m of read(f).matchAll(/electronAPI\??\.([a-zA-Z]+)/g)) used.add(m[1])
+      // splash.html calls it through `const api = window.electronAPI`.
+      if (f === 'splash.html') for (const m of read(f).matchAll(/\bapi\.([a-zA-Z]+)/g)) used.add(m[1])
     }
     expect([...used].filter((m) => !exposed.has(m))).toEqual([])
   })

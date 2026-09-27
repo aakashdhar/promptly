@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
+import useCopy from '../hooks/useCopy.js'
 
 // Under the harness files: the command that starts it (always visible, with Copy), and once the
 // files are saved into a project, a schedule macOS runs it on (a launchd job, removable here).
@@ -20,23 +21,29 @@ const primaryBtn = { ...smallBtn, border: 'none', background: 'linear-gradient(1
 
 export default function HarnessRunPanel({ run, suggested, savedTo, scheduled, alreadyScheduled, onCopy, onSchedule, onUnschedule }) {
   const [when, setWhen] = useState(() => ({ every: 'day', time: '09:00', day: 1, ...(suggested || {}) }))
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopy(1600)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   if (!run) return null
 
-  // Once saved, the copied command works from any Terminal window.
+  // Once saved, the copied command works from any Terminal window. The folder is single-quoted,
+  // so a name with $, ` or " in it can't change what the shell runs.
   function copyRun() {
-    onCopy(savedTo ? `cd "${savedTo}" && ${run}` : run)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1600)
+    const folder = `'${String(savedTo).replace(/'/g, `'\\''`)}'`
+    copy(savedTo ? `cd ${folder} && ${run}` : run, 'copied', onCopy)
   }
 
   async function act(fn) {
     setBusy(true)
     setError('')
-    const result = await fn()
-    setBusy(false)
+    let result
+    try {
+      result = await fn()
+    } catch {
+      result = { ok: false }
+    } finally {
+      setBusy(false)
+    }
     if (result && !result.ok) setError(result.error || 'That didn’t work')
   }
 

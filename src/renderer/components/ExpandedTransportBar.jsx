@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
+import { modeTone } from '../utils/modes.js'
 import ModeDropdown from './ModeDropdown.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
 
@@ -14,15 +15,10 @@ const iconBtn = (active = false) => ({
   color: active ? readableColor('rgba(100,180,255,0.9)') : 'var(--text-secondary)',
 })
 
+// The mode pill takes the same colours as the mode's tags in history (shared/modes.json).
 function modeColours(mode) {
-  const byMode = {
-    polish: ['rgba(48,209,88,0.12)', 'rgba(48,209,88,0.3)', 'rgba(100,220,130,0.9)'],
-    refine: ['rgba(168,85,247,0.12)', 'rgba(168,85,247,0.3)', 'rgba(200,160,255,1)'],
-    video: ['rgba(251,146,60,0.12)', 'rgba(251,146,60,0.3)', 'rgba(251,146,60,0.85)'],
-    workflow: ['rgba(34,197,94,0.12)', 'rgba(34,197,94,0.3)', 'rgba(74,222,128,0.9)'],
-    email: ['rgba(20,184,166,0.12)', 'rgba(20,184,166,0.3)', 'rgba(45,212,191,0.9)'],
-  }
-  return byMode[mode] || ['rgba(10,132,255,0.12)', 'rgba(10,132,255,0.28)', 'rgba(100,180,255,0.85)']
+  const { rgb, text } = modeTone(mode)
+  return [`rgba(${rgb},0.12)`, `rgba(${rgb},0.3)`, `rgba(${text},0.9)`]
 }
 
 export default function ExpandedTransportBar({
