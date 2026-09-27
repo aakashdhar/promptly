@@ -2197,3 +2197,25 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > - Mouse-only controls got role/tabIndex/Enter-Space rather than becoming <button>s, so their look is unchanged.
 > - No renderer hook unit tests (no React testing library in devDeps); e2e fixed sleeps and ui.spec's retry left
 >   as they are — no flake was seen across two full runs.
+
+## D-AUDIT-MINOR — Fixes for the minor code-audit findings — 2026-09-27
+> Visible changes: history's 👍/👎 are an SVG mark in the theme's colours; a history entry's prompt is laid out
+>   exactly like a fresh result (one section component, one parser); the Shortcuts panel shows the talk key chosen
+>   in Settings and no longer lists a "Show / hide window" shortcut that doesn't exist; the variation skeleton
+>   pulses; history rows don't slide in with reduced motion; the tray icon keeps showing recording/generating when
+>   the window is shown or hidden; buttons use --on-accent and faint text uses --text-tertiary.
+> Under the hood: a Claude process killed by anything but Promptly is an error, not "Cancelled"; the last stream
+>   line is read without a trailing newline; the logger can't throw; Whisper's second pass gets only the time
+>   left and passes a cancel through; the Python model download reports its last lines and can be cancelled;
+>   word corrections insert "$" literally; PATH is checked by exact folder; a dead event tap is recreated;
+>   `claude --version` runs through llm.js; System Settings links live in darwin.js; config.json is cached by
+>   mtime; main.js shares showWindow/throttledDelta/speechLanguage; a second instance exits before 'ready'; IPC
+>   handlers default and type-check their arguments; JSON is found by balanced braces; nested n8n parameters show
+>   as JSON; dead "compact window" branches removed. Scripts: publish-release.sh is strict and checks the latest
+>   link points at the new version; preflight runs once per release (the npm prerelease hook is gone) and explains
+>   a failing lipo; create-cert.sh removes the private key however it ends; uninstall.sh only stops the app's own
+>   processes; site/script.js is linted; e2e restores the developer's clipboard.
+> Not done, and why: memoising ExpandedView's props and turning isIterated into state (no measured slowness, and
+>   both touch every screen); an AddInput component for ImageBuilderState's three add fields; linting the inline
+>   scripts in pill.html/splash.html (needs a new ESLint plugin); handleAbort's builder/email branches stay as
+>   defensive fallbacks.
