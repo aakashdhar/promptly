@@ -2149,3 +2149,23 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   fixed-name Promptly.dmg, so the site links to releases/latest/download/Promptly.dmg and never needs editing;
 >   release.sh updates the version and size on the page, scripts/publish-release.sh publishes the release.
 
+
+## D-AUDIT-CRITICAL — Fixes for the eight critical code-audit findings — 2026-09-27
+> From the code quality audit (Claude Docs: "Promptly Code Quality Audit"). No behaviour a user relies on changed.
+> - Esc on a paused or refining recording goes through the same abort as Cancel, so the microphone is released.
+> - config.json that won't parse is renamed config.json.corrupt-<timestamp> and logged, never silently overwritten.
+> - Harness: main keeps the files and run command from the last harness-files result and saves/schedules only
+>   that copy; the window's copy is ignored (the IPC arguments stay for the contract). The schedule handler creates
+>   .harness/ so launchd can write the log. Remove schedule keeps the plist if launchctl couldn't stop the job
+>   ("not loaded" counts as stopped). Uninstall now boots out and deletes every com.promptly.harness.* job.
+>   Persisting the last saved harness across restarts was not done: after a relaunch, saving the harness to the
+>   same folder again brings back "Remove schedule", and there is no other screen that could use it.
+> - Quitting cancels Claude, eval and the speech-model download; every timeout/cancel/quit kill escalates from
+>   SIGTERM to SIGKILL after 3 s (binaries.js terminate).
+> - History writes never throw: when localStorage is full the oldest unbookmarked entries go first.
+> - Eval results are normalised in main (normalizeEval); workflow node text fields are type-checked; an error
+>   boundary (the only class component, an accepted exception to "functional components only") replaces a blank
+>   window with Start over.
+> - release.sh runs from the repo root, runs lint and unit tests before building, uses set -eo pipefail (not -u:
+>   nvm.sh breaks under it), restores package.json and index.html if a step fails, and checks the size edit too.
+>   Preflight CHECK 8 can fail again. site-stats.js doesn't count a failing unit suite.

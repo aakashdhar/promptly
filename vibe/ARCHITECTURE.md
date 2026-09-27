@@ -54,7 +54,7 @@ promptly/
 ```
 
 **Rules:**
-- All UI lives in `src/renderer/`. One component per file. Functional React components only.
+- All UI lives in `src/renderer/`. One component per file. Functional React components only (sole exception: `ErrorBoundary.jsx`, since React only catches render errors in a class).
 - `main.js` wires Electron (windows, tray, shortcuts, IPC). Logic goes in a `main/` module that does not import Electron, with a unit test.
 - macOS-specific paths and commands go in `main/platform/darwin.js`, never inline.
 - `preload.js` is the only bridge between renderer and main.
