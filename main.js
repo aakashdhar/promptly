@@ -47,6 +47,9 @@ if (IS_E2E) {
     appState: () => currentAppState,
     config: () => config.read(),
     trayIconsCreated: () => trayIconsCreated,
+    // How many times the window has reported its mode. It does that from the same effects pass
+    // that subscribes to hotkeys and keys, so a new report means the page is ready for input.
+    modeReports: () => modeReports,
   };
 }
 
@@ -564,6 +567,7 @@ const helper = createHelper({
 });
 
 let currentModeLabel = '';
+let modeReports = 0; // e2e only reads it (__promptlyE2E.modeReports)
 
 // ── Floating pill ──
 
@@ -968,7 +972,7 @@ app.whenReady().then(async () => {
     if (quietDetector.push(level) !== wasQuiet) sendMicQuiet(!wasQuiet);
   });
 
-  ipcMain.on('mode-changed', (_event, label) => { currentModeLabel = String(label || ''); });
+  ipcMain.on('mode-changed', (_event, label) => { currentModeLabel = String(label || ''); modeReports++; });
 
   ipcMain.on('renderer-log', (_event, { level, message } = {}) => {
     const write = level === 'error' ? log.error : level === 'warn' ? log.warn : log.info;

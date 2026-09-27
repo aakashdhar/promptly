@@ -10,8 +10,8 @@ import { auditLayout, formatIssues } from './layout-audit.mjs'
 
 // These walk the real window for a minute each. If someone is using the Mac at the same time,
 // focus changes can hide the bar mid-walk; one retry absorbs that (a real layout problem fails
-// both runs).
-test.describe.configure({ retries: 1 })
+// both runs). CI has nobody at the keyboard, so there a failure is a real one: no retry.
+test.describe.configure({ retries: process.env.CI ? 0 : 1 })
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(ROOT, 'test-results', 'ui')
@@ -159,6 +159,9 @@ async function mainPage(app) {
   await expect.poll(async () => app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && !w.webContents.isLoading())
   ), { timeout: 20000 }).toBe(true)
+  // Loaded isn't mounted: wait for the page's first mode report, sent from the same effects that
+  // subscribe to hotkeys and keys, so the first key a test presses isn't lost.
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.modeReports()), { timeout: 20000 }).toBeGreaterThan(0)
   await app.evaluate(({ BrowserWindow }) => {
     const w = BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes('dist-renderer'))
     if (!w.isVisible()) w.showInactive()

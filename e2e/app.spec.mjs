@@ -162,11 +162,16 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
   ), { timeout: 20000 }).toBe(true)
   const page = app.windows().find((w) => w.url().includes('dist-renderer'))
+  // The window can be visible before React has mounted and subscribed to hotkeys and keys; a
+  // test that presses something straight away would lose the event (seen on slower CI machines).
+  // The page reports its mode from the same effects that subscribe, so wait for a new report.
+  const reportsBefore = mode ? await app.evaluate(() => globalThis.__promptlyE2E.modeReports()) : 0
   if (mode) {
     await page.evaluate((m) => localStorage.setItem('mode', m), mode)
     await page.reload()
-    await expect(page.locator('#mode-pill')).toBeVisible({ timeout: 10000 })
   }
+  await expect.poll(() => app.evaluate(() => globalThis.__promptlyE2E.modeReports()), { timeout: 20000 }).toBeGreaterThan(reportsBefore)
+  await expect(page.locator('#mode-pill')).toBeVisible({ timeout: 20000 })
   return { app, page, dir, fakeDir, tmpDir }
 }
 
