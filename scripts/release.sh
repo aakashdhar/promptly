@@ -164,6 +164,8 @@ sed -i '' -E \
   index.html || fail "Could not update index.html"
 grep -q "Promptly $VERSION for macOS" index.html || fail "index.html doesn't show v$VERSION"
 ok "Site shows v$VERSION, $SIZE_MB MB"
+# "Built with the vibe skills": commits, specs, reviews, bugs, tests and releases, recounted.
+node scripts/site-stats.js || fail "Could not update the site's numbers"
 
 # ── done ──────────────────────────────────────────────────────────────────────
 echo ""
