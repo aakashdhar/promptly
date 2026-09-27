@@ -2169,3 +2169,31 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > - release.sh runs from the repo root, runs lint and unit tests before building, uses set -eo pipefail (not -u:
 >   nvm.sh breaks under it), restores package.json and index.html if a step fails, and checks the size edit too.
 >   Preflight CHECK 8 can fail again. site-stats.js doesn't count a failing unit suite.
+
+## D-AUDIT-MODERATE — Fixes for the moderate code-audit findings — 2026-09-27
+> The 34 moderate findings of the code quality audit. Visible changes, on purpose:
+> - Video's history tag is orange like its pill and dot (it was the fallback blue). All mode tag, pill and thinking
+>   accent colours now come from a `tone` per mode in shared/modes.json (small shade changes: Polish and Harness
+>   tag backgrounds, the Design, Image and Harness pills take their own colour instead of the fallback blue). The typing screen shows the mode's own description from modes.json.
+> - The window opens where it was left instead of re-centring every launch.
+> - Dictation only treats "new line"/"new paragraph" as a command at the start, after punctuation or before it
+>   ("a new line of products" stays), and "er" only as a filler before a pause ("to err" stays).
+> - Settings/setup refuse a tool path that isn't a program at that path, and an emptied box goes back to finding
+>   the tool automatically. Escape while editing an email cancels the edit only.
+> - Uninstall removes the app from wherever it runs and lists anything it couldn't remove.
+> How: a shared `runStep` (utils/claudeStep.js) for every Claude call the user waits on, a `useCopy` hook,
+>   `pressable` for keyboard access, sender checks on save/schedule/path handlers, stream-decoded UTF-8, a stall
+>   timeout on the model download, login-shell lookups via execFile with a 5 s timeout, a restart budget for the
+>   helper that resets after a healthy minute, a settings merge that unions permissions and adds hooks once, no
+>   harness files inside .git, AX messaging timeouts and AXEnhancedUserInterface only for Chromium browsers,
+>   whisper.cpp pinned to a commit, the stale dist:signed path removed (release.sh is the only signed build),
+>   CI running preflight --codebase-only plus an e2e job with SHA-pinned actions, SRI on the site's CDN scripts.
+> Scoped down, and why:
+> - The four builder hooks keep their own UI state; only their Claude calls were unified (runStep). Merging the
+>   hooks is a refactor with no failure behind it now that cancel and error handling are the same.
+> - The pill keeps the shared preload; the handlers that write files, change paths or schedule jobs check which
+>   window called them instead.
+> - Auto-run files (.envrc) aren't given an extra confirmation; files inside .git are refused outright.
+> - Mouse-only controls got role/tabIndex/Enter-Space rather than becoming <button>s, so their look is unchanged.
+> - No renderer hook unit tests (no React testing library in devDeps); e2e fixed sleeps and ui.spec's retry left
+>   as they are — no flake was seen across two full runs.

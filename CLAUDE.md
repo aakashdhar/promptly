@@ -64,6 +64,7 @@ npm test              # Vitest unit tests
 npm run test:e2e      # build + Playwright end-to-end tests (fake Claude/Whisper, throwaway profile)
                       #   includes e2e/ui.spec.mjs: screenshots of every screen in both themes + layout audit
 npm run preflight     # local tool + codebase checks (release.sh runs this)
+bash scripts/preflight.sh --codebase-only  # CHECKs 7-10 only, no local tools needed (CI runs this)
 npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh); also updates the site's version + size
 bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Release the site downloads from
 ```
