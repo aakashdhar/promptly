@@ -118,7 +118,7 @@ over `claude.cmd` when both exist.
 
 ---
 ### WIN-004 · Whisper binary name and temp paths from the platform
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (9)
 - **Dependencies**: WIN-001
@@ -129,8 +129,8 @@ Audit whisper.js and main.js for `/tmp` or `/`-joined paths; everything goes thr
 `os.tmpdir()`. Python-whisper fallback stays Mac-only (win32 `hasPythonWhisperModule` → false).
 
 **Acceptance criteria**:
-- [ ] The bundled engine is found as `whisper-cli.exe` on Windows and unchanged on Mac
-- [ ] No hard-coded POSIX temp paths remain in main/
+- [x] The bundled engine is found as `whisper-cli.exe` on Windows and unchanged on Mac
+- [x] No hard-coded POSIX temp paths remain in main/
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (9). Tick every criterion.
 **Test requirement**: findBundledEngine test with a fake `.exe` engine dir under an injected win32 platform.
@@ -140,7 +140,9 @@ Audit whisper.js and main.js for `/tmp` or `/`-joined paths; everything goes thr
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Audit: main/ and main.js already build every temp path with `os.tmpdir()` + `path.join` (audio, setup scripts, uninstall copy); no `/tmp` literals.
+- `BUNDLED_CLI` is kept as an export, now `platform.WHISPER_CLI`. `findBundledEngine(dir, plat)` takes the platform for tests; `X_OK` works as an existence check on Windows.
+- WIN-003 handoff done: `makeWhisperEnv` keeps the env's own PATH key (Windows `Path`).
 ---
 
 ---
