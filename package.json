@@ -15,6 +15,7 @@
     "dist": "npm run fetch-whisper && npm run build-helper && npm run build:renderer && electron-builder --universal",
     "lint": "eslint .",
     "dist:unsigned": "npm run fetch-whisper && npm run build-helper && npm run build:renderer && electron-builder --mac --universal --config.mac.identity=null",
+    "dist:win": "npm run fetch-whisper:win && npm run build-helper:win && npm run build:renderer && electron-builder --win nsis --x64 --publish never",
     "create-cert": "bash scripts/create-cert.sh",
     "uninstall": "bash scripts/uninstall.sh",
     "release": "bash scripts/release.sh",
@@ -74,7 +75,30 @@
       "signIgnore": [
         "uninstall\\.sh$"
       ],
-      "x64ArchFiles": "Contents/Resources/{whisper/whisper-cli,helper/promptly-helper}"
+      "x64ArchFiles": "Contents/Resources/{whisper/whisper-cli,helper/promptly-helper}",
+      "extraFiles": [
+        {
+          "from": "scripts/uninstall.sh",
+          "to": "uninstall.sh"
+        }
+      ],
+      "extraResources": [
+        {
+          "from": "vendor/whisper",
+          "to": "whisper",
+          "filter": [
+            "whisper-cli",
+            "*.bin"
+          ]
+        },
+        {
+          "from": "vendor/helper",
+          "to": "helper",
+          "filter": [
+            "promptly-helper"
+          ]
+        }
+      ]
     },
     "dmg": {
       "title": "Promptly",
@@ -98,12 +122,45 @@
         }
       ]
     },
-    "extraFiles": [
-      {
-        "from": "scripts/uninstall.sh",
-        "to": "uninstall.sh"
-      }
-    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "Promptly-Setup-${version}.${ext}",
+      "extraResources": [
+        {
+          "from": "vendor/whisper",
+          "to": "whisper",
+          "filter": [
+            "whisper-cli.exe",
+            "ggml-base.en-q5_1.bin",
+            "ggml-silero-v5.1.2.bin"
+          ]
+        },
+        {
+          "from": "vendor/helper",
+          "to": "helper",
+          "filter": [
+            "promptly-helper.exe"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "shortcutName": "Promptly"
+    },
     "files": [
       "main.js",
       "preload.js",
@@ -113,23 +170,6 @@
       "pill.html",
       "dist-renderer/**",
       "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "vendor/whisper",
-        "to": "whisper",
-        "filter": [
-          "whisper-cli",
-          "*.bin"
-        ]
-      },
-      {
-        "from": "vendor/helper",
-        "to": "helper",
-        "filter": [
-          "promptly-helper"
-        ]
-      }
     ]
   }
 }
