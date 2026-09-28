@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createRequire } from 'module'
 import fs from 'fs'
 import os from 'os'
@@ -205,6 +205,64 @@ describe('Harness mode', () => {
     expect(plist).toContain('<string>bash .harness/run.sh &amp;&amp; echo &lt;done&gt;</string>')
     expect(plist).toContain('<dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>0</integer></dict>')
     expect(plist).toContain('/Users/me/My App/.harness/schedule.log')
+  })
+})
+
+// ── Harness files on Windows: a PowerShell prompt, picked by the platform module ──
+
+describe('Harness files per system', () => {
+  const darwin = require('../main/platform/darwin.js')
+  const win32 = require('../main/platform/win32.js')
+  const crypto = require('crypto')
+  const args = { transcript: 'fix the tests nightly', plan: { gaps: [{ id: 'test_command', label: 'Test command' }] }, answers: { test_command: 'npm test' } }
+
+  it('keeps the Mac files prompt byte for byte, and picks it on a Mac', () => {
+    const file = fs.readFileSync(require.resolve('../main/prompts/harness-files.txt'), 'utf8')
+    // The Mac prompt as it shipped in 2.17; any edit to it must be deliberate (update this hash).
+    expect(crypto.createHash('sha256').update(file).digest('hex')).toBe('afa6873953e408e74815d102dcc9a4b85510999e4cf73caf8d054a4f750d890e')
+    expect(darwin.HARNESS_FILES_PROMPT).toBe('harness-files')
+    const mac = harness.buildFilesPrompt(args, darwin)
+    expect(mac).toContain("osascript -e 'display notification")
+    expect(mac).toContain('RUN: bash .harness/run.sh')
+    expect(mac).not.toContain('.ps1')
+    if (!onWindows) expect(harness.buildFilesPrompt(args)).toBe(mac)
+  })
+
+  it('picks the PowerShell prompt on Windows, in the same output format', () => {
+    expect(win32.HARNESS_FILES_PROMPT).toBe('harness-files-win')
+    const win = harness.buildFilesPrompt(args, win32)
+    expect(win).toContain('fix the tests nightly')
+    expect(win).toContain('Test command: npm test')
+    expect(win).not.toMatch(/\{(PLAN|ANSWERS|TRANSCRIPT)\}/)
+    expect(win).toContain('RUN: powershell -NoProfile -ExecutionPolicy Bypass -File .harness/run.ps1')
+    expect(win).toContain('Windows.UI.Notifications.ToastNotificationManager')
+    expect(win).not.toMatch(/osascript|#!\/bin\/bash|Install-Module|BurntToast/)
+    for (const marker of ['SCHEDULE: daily 02:00', '=== FILE .harness/run.ps1 ===', 'PURPOSE: Runs the passes', '=== END ===']) expect(win).toContain(marker)
+    if (onWindows) expect(harness.buildFilesPrompt(args)).toBe(win)
+    // parseFiles reads what the Windows prompt asks for, unchanged.
+    const out = harness.parseFiles('RUN: powershell -NoProfile -ExecutionPolicy Bypass -File .harness/run.ps1\nSCHEDULE: weekdays 09:30\n=== FILE .harness/run.ps1 ===\nPURPOSE: Runs the passes\n$ErrorActionPreference = \'Stop\'\n=== END ===')
+    expect(out).toEqual({
+      run: 'powershell -NoProfile -ExecutionPolicy Bypass -File .harness/run.ps1',
+      schedule: { every: 'weekday', time: '09:30' },
+      files: [{ path: '.harness/run.ps1', purpose: 'Runs the passes', content: "$ErrorActionPreference = 'Stop'\n" }],
+    })
+  })
+
+  describe('saving', () => {
+    let dir
+    beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-win-')) })
+    afterEach(() => { vi.restoreAllMocks(); fs.rmSync(dir, { recursive: true, force: true }) })
+
+    it('leaves .ps1 files unchmodded on Windows, and chmods everything on a Mac', () => {
+      const chmod = vi.spyOn(fs, 'chmodSync').mockImplementation(() => {})
+      const files = [{ path: '.harness/run.ps1', content: "$ErrorActionPreference = 'Stop'\n" }, { path: '.harness/PROGRESS.md', content: '# Progress\n' }]
+      expect(harness.writeFiles(dir, files, { osName: 'win32' })).toEqual(['.harness/run.ps1', '.harness/PROGRESS.md'])
+      expect(chmod.mock.calls.map(([p]) => path.basename(p))).toEqual(['PROGRESS.md'])
+      expect(fs.readFileSync(path.join(dir, '.harness/run.ps1'), 'utf8')).toBe("$ErrorActionPreference = 'Stop'\n")
+      chmod.mockClear()
+      harness.writeFiles(dir, files, { osName: 'darwin' })
+      expect(chmod.mock.calls.map(([p, mode]) => [path.basename(p), mode])).toEqual([['run.ps1', 0o644], ['PROGRESS.md', 0o644]])
+    })
   })
 })
 

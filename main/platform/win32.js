@@ -344,6 +344,9 @@ const PRIVACY_SETTINGS = {
 // main/platform/scheduler.js schedules harnesses here with schtasks. The launchd-shaped keys
 // below only keep the same shape as darwin.js; nothing on Windows calls them.
 const HARNESS_SCHEDULER = 'task-scheduler';
+// The harness files prompt for Windows (main/prompts/harness-files-win.txt): PowerShell .ps1
+// scripts and toast notifications, in the same output format so harness.parseFiles reads both.
+const HARNESS_FILES_PROMPT = 'harness-files-win';
 // Task Scheduler runs a task with the user's own PATH, so nothing needs adding beyond
 // Claude's folder (main.js prepends that).
 const SCHEDULE_PATH = '';
@@ -374,6 +377,7 @@ module.exports = {
   microphoneAccess,
   SCHEDULE_PATH,
   HARNESS_SCHEDULER,
+  HARNESS_FILES_PROMPT,
   launchAgentsDir,
   loadLaunchAgent,
   unloadLaunchAgent,

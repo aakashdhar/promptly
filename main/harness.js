@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { loadPrompt, fillTemplate } = require('./prompts');
 const { parseJsonOutput } = require('./llm');
+const defaultPlatform = require('./platform');
 
 // Harness mode: a spoken job becomes a plan (a loop or a pipeline the user can check), then the
 // files that run it with Claude Code. Claude writes both; this module builds the requests, checks
@@ -17,9 +18,11 @@ function buildPlanPrompt(transcript, context = '') {
   return fillTemplate(loadPrompt('harness-plan'), { TRANSCRIPT: transcript, CONTEXT: context });
 }
 
-function buildFilesPrompt({ transcript, plan, answers = {} }) {
+// The files prompt is the system's own (bash on a Mac, PowerShell on Windows); platform is the
+// platform module, passed in by tests.
+function buildFilesPrompt({ transcript, plan, answers = {} }, platform = defaultPlatform) {
   const lines = (plan.gaps || []).map((g) => `${g.label}: ${text(answers[g.id], 300) || '(no answer)'}`);
-  return fillTemplate(loadPrompt('harness-files'), {
+  return fillTemplate(loadPrompt(platform.HARNESS_FILES_PROMPT), {
     PLAN: JSON.stringify(plan, null, 2),
     ANSWERS: lines.length ? lines.join('\n') : '(the plan had no gaps)',
     TRANSCRIPT: transcript,
@@ -239,7 +242,8 @@ function existingFiles(dir, files) {
   }).map((f) => f.path);
 }
 
-function writeFiles(dir, files) {
+// osName is process.platform, passed in by tests.
+function writeFiles(dir, files, { osName = process.platform } = {}) {
   const written = [];
   for (const f of files) {
     const rel = safeRelativePath(f.path);
@@ -256,7 +260,9 @@ function writeFiles(dir, files) {
     // mode only applies to new files, so an existing one is chmod'ed too.
     const executable = /\.sh$/.test(rel) || content.startsWith('#!');
     fs.writeFileSync(target, content);
-    fs.chmodSync(target, executable ? 0o755 : 0o644);
+    // Windows has no execute bit (chmod only flips read-only there); PowerShell runs a .ps1
+    // through -File, so those are left as written.
+    if (!(osName === 'win32' && /\.ps1$/i.test(rel))) fs.chmodSync(target, executable ? 0o755 : 0o644);
     written.push(rel);
   }
   return written;

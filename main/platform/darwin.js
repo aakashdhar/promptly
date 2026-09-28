@@ -249,6 +249,8 @@ const PRIVACY_SETTINGS = {
 
 // Which backend main/platform/scheduler.js uses: a launchd plist loaded with launchctl.
 const HARNESS_SCHEDULER = 'launchd';
+// The harness files prompt (main/prompts/harness-files.txt): bash scripts, osascript notifications.
+const HARNESS_FILES_PROMPT = 'harness-files';
 
 // launchd starts jobs with a bare PATH; the harness needs claude, git, node and Homebrew tools.
 const SCHEDULE_PATH = '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin';
@@ -295,6 +297,7 @@ module.exports = {
   microphoneAccess,
   SCHEDULE_PATH,
   HARNESS_SCHEDULER,
+  HARNESS_FILES_PROMPT,
   launchAgentsDir,
   loadLaunchAgent,
   unloadLaunchAgent,
