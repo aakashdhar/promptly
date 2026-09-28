@@ -116,7 +116,7 @@ bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Releas
 ---
 
 ## Execution mode
-VIBE_MODE=manual
+VIBE_MODE=autonomous
 
 ---
 ### Active Feature: Promptly for Windows
