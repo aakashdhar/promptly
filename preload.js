@@ -103,6 +103,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTheme: () =>
     ipcRenderer.invoke('get-theme'),
 
+  getPlatform: () =>
+    ipcRenderer.invoke('get-platform'),
+
   onThemeChanged: (callback) => {
     const cb = (_event, data) => callback(data)
     ipcRenderer.on('theme-changed', cb)

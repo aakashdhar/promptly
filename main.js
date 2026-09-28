@@ -26,6 +26,7 @@ const { tidyDictation } = require('./main/dictation');
 const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
 const harness = require('./main/harness');
 const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
+const { keysFor } = require('./main/keys');
 
 // End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
 const IS_E2E = !!process.env.PROMPTLY_USER_DATA;
@@ -1462,6 +1463,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('get-theme', () => {
     return { dark: nativeTheme.shouldUseDarkColors };
   });
+
+  // Key names for labels: ⌘ ⌥ ⌃ on a Mac, Ctrl Alt on Windows.
+  ipcMain.handle('get-platform', () => keysFor(process.platform));
 
   // ── Tool checks (setup wizard + Settings) ──
 

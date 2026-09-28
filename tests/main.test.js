@@ -4,6 +4,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { EventEmitter } from 'events'
+import * as rendererKeys from '../src/renderer/utils/keys.js'
 
 const require = createRequire(import.meta.url)
 const { fillTemplate, buildModePrompt, buildEvalPrompt, normalizeEval, getMode, MODES } = require('../main/prompts.js')
@@ -16,6 +17,7 @@ const { spawn } = require('child_process')
 const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv, findBundledEngine, cleanTranscript, silentWav, createWhisperRunner } = require('../main/whisper.js')
 const { getClaudeStatus, installScript, loginScript, shellQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
 const { drawMicIconPng, isTemplateState } = require('../main/tray-icon.js')
+const { keysFor, formatCombo } = require('../main/keys.js')
 
 let tmp
 beforeAll(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-test-')) })
@@ -459,6 +461,47 @@ describe('starting Claude Code on Windows', () => {
   it('an empty Windows environment falls back to the system folders', () => {
     const env = makeClaudeEnv(CMD, {}, win32)
     expect(env.PATH.endsWith(win32.DEFAULT_PATH)).toBe(true)
+  })
+})
+
+describe('key names', () => {
+  it('a Mac gets the symbols the app shows today', () => {
+    expect(keysFor('darwin')).toEqual({ os: 'darwin', mod: '⌘', alt: '⌥', ctrl: '⌃', shift: '⇧', enter: '↵' })
+    expect(formatCombo(['⌘', 'T'], 'darwin')).toBe('⌘T')
+    expect(formatCombo(['⌃', '⌘', 'S'], 'darwin')).toBe('⌃⌘S')
+  })
+
+  it('Windows gets words joined with +', () => {
+    expect(keysFor('win32')).toEqual({ os: 'win32', mod: 'Ctrl', alt: 'Alt', ctrl: 'Ctrl', shift: 'Shift', enter: 'Enter' })
+    expect(formatCombo(['Ctrl', 'T'], 'win32')).toBe('Ctrl+T')
+    expect(formatCombo(['Alt', 'Space'], 'win32')).toBe('Alt+Space')
+  })
+
+  it('other systems fall back to the Mac set, and callers cannot change the shared one', () => {
+    expect(keysFor('linux')).toEqual(keysFor('darwin'))
+    keysFor('darwin').mod = 'X'
+    expect(keysFor('darwin').mod).toBe('⌘')
+  })
+
+  it('the renderer starts with the Mac set, so first paint on a Mac never changes', () => {
+    expect({ ...rendererKeys.keys }).toEqual(keysFor('darwin'))
+    expect(rendererKeys.combo('⌘', 'H')).toBe('⌘H')
+  })
+
+  it('the renderer takes Windows names from get-platform, and keeps the Mac set if the call fails', async () => {
+    const saved = { ...rendererKeys.keys }
+    try {
+      globalThis.window = { electronAPI: { getPlatform: async () => { throw new Error('no handler') } } }
+      await rendererKeys.loadKeys()
+      expect({ ...rendererKeys.keys }).toEqual(keysFor('darwin'))
+      globalThis.window = { electronAPI: { getPlatform: async () => keysFor('win32') } }
+      await rendererKeys.loadKeys()
+      expect(rendererKeys.keys.mod).toBe('Ctrl')
+      expect(rendererKeys.combo(rendererKeys.keys.mod, 'T')).toBe(formatCombo(['Ctrl', 'T'], 'win32'))
+    } finally {
+      Object.assign(rendererKeys.keys, saved)
+      delete globalThis.window
+    }
   })
 })
 
