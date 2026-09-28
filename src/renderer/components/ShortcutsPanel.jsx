@@ -6,7 +6,8 @@ export default function ShortcutsPanel({ onClose }) {
   // The talk key is whatever is chosen in Settings (or Option-Space while it needs Accessibility).
   const words = useHotkeyWords()
   const talk = words.needsAccess && words.fallback ? words.fallback.replace(/^Press /, '') : words.short
-  const talkKeys = /^double-tap/i.test(talk) ? [talk] : talk.split(' ')
+  // One keycap per key: a space separates them on a Mac, + on Windows ('Alt+Space').
+  const talkKeys = /^double-tap/i.test(talk) ? [talk] : talk.split(/[ +]/)
 
   const groups = [
     {

@@ -1097,6 +1097,53 @@ describe('Double-tap Control', () => {
   })
 })
 
+describe('talk shortcuts on each system', () => {
+  const { presetsFor, fallbackHotkeyFor, getPreset, hotkeyWords, HOTKEY_PRESETS, DEFAULT_HOTKEY } = require('../main/hotkey.js')
+
+  it('the Mac keeps its six presets and double-tap Control', () => {
+    expect(Object.keys(presetsFor('darwin'))).toEqual(['double-control', 'option-space', 'right-option', 'fn', 'control-option-space', 'command-shift-space'])
+    expect(presetsFor('darwin')['option-space'].short).toBe('⌥ Space')
+    expect(fallbackHotkeyFor('darwin')).toBe('option-space')
+    if (process.platform === 'darwin') expect(HOTKEY_PRESETS).toBe(presetsFor('darwin'))
+  })
+
+  it('Windows offers exactly five, default double-tap Ctrl, and no Fn', () => {
+    const win = presetsFor('win32')
+    expect(Object.keys(win)).toEqual(['double-control', 'alt-space', 'right-alt', 'ctrl-alt-space', 'ctrl-shift-space'])
+    expect(DEFAULT_HOTKEY).toBe('double-control')
+    expect(getPreset(undefined, 'win32').label).toBe('Double-tap Ctrl')
+    expect(win.fn).toBeUndefined()
+  })
+
+  it('Windows presets use Windows words, the same combo spelling as the rest of the app, and virtual-key codes', () => {
+    const { formatCombo } = require('../main/keys.js')
+    const win = presetsFor('win32')
+    for (const p of Object.values(win)) expect(`${p.label} ${p.short} ${p.action}`).not.toMatch(/[⌘⌥⌃⇧]|Option|Command|Control\b/)
+    expect(win['alt-space'].short).toBe(formatCombo(['Alt', 'Space'], 'win32'))
+    expect(win['ctrl-alt-space'].short).toBe(formatCombo(['Ctrl', 'Alt', 'Space'], 'win32'))
+    expect(win['ctrl-shift-space'].short).toBe(formatCombo(['Ctrl', 'Shift', 'Space'], 'win32'))
+    expect(win['double-control'].helper).toEqual({ keyCode: 0x11, modifiers: [], modifierOnly: true, doubleTap: true })
+    expect(win['right-alt'].helper.keyCode).toBe(0xA5)
+    // Keys with an accelerator work without the helper; modifier-only ones need it.
+    expect(Object.entries(win).filter(([, p]) => p.accelerator).map(([k]) => k)).toEqual(['alt-space', 'ctrl-alt-space', 'ctrl-shift-space'])
+    for (const p of Object.values(win)) expect(p.helper.modifiers.every((m) => ['control', 'alt', 'shift'].includes(m))).toBe(true)
+  })
+
+  it('a Mac-only choice copied to Windows falls back to double-tap Ctrl', () => {
+    expect(getPreset('option-space', 'win32').label).toBe('Double-tap Ctrl')
+    expect(getPreset('fn', 'win32').label).toBe('Double-tap Ctrl')
+    expect(getPreset('alt-space', 'darwin').label).toBe('Double-tap Control')
+  })
+
+  it('without the helper, Windows hints name Alt+Space as the stand-in', () => {
+    expect(hotkeyWords('double-control', { helperActive: false, platform: 'win32' }))
+      .toEqual({ short: 'double-tap Ctrl', action: 'Double-tap Ctrl', needsAccess: true, fallback: 'Press Alt+Space' })
+    expect(hotkeyWords('ctrl-shift-space', { helperActive: false, platform: 'win32' }))
+      .toEqual({ short: 'Ctrl+Shift+Space', action: 'Press Ctrl+Shift+Space', needsAccess: false })
+    expect(hotkeyWords('right-alt', { helperActive: true, platform: 'win32' }).action).toBe('Hold right Alt')
+  })
+})
+
 describe('eval scorecard shape', () => {
   it('keeps only what the panel can render', () => {
     const r = normalizeEval({
