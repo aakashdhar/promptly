@@ -58,7 +58,8 @@
 | `scripts/build-helper.sh` | swiftc → universal vendor/helper/promptly-helper | — |
 | `main/binaries.js` | Binary lookup order (Settings → known paths → nvm → login shell) | `resolveClaudePath`, `resolveWhisperPath`, `resolveFfmpegPath`, `makeClaudeEnv`, `PYTHON_WHISPER`, `terminate(child)` (SIGTERM, then SIGKILL after 3 s; used for every timeout, cancel and quit) |
 | `main/platform/darwin.js` | Every macOS-specific path and command (binary locations, shell lookup, pyenv shims, Whisper PATH + SSL env, model cache dirs, uninstall paths, `uninstallScriptPath(resourcesPath)`, tccutil, launchd jobs incl. `harnessLaunchAgents(home)` for uninstall) | see file |
-| `main/platform/index.js` | Picks the platform module (darwin only today) | — |
+| `main/platform/index.js` | Picks the platform module: win32.js on Windows, darwin.js everywhere else | — |
+| `main/platform/win32.js` | Windows counterpart of darwin.js — same exports (tests/main.test.js checks keys + types); placeholders until WIN-002/WIN-024 | see file |
 | `main/prompts.js` | Builds prompts from main/prompts/*.txt and shared/modes.json; single-pass placeholder fill | `buildModePrompt`, `buildEvalPrompt`, `normalizeEval` (the scorecard reduced to what EvalPanel renders), `fillTemplate`, `getMode`, `MODES` |
 | `main/prompts/*.txt` | All prompt text: prompt/code/design/polish/email.txt (modes), revise/polish-revise/email-revise.txt (Iterate and email tone chips), image-*/video-*/workflow-*.txt (builder steps), eval.txt (scorecard), learn-style.txt | — |
 | `main/uninstall.js` | Tray › Uninstall hands removal to `uninstall.sh` (temp copy, detached) and quits: the app never deletes itself while running (it froze the Mac — vibe/bugs/2026-09-28-uninstall-freezes-mac) | `uninstallCommand({ scriptPath, pid, bundlePath, dataPaths })` → `['/bin/bash', args]` |

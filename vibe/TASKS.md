@@ -936,11 +936,11 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (0/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (1/26)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
-   [ ] WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
+   [x] WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
    [ ] WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
    [ ] WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
    [ ] WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
@@ -979,12 +979,13 @@ Say "next" to begin.
 ---
 
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
-   (Windows feature paused at WIN-001)
 
 ## What just happened
-✅ Uninstall bug fixed (4/4) — regression tests, fix, full-suite check, docs
-   Committed: fix(uninstall) c92660e + docs
+✅ WIN-001 · Platform selector — Mac keeps its module; Windows gets win32.js with the same shape (placeholders)
+   Est. cost: ~$0.05 · Session running total: ~$0.05
+   Committed: feat(windows-version): WIN-001 — 8ab5a33 (branch feature/windows-version)
 
 ## What's next
-⬜ Try it on an installed build (2.19.3) — Uninstall from the menu bar: Promptly quits, the Mac stays responsive, a notification confirms
-   Then the Windows version resumes at WIN-001 when you're ready.
+⬜ WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
+   Nothing changes on the Mac; on Windows, setup can find Claude Code where npm or the installer put it.
+Say "next" to begin.

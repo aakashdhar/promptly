@@ -13,7 +13,7 @@
 
 ---
 ### WIN-001 · Platform selector and a win32 module with the same shape as darwin
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#5-integration-points
 - **Dependencies**: None
@@ -28,8 +28,8 @@ removeInstalledApp) as safe stubs: `PATH_DELIMITER ';'`, empty lists, `null`/`{ 
 Windows yet' }` results. Real bodies land in WIN-002 and WIN-024.
 
 **Acceptance criteria**:
-- [ ] `require('./main/platform')` still returns darwin on macOS (no Mac behaviour change)
-- [ ] darwin.js and win32.js export the same set of keys, with matching types (function vs value)
+- [x] `require('./main/platform')` still returns darwin on macOS (no Mac behaviour change)
+- [x] darwin.js and win32.js export the same set of keys, with matching types (function vs value)
 
 **Self-verify**: Re-read FEATURE_SPEC.md#5. Tick every criterion.
 **Test requirement**: contract test in tests/main.test.js: `Object.keys(darwin)` equals `Object.keys(win32)` and each pair has the same `typeof`.
@@ -39,7 +39,7 @@ Windows yet' }` results. Real bodies land in WIN-002 and WIN-024.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- win32.js also mirrors `uninstallScriptPath` (added to darwin.js after the plan). Async darwin functions stay async in win32 so callers await the same way; `unloadLaunchAgent` answers ok (nothing scheduled), `PRIVACY_SETTINGS.accessibility` is null (Windows has no such permission) — WIN-009 guards the caller.
 ---
 
 ---
