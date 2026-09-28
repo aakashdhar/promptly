@@ -1,5 +1,5 @@
 'use strict';
 
-// macOS is the only supported platform today. When Windows lands, add win32.js with
-// the same exports and select it here on process.platform === 'win32'.
-module.exports = require('./darwin');
+// darwin.js and win32.js export the same keys (tests/main.test.js checks this).
+// Anything that isn't Windows gets the macOS module, exactly as before.
+module.exports = process.platform === 'win32' ? require('./win32') : require('./darwin');

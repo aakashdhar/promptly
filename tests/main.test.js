@@ -350,6 +350,28 @@ describe('binaries', () => {
   })
 })
 
+describe('platform modules', () => {
+  const win32 = require('../main/platform/win32.js')
+
+  it('picks the macOS module on a Mac', () => {
+    if (process.platform !== 'darwin') return
+    expect(require('../main/platform')).toBe(darwin)
+  })
+
+  it('darwin and win32 export the same keys, each with the same type', () => {
+    expect(Object.keys(win32).sort()).toEqual(Object.keys(darwin).sort())
+    for (const key of Object.keys(darwin)) expect([key, typeof win32[key]]).toEqual([key, typeof darwin[key]])
+  })
+
+  it('win32 placeholders answer "nothing here" instead of throwing', async () => {
+    expect(win32.PATH_DELIMITER).toBe(';')
+    expect(win32.binaryCandidates('claude', 'C:\\Users\\a')).toEqual([])
+    expect(await win32.shellWhich('claude')).toBe(null)
+    expect(await win32.unloadLaunchAgent('x')).toEqual({ ok: true })
+    expect((await win32.removeInstalledApp('C:\\x')).ok).toBe(false)
+  })
+})
+
 describe('whisper helpers', () => {
   it('builds commands for a binary and for python -m whisper', () => {
     expect(whisperCommand('/bin/whisper', ['a'])).toEqual(['/bin/whisper', ['a']])
