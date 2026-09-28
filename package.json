@@ -25,7 +25,8 @@
     "fetch-whisper": "bash scripts/fetch-whisper.sh",
     "fetch-whisper:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fetch-whisper.ps1",
     "dmg-background": "electron scripts/make-dmg-background.js",
-    "build-helper": "bash scripts/build-helper.sh"
+    "build-helper": "bash scripts/build-helper.sh",
+    "build-helper:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-helper-win.ps1"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
