@@ -374,6 +374,93 @@ describe('platform modules', () => {
   })
 })
 
+describe('window, tray and permissions per platform', () => {
+  const win32 = require('../main/platform/win32.js')
+  const DARK = { dark: true, background: '#1C1C1F' }
+  const LIGHT = { dark: false, background: '#F4F4F6' }
+
+  it('macOS keeps the inset traffic lights, whatever the theme', () => {
+    const expected = { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 18, y: 21 } }
+    expect(darwin.windowChrome(DARK)).toEqual(expected)
+    expect(darwin.windowChrome(LIGHT)).toEqual(expected)
+    expect(darwin.TRAY_CLICK_BLURS).toBe(false)
+  })
+
+  it('Windows draws caption buttons over the 56 px toolbar in the theme colours', () => {
+    expect(win32.windowChrome(DARK)).toEqual({
+      titleBarStyle: 'hidden',
+      titleBarOverlay: { color: '#1C1C1F', symbolColor: '#ECECF0', height: 56 },
+    })
+    expect(win32.windowChrome(LIGHT).titleBarOverlay).toEqual({ color: '#F4F4F6', symbolColor: '#1C1C20', height: 56 })
+    expect(win32.TRAY_CLICK_BLURS).toBe(true)
+  })
+
+  it('nothing macOS-only reaches Windows', () => {
+    const src = fs.readFileSync(require.resolve('../main/platform/win32.js'), 'utf8')
+    expect(src).not.toMatch(/x-apple\.systempreferences|trafficLightPosition/)
+    expect('trafficLightPosition' in win32.windowChrome(DARK)).toBe(false)
+    expect(win32.PRIVACY_SETTINGS).toEqual({ accessibility: null, microphone: 'ms-settings:privacy-microphone' })
+    expect(win32.UNINSTALL_TEXT.fallback).not.toMatch(/Applications|Bin/)
+  })
+
+  it('macOS microphone access prompts only when not yet decided', async () => {
+    const make = (first, after) => {
+      let asked = false
+      return {
+        getMediaAccessStatus: () => (asked ? after : first),
+        askForMediaAccess: async () => { asked = true },
+        get asked() { return asked },
+      }
+    }
+    const fresh = make('not-determined', 'granted')
+    expect(await darwin.microphoneAccess(fresh)).toEqual({ granted: true, status: 'granted' })
+    expect(fresh.asked).toBe(true)
+    const quiet = make('not-determined', 'granted')
+    expect(await darwin.microphoneAccess(quiet, { prompt: false })).toEqual({ granted: false, status: 'not-determined' })
+    expect(quiet.asked).toBe(false)
+    expect(await darwin.microphoneAccess(make('denied'))).toEqual({ granted: false, status: 'denied' })
+  })
+
+  it('Windows microphone access is blocked only by the privacy switch', async () => {
+    const prefs = (status) => ({ getMediaAccessStatus: () => status })
+    expect(await win32.microphoneAccess(prefs('granted'))).toEqual({ granted: true, status: 'granted' })
+    expect(await win32.microphoneAccess(prefs('not-determined'))).toEqual({ granted: true, status: 'not-determined' })
+    expect(await win32.microphoneAccess(prefs('denied'))).toEqual({ granted: false, status: 'denied' })
+  })
+
+  it('macOS uninstall runs a temp copy of uninstall.sh with the same arguments as before', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-uninstall-test-'))
+    const source = path.join(tmpDir, 'uninstall.sh')
+    fs.writeFileSync(source, '#!/bin/bash\n')
+    const { uninstallCommand } = require('../main/uninstall.js')
+    const opts = { pid: 42, bundlePath: '/Applications/Promptly.app', dataPaths: ['/d1'] }
+    const [cmd, args] = darwin.uninstallLaunch({ source, tmpDir, ...opts })
+    const script = path.join(tmpDir, 'promptly-uninstall-42.sh')
+    expect([cmd, args]).toEqual(uninstallCommand({ scriptPath: script, ...opts }))
+    expect(fs.readFileSync(script, 'utf8')).toBe('#!/bin/bash\n')
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it('Windows uninstall hands every path to a hidden PowerShell as its own argument', () => {
+    const written = {}
+    const installDir = 'C:\\Users\\Zoë Smith\\AppData\\Local\\Programs\\Promptly'
+    const data = ['C:\\Users\\Zoë Smith\\AppData\\Roaming\\Promptly', 'C:\\Users\\Zoë Smith\\AppData\\Local\\Promptly']
+    const [cmd, args] = win32.uninstallLaunch(
+      { source: null, tmpDir: 'C:\\Temp', pid: 7, bundlePath: installDir, dataPaths: data },
+      { writeFile: (file, text) => { written[file] = text } },
+    )
+    const script = 'C:\\Temp\\promptly-uninstall-7.ps1'
+    expect(cmd).toBe('powershell.exe')
+    expect(args).toEqual(['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', script, '7', installDir, ...data])
+    expect(written[script]).toMatch(/Wait-Process -Id \$waitPid/)
+    expect(written[script]).toContain("Join-Path $installDir 'Uninstall Promptly.exe'")
+    expect(written[script]).toContain("'_?=' + $installDir")
+    // Not running from an installed copy: only the data goes.
+    const [, devArgs] = win32.uninstallLaunch({ tmpDir: 'C:\\Temp', pid: 7, bundlePath: null, dataPaths: [] }, { writeFile: () => {} })
+    expect(devArgs.slice(-2)).toEqual(['7', '-'])
+  })
+})
+
 describe('starting Claude Code on Windows', () => {
   const win32 = require('../main/platform/win32.js')
   const CMD = 'C:\\Users\\Zoë Smith\\AppData\\Roaming\\npm\\claude.cmd'

@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
+const { uninstallCommand } = require('../uninstall');
 
 const PATH_DELIMITER = ':';
 const DEFAULT_PATH = '/usr/local/bin:/usr/bin:/bin';
@@ -191,6 +192,41 @@ function spawnArgs(file, args, options = {}) {
 // Claude Code reads its login from the keychain and reports "logged out" when USER is unset.
 const USER_ENV_VARS = ['USER', 'LOGNAME'];
 
+// ── Window, tray and uninstall ──
+
+// The main window's frame: the traffic lights sit inside the toolbar, centred in its 56 px.
+// macOS draws the buttons itself, so the theme doesn't matter here.
+function windowChrome() {
+  return { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 18, y: 21 } };
+}
+
+// Clicking the menu bar icon leaves the window focused, so focus alone says whether it's in front.
+const TRAY_CLICK_BLURS = false;
+
+const UNINSTALL_TEXT = {
+  detail: 'This will remove Promptly and all its data:\n\n• Application bundle\n• App data and preferences\n• Logs\n• Microphone permission entry\n• Scheduled harnesses\n\nThis cannot be undone.',
+  fallback: 'It will quit now. Then drag Promptly from Applications to the Bin.',
+};
+
+// The command that removes Promptly after it has exited. It runs a temp copy of uninstall.sh,
+// because the original lives inside the bundle it is about to remove.
+function uninstallLaunch({ source, tmpDir, pid, bundlePath, dataPaths }) {
+  const script = path.join(tmpDir, `promptly-uninstall-${pid}.sh`);
+  fs.copyFileSync(source, script);
+  return uninstallCommand({ scriptPath: script, pid, bundlePath, dataPaths });
+}
+
+// Microphone access, asking (the system prompt) only the first time. prefs is Electron's
+// systemPreferences.
+async function microphoneAccess(prefs, { prompt = true } = {}) {
+  let status = prefs.getMediaAccessStatus('microphone');
+  if (status === 'not-determined' && prompt) {
+    await prefs.askForMediaAccess('microphone');
+    status = prefs.getMediaAccessStatus('microphone');
+  }
+  return { granted: status === 'granted', status };
+}
+
 // System Settings panes Promptly sends people to.
 const PRIVACY_SETTINGS = {
   accessibility: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility',
@@ -237,6 +273,11 @@ function harnessLaunchAgents(home) {
 
 module.exports = {
   PRIVACY_SETTINGS,
+  windowChrome,
+  TRAY_CLICK_BLURS,
+  UNINSTALL_TEXT,
+  uninstallLaunch,
+  microphoneAccess,
   SCHEDULE_PATH,
   launchAgentsDir,
   loadLaunchAgent,

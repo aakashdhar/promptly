@@ -248,6 +248,66 @@ function spawnArgs(file, args, options = {}) {
 // Claude Code on Windows identifies the user by USERNAME.
 const USER_ENV_VARS = ['USERNAME'];
 
+// ── Window, tray and uninstall ──
+
+// Theme ink (--ink in src/renderer/index.css) for the caption button symbols.
+const CAPTION_SYMBOL = { dark: '#ECECF0', light: '#1C1C20' };
+
+// Windows keeps its minimise/maximise/close buttons, drawn over the right end of the 56 px toolbar
+// in the window's own colours (titleBarOverlay). theme: { dark, background }.
+function windowChrome({ dark = false, background } = {}) {
+  return {
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { color: background, symbolColor: dark ? CAPTION_SYMBOL.dark : CAPTION_SYMBOL.light, height: 56 },
+  };
+}
+
+// Clicking the tray icon moves focus to the taskbar first, so a window that was just in front
+// already reads as unfocused by the time the click arrives.
+const TRAY_CLICK_BLURS = true;
+
+const UNINSTALL_TEXT = {
+  detail: 'This will remove Promptly and all its data:\n\n• The app\n• App data and settings\n• Logs\n\nThis cannot be undone.',
+  fallback: 'It will quit now. Then remove Promptly from Settings → Apps → Installed apps.',
+};
+
+// Waits for Promptly to exit, runs the NSIS uninstaller in place (_?= keeps it from copying itself
+// to Temp and returning at once), then removes the install folder and the data the uninstaller
+// keeps. Every path arrives as its own argument: pid, install folder or '-', data paths.
+const UNINSTALL_PS1 = `$ErrorActionPreference = 'SilentlyContinue'
+$waitPid = [int]$args[0]
+$installDir = [string]$args[1]
+$data = @($args | Select-Object -Skip 2)
+Wait-Process -Id $waitPid -Timeout 30
+Start-Sleep -Seconds 1
+if ($installDir -ne '-') {
+  $uninstaller = Join-Path $installDir '${UNINSTALLER}'
+  if (Test-Path -LiteralPath $uninstaller) { Start-Process -FilePath $uninstaller -ArgumentList '/S', ('_?=' + $installDir) -Wait }
+  Remove-Item -LiteralPath $installDir -Recurse -Force
+}
+foreach ($p in $data) { if ($p) { Remove-Item -LiteralPath $p -Recurse -Force } }
+Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force
+`;
+
+// The command that removes Promptly after it has exited: the script above, written to Temp and
+// run by a hidden PowerShell. uninstall.sh (source) is macOS-only.
+function uninstallLaunch({ tmpDir, pid, bundlePath, dataPaths = [] }, { writeFile = fs.writeFileSync } = {}) {
+  const script = path.join(tmpDir, `promptly-uninstall-${pid}.ps1`);
+  writeFile(script, UNINSTALL_PS1);
+  return ['powershell.exe', [
+    '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', script,
+    String(pid), bundlePath || '-', ...dataPaths,
+  ]];
+}
+
+// Windows asks by itself the first time an app uses the microphone, so there is nothing to
+// prompt for; only the privacy switch being off blocks it, and then setup offers
+// PRIVACY_SETTINGS.microphone. prefs is Electron's systemPreferences.
+async function microphoneAccess(prefs) {
+  const status = prefs.getMediaAccessStatus('microphone');
+  return { granted: status !== 'denied', status };
+}
+
 // Settings pages Promptly sends people to. Windows has no Accessibility permission.
 const PRIVACY_SETTINGS = {
   accessibility: null,
@@ -277,6 +337,11 @@ function harnessLaunchAgents() {
 
 module.exports = {
   PRIVACY_SETTINGS,
+  windowChrome,
+  TRAY_CLICK_BLURS,
+  UNINSTALL_TEXT,
+  uninstallLaunch,
+  microphoneAccess,
   SCHEDULE_PATH,
   launchAgentsDir,
   loadLaunchAgent,

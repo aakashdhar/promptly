@@ -7,7 +7,6 @@ const fs = require('fs');
 const { execFile, spawn } = require('child_process');
 
 const { createConfigStore } = require('./main/config');
-const { uninstallCommand } = require('./main/uninstall');
 const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
 const { resolveClaudePath, resolveWhisperPath, resolveFfmpegPath } = require('./main/binaries');
@@ -93,6 +92,10 @@ const THEMES = ['system', 'light', 'dark'];
 
 function windowBackground() {
   return nativeTheme.shouldUseDarkColors ? WINDOW_BG.dark : WINDOW_BG.light;
+}
+
+function windowTheme() {
+  return { dark: nativeTheme.shouldUseDarkColors, background: windowBackground() };
 }
 
 // Models offered in Settings. Aliases always resolve to the latest model of that family.
@@ -342,6 +345,10 @@ function createMicIcon(state, isDark, showDot = true) {
 }
 
 let trayIconsCreated = 0;
+// When the window last lost focus. On Windows the tray click itself takes focus away, so a
+// window that lost it just before the click was the one in front.
+let winBlurredAt = 0;
+const TRAY_BLUR_MS = 300;
 
 function createMenuBarIcon() {
   trayIconsCreated++;
@@ -349,7 +356,8 @@ function createMenuBarIcon() {
   menuBarTray.setToolTip('Promptly — ready');
   menuBarTray.on('click', () => {
     if (!win || win.isDestroyed()) return;
-    if (win.isVisible() && win.isFocused()) win.hide(); else showWindow();
+    const inFront = win.isFocused() || (platform.TRAY_CLICK_BLURS && Date.now() - winBlurredAt < TRAY_BLUR_MS);
+    if (win.isVisible() && inFront) win.hide(); else showWindow();
   });
   menuBarTray.on('right-click', () => {
     menuBarTray.popUpContextMenu(buildTrayMenu());
@@ -405,7 +413,7 @@ async function handleUninstall() {
     cancelId: 0,
     title: 'Uninstall Promptly',
     message: 'Uninstall Promptly?',
-    detail: 'This will remove Promptly and all its data:\n\n• Application bundle\n• App data and preferences\n• Logs\n• Microphone permission entry\n• Scheduled harnesses\n\nThis cannot be undone.',
+    detail: platform.UNINSTALL_TEXT.detail,
   });
   if (response === 0) return { cancelled: true };
 
@@ -426,16 +434,14 @@ async function handleUninstall() {
   const bundle = app.isPackaged ? platform.appBundlePath(app.getPath('exe')) : null;
   const source = app.isPackaged ? platform.uninstallScriptPath(process.resourcesPath) : path.join(__dirname, 'scripts', 'uninstall.sh');
   try {
-    // A temp copy, because the original lives inside the bundle it is about to remove.
-    const script = path.join(os.tmpdir(), `promptly-uninstall-${process.pid}.sh`);
-    fs.copyFileSync(source, script);
-    const [cmd, args] = uninstallCommand({
-      scriptPath: script,
+    const [cmd, args] = platform.uninstallLaunch({
+      source,
+      tmpDir: os.tmpdir(),
       pid: process.pid,
       bundlePath: bundle,
       dataPaths: platform.uninstallDataPaths(os.homedir(), BUNDLE_ID),
     });
-    spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
+    spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref();
     log.info('Uninstall handed to the uninstall script', { bundle });
   } catch (err) {
     log.error('Uninstall script could not start', err);
@@ -443,7 +449,7 @@ async function handleUninstall() {
       type: 'warning',
       title: 'Uninstall Promptly',
       message: "Promptly couldn't start its uninstaller",
-      detail: 'It will quit now. Then drag Promptly from Applications to the Bin.',
+      detail: platform.UNINSTALL_TEXT.fallback,
     });
   }
   isQuitting = true;
@@ -821,8 +827,7 @@ function createWindow() {
     frame: false,
     transparent: false,
     backgroundColor: windowBackground(),
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 21 }, // centred in the 56 px toolbar
+    ...platform.windowChrome(windowTheme()),
     resizable: true,
     maximizable: true,
     fullscreenable: true,
@@ -862,10 +867,14 @@ function createWindow() {
   win.on('responsive', () => log.info('Window responding again'));
   win.on('hide', () => refreshMenuBarIcon());
   win.on('show', () => refreshMenuBarIcon());
+  win.on('blur', () => { winBlurredAt = Date.now(); });
   nativeTheme.on('updated', () => {
     for (const w of [win, splashWin]) {
       if (w && !w.isDestroyed()) w.setBackgroundColor(windowBackground());
     }
+    // Windows' caption buttons are drawn in the window's colours, so they follow the theme too.
+    const { titleBarOverlay } = platform.windowChrome(windowTheme());
+    if (titleBarOverlay && win && !win.isDestroyed()) win.setTitleBarOverlay(titleBarOverlay);
     winSend('theme-changed', { dark: nativeTheme.shouldUseDarkColors });
     updateMenuBarIcon(currentIconState);
   });
@@ -1100,9 +1109,12 @@ app.whenReady().then(async () => {
     return status ? { trusted: !!status.trusted, tap: !!status.tap } : helper.status();
   });
 
+  // Where there's no Accessibility permission (Windows) it reports unavailable, which is what
+  // makes setup skip its Accessibility step.
   ipcMain.handle('accessibility-status', async () => {
     const status = await helper.refreshStatus();
-    return { available: helper.isRunning(), ...(status ? { trusted: !!status.trusted, tap: !!status.tap } : helper.status()) };
+    const available = helper.isRunning() && !!platform.PRIVACY_SETTINGS.accessibility;
+    return { available, ...(status ? { trusted: !!status.trusted, tap: !!status.tap } : helper.status()) };
   });
 
   // ── It writes like you ──
@@ -1145,6 +1157,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('open-accessibility-settings', () => {
+    if (!platform.PRIVACY_SETTINGS.accessibility) return;
     shell.openExternal(platform.PRIVACY_SETTINGS.accessibility).catch((err) => log.warn('Could not open System Settings', err.message));
   });
 
@@ -1166,15 +1179,10 @@ app.whenReady().then(async () => {
     if (typeof url === 'string' && url.startsWith('https://')) shell.openExternal(url).catch((err) => log.warn('Could not open link', err.message));
   });
 
-  // Asks macOS for microphone access (shows the system prompt the first time).
+  // Asks the system for microphone access (macOS shows its prompt the first time).
   ipcMain.handle('request-microphone', async (_event, { prompt = true } = {}) => {
-    if (process.platform !== 'darwin' || IS_E2E) return { granted: true, status: 'granted' };
-    let status = systemPreferences.getMediaAccessStatus('microphone');
-    if (status === 'not-determined' && prompt) {
-      await systemPreferences.askForMediaAccess('microphone');
-      status = systemPreferences.getMediaAccessStatus('microphone');
-    }
-    return { granted: status === 'granted', status };
+    if ((process.platform !== 'darwin' && process.platform !== 'win32') || IS_E2E) return { granted: true, status: 'granted' };
+    return platform.microphoneAccess(systemPreferences, { prompt });
   });
 
   ipcMain.handle('open-microphone-settings', () => {
