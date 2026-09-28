@@ -442,7 +442,7 @@ not, return `{ ok: false, reason: 'elevated' }` so main falls back to "Copied �
 
 ---
 ### WIN-014 · Build the Windows helper and point main at it
-- **Status**: `[~]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_PLAN.md#1 (scripts)
 - **Dependencies**: WIN-012
@@ -455,7 +455,7 @@ name. npm script `build-helper:win`.
 > **Upstream note from Wave 1 (WIN-012)**: the static CRT flag lives in native/helper-win/.cargo/config.toml, which cargo only reads when run from that folder — the build script must `Push-Location native/helper-win; cargo build --release` (or set RUSTFLAGS `-C target-feature=+crt-static`), not rely on `--manifest-path`. main.js already uses `platform.HELPER_BIN` (WIN-008), so HELPER_PATH may need no change.
 
 **Acceptance criteria**:
-- [~] `npm run build-helper:win` produces vendor/helper/promptly-helper.exe
+- [x] `npm run build-helper:win` produces vendor/helper/promptly-helper.exe
 - [x] Mac helper path and build unchanged
 
 **Self-verify**: Tick every criterion.
@@ -467,6 +467,7 @@ name. npm script `build-helper:win`.
 **Decisions**:
 > Filled in by agent after completing.
 - Wave 2, 5c817aa. **Partial = written, not run** (no PowerShell/MSVC linker on the Mac); `cargo check --release --locked --target x86_64-pc-windows-msvc` clean. Runs cargo from native/helper-win (so .cargo/config.toml's +crt-static applies), clears RUSTFLAGS-style variables for the process (they'd override config.toml), refuses an exe that imports VCRUNTIME140 or doesn't answer `--version`, skips when the exe is newer than its sources. `npm run build-helper:win`.
+- **Proven on Windows CI (run 36410102005, 2026-09-28)**: promptly-helper.exe builds (static CRT) and answers `--version`. First CI run showed PowerShell neither waits for nor captures a GUI-subsystem exe called with `&` — the version check now uses Start-Process with redirected output.
 ---
 
 ---
@@ -496,6 +497,7 @@ download base + VAD models and verify their checksums into vendor/whisper/. npm 
 - Wave 1 (parallel), 02f0ab6. **Partial = written, not run** (no PowerShell on the Mac) — first run on the Windows PC or Windows CI (WIN-018).
 - Reads every pin (tag, commit, model URLs + SHA-256s, cmake version) from fetch-whisper.sh at run time, so there's one source of truth; the .sh's top-level `NAME="..."` lines are now load-bearing.
 - Static MSVC runtime and GGML_OPENMP=OFF, so whisper-cli.exe needs no VC++ redistributable or vcomp140.dll — WIN-017 ships only the exe + models. `npm run fetch-whisper:win`. Logs in .cache/whisper-build/.
+- **Proven on Windows CI (run 36410102005, 2026-09-28)**: whisper-cli.exe builds (x64, CPU) and both models download and pass their SHA-256. Get-FileHash vanishes when Windows PowerShell 5.1 starts from pwsh 7 (inherited module path) — checksums now use .NET SHA256. Still to prove on the PC: a sample WAV transcribes.
 ---
 
 ---
@@ -556,11 +558,12 @@ npm script `dist:win`.
 - Wave 3, d8c8ffa. **Partial = install/start/uninstall needs the Windows PC (WIN-023).** A dry run on the Mac (no Wine) built Promptly-Setup-2.19.3.exe at 144.7 MB (DMG 234.4 MB, universal) with placeholder exes.
 - Mac-only extraResources/extraFiles moved from the shared build keys into build.mac: electron-builder adds platform lists to the top-level ones, so shared keys would have put uninstall.sh into the Windows install. Mac packing verified identical (mac --dir before/after: same 59 files, same 56 asar entries, binaries byte-identical).
 - build.win: nsis x64, build/icon.ico, `Promptly-Setup-${version}.${ext}`, extraResources by exact filename (whisper-cli.exe + 2 models → whisper/, promptly-helper.exe → helper/; no DLLs). build.nsis: assisted, per-user, choose folder, keep app data on uninstall (tray Uninstall removes it); uninstaller is "Uninstall Promptly.exe" (electron-builder default, matches win32.js). `npm run dist:win`.
+- **Proven on Windows CI (run 36410102005, 2026-09-28)**: `electron-builder --win nsis --x64` produced the 138 MB installer with the real exes and models (artifact Promptly-Setup-windows-x64). Install/start/uninstall is WIN-023.
 ---
 
 ---
 ### WIN-018 · Windows build in CI (no e2e)
-- **Status**: `[~]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (14)
 - **Dependencies**: WIN-014, WIN-015, WIN-017
@@ -571,7 +574,7 @@ npm script `dist:win`.
 No e2e (owner, 2026-09-28).
 
 **Acceptance criteria**:
-- [~] A push produces a downloadable `Promptly-Setup-X.Y.Z.exe` artifact
+- [x] A push produces a downloadable `Promptly-Setup-X.Y.Z.exe` artifact
 - [x] Unit tests and lint pass on Windows
 
 **Self-verify**: Tick every criterion.
@@ -584,6 +587,7 @@ No e2e (owner, 2026-09-28).
 > Filled in by agent after completing.
 - Wave 4, 0c86ea4 (+ fixes). .github/workflows/windows.yml: windows-latest; lint, unit tests, cargo test, build-helper:win, pinned cmake (read from fetch-whisper.sh, first on PATH), fetch-whisper:win, build:renderer, a check that the exes/models exist (electron-builder skips missing extraResources silently), electron-builder --win nsis --x64; artifact Promptly-Setup-windows-x64 (7 days), build logs on failure. SHA-pinned actions; caches cargo + vendor/whisper.
 - First runs found real issues, fixed in f127c34 / 0847a63 / build-helper fix: 38 unit tests assumed bash or the Mac platform (now `it.skipIf(onWindows)` with a reason each — all still run on the Mac); prompt files checked out CRLF (.gitattributes `eol=lf`); the config cache missed a same-tick, same-size hand edit on NTFS (2 s racy-timestamp guard, as git does); a spy recursed on a Windows runner; PowerShell doesn't capture a GUI-subsystem exe's `--version` (Start-Process with redirected output). Unit tests + lint + cargo test now pass on Windows.
+- **Proven on Windows CI (run 36410102005, 2026-09-28)**: all steps green in 4m46s: lint, 274 unit tests, cargo test, helper, whisper + models, renderer, installer, artifact.
 ---
 
 ---
@@ -677,7 +681,7 @@ SmartScreen's "More info → Run anyway" for Windows alongside Mac's Open Anyway
 
 ---
 ### WIN-022 · Docs for the two-platform codebase
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#10-conformance-checklist
 - **Dependencies**: WIN-001..WIN-021
@@ -688,7 +692,7 @@ the IPC table. SPEC.md's out-of-scope line becomes "Linux" only. CLAUDE.md comma
 D-WINDOWS decision entry.
 
 **Acceptance criteria**:
-- [ ] A fresh session can find every platform seam from CODEBASE.md alone
+- [x] A fresh session can find every platform seam from CODEBASE.md alone
 
 **Self-verify**: Re-read FEATURE_SPEC.md#10. Tick every criterion.
 **Test requirement**: none (docs).
@@ -698,7 +702,7 @@ D-WINDOWS decision entry.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- ARCHITECTURE.md gained "Platforms (macOS and Windows)": every seam in one table (platform modules and their keys, scheduler, keys/get-platform, hotkey presets, tray icons, the two helpers, scripts, build.mac/win/nsis, splash/pill wording) plus the rules for adding a difference. CODEBASE.md points to it from "Current state" and has rows for every new file (scheduler.js, helper-win, the .ps1 scripts, e2e/fakes, windows.yml, .gitattributes). CLAUDE.md: native/helper-win in the structure, the Windows commands, the unsigned-installer gap. DECISIONS.md: D-WINDOWS. SPEC.md already said Linux only. FEATURE_SPEC: Windows task names are ASCII (WIN-024).
 ---
 
 ---
@@ -733,7 +737,7 @@ main.log over 20 presses (p95 < 150 ms). Log each result here; bugs go through `
 
 ---
 ### WIN-024 · One scheduler interface: launchd and Task Scheduler
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (19)
 - **Dependencies**: WIN-023
@@ -745,8 +749,8 @@ today's plist + launchctl code unchanged; win32 uses `schtasks /Create /SC DAILY
 argument arrays, logging to `.harness\schedule.log`. The IPC handlers keep their shape.
 
 **Acceptance criteria**:
-- [ ] Mac scheduling unchanged (harness e2e green)
-- [ ] Windows schedule/replace/remove works and logs
+- [x] Mac scheduling unchanged (harness e2e green)
+- [~] Windows schedule/replace/remove works and logs
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (19). Tick every criterion.
 **Test requirement**: unit tests for the schtasks argument arrays per schedule kind.
@@ -756,12 +760,13 @@ argument arrays, logging to `.harness\schedule.log`. The IPC handlers keep their
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- 9a56614. main/platform/scheduler.js: `createScheduler({ kind: platform.HARNESS_SCHEDULER, … })` → `{ systemName, labelFor, install, remove, has, list }`. launchd side wraps today's plist + launchctl code unchanged (a test pins the plist; Mac e2e 48/48). Windows: `schtasks.exe` argument arrays (/Create /F replaces; /Query before /Delete since "not found" is translated; list via `/Query /FO CSV /NH`); `/TR` runs `<project>\.harness\schedule.ps1` (schtasks has no working directory and caps /TR at 261 chars — longer paths get a clear error); task names ASCII `Promptly Harness - <folder> (<hash>)` (console code page). main.js harness handlers and uninstall use the scheduler; IPC shapes unchanged.
+- **Partial = not run against real schtasks** — check on the PC: English /D day names on a non-English Windows, -File paths containing [ ], a console flash with -WindowStyle Hidden.
 ---
 
 ---
 ### WIN-025 · Harness files for PowerShell
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (18)
 - **Dependencies**: WIN-024
@@ -772,8 +777,8 @@ toasts through a built-in PowerShell snippet (no extra modules). `buildFilesProm
 is unchanged. `.ps1` files are not chmod'ed.
 
 **Acceptance criteria**:
-- [ ] Mac prompt and output unchanged
-- [ ] A Windows harness saves and runs from PowerShell
+- [x] Mac prompt and output unchanged
+- [~] A Windows harness saves and runs from PowerShell
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (18). Tick every criterion.
 **Test requirement**: unit test that win32 picks the Windows prompt and the Mac prompt is untouched.
@@ -783,7 +788,9 @@ is unchanged. `.ps1` files are not chmod'ed.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- 2fda015 (+ 0ba4df2). main/prompts/harness-files-win.txt: Windows PowerShell 5.1 .ps1 scripts (ASCII only, no &&/ternary), RUN `powershell -NoProfile -ExecutionPolicy Bypass -File .harness/run.ps1`, prompts piped to `claude -p` on stdin (claude.cmd mangles long arguments), hooks via `powershell … -File .harness/guard.ps1`, a built-in WinRT toast with a Write-Host fallback; same RUN/SCHEDULE/=== FILE === format so parseFiles is unchanged. Picked by platform key HARNESS_FILES_PROMPT; the Mac prompt's sha256 is pinned in a test. `.ps1` not chmod'ed on Windows.
+- Main-session follow-up 0ba4df2: the Harness panel's "Copy command" gives `Set-Location -LiteralPath '<dir>'; <run>` on Windows (5.1 has no &&); the Mac string is byte-identical (test).
+- **Partial = not run in real PowerShell** — check on the PC: a saved harness runs, the toast shows, Claude Code's Windows hooks call guard.ps1.
 ---
 
 ---

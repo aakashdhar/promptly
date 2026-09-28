@@ -43,6 +43,7 @@ promptly/
 ├── index.html, site/    ← product site for aakashdhar.me/promptly (GitHub Pages, not packaged)
 ├── pill.html            ← floating pill shown while talking from another app
 ├── native/helper/       ← promptly-helper (Swift): hotkey down/up, frontmost app, selected text
+├── native/helper-win/   ← promptly-helper.exe (Rust): the same protocol on Windows
 ├── src/renderer/        ← React app: App.jsx state machine, hooks/, components/, utils/
 ├── tests/               ← Vitest unit tests + IPC contract test
 ├── e2e/                 ← Playwright tests driving the real app with a fake Claude CLI
@@ -65,6 +66,10 @@ npm run test:e2e      # build + Playwright end-to-end tests (fake Claude/Whisper
                       #   includes e2e/ui.spec.mjs: screenshots of every screen in both themes + layout audit
 npm run preflight     # local tool + codebase checks (release.sh runs this)
 bash scripts/preflight.sh --codebase-only  # CHECKs 7-10 only, no local tools needed (CI runs this)
+npm run fetch-whisper:win   # Windows: build whisper-cli.exe + models (PowerShell; pins read from fetch-whisper.sh)
+npm run build-helper:win    # Windows: build native/helper-win → vendor/helper/promptly-helper.exe
+npm run dist:win            # Windows: both of the above + renderer + NSIS installer (dist/Promptly-Setup-X.Y.Z.exe)
+                            #   CI builds the same on every push: .github/workflows/windows.yml (artifact Promptly-Setup-windows-x64)
 npm run release -- X.Y.Z   # signed DMG (see scripts/release.sh); also updates the site's version + size
 bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Release the site downloads from
 ```
@@ -112,6 +117,7 @@ bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Releas
 - App.jsx still threads refs through ~12 hooks; a reducer/state-machine refactor is planned once e2e covers the expanded view and builders.
 - Requires Claude Code (by design, D-CLI-ONLY); setup installs or signs in to it from inside the app.
 - Self-signed, shared personally: first open needs System Settings → Open Anyway (no Apple Developer account; notarization and auto-update are backlogged).
+- Windows installer is unsigned in phase 1: SmartScreen shows More info → Run anyway (WIN-026 picks a signing method). OS differences live only in the seams listed in vibe/ARCHITECTURE.md → Platforms.
 
 ---
 

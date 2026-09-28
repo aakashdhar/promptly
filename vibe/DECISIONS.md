@@ -2254,3 +2254,13 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **ARCHITECTURE.md update**: No
 - **Deviations from BUG_PLAN.md**: none yet
 ---
+
+---
+### D-WINDOWS — Promptly on Windows: one codebase, platform seams, parallel build
+- **Date**: 2026-09-28 · **Type**: architecture
+- **Decision**: Windows 10 22H2+/11 x64 is built from the same codebase behind the seams in ARCHITECTURE.md → Platforms: `main/platform/{darwin,win32}.js` with one export shape (contract-tested), a Rust helper (`native/helper-win`) speaking the Swift helper's protocol, key names from `main/keys.js` via `get-platform`, NSIS packaging under `build.win`, Windows CI that builds the installer (no e2e, per D-WINDOWS-START).
+- **Why**: Mac behaviour stays byte-for-byte (verified by the unchanged Mac e2e suite, pinned tray-icon hashes and script byte checks) while Windows gets native behaviour — cmd.exe-safe spawning, taskkill trees, UI Automation selection, Task Scheduler, PowerShell setup.
+- **How it was built**: WIN-001..008 one by one; then (owner's call) VIBE_MODE=autonomous with vibe-parallel waves in git worktrees (vibe/parallel/windows-wave-*). Windows CI's first runs caught real bugs (CRLF prompts, NTFS timestamp race, cancel leaving claude.cmd running, PowerShell capture/Get-FileHash quirks) — all fixed.
+- **Deviations from the spec**: Windows Harness task names are ASCII (`Promptly Harness - …`) because schtasks lists names in the console code page; `setup-info` split into instant `setup-info` + slow `setup-checks`; setup scripts stay in the temp folder on both systems.
+- **Open**: WIN-023 hands-on pass on the owner's Windows PC; WIN-026 signing method (owner's choice).
+---

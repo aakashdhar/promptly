@@ -112,7 +112,7 @@ Delivered in two phases:
 ## 6. Data model changes
 
 None to history or config formats. `config.json` gains nothing new; paths already stored per install.
-Harness schedules on Windows are Task Scheduler tasks named `Promptly Harness — <folder> (<hash>)` (same label
+Harness schedules on Windows are Task Scheduler tasks named `Promptly Harness - <folder> (<hash>)` — ASCII hyphen, not an em dash, because schtasks lists names in the console code page (WIN-024) — (same label
 rule as `agentLabel`).
 
 ## 7. IPC / API changes

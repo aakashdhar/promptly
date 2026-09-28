@@ -936,7 +936,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (21/26 · 6 of them written, need a Windows run)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (24/26 · built; 7 need the hands-on pass on Windows)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
@@ -953,18 +953,18 @@ Final review gate run 2026-05-19. See blocking tasks below.
    [x] WIN-011 · Windows icons — tray icons per state and an installer icon
    [~] WIN-012 · Windows helper: hotkeys — a small Rust helper that hears hold-to-talk
    [~] WIN-013 · Windows helper: app, selection, paste — selected text as context and typing into the app you're in
-   [~] WIN-014 · Build the Windows helper — one command builds promptly-helper.exe
+   [x] WIN-014 · Build the Windows helper — one command builds promptly-helper.exe
    [~] WIN-015 · Speech engine for Windows — whisper.cpp built and models checked, same pins as Mac
    [x] WIN-016 · Tests that run on both systems — the test fakes move from bash to Node
    [~] WIN-017 · Windows installer — an NSIS installer that installs, runs and uninstalls
-   [~] WIN-018 · Windows build in CI — every push builds the installer (no e2e in CI)
+   [x] WIN-018 · Windows build in CI — every push builds the installer (no e2e in CI)
    [x] WIN-019 · Windows-aware e2e tests — Mac-only checks skipped with reasons; layout at 150%
    [x] WIN-020 · Publish the installer — each release carries Promptly-Setup.exe
    [x] WIN-021 · Right download per visitor — the site offers Windows users the installer
-   [ ] WIN-022 · Docs for two platforms — where every platform seam lives
+   [x] WIN-022 · Docs for two platforms — where every platform seam lives
    [ ] WIN-023 · Hands-on test on the Windows PC — the phase-1 checklist, end to end
-   [ ] WIN-024 · Scheduler for both systems — Harness schedules via launchd or Task Scheduler
-   [ ] WIN-025 · PowerShell harness files — Harness writes .ps1 on Windows
+   [~] WIN-024 · Scheduler for both systems — Harness schedules via launchd or Task Scheduler
+   [~] WIN-025 · PowerShell harness files — Harness writes .ps1 on Windows
    [ ] WIN-026 · Windows code signing — signed installer once you pick a signing method
    → Full specs: vibe/features/2026-09-27-windows-version/FEATURE_TASKS.md (agent use)
 
@@ -981,11 +981,12 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ Waves 3–4 (parallel, autonomous) — WIN-019 ✅ · WIN-020 ✅ · WIN-021 ✅ · WIN-017 🟡 · WIN-018 🟡
-   Windows installer config (Mac packing verified identical); Windows CI builds it; releases carry Promptly-Setup.exe; the site offers Windows visitors the installer; e2e specs Windows-aware
-   Windows CI found and we fixed: CRLF prompt files, a config-cache timestamp race, cancel leaving claude.cmd running (now taskkill /T), a PowerShell capture issue in the helper build
-   Mac: 274 unit tests, e2e 48/48 · Windows CI: lint, unit tests, cargo test green; installer build in progress
+✅ Promptly for Windows is built — WIN-022 docs, WIN-024/025 Harness on Windows, and a green Windows CI build
+   Windows CI (run 36410102005): lint, 274 unit tests, cargo test, helper, whisper.cpp + models, NSIS installer → artifact Promptly-Setup-windows-x64 (138 MB)
+   Mac: 289 unit tests, e2e 48/48 — unchanged behaviour
+   Branch feature/windows-version pushed
 
 ## What's next
-🔄 WIN-024 + WIN-025 (Harness scheduling and PowerShell files on Windows) — running
-⬜ WIN-022 docs, then the owner tests the CI-built installer on the Windows laptop (WIN-023); WIN-026 signing needs the owner's choice
+⬜ WIN-023 · You: install the CI build on the Windows laptop and run the checklist in FEATURE_TASKS.md (WIN-023)
+   Anything that fails comes back as `bug:`; the partial tasks (012, 013, 015, 017, 024, 025) get ticked from your results.
+⬜ WIN-026 · Signing — needs your choice of method (code-signing certificate, or Azure Trusted Signing)

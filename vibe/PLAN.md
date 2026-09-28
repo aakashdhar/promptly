@@ -148,7 +148,7 @@ Phase 1 complete (Electron shell + IPC skeleton + PATH resolution)
 > Depends on: STATES/STATE_HEIGHTS pattern in App.jsx, generate-prompt IPC (F-CLAUDE), saveToHistory (FCR-013)
 > Shared data: reads `mode` (useMode hook); writes `originalTranscript.current` (same as stopRecording); no new localStorage keys
 
-#### Promptly for Windows — the same app on Windows 10/11 x64 ← UNPLANNED ADDITION 🔄 IN PROGRESS 2026-09-28
+#### Promptly for Windows — the same app on Windows 10/11 x64 ← UNPLANNED ADDITION 🔄 BUILT, IN HANDS-ON TEST 2026-09-28 (WIN-023 on the owner's PC; WIN-026 signing open)
 > Added: 2026-09-28 · See DECISIONS.md D-WINDOWS-START for context · spec in vibe/features/2026-09-27-windows-version/
 > Build order: after the v2.19 audit fixes · Depends on: the platform seam (main/platform/), the helper JSON-lines protocol, shared/modes.json
 > Shared data: reads config.json/history as today (no format changes); creates nothing new except per-platform key names (get-platform IPC)

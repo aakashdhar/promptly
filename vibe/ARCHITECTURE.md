@@ -211,6 +211,26 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 
 ---
 
+## Platforms (macOS and Windows)
+
+Promptly runs on macOS 12+ and Windows 10 22H2+/11 x64 from one codebase. Every difference lives in one of these places — nowhere else:
+
+| Seam | What it holds |
+|------|---------------|
+| `main/platform/index.js` → `darwin.js` / `win32.js` | Everything OS-specific in the main process, **same exports in both** (tests/main.test.js checks keys + `typeof`): binary locations and lookup (`binaryCandidates`, `shellWhich`, `executableNames`, `PATH_DELIMITER`, `USER_ENV_VARS`), starting binaries (`spawnArgs`: `.cmd` through an escaped `cmd.exe /d /s /c` line on Windows; `killTree`: `taskkill /T` on Windows), setup (`INSTALL_COMMAND`, `SETUP_SCRIPT`/`openSetupScript`, `SETUP_COPY`, `checkPrerequisites`, `blockedBinaries`), window and tray (`windowChrome`, `TRAY_CLICK_BLURS`, `TRAY_TEMPLATE_ICONS`), permissions (`PRIVACY_SETTINGS`, `microphoneAccess`), uninstall (`uninstallLaunch`, `UNINSTALL_TEXT`, `uninstallDataPaths`, `appBundlePath`), Harness (`HARNESS_SCHEDULER`, `HARNESS_FILES_PROMPT`), binary names (`WHISPER_CLI`, `HELPER_BIN`). |
+| `main/platform/scheduler.js` | Harness schedules: launchd plist + launchctl (Mac) or `schtasks.exe` argument arrays (Windows) behind `install / remove / has / list`. |
+| `main/keys.js` → `get-platform` → `src/renderer/utils/keys.js` | Key names (⌘ ⌥ ⌃ ⇧ ↵ vs Ctrl/Alt/Shift/Enter), combo spelling, the two shortcuts that differ (Generate, Hide history), caption-button room (`titleBarPadding`, `panelTopStrip`). The renderer never reads `process.platform`; it asks `keys.os`. |
+| `main/hotkey.js` | Talk-shortcut presets per system (`presetsFor(platform)`), with the helper's key codes (Mac key codes / Windows virtual-key codes). |
+| `main/tray-icon.js` | Mac template icons; Windows coloured 16/32 px icons (`drawWinTrayIcons`). |
+| `native/helper/` (Swift) · `native/helper-win/` (Rust) | The hold-to-talk / front app / selected text / paste helper, one per OS, speaking the **same JSON-lines protocol** (main/helper.js). |
+| `scripts/*.sh` · `scripts/*-win.ps1` | Build scripts per OS; the Windows whisper script reads its pins from fetch-whisper.sh. |
+| `package.json` `build.mac` / `build.win` / `build.nsis` | Packaging: Mac-only resources live under `build.mac` (shared keys would leak into the Windows build). |
+| `splash.html` / `pill.html` | Wording from `setup-info` `copy` and key names from `get-platform` — no platform checks in the page. |
+
+Rules: a new OS difference goes behind a platform key (added to **both** modules) or into one of the files above; Mac behaviour of an existing path never changes to make room for Windows; Windows-only code is proven by unit tests with injected platforms (`path.win32`, stubbed `execFile`) so it passes on a Mac and on the Windows CI runner (`.github/workflows/windows.yml`). Tests that need bash or check Mac-only behaviour use `it.skipIf(onWindows)` with a reason — they still run on every Mac.
+
+---
+
 ## PATH resolution (critical — most common failure point)
 
 **Rule:** `claude`, `whisper` and `ffmpeg` are resolved at startup and cached, because a packaged `.app` does not inherit the user's shell PATH.
