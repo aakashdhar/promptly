@@ -131,27 +131,6 @@ export default function ExpandedView({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', position: 'relative' }}>
-      {currentState === 'SHORTCUTS' && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 20,
-          background: 'var(--bg)',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
-          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <ShortcutsPanel onClose={onCloseShortcuts} />
-          </div>
-        </div>
-      )}
-      {currentState === 'SETTINGS' && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 20,
-          background: 'var(--bg)',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          <SettingsPanel onClose={onCloseSettings} />
-        </div>
-      )}
       {/* While Settings or Shortcuts cover the window, what's behind them can't be reached by
           Tab or a screen reader. */}
       <div inert={currentState === 'SETTINGS' || currentState === 'SHORTCUTS' ? true : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -245,6 +224,30 @@ export default function ExpandedView({
         />
       </div>
       </div>
+      {/* Settings and Shortcuts come after the content they cover, on purpose: Electron works out
+          which parts of the window drag the window in page order, not by what's on top. Placed
+          before it, the toolbar's drag area underneath swallowed clicks on the Done button. */}
+      {currentState === 'SHORTCUTS' && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20,
+          background: 'var(--bg)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
+          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <ShortcutsPanel onClose={onCloseShortcuts} />
+          </div>
+        </div>
+      )}
+      {currentState === 'SETTINGS' && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 20,
+          background: 'var(--bg)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <SettingsPanel onClose={onCloseSettings} />
+        </div>
+      )}
     </div>
   )
 }
