@@ -52,3 +52,11 @@ the interactive `npm run uninstall` flow; the helper.
 ## 9. Regression test
 tests/uninstall.test.js — "deletes nothing until Promptly has quit" (script + dummy PID) and "the app never removes
 its own bundle or data while running" (handleUninstall's plan comes from main/uninstall.js as a spawn command only).
+
+## 10. Confirmation (owner's screenshot, 2026-09-28, build ≤ 2.19.2)
+"Promptly couldn't remove everything — /Applications/Promptly.app: ENOTEMPTY: directory not empty, rmdir
+'/Applications/Promptly.app/Contents/Resources'". The in-process delete had already removed most of the running
+bundle and failed only on Contents/Resources (app.asar, helper, whisper in use). So macOS App Management did not
+block it — the app dismantled itself while running, with the helper's tap active, then blocked on this dialog.
+Consistent with the root cause; the 2.19.3 fix (quit first, script removes afterwards) removes exactly this path.
+The Finder fallback in uninstall.sh stays as a safety net.
