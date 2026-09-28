@@ -44,7 +44,7 @@ Windows yet' }` results. Real bodies land in WIN-002 and WIN-024.
 
 ---
 ### WIN-002 · Find Claude, Whisper and ffmpeg on Windows
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (10, 11, 17), #8-edge-cases-and-error-states
 - **Dependencies**: WIN-001
@@ -62,9 +62,9 @@ resolves `{ ok: true }` (nothing to reset); `appBundlePath(exe)` → install fol
 is not found (never look inside `\\wsl$`).
 
 **Acceptance criteria**:
-- [ ] Candidates cover native installer, npm global, Scoop and Chocolatey locations
-- [ ] `where.exe` output with several lines or a CRLF resolves to the first existing file
-- [ ] Paths with spaces and non-ASCII user names (`C:\Users\Zoë Smith`) are kept intact
+- [x] Candidates cover native installer, npm global, Scoop and Chocolatey locations
+- [x] `where.exe` output with several lines or a CRLF resolves to the first existing file
+- [x] Paths with spaces and non-ASCII user names (`C:\Users\Zoë Smith`) are kept intact
 
 **Self-verify**: Re-read FEATURE_SPEC.md#8. Tick every criterion.
 **Test requirement**: unit tests with `path.win32` paths and a stubbed `execFile` for `where.exe` (CRLF, missing, multiple results).
@@ -74,7 +74,11 @@ is not found (never look inside `\\wsl$`).
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Paths are built with `path.win32` so the module and its tests behave the same on the Mac.
+- `shellWhich`, `appBundlePath` and `removeInstalledApp` take an optional last argument (`run`/`fileExists`) so tests stub `where.exe` and the file system; callers pass nothing.
+- Windows folders come from APPDATA/LOCALAPPDATA/ProgramData/ProgramFiles/NVM_HOME/NVM_SYMLINK, falling back to the profile folder when unset.
+- Python Whisper on Windows is `whisper.exe` in the Python Scripts folders; `hasPythonWhisperModule` stays false (`python3 -m whisper` isn't a Windows spelling).
+- **Handoff to WIN-003**: `resolveBinary` joins nvm dirs with the bare name (`claude`), which won't match `claude.cmd` — WIN-003 (binaries.js) must try the Windows extensions there.
 ---
 
 ---

@@ -936,12 +936,12 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (1/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (2/26)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
    [x] WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
-   [ ] WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
+   [x] WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
    [ ] WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
    [ ] WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
    [ ] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
@@ -981,11 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ WIN-001 · Platform selector — Mac keeps its module; Windows gets win32.js with the same shape (placeholders)
-   Est. cost: ~$0.05 · Session running total: ~$0.05
-   Committed: feat(windows-version): WIN-001 — 8ab5a33 (branch feature/windows-version)
+✅ WIN-002 · Find the tools on Windows — Claude Code, Whisper and ffmpeg are looked for in the native installer, npm, nvm-windows, Scoop, Chocolatey and winget folders; where.exe as a last resort (WSL copies ignored)
+   Est. cost: ~$0.12 · Session running total: ~$0.17
+   Committed: feat(windows-version): WIN-002 — 2267c29 (branch feature/windows-version)
 
 ## What's next
-⬜ WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
-   Nothing changes on the Mac; on Windows, setup can find Claude Code where npm or the installer put it.
+⬜ WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
+   Nothing changes on the Mac; on Windows, a Claude Code installed with npm can actually be started.
 Say "next" to begin.
