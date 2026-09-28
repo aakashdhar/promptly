@@ -208,7 +208,7 @@ and exposes `keys` + `combo(...)`.
 
 ---
 ### WIN-007 · Windows hotkey presets
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (4)
 - **Dependencies**: WIN-005
@@ -221,8 +221,8 @@ Windows virtual-key codes. `getPreset`/`DEFAULT_HOTKEY`/`hotkeyWords` pick by pl
 A stored Mac-only preset on Windows falls back to the default. The hold/tap state machine is unchanged.
 
 **Acceptance criteria**:
-- [ ] macOS presets, labels and default are identical to today
-- [ ] Windows offers exactly the five presets above, default double-tap Ctrl
+- [x] macOS presets, labels and default are identical to today
+- [x] Windows offers exactly the five presets above, default double-tap Ctrl
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (4). Tick every criterion.
 **Test requirement**: extend the "Double-tap Control" tests with win32 preset/default/fallback cases.
@@ -232,7 +232,10 @@ A stored Mac-only preset on Windows falls back to the default. The hold/tap stat
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- `presetsFor(platform)` / `fallbackHotkeyFor(platform)`; `HOTKEY_PRESETS` and `FALLBACK_HOTKEY` stay as exports, computed for the running system, so main.js needed no change. `getPreset` and `hotkeyWords` take an optional platform for tests.
+- Windows helper descriptors keep the Mac shape (`keyCode`, `modifiers`, `modifierOnly`, `doubleTap`) with Windows virtual-key codes (VK_CONTROL 0x11, VK_SPACE 0x20, VK_RMENU 0xA5) and modifier names control/alt/shift — the contract WIN-012's helper reads.
+- ShortcutsPanel splits the talk key on space or `+`, so Alt+Space shows as two keycaps like ⌥ Space does (Mac strings contain no +).
+- **Later (WIN-008/009, splash)**: splash.html's Ready step checks `hotkey === 'option-space'`; on Windows the Alt+Space preset is `alt-space`, and its copy says "Control"/"your Mac".
 ---
 
 ---

@@ -936,7 +936,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (6/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (7/26)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
@@ -946,7 +946,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
    [x] WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
    [x] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
    [x] WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
-   [ ] WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
+   [x] WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
    [ ] WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
    [ ] WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
    [ ] WIN-010 · Toolbar room for caption buttons — nothing sits under minimise/maximise/close
@@ -981,12 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ WIN-006 · Key labels everywhere — every hint, tooltip, shortcut list, the pill and setup read key names from one place; Mac screens look the same
-   Est. cost: ~$0.15 · Session running total: ~$0.61
-   Committed: feat(windows-version): WIN-006 — c78f375 (branch feature/windows-version) · Mac e2e 48/48
-   + Generate and Hide history now listen for Ctrl+Enter and Ctrl+Shift+S on Windows (34b1e0d, Mac unchanged)
+✅ WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space, right Alt, Ctrl+Alt+Space and Ctrl+Shift+Space; a Mac-only choice falls back to the default
+   Est. cost: ~$0.12 · Session running total: ~$0.73
+   Committed: feat(windows-version): WIN-007 (branch feature/windows-version)
 
 ## What's next
-⬜ WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
-   Nothing changes on the Mac; on Windows, Settings offers Windows talk shortcuts with Windows names.
+⬜ WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
+   Nothing changes on the Mac; on Windows, setup can install and sign in to Claude Code.
 Say "next" to begin.
