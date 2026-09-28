@@ -73,3 +73,19 @@
 - **Why**: tests delete/relocate fakes per run; makeClaudeEnv rewrites PATH so `node` may not be found; `exec` keeps cancel's SIGTERM reaching the fake; `.cmd` lets spawnArgs start it on Windows.
 - **Touches**: e2e/fakes/install.mjs, e2e/app.spec.mjs, e2e/ui.spec.mjs
 ---
+
+---
+### 2026-09-28 · Wave 2 · WIN-013 · Selection via UI Automation, then a guarded, clipboard-exact Ctrl+C
+- **Decision**: read selected text through UI Automation (the `windows` crate, COM only); fall back to Ctrl+C only for fields with no text pattern that are known not to be passwords, aren't terminals, with Alt/Shift/Win up. Save every clipboard format in full (≤200 ms, ≤64 MB) or don't copy; restore exactly, even after a late copy; mark the restored item not for Win+V history/cloud.
+- **Why**: Ctrl+C in a terminal stops the running command, with Shift/Alt it becomes another shortcut; the owner's rule is that the clipboard always comes back. Hand-written COM vtables for UIA would be untestable on the Mac.
+- **Touches**: native/helper-win/src/{context,uia,clipboard,apps,keys,paste}.rs, Cargo.toml
+---
+### 2026-09-28 · Wave 2 · WIN-011 · Windows tray states are coloured discs, not a status dot
+- **Decision**: at 16 px a Mac-style dot can't be read, so each state is a coloured disc with a light mic that shows on light and dark taskbars; `platform.TRAY_TEMPLATE_ICONS` picks the drawing in main.js. The .ico is built from build/icon.png by a package-free PNG decoder/ICO writer.
+- **Touches**: main/tray-icon.js (`drawWinTrayIcons`), main.js (`createMicIcon`), scripts/generate-icon.js, build/icon.ico
+---
+### 2026-09-28 · Wave 2 · setup-info split into instant wording and slow checks
+- **Decision**: `setup-info` returns only wording; `setup-checks` starts the binaries (antivirus check) and looks for Git.
+- **Why**: the checks can take up to 5 s; with one channel the Windows welcome screen showed Mac wording until they finished.
+- **Touches**: main.js, preload.js (`setupChecks`), splash.html (`applySetupInfo`)
+---

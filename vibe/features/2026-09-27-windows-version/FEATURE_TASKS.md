@@ -312,7 +312,7 @@ skips the Accessibility step on Windows; "open microphone settings" uses `platfo
 
 ---
 ### WIN-010 · Leave room for the Windows caption buttons in the toolbar
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (3), FEATURE_PLAN.md#5
 - **Dependencies**: WIN-005, WIN-009
@@ -324,8 +324,8 @@ right (caption buttons) instead, from `keys.os`. Every clickable item stays `no-
 > **Upstream note from Wave 1 (WIN-009)**: splash.html copy is still Mac-only in places ("on your Mac", "Double-tap Control needs Accessibility", "macOS opens System Settings"). Accessibility is skipped on Windows (available:false), but the lede and done-screen text should come from data (setup-info / key names), with Mac text unchanged.
 
 **Acceptance criteria**:
-- [ ] Mac padding unchanged (screenshots identical)
-- [ ] On Windows nothing sits under the minimise/maximise/close buttons
+- [x] Mac padding unchanged (screenshots identical)
+- [x] On Windows nothing sits under the minimise/maximise/close buttons
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (3). Tick every criterion.
 **Test requirement**: Mac e2e layout audit green; Windows check in WIN-023.
@@ -335,12 +335,13 @@ right (caption buttons) instead, from `keys.os`. Every clickable item stays `no-
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 2, 447ba71 (+ a990deb, f727688). `titleBarPadding(mac, gutter)` / `CAPTION_BUTTONS_WIDTH` (140) in utils/keys.js: Mac padding verbatim; Windows reserves the caption buttons on the right. `panelTopStrip()` makes the Shortcuts overlay's drag strip 56 px on Windows so Done clears the buttons at the 760 px minimum width.
+- Setup wording: `platform.SETUP_COPY` ({} on the Mac — the splash's own text is the Mac wording; Windows replacements keyed by `data-copy`). Follow-up f727688 split the channel: `setup-info` answers instantly (installCommand, terminal, copy) and the slow `setup-checks` (gitMissing, blocked) runs after, so Windows never flashes "this Mac". The done screen treats `alt-space` like `option-space`. Tests: tests/windows-ui.test.js. Mac e2e 48/48.
 ---
 
 ---
 ### WIN-011 · Windows tray and app icons
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (2)
 - **Dependencies**: WIN-001
@@ -350,8 +351,8 @@ right (caption buttons) instead, from `keys.os`. Every clickable item stays `no-
 and ready, since Windows has no template images. generate-icon.js also writes `build/icon.ico` (16–256 px).
 
 **Acceptance criteria**:
-- [ ] Mac tray icons are unchanged (template images)
-- [ ] Windows gets a visible icon per state and an .ico for the installer
+- [x] Mac tray icons are unchanged (template images)
+- [x] Windows gets a visible icon per state and an .ico for the installer
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (2). Tick every criterion.
 **Test requirement**: extend the tray-icon tests: win32 states are not template images and have 16 and 32 px sizes.
@@ -361,7 +362,8 @@ and ready, since Windows has no template images. generate-icon.js also writes `b
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 2, ab74ad7 (+ wiring f727688). Windows tray: a coloured disc with a mic per state at 16/32 px (`drawWinTrayIcons`), never template; the pulse blinks between the state colour and idle. A test pins a hash of all 24 Mac icon variants, so Mac pixels can't drift. `build/icon.ico` 16–256 px from build/icon.png via `scripts/generate-icon.js --ico` (no packages).
+- Wiring (main session): `platform.TRAY_TEMPLATE_ICONS` (Mac true, Windows false) — `createMicIcon` builds a multi-resolution nativeImage from `drawWinTrayIcons` on Windows. Colours were the agent's pick; a preview was shown to the owner (awaiting a visual nod).
 ---
 
 ## Stage 1B — Native helper and build (needs Windows)
@@ -400,7 +402,7 @@ recording (latency NFR). stdout is flushed per line; stdin EOF exits.
 
 ---
 ### WIN-013 · Windows helper: front app, selected text and paste
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: L
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (6, 7, 8), #8
 - **Dependencies**: WIN-012
@@ -416,10 +418,10 @@ not, return `{ ok: false, reason: 'elevated' }` so main falls back to "Copied �
 > **Upstream notes from Wave 1 (WIN-012)**: context.rs and paste.rs are stubs to fill; the context stub answers `app: null` (not Swift's `{}`) so main.js skips it. main/helper.js calls `onHotkey(msg.phase)` and drops `msg.t` — passing `t` through and logging key-down→recording latency in main.js would let WIN-023 measure the 150 ms target.
 
 **Acceptance criteria**:
-- [ ] Selection is read in Notepad, VS Code, Chrome and Word (UIA or the Ctrl+C fallback); apps with nothing selected return none, no error
-- [ ] After the fallback the clipboard holds exactly what it held before; password fields are never copied
-- [ ] "Code.exe" reports as Visual Studio Code
-- [ ] Paste into an elevated window falls back with the reason shown
+- [~] Selection is read in Notepad, VS Code, Chrome and Word (UIA or the Ctrl+C fallback); apps with nothing selected return none, no error
+- [~] After the fallback the clipboard holds exactly what it held before; password fields are never copied
+- [x] "Code.exe" reports as Visual Studio Code
+- [~] Paste into an elevated window falls back with the reason shown
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (6–8). Tick every criterion.
 **Test requirement**: manual checks in WIN-023; unit tests for the exe → name mapping.
@@ -429,12 +431,18 @@ not, return `{ ok: false, reason: 'elevated' }` so main falls back to "Copied �
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 2, d39f5e1. **Partial = written and tested as far as a Mac allows** (cargo test 59/59, clippy clean on both targets); every criterion needs the Windows PC (WIN-023) except the Code.exe name mapping.
+- `context`: `{ app: { name, bundleId: <exe path>, pid }, selectedText }` (Swift shape; 20,000-char cap; CRLF→LF). Names: table (Code.exe → Visual Studio Code …) → FileDescription → exe name; Store apps via their frame window; Promptly's own window → `app: null`.
+- Selection: UI Automation first (COM worker thread, 500 ms). Ctrl+C fallback only when the field has no text pattern, is known not to be a password, isn't a terminal (incl. VS Code's xterm), and Alt/Shift/Win are up; every clipboard format saved (≤200 ms, ≤64 MB, else no copy) and restored exactly, also after a late copy (1 s watcher); restored item marked not for Win+V history/cloud. Line-copy with no selection counts as none.
+- `paste`: Ctrl+V via SendInput; `{ ok: false, reason: 'elevated' }` for admin windows. Main-session follow-up f727688 shows it in the pill ("<App> runs as administrator. Copied, press Ctrl+V").
+- Latency: helper.js forwards `t`; main.js logs `Hotkey latency: N ms (key down → recording)` (Windows only — Swift sends no t). Deps: windows-sys + windows 0.62 (UIA COM only) + serde_json.
+- Main-session follow-up f727688: `destinationFor` matches Windows `.exe` names (terminals/editors → agent, browsers → chat, Word/Slack/Outlook/Notion → writing, Figma → design); Mac bundle ids unchanged.
+- Known limit: with an Alt- or Shift-based hotkey held, only UI Automation reads the selection (no Ctrl+C fallback).
 ---
 
 ---
 ### WIN-014 · Build the Windows helper and point main at it
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: S
 - **Spec ref**: FEATURE_PLAN.md#1 (scripts)
 - **Dependencies**: WIN-012
@@ -447,8 +455,8 @@ name. npm script `build-helper:win`.
 > **Upstream note from Wave 1 (WIN-012)**: the static CRT flag lives in native/helper-win/.cargo/config.toml, which cargo only reads when run from that folder — the build script must `Push-Location native/helper-win; cargo build --release` (or set RUSTFLAGS `-C target-feature=+crt-static`), not rely on `--manifest-path`. main.js already uses `platform.HELPER_BIN` (WIN-008), so HELPER_PATH may need no change.
 
 **Acceptance criteria**:
-- [ ] `npm run build-helper:win` produces vendor/helper/promptly-helper.exe
-- [ ] Mac helper path and build unchanged
+- [~] `npm run build-helper:win` produces vendor/helper/promptly-helper.exe
+- [x] Mac helper path and build unchanged
 
 **Self-verify**: Tick every criterion.
 **Test requirement**: build on the Windows PC / Windows CI.
@@ -458,7 +466,7 @@ name. npm script `build-helper:win`.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 2, 5c817aa. **Partial = written, not run** (no PowerShell/MSVC linker on the Mac); `cargo check --release --locked --target x86_64-pc-windows-msvc` clean. Runs cargo from native/helper-win (so .cargo/config.toml's +crt-static applies), clears RUSTFLAGS-style variables for the process (they'd override config.toml), refuses an exe that imports VCRUNTIME140 or doesn't answer `--version`, skips when the exe is newer than its sources. `npm run build-helper:win`.
 ---
 
 ---
