@@ -1,0 +1,9 @@
+# Link the C runtime statically so promptly-helper.exe runs on a PC without the Visual C++
+# redistributable (a missing VCRUNTIME140.dll would look like an antivirus block to setup).
+# Cargo reads this file only when it runs from native/helper-win, so the build script must run
+# cargo from this folder (or pass the same RUSTFLAGS) rather than rely on --manifest-path alone.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
