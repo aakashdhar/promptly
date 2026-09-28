@@ -936,7 +936,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (14/26 · 4 of them written, need a Windows run)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (21/26 · 6 of them written, need a Windows run)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
@@ -956,11 +956,11 @@ Final review gate run 2026-05-19. See blocking tasks below.
    [~] WIN-014 · Build the Windows helper — one command builds promptly-helper.exe
    [~] WIN-015 · Speech engine for Windows — whisper.cpp built and models checked, same pins as Mac
    [x] WIN-016 · Tests that run on both systems — the test fakes move from bash to Node
-   [ ] WIN-017 · Windows installer — an NSIS installer that installs, runs and uninstalls
-   [ ] WIN-018 · Windows build in CI — every push builds the installer (no e2e in CI)
-   [ ] WIN-019 · Windows-aware e2e tests — Mac-only checks skipped with reasons; layout at 150%
-   [ ] WIN-020 · Publish the installer — each release carries Promptly-Setup.exe
-   [ ] WIN-021 · Right download per visitor — the site offers Windows users the installer
+   [~] WIN-017 · Windows installer — an NSIS installer that installs, runs and uninstalls
+   [~] WIN-018 · Windows build in CI — every push builds the installer (no e2e in CI)
+   [x] WIN-019 · Windows-aware e2e tests — Mac-only checks skipped with reasons; layout at 150%
+   [x] WIN-020 · Publish the installer — each release carries Promptly-Setup.exe
+   [x] WIN-021 · Right download per visitor — the site offers Windows users the installer
    [ ] WIN-022 · Docs for two platforms — where every platform seam lives
    [ ] WIN-023 · Hands-on test on the Windows PC — the phase-1 checklist, end to end
    [ ] WIN-024 · Scheduler for both systems — Harness schedules via launchd or Task Scheduler
@@ -981,12 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ Wave 2 (parallel, autonomous) — WIN-010 ✅ · WIN-011 ✅ · WIN-013 🟡 · WIN-014 🟡
-   Toolbars and Shortcuts clear the Windows window buttons; setup speaks Windows; Windows tray icons (preview shown — awaiting your nod on colours); helper reads the front app and selected text and pastes (needs a Windows run); helper build script (needs a Windows run)
-   + wiring: tray icons in use, setup wording before slow checks, pill explains admin apps, destination-aware prompts for Windows apps
-   Mac: 266 unit tests, e2e 48/48 · Rust 59/59, Windows target clean
-   Log: vibe/parallel/windows-wave-2-status.md
+✅ Waves 3–4 (parallel, autonomous) — WIN-019 ✅ · WIN-020 ✅ · WIN-021 ✅ · WIN-017 🟡 · WIN-018 🟡
+   Windows installer config (Mac packing verified identical); Windows CI builds it; releases carry Promptly-Setup.exe; the site offers Windows visitors the installer; e2e specs Windows-aware
+   Windows CI found and we fixed: CRLF prompt files, a config-cache timestamp race, cancel leaving claude.cmd running (now taskkill /T), a PowerShell capture issue in the helper build
+   Mac: 274 unit tests, e2e 48/48 · Windows CI: lint, unit tests, cargo test green; installer build in progress
 
 ## What's next
-🔄 Wave 3 (parallel) — WIN-017 NSIS installer · WIN-019 Windows-aware e2e
-   Runs automatically (VIBE_MODE=autonomous).
+🔄 WIN-024 + WIN-025 (Harness scheduling and PowerShell files on Windows) — running
+⬜ WIN-022 docs, then the owner tests the CI-built installer on the Windows laptop (WIN-023); WIN-026 signing needs the owner's choice

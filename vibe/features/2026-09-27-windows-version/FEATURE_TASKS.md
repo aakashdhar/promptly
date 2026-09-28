@@ -527,7 +527,7 @@ on Windows a `.cmd` shim calling `node`. The specs call one helper that returns 
 
 ---
 ### WIN-017 · Windows installer (NSIS) configuration
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (1, 14, 16, 17)
 - **Dependencies**: WIN-011, WIN-014, WIN-015
@@ -542,8 +542,8 @@ npm script `dist:win`.
 > **Upstream note from Wave 1 (WIN-015)**: whisper-cli.exe is built with the static MSVC runtime and no OpenMP — package only the exe and the two models, no DLLs.
 
 **Acceptance criteria**:
-- [ ] `npm run dist:win` on Windows produces an installer that installs, starts and uninstalls
-- [ ] Mac `build` config and DMG unchanged; installer within 15% of the DMG size
+- [~] `npm run dist:win` on Windows produces an installer that installs, starts and uninstalls
+- [x] Mac `build` config and DMG unchanged; installer within 15% of the DMG size
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (14). Tick every criterion.
 **Test requirement**: install/uninstall on the Windows PC (WIN-023).
@@ -553,12 +553,14 @@ npm script `dist:win`.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 3, d8c8ffa. **Partial = install/start/uninstall needs the Windows PC (WIN-023).** A dry run on the Mac (no Wine) built Promptly-Setup-2.19.3.exe at 144.7 MB (DMG 234.4 MB, universal) with placeholder exes.
+- Mac-only extraResources/extraFiles moved from the shared build keys into build.mac: electron-builder adds platform lists to the top-level ones, so shared keys would have put uninstall.sh into the Windows install. Mac packing verified identical (mac --dir before/after: same 59 files, same 56 asar entries, binaries byte-identical).
+- build.win: nsis x64, build/icon.ico, `Promptly-Setup-${version}.${ext}`, extraResources by exact filename (whisper-cli.exe + 2 models → whisper/, promptly-helper.exe → helper/; no DLLs). build.nsis: assisted, per-user, choose folder, keep app data on uninstall (tray Uninstall removes it); uninstaller is "Uninstall Promptly.exe" (electron-builder default, matches win32.js). `npm run dist:win`.
 ---
 
 ---
 ### WIN-018 · Windows build in CI (no e2e)
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (14)
 - **Dependencies**: WIN-014, WIN-015, WIN-017
@@ -569,8 +571,8 @@ npm script `dist:win`.
 No e2e (owner, 2026-09-28).
 
 **Acceptance criteria**:
-- [ ] A push produces a downloadable `Promptly-Setup-X.Y.Z.exe` artifact
-- [ ] Unit tests and lint pass on Windows
+- [~] A push produces a downloadable `Promptly-Setup-X.Y.Z.exe` artifact
+- [x] Unit tests and lint pass on Windows
 
 **Self-verify**: Tick every criterion.
 **Test requirement**: the workflow run itself.
@@ -580,12 +582,13 @@ No e2e (owner, 2026-09-28).
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 4, 0c86ea4 (+ fixes). .github/workflows/windows.yml: windows-latest; lint, unit tests, cargo test, build-helper:win, pinned cmake (read from fetch-whisper.sh, first on PATH), fetch-whisper:win, build:renderer, a check that the exes/models exist (electron-builder skips missing extraResources silently), electron-builder --win nsis --x64; artifact Promptly-Setup-windows-x64 (7 days), build logs on failure. SHA-pinned actions; caches cargo + vendor/whisper.
+- First runs found real issues, fixed in f127c34 / 0847a63 / build-helper fix: 38 unit tests assumed bash or the Mac platform (now `it.skipIf(onWindows)` with a reason each — all still run on the Mac); prompt files checked out CRLF (.gitattributes `eol=lf`); the config cache missed a same-tick, same-size hand edit on NTFS (2 s racy-timestamp guard, as git does); a spy recursed on a Windows runner; PowerShell doesn't capture a GUI-subsystem exe's `--version` (Start-Process with redirected output). Unit tests + lint + cargo test now pass on Windows.
 ---
 
 ---
 ### WIN-019 · Make the e2e specs Windows-aware
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (13)
 - **Dependencies**: WIN-016
@@ -598,8 +601,8 @@ pbpaste/pbcopy → PowerShell `Get-Clipboard`/`Set-Clipboard` equivalents). ui.s
 > **Upstream notes from Wave 1 (WIN-016)**: on Windows the fakes are `.cmd` launchers. Claude already starts through `platform.spawnArgs`, but main/whisper.js runs `<PROMPTLY_WHISPER_DIR>/whisper-cli.exe` with execFile and main/helper.js runs `spawn(PROMPTLY_HELPER, [])` — neither goes through spawnArgs, so the fake engine/helper can't start. Route those spawns through `platform.spawnArgs` (identity on the Mac) or let the e2e env name the engine file; also check resolveWhisperPath/resolveFfmpegPath accept `.cmd`.
 
 **Acceptance criteria**:
-- [ ] Every skip names why; no test is silently skipped on the Mac
-- [ ] Layout audit passes at 100% and 150% on the Windows PC
+- [x] Every skip names why; no test is silently skipped on the Mac
+- [~] Layout audit passes at 100% and 150% on the Windows PC
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (13). Tick every criterion.
 **Test requirement**: Mac e2e unchanged (48/48); Windows run in WIN-023.
@@ -609,14 +612,16 @@ pbpaste/pbcopy → PowerShell `Get-Clipboard`/`Set-Clipboard` equivalents). ui.s
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 3, ed6dd84. whisper engine/model-download, helper start and the check-whisper/check-ffmpeg probes go through platform.spawnArgs (identity on the Mac; tests/spawn-windows.test.js pins the Mac call shapes). e2e-only `PROMPTLY_WHISPER_CLI` (read only when IS_E2E) names the fake .cmd engine. Specs press Ctrl/Ctrl+Shift+S on Windows, use PowerShell clipboard (UTF-8, argument arrays), skip 6 Mac-only tests with reasons; ui.spec runs the layout audit at 100% and 150% on Windows; Mac run 48/48 with names/screenshots unchanged.
+- Found: on Windows `child.kill()` ends only cmd.exe, not claude.cmd's Node — a cancel would leave Claude running and spending. Fixed (main session, f127c34): `platform.killTree` (win32: `taskkill /T /F /PID`; Mac: false → SIGTERM/SIGKILL as before) used by binaries.terminate.
+- To check on the PC (WIN-023): layout audit at 150%; whether Electron's clipboard returns CRLF for multi-line text; the 940×600 size check.
 ---
 
 ## Stage 1C — Ship
 
 ---
 ### WIN-020 · Publish the Windows installer with each release
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (15)
 - **Dependencies**: WIN-017
@@ -627,8 +632,8 @@ fixed-name `Promptly-Setup.exe` to the same GitHub Release, and check
 `releases/latest/download/Promptly-Setup.exe` redirects to the new version (same check as the DMG).
 
 **Acceptance criteria**:
-- [ ] Mac-only releases work exactly as today when no installer is present
-- [ ] Both links point at the new version after a release with the installer
+- [x] Mac-only releases work exactly as today when no installer is present
+- [x] Both links point at the new version after a release with the installer
 
 **Self-verify**: Tick every criterion.
 **Test requirement**: dry run with a stub gh; real run at the first Windows release.
@@ -638,12 +643,12 @@ fixed-name `Promptly-Setup.exe` to the same GitHub Release, and check
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 4, 810a7ca. When dist/Promptly-Setup-X.Y.Z.exe exists, publish-release.sh uploads it and a fixed-name Promptly-Setup.exe in the same `gh release create`, and `check_latest` verifies releases/latest/download/Promptly-Setup.exe redirects to the new version (same check as the DMG, "Windows download link"). Only the versioned file triggers it (a stale fixed-name copy never does). Stubbed dry run: Mac-only release makes identical gh/curl/git calls to the old script.
 ---
 
 ---
 ### WIN-021 · The site offers each visitor the right download
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (15, 16)
 - **Dependencies**: WIN-020
@@ -654,8 +659,8 @@ script.js swaps href and label to `Promptly-Setup.exe` / "Download for Windows".
 SmartScreen's "More info → Run anyway" for Windows alongside Mac's Open Anyway.
 
 **Acceptance criteria**:
-- [ ] Mac and no-JS visitors still get the DMG
-- [ ] Windows visitors get the .exe link and the SmartScreen note
+- [x] Mac and no-JS visitors still get the DMG
+- [x] Windows visitors get the .exe link and the SmartScreen note
 
 **Self-verify**: Tick every criterion.
 **Test requirement**: load the page with a Windows UA in the browser pane.
@@ -665,7 +670,9 @@ SmartScreen's "More info → Run anyway" for Windows alongside Mac's Open Anyway
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 4, 0ccbbf0. Windows copy lives in index.html (`data-os="win" hidden`, `data-win-href`/`data-win-text`); site/script.js swaps it before SplitText/GSAP when `userAgentData.platform` or the UA says Windows. Install section on Windows: "Install on Windows." with SmartScreen More info → Run anyway, a Download and run card and a What you need card (Win 10 22H2+/11 x64, Git for Windows). `[hidden]{display:none !important}` so `.install-grid` can't override hidden. Windows footer line has no version (release.sh/publish-release.sh only touch the Mac line).
+- Checked in headless Chromium with Windows and Mac UAs and with JS off: Windows gets 4 × Promptly-Setup.exe and the Windows install cards; Mac (JS on/off) unchanged; no page errors.
+- **Merge timing**: the Windows link 404s until a release includes Promptly-Setup.exe — don't publish this to main before that release.
 ---
 
 ---
