@@ -178,7 +178,7 @@ and exposes `keys` + `combo(...)`.
 
 ---
 ### WIN-006 · Show Ctrl / Alt / Shift on Windows everywhere a key is named
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (5)
 - **Dependencies**: WIN-005
@@ -189,8 +189,8 @@ and exposes `keys` + `combo(...)`.
 `metaKey || ctrlKey`; leave it. No per-file `process.platform` checks.
 
 **Acceptance criteria**:
-- [ ] `grep -r "⌘\|⌥\|⌃" src/renderer pill.html splash.html` finds only keys.js
-- [ ] Mac screenshots (ui.spec) are unchanged
+- [x] `grep -r "⌘\|⌥\|⌃" src/renderer pill.html splash.html` finds only keys.js
+- [x] Mac screenshots (ui.spec) are unchanged
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (5). Tick every criterion.
 **Test requirement**: run `npm run test:e2e` on the Mac (layout audit + screenshots unchanged).
@@ -200,7 +200,10 @@ and exposes `keys` + `combo(...)`.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Combo rule (main `formatCombo`, renderer `combo`, splash `fillKeyNames` — test-locked to agree): Mac puts a space before a named key (`⌥ Space`, as shown today); Windows joins with `+` and names a repeated key once (⌃⌘S → `Ctrl+S`, not `Ctrl+Ctrl+S`).
+- pill.html and splash.html get names from `getPlatform()`; splash uses `data-combo="mod V"` spans filled on load. Comments now say Cmd-H/Option-Space in words, so the grep criterion holds; a unit test fails if ⌘ ⌥ ⌃ reappear outside utils/keys.js.
+- Mac screenshots: captured all 114 before and after; the only pixel differences on text screens are sub-pixel anti-aliasing from text split into spans (checked visually on idle, setup hold, setup done); the rest are timers, waveforms and timestamps.
+- **Open (needs the owner — changes key handling, not labels)**: two in-window shortcuts only listen for Mac keys, so on Windows their new labels name keys that do nothing yet: Generate (ExpandedTypingContent checks `e.metaKey` + Enter → label `Ctrl+Enter`) and Hide history (ExpandedView checks `e.ctrlKey && e.metaKey` + S → label `Ctrl+S`). Proposed: Windows-only matchers via `keys.os` (Ctrl+Enter; Ctrl+Shift+S), Mac unchanged.
 ---
 
 ---
