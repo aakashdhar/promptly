@@ -16,7 +16,8 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
-const posixPath = require('path');
+// launchd paths are always POSIX, whichever system runs the tests.
+const posixPath = require('path').posix;
 const winPath = require('path').win32;
 
 // ── macOS: launchd ──
