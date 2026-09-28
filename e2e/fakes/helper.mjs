@@ -7,8 +7,10 @@ import readline from 'readline'
 
 const rl = readline.createInterface({ input: process.stdin })
 const out = (o) => process.stdout.write(JSON.stringify(o) + '\n')
+// On Windows: UTF-8 out and no newline added by PowerShell, and the clipboard's CRLF line breaks
+// read back as \n, so a test compares the words and paragraph breaks, not the line-ending style.
 const clipboard = () => process.platform === 'win32'
-  ? execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Get-Clipboard -Raw'])
+  ? execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', '[Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write((Get-Clipboard -Raw))'], { encoding: 'utf8' }).replace(/\r\n/g, '\n')
   : execFileSync('pbpaste')
 
 out({ type: 'ready', trusted: true, tap: true })

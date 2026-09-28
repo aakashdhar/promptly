@@ -15,6 +15,15 @@ import { installFake } from './fakes/install.mjs'
 test.describe.configure({ retries: process.env.CI ? 0 : 1 })
 
 const ROOT = path.resolve(import.meta.dirname, '..')
+
+// Windows names the same shortcuts with Ctrl where the Mac uses ⌘, and hides history with
+// Ctrl+Shift+S rather than ⌃⌘S (src/renderer/utils/keys.js). On the Mac these are the keys as before.
+const WIN = process.platform === 'win32'
+const MOD = WIN ? 'Control' : 'Meta'
+const HISTORY_KEYS = WIN ? 'Control+Shift+s' : 'Control+Meta+s'
+// Windows PCs commonly run at 150% display scaling, so there every screen is also audited at 1.5×.
+// The Mac runs at the scale it always has (one pass per theme).
+const SCALES = WIN ? [1, 1.5] : [1]
 const OUT = path.join(ROOT, 'test-results', 'ui')
 
 const PROMPT = `Goal:
@@ -84,23 +93,26 @@ function writeFakeHelper(dir, trusted) {
   return installFake('helper-ui', path.join(dir, 'promptly-helper'), [trusted ? 'trusted' : 'untrusted'])
 }
 
-async function launch(theme, { setupComplete = true, helper = null, config = {} } = {}) {
+async function launch(theme, { setupComplete = true, helper = null, config = {}, scale = 1 } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-ui-'))
   const userData = path.join(dir, 'userData')
   fs.mkdirSync(userData)
   const claude = writeFakeClaude(dir)
   const engine = path.join(dir, 'engine')
   fs.mkdirSync(engine)
-  installFake('whisper-cli-ui', path.join(engine, 'whisper-cli'))
+  const engineCli = installFake('whisper-cli-ui', path.join(engine, 'whisper-cli'))
   fs.writeFileSync(path.join(engine, 'ggml-base.en-q5_1.bin'), 'x')
   fs.writeFileSync(path.join(userData, 'config.json'), JSON.stringify({ setupComplete, theme, claudePath: claude, ...config }))
   const app = await electron.launch({
-    args: [ROOT], cwd: ROOT,
+    // Chromium's own switch: the whole app renders as on a display scaled to `scale`.
+    args: [...(scale !== 1 ? [`--force-device-scale-factor=${scale}`] : []), ROOT], cwd: ROOT,
     env: {
       ...process.env,
       PROMPTLY_USER_DATA: userData,
       PROMPTLY_SAVE_DIR: fs.mkdtempSync(path.join(dir, 'project-')),
       PROMPTLY_WHISPER_DIR: engine,
+      // On Windows the fake engine is whisper-cli.cmd, not the whisper-cli.exe the app looks for.
+      ...(WIN && { PROMPTLY_WHISPER_CLI: path.basename(engineCli) }),
       PROMPTLY_HELPER: helper === null ? path.join(dir, 'no-helper') : writeFakeHelper(dir, helper),
       TMPDIR: dir,
     },
@@ -145,11 +157,11 @@ function recorder(theme, found, app) {
 }
 
 async function typeAndSubmit(page, text) {
-  await page.keyboard.press('Meta+t')
+  await page.keyboard.press(`${MOD}+t`)
   const box = page.getByPlaceholder('Describe what you want Claude to build, design, or write...')
   await expect(box).toBeVisible()
   await box.fill(text)
-  await box.press('Meta+Enter')
+  await box.press(`${MOD}+Enter`)
 }
 
 async function switchMode(app, page, mode) {
@@ -175,13 +187,16 @@ async function scrollAll(page, selector = '[data-scroll-region], .overflow-y-aut
   await page.evaluate((sel) => document.querySelectorAll(sel).forEach((el) => { el.scrollTop = el.scrollHeight }), selector)
 }
 
-for (const theme of ['dark', 'light']) {
-  test(`main window — ${theme}`, async () => {
+for (const scale of SCALES) for (const theme of ['dark', 'light']) {
+  // At 1 the test names, screenshots and issue files are the ones the Mac always had.
+  const label = scale === 1 ? theme : `${theme}-${scale * 100}`
+  const at = scale === 1 ? '' : ` @ ${scale * 100}%`
+  test(`main window — ${theme}${at}`, async () => {
     test.setTimeout(240000)
     fs.mkdirSync(OUT, { recursive: true })
     const found = []
-    const { app, dir } = await launch(theme, { config: { dictionary: 'Supabase\nZendesk\nKubernetes\nN10 → n8n' } })
-    const check = recorder(theme, found, app)
+    const { app, dir } = await launch(theme, { scale, config: { dictionary: 'Supabase\nZendesk\nKubernetes\nN10 → n8n' } })
+    const check = recorder(label, found, app)
     const page = await mainPage(app)
     page.__theme = theme
     // Playwright forces a light colour scheme unless told otherwise.
@@ -199,9 +214,9 @@ for (const theme of ['dark', 'light']) {
     await talk()
     await check(page, 'recording', { settle: 900 })
     // History hidden (⌃⌘S): the Ribbon runs the full width.
-    await page.keyboard.press('Control+Meta+s')
+    await page.keyboard.press(HISTORY_KEYS)
     await check(page, 'recording-full-width', { settle: 900 })
-    await page.keyboard.press('Control+Meta+s')
+    await page.keyboard.press(HISTORY_KEYS)
     await page.getByRole('button', { name: 'Stop' }).click()
     await expect(page.getByRole('tab', { name: 'As I said it' })).toBeVisible({ timeout: 15000 })
     await check(page, 'dictation-ready', { settle: 800 })
@@ -211,7 +226,7 @@ for (const theme of ['dark', 'light']) {
     await switchMode(app, page, 'prompt')
     await expect(page.locator('#mode-pill')).toHaveText('Prompt')
 
-    await page.keyboard.press('Meta+?')
+    await page.keyboard.press(`${MOD}+?`)
     await check(page, 'shortcuts')
     await page.keyboard.press('Escape')
     // Two edits that fixed the same word: Your words offers to fix it automatically.
@@ -219,7 +234,7 @@ for (const theme of ['dark', 'light']) {
       { mode: 'balanced', before: 'Sync the Zen desk tickets', after: 'Sync the Zendesk tickets', at: '' },
       { mode: 'dictate', before: 'Ask Zen desk support', after: 'Ask Zendesk support', at: '' },
     ]))
-    await page.keyboard.press('Meta+/')
+    await page.keyboard.press(`${MOD}+/`)
     await check(page, 'settings')
     // Every tab (Dictation offers the Zendesk fix in Your words), then You: drafting "How you
     // write" from pasted writing.
@@ -242,13 +257,13 @@ for (const theme of ['dark', 'light']) {
     await check(page, 'settings-bottom')
     await page.keyboard.press('Escape')
 
-    await page.keyboard.press('Meta+t')
+    await page.keyboard.press(`${MOD}+t`)
     await check(page, 'typing-empty')
     const box = page.getByPlaceholder('Describe what you want Claude to build, design, or write...')
     await box.fill('internal dashboard for the support team, zendesk tickets, nextjs and postgres. it should highlight anything waiting more than four hours and send a summary to the team lead every morning')
     await check(page, 'typing-filled')
     fs.writeFileSync(path.join(dir, 'delay'), '4')
-    await box.press('Meta+Enter')
+    await box.press(`${MOD}+Enter`)
     await expect.poll(() => appState(app)).toBe('THINKING')
     await check(page, 'thinking', { settle: 1200 })
     await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
@@ -267,7 +282,7 @@ for (const theme of ['dark', 'light']) {
     // History: ⌘H searches it; picking an entry shows it again.
     await page.keyboard.press('Escape')
     await expect.poll(() => appState(app)).toBe('IDLE')
-    await page.keyboard.press('Meta+h')
+    await page.keyboard.press(`${MOD}+h`)
     await check(page, 'history-search')
     await page.getByRole('button', { name: 'Close search' }).click()
     await page.getByRole('button', { name: 'Filter history' }).click()
@@ -402,15 +417,15 @@ for (const theme of ['dark', 'light']) {
 
     await app.close()
     fs.rmSync(dir, { recursive: true, force: true })
-    fs.writeFileSync(path.join(OUT, `${theme}-main-issues.txt`), found.join('\n'))
+    fs.writeFileSync(path.join(OUT, `${label}-main-issues.txt`), found.join('\n'))
     expect(found, `layout problems:\n${found.join('\n')}`).toEqual([])
   })
 
-  test(`setup wizard — ${theme}`, async () => {
+  test(`setup wizard — ${theme}${at}`, async () => {
     fs.mkdirSync(OUT, { recursive: true })
     const found = []
-    const check = recorder(theme, found)
-    const { app, dir } = await launch(theme, { setupComplete: false, helper: false })
+    const check = recorder(label, found)
+    const { app, dir } = await launch(theme, { scale, setupComplete: false, helper: false })
     const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
     await setup.emulateMedia({ colorScheme: theme })
     await check(setup, 'setup-welcome')
@@ -424,16 +439,23 @@ for (const theme of ['dark', 'light']) {
     await setup.locator('details').first().evaluate((d) => { d.open = true }).catch(() => {})
     await check(setup, 'setup-claude-manual')
     await setup.locator('#claude-next').click()
-    await check(setup, 'setup-hold')
-    await setup.evaluate(() => document.getElementById('hold-next').click())
-    // Without Accessibility the Ready screen still shows the chosen shortcut, and says what it needs.
-    await expect(setup.locator('#key-space')).toHaveText('control')
-    await expect(setup.locator('#key-opt')).toBeHidden()
-    await expect(setup.getByText('Double-tap Control needs Accessibility.')).toBeVisible()
+    if (WIN) {
+      // Windows has no Accessibility permission: setup goes straight from Claude Code to Ready
+      // (accessibility-status reports it unavailable), so there is no hold-to-talk screen to audit
+      // and the Mac's Accessibility wording below doesn't apply.
+      await expect(setup.locator('#screen-done')).toBeVisible()
+    } else {
+      await check(setup, 'setup-hold')
+      await setup.evaluate(() => document.getElementById('hold-next').click())
+      // Without Accessibility the Ready screen still shows the chosen shortcut, and says what it needs.
+      await expect(setup.locator('#key-space')).toHaveText('control')
+      await expect(setup.locator('#key-opt')).toBeHidden()
+      await expect(setup.getByText('Double-tap Control needs Accessibility.')).toBeVisible()
+    }
     await check(setup, 'setup-done')
     await app.close()
     fs.rmSync(dir, { recursive: true, force: true })
-    fs.writeFileSync(path.join(OUT, `${theme}-setup-issues.txt`), found.join('\n'))
+    fs.writeFileSync(path.join(OUT, `${label}-setup-issues.txt`), found.join('\n'))
     expect(found, `layout problems:\n${found.join('\n')}`).toEqual([])
   })
 }

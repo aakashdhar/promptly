@@ -22,10 +22,11 @@ const BUNDLED_VAD = 'ggml-silero-v5.1.2.bin';
 const WHISPER_MODEL = 'base';
 const MIN_MODEL_BYTES = 100 * 1024 * 1024;
 
-// plat is only passed by tests, to look for the Windows engine on a Mac.
-function findBundledEngine(dir, plat = platform) {
+// plat is only passed by tests, to look for the Windows engine on a Mac. cliName is only set by
+// the e2e suite on Windows, whose fake engine is a .cmd launcher rather than whisper-cli.exe.
+function findBundledEngine(dir, plat = platform, cliName = plat.WHISPER_CLI) {
   if (!dir) return null;
-  const cli = path.join(dir, plat.WHISPER_CLI);
+  const cli = path.join(dir, cliName);
   const model = path.join(dir, BUNDLED_MODEL);
   try {
     fs.accessSync(cli, fs.constants.X_OK);
@@ -142,13 +143,18 @@ function createWhisperRunner({
   getLanguage = () => 'en',
   onSlow = () => {},
   children = new Set(),
+  // The engine's file name inside the bundled dir; only the e2e suite changes it (see findBundledEngine).
+  bundledCli = platform.WHISPER_CLI,
+  // Tests pass their own to see exactly what would be started.
+  execFileImpl = execFile,
+  spawnImpl = spawn,
 }) {
   // The GPU path compiles Metal shaders on first use (~20 s, once per Mac). Until a background
   // warm-up has done that, transcribe on the CPU so no recording waits for it.
   let gpuReady = false;
 
   function engine() {
-    const bundled = findBundledEngine(getBundledDir());
+    const bundled = findBundledEngine(getBundledDir(), platform, bundledCli);
     if (bundled) return { type: 'bundled', ...bundled };
     const whisperPath = getWhisperPath();
     return whisperPath ? { type: 'python', whisperPath } : null;
@@ -158,7 +164,8 @@ function createWhisperRunner({
   function run(cmd, args, { env, timeoutMs, slowWarningMs }) {
     return new Promise((resolve, reject) => {
       let timedOut = false;
-      const child = execFile(cmd, args, { env, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+      // spawnArgs: a .cmd (the e2e fakes on Windows) needs cmd.exe; on the Mac it's the same call.
+      const child = execFileImpl(...platform.spawnArgs(cmd, args, { env, maxBuffer: 10 * 1024 * 1024 }), (err, stdout, stderr) => {
         clearTimeout(slowTimer);
         clearTimeout(killTimer);
         children.delete(child);
@@ -256,7 +263,7 @@ function createWhisperRunner({
   function downloadModel(onProgress) {
     return new Promise((resolve) => {
       const [cmd, args] = whisperCommand(getWhisperPath(), [os.devNull, '--model', WHISPER_MODEL]);
-      const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], env: makeWhisperEnv(getFfmpegPath()) });
+      const child = spawnImpl(...platform.spawnArgs(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], env: makeWhisperEnv(getFfmpegPath()) }));
       children.add(child); // so a cancel stops the download too
       let stderrBuf = '';
       const lastLines = []; // the last few non-progress lines, for the error message

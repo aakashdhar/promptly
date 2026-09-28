@@ -12,6 +12,12 @@ import { installFake } from './fakes/install.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 
+// Windows names the same shortcuts with Ctrl where the Mac uses ⌘, and hides history with
+// Ctrl+Shift+S rather than ⌃⌘S (src/renderer/utils/keys.js). On the Mac these are the keys as before.
+const WIN = process.platform === 'win32'
+const MOD = WIN ? 'Control' : 'Meta'
+const HISTORY_KEYS = WIN ? 'Control+Shift+s' : 'Control+Meta+s'
+
 // The fakes are Node scripts in e2e/fakes/ (see each for what it does), so they run on the Mac
 // and on Windows. The fake CLI records its arguments and stdin, waits $FAKE_DIR/delay seconds if
 // that file exists, then prints a prompt built from the last line of stdin (the transcript).
@@ -24,13 +30,13 @@ function writeFakeTools(dir) {
   // Fake built-in engine (whisper-cli + model): only accepts WAV, like the real one.
   const engineDir = path.join(dir, 'engine')
   fs.mkdirSync(engineDir)
-  installFake('whisper-cli', path.join(engineDir, 'whisper-cli'))
+  const engineCli = installFake('whisper-cli', path.join(engineDir, 'whisper-cli'))
   fs.writeFileSync(path.join(engineDir, 'ggml-base.en-q5_1.bin'), 'fake model')
   const whisper = installFake('whisper', path.join(dir, 'whisper'))
   const ffmpeg = installFake('ffmpeg', path.join(dir, 'ffmpeg'))
   // Fake promptly-helper: Accessibility granted, Terminal in front with some text selected.
   const helper = installFake('helper', path.join(dir, 'promptly-helper'))
-  return { claude, whisper, ffmpeg, engineDir, helper }
+  return { claude, whisper, ffmpeg, engineDir, engineCli, helper }
 }
 
 // mode: most tests below are about prompt modes, so they start in Prompt; pass mode: null to
@@ -71,6 +77,8 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
       ...process.env,
       PROMPTLY_USER_DATA: userData,
       PROMPTLY_WHISPER_DIR: tools.engineDir,
+      // On Windows the fake engine is whisper-cli.cmd, not the whisper-cli.exe the app looks for.
+      ...(WIN && { PROMPTLY_WHISPER_CLI: path.basename(tools.engineCli) }),
       // No helper unless a test asks for one, so the real frontmost app never leaks into tests.
       PROMPTLY_HELPER: withHelper ? tools.helper : path.join(dir, 'no-helper'),
       FAKE_DIR: fakeDir,
@@ -123,21 +131,31 @@ async function lastStdin(fakeDir) {
 }
 
 async function typeAndSubmit(page, text) {
-  await page.keyboard.press('Meta+t')
+  await page.keyboard.press(`${MOD}+t`)
   const box = page.getByPlaceholder('Describe what you want Claude to build, design, or write...')
   await expect(box).toBeVisible()
   await box.fill(text)
-  await box.press('Meta+Enter')
+  await box.press(`${MOD}+Enter`)
 }
+
+// The developer's clipboard, read and written outside the app: pbpaste/pbcopy on the Mac,
+// PowerShell's Get-Clipboard/Set-Clipboard on Windows (UTF-8 both ways, no newline added).
+const PS = ['-NoProfile', '-NonInteractive', '-Command']
+const readSystemClipboard = () => WIN
+  ? execFileSync('powershell.exe', [...PS, '[Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write((Get-Clipboard -Raw))'], { encoding: 'utf8' })
+  : execFileSync('pbpaste', { encoding: 'utf8' })
+const writeSystemClipboard = (text) => WIN
+  ? execFileSync('powershell.exe', [...PS, '[Console]::InputEncoding = [Text.Encoding]::UTF8; Set-Clipboard -Value ([Console]::In.ReadToEnd())'], { input: text })
+  : execFileSync('pbcopy', { input: text })
 
 let ctx
 // Several tests copy and paste through the real clipboard; put back what the developer had.
 let clipboardBefore = null
 test.beforeAll(() => {
-  try { clipboardBefore = execFileSync('pbpaste', { encoding: 'utf8' }) } catch { clipboardBefore = null }
+  try { clipboardBefore = readSystemClipboard() } catch { clipboardBefore = null }
 })
 test.afterAll(() => {
-  if (clipboardBefore !== null) try { execFileSync('pbcopy', { input: clipboardBefore }) } catch { /* nothing to restore */ }
+  if (clipboardBefore !== null) try { writeSystemClipboard(clipboardBefore) } catch { /* nothing to restore */ }
 })
 
 test.afterEach(async () => {
@@ -165,14 +183,14 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
 test('⌘T opens the typing box from Settings too, but never interrupts a recording', async () => {
   ctx = await launch()
   const { app, page } = ctx
-  await page.keyboard.press('Meta+/')
+  await page.keyboard.press(`${MOD}+/`)
   await expect(page.getByText('Settings', { exact: true })).toBeVisible()
-  await page.keyboard.press('Meta+t')
+  await page.keyboard.press(`${MOD}+t`)
   await expect(page.getByPlaceholder('Describe what you want Claude to build, design, or write...')).toBeVisible()
   await page.keyboard.press('Escape')
   await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
   await expect.poll(() => appState(app)).toBe('RECORDING')
-  await page.keyboard.press('Meta+t')
+  await page.keyboard.press(`${MOD}+t`)
   await page.waitForTimeout(300)
   expect(await appState(app)).toBe('RECORDING')
   await app.evaluate(() => globalThis.__promptlyE2E.pressHotkey())
@@ -345,6 +363,7 @@ test('first-run setup: microphone, then Claude Code sign-in is picked up on its 
 })
 
 test('a missing Claude Code offers the installer', async () => {
+  test.skip(WIN, 'the install command asserted here is the Mac\'s curl | bash; Windows offers the PowerShell installer (main/platform/win32.js INSTALL_COMMAND)')
   ctx = await launch({ setupComplete: false })
   const { app, claude } = ctx
   const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
@@ -396,11 +415,11 @@ test('fix-12: Cmd+C copies the selection when there is one, the whole prompt oth
     })
     // The generated prompt must be selectable (the rest of the UI is not).
     expect(await page.evaluate(() => window.getSelection().toString())).toBe('test')
-    await page.keyboard.press('Meta+c')
+    await page.keyboard.press(`${MOD}+c`)
     await expect.poll(() => readClipboard(app)).toBe('test')
 
     await page.evaluate(() => window.getSelection().removeAllRanges())
-    await page.keyboard.press('Meta+c')
+    await page.keyboard.press(`${MOD}+c`)
     await expect.poll(() => readClipboard(app)).toContain('Role:\nYou are a test assistant.')
   })
 })
@@ -444,6 +463,7 @@ test('the app menu keeps the Edit commands macOS needs for copy and paste', asyn
 })
 
 test('hold to talk from Terminal: destination, selection and dictionary shape the prompt', async () => {
+  test.skip(WIN, 'the fake helper reports macOS Terminal (com.apple.Terminal); Windows destinations match .exe names, so no coding destination is picked')
   ctx = await launch({ withHelper: true })
   const { app, page, fakeDir } = ctx
   await page.evaluate(() => window.electronAPI.setPreferences({ dictionary: 'Supabase, Promptly\nN10 → n8n' }))
@@ -511,6 +531,7 @@ test('the prompt streams in while Claude writes it', async () => {
 })
 
 test('preferences are saved', async () => {
+  test.skip(WIN, 'asserts the Mac hotkey presets (fn, right-option); Windows has its own list (main/hotkey.js WINDOWS_PRESETS)')
   ctx = await launch()
   const { page } = ctx
   const before = await page.evaluate(() => window.electronAPI.getPreferences())
@@ -522,6 +543,7 @@ test('preferences are saved', async () => {
 })
 
 test('setup offers hold to talk when the helper is available, and notices when it is allowed', async () => {
+  test.skip(WIN, 'Windows has no Accessibility permission, so setup skips the hold-to-talk step asserted here')
   ctx = await launch({ setupComplete: false, withHelper: true })
   const { app } = ctx
   const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
@@ -570,7 +592,7 @@ test('edits you make are remembered, and Settings drafts your style notes from t
 
   await page.keyboard.press('Escape')
   await expect.poll(() => appState(app)).toBe('IDLE')
-  await page.keyboard.press('Meta+/')
+  await page.keyboard.press(`${MOD}+/`)
   await page.getByRole('tab', { name: 'You' }).click()
   await page.getByRole('button', { name: 'Suggest from my 1 edit' }).click()
   await expect(page.getByText('Suggested notes')).toBeVisible({ timeout: 15000 })
@@ -588,7 +610,7 @@ test('edits you make are remembered, and Settings drafts your style notes from t
 test('Settings drafts your style notes from pasted writing', async () => {
   ctx = await launch()
   const { page, fakeDir } = ctx
-  await page.keyboard.press('Meta+/')
+  await page.keyboard.press(`${MOD}+/`)
   await page.getByRole('tab', { name: 'You' }).click()
   await page.getByRole('button', { name: 'Learn from my writing' }).click()
   await page.locator('#settings-samples').fill('Hi all, quick one: the release moves to Friday. Nothing else changes. Cheers, Sam')
@@ -828,7 +850,7 @@ test('history can be hidden and stays hidden; a dictation and the prompt made fr
   await reload(app, page)
   await expect(page.getByRole('button', { name: 'Show history' })).toBeVisible({ timeout: 10000 })
   // ⌃⌘S brings it back.
-  await page.keyboard.press('Control+Meta+s')
+  await page.keyboard.press(HISTORY_KEYS)
   await expect(page.getByRole('button', { name: 'Hide history' })).toBeVisible()
 
   // Typing in Dictation makes a prompt; saving a dictation first and then making it a prompt pairs them.
@@ -885,6 +907,7 @@ test('the pill can be dragged out of the way, and comes back where you left it',
 })
 
 test('on a fresh start the window names double-tap Control and, without Accessibility, says what it needs', async () => {
+  test.skip(WIN, 'asserts the Mac wording (Accessibility, ⌘/, ⌥ Space); Windows names Ctrl and Alt and needs no Accessibility')
   // The window's first requests (preferences, shortcut) must reach main: its handlers are
   // registered before any window loads.
   ctx = await launch({ mode: null })
@@ -915,7 +938,7 @@ test('"Best accuracy" downloads once, is used for transcription, and takes the l
       },
     })
     const { app, page, fakeDir } = ctx
-    await page.keyboard.press('Meta+/')
+    await page.keyboard.press(`${MOD}+/`)
     await page.getByRole('tab', { name: 'Speech' }).click()
     await page.getByRole('button', { name: /^Download \(/ }).click()
     // Downloading switches to it and offers the language.
@@ -932,7 +955,7 @@ test('"Best accuracy" downloads once, is used for transcription, and takes the l
 
     // Removing it goes back to the built-in model.
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find((w) => w.webContents.getURL().includes('dist-renderer')).show())
-    await page.keyboard.press('Meta+/')
+    await page.keyboard.press(`${MOD}+/`)
     await page.getByRole('tab', { name: 'Speech' }).click()
     await page.getByRole('button', { name: /Remove the download/ }).click()
     await expect(page.getByRole('radio', { name: /Standard/ })).toHaveAttribute('aria-checked', 'true')
@@ -1015,6 +1038,7 @@ test('Esc while a builder is working cancels it for good', async () => {
 })
 
 test('Harness mode: a spoken job becomes a plan with gaps to fill, then files saved into a project', async () => {
+  test.skip(WIN, 'scheduling is a launchd plist and loop.sh needs the POSIX execute bit; the Windows scheduler and PowerShell harness come in phase 2 (WIN-024, WIN-025)')
   const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-harness-'))
   ctx = await launch({ mode: 'harness', env: { PROMPTLY_SAVE_DIR: saveDir } })
   const { app, page, fakeDir } = ctx

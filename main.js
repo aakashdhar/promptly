@@ -187,6 +187,8 @@ const whisper = createWhisperRunner({
   getLanguage: () => accurateSpeech()?.language || 'en',
   onSlow: () => winSend('transcription-slow-warning'),
   children: activeChildren,
+  // Tests on Windows name their fake engine (a .cmd launcher, not whisper-cli.exe) with PROMPTLY_WHISPER_CLI.
+  ...(IS_E2E && process.env.PROMPTLY_WHISPER_CLI && { bundledCli: process.env.PROMPTLY_WHISPER_CLI }),
 });
 
 async function resolveAllPaths() {
@@ -1558,7 +1560,7 @@ app.whenReady().then(async () => {
     const [cmd, args] = whisperCommand(resolvedPath, ['--help']);
     try {
       await new Promise((resolve, reject) => {
-        execFile(cmd, args, { timeout: 10000 }, (err) => { err ? reject(err) : resolve(); });
+        execFile(...platform.spawnArgs(cmd, args, { timeout: 10000 }), (err) => { err ? reject(err) : resolve(); });
       });
       return { found: true, path: resolvedPath, error: null };
     } catch (err) {
@@ -1575,7 +1577,7 @@ app.whenReady().then(async () => {
     }
     try {
       await new Promise((resolve, reject) => {
-        execFile(resolvedPath, ['-version'], { timeout: 5000 }, (err) => { err ? reject(err) : resolve(); });
+        execFile(...platform.spawnArgs(resolvedPath, ['-version'], { timeout: 5000 }), (err) => { err ? reject(err) : resolve(); });
       });
       return { found: true, path: resolvedPath, error: null };
     } catch (err) {

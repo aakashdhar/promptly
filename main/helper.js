@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const { spawn } = require('child_process');
+const platform = require('./platform');
 
 const REQUEST_TIMEOUT_MS = 1500;
 const MAX_RESTARTS = 3;
@@ -44,7 +45,8 @@ function createHelper({ binaryPath, onHotkey = () => {}, onStatus = () => {}, lo
     // A build without the helper just runs without hold-to-talk.
     if (!fs.existsSync(binaryPath)) return false;
     try {
-      child = spawnImpl(binaryPath, [], { stdio: ['pipe', 'pipe', 'pipe'] });
+      // spawnArgs: the e2e fake helper on Windows is a .cmd, which needs cmd.exe; identity on the Mac.
+      child = spawnImpl(...platform.spawnArgs(binaryPath, [], { stdio: ['pipe', 'pipe', 'pipe'] }));
     } catch (err) {
       log?.warn('Helper failed to start', err.message);
       child = null;
