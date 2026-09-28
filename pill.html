@@ -188,7 +188,10 @@ window.electronAPI.onPillState((state) => {
     render('copied');
   } else if (state.state === 'dictated') {
     // Typed where the cursor was, or (without Accessibility) left on the clipboard.
-    doneText = state.typed ? (rec.app ? `Typed into ${rec.app}` : 'Typed') : (pasteKeys ? `Copied, press ${pasteKeys}` : 'Copied');
+    // An app running as administrator won't take keystrokes from Promptly (Windows); say so, since
+    // otherwise it looks like typing just didn't work.
+    const refusedWhy = state.refused === 'elevated' ? `${rec.app || 'That app'} runs as administrator. ` : '';
+    doneText = state.typed ? (rec.app ? `Typed into ${rec.app}` : 'Typed') : `${refusedWhy}${pasteKeys ? `Copied, press ${pasteKeys}` : 'Copied'}`;
     render('typed');
   } else if (state.state === 'error') {
     render('error');

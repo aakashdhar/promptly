@@ -60,6 +60,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setupInfo: () =>
     ipcRenderer.invoke('setup-info'),
 
+  setupChecks: () =>
+    ipcRenderer.invoke('setup-checks'),
+
   checkSetupComplete: () =>
     ipcRenderer.invoke('check-setup-complete'),
 

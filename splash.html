@@ -398,9 +398,11 @@ async function applySetupInfo() {
   if (!info) return;
   document.getElementById('install-cmd').textContent = info.installCommand;
   document.querySelectorAll('[data-terminal]').forEach((el) => { el.textContent = info.terminal; });
-  document.getElementById('setup-git').hidden = !info.gitMissing;
-  document.getElementById('setup-blocked').hidden = !info.blocked.length;
-  document.getElementById('setup-blocked-names').textContent = info.blocked.join(' and ');
+  const checks = api.setupChecks ? await api.setupChecks().catch(() => null) : null;
+  if (!checks) return;
+  document.getElementById('setup-git').hidden = !checks.gitMissing;
+  document.getElementById('setup-blocked').hidden = !checks.blocked.length;
+  document.getElementById('setup-blocked-names').textContent = checks.blocked.join(' and ');
 }
 document.getElementById('setup-git-link').addEventListener('click', () => api.splashOpenURL('https://git-scm.com/download/win'));
 

@@ -222,6 +222,9 @@ async function blockedBinaries(checks, { run = execFile, fileExists = exists } =
 
 const HELPER_BIN = 'promptly-helper.exe';
 
+// Windows trays have no template images: each state is its own colour icon (main/tray-icon.js).
+const TRAY_TEMPLATE_ICONS = false;
+
 // ── Starting command-line tools ──
 
 const paths = path;
@@ -389,4 +392,5 @@ module.exports = {
   checkPrerequisites,
   blockedBinaries,
   HELPER_BIN,
+  TRAY_TEMPLATE_ICONS,
 };

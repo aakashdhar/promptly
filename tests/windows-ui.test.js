@@ -46,3 +46,28 @@ describe('setup screen wording by system', () => {
     }
   })
 })
+
+describe('destination-aware prompts on Windows', () => {
+  const { destinationFor } = require('../main/prompts.js')
+
+  it('matches Windows apps by their .exe, and Mac bundle ids exactly as before', () => {
+    expect(destinationFor('C:\\Users\\Zoë\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe').key).toBe('agent')
+    expect(destinationFor('C:\\Program Files\\WindowsApps\\Microsoft.WindowsTerminal_1.21\\WindowsTerminal.exe').key).toBe('agent')
+    expect(destinationFor('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe').key).toBe('chat')
+    expect(destinationFor('C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE').key).toBe('writing')
+    expect(destinationFor('C:\\Users\\a\\AppData\\Local\\Figma\\Figma.exe').key).toBe('design')
+    expect(destinationFor('C:\\Windows\\notepad.exe')).toBe(null)
+    expect(destinationFor('com.microsoft.VSCode').key).toBe('agent')
+    expect(destinationFor('com.google.Chrome').key).toBe('chat')
+    // A Mac bundle id never goes through the Windows list, and an .exe never matches a bundle id.
+    expect(destinationFor('code.exe').key).toBe('agent')
+    expect(destinationFor('com.figma.Desktop').key).toBe('design')
+  })
+})
+
+describe('Windows tray icons are used instead of template images', () => {
+  it('only the Mac asks for template images', () => {
+    expect(darwin.TRAY_TEMPLATE_ICONS).toBe(true)
+    expect(win32.TRAY_TEMPLATE_ICONS).toBe(false)
+  })
+})

@@ -41,30 +41,43 @@ const DESTINATIONS = [
     key: 'agent',
     label: 'an AI coding agent',
     match: /^(com\.apple\.Terminal|com\.googlecode\.iterm2|dev\.warp\.Warp-Stable|com\.mitchellh\.ghostty|net\.kovidgoyal\.kitty|io\.alacritty|com\.microsoft\.VSCode.*|com\.todesktop\.230313mzl4w4u92|com\.exafunction\.windsurf|dev\.zed\.Zed.*|com\.jetbrains\..*|com\.apple\.dt\.Xcode)$/,
+    // Windows reports the app as its .exe path.
+    exe: /^(windowsterminal|wt|cmd|powershell|pwsh|wezterm-gui|alacritty|warp|code|code - insiders|cursor|windsurf|zed|devenv|idea64|pycharm64|webstorm64|rider64|goland64|clion64)\.exe$/i,
     guidance: 'It will be pasted into an AI coding agent (such as Claude Code) working in a code repository. Frame it as a concrete engineering task with clear acceptance criteria, and keep any files, commands or constraints the user mentioned.',
   },
   {
     key: 'chat',
     label: 'a chat assistant',
     match: /^(com\.apple\.Safari|com\.google\.Chrome.*|company\.thebrowser\.Browser|org\.mozilla\.firefox|com\.brave\.Browser|com\.microsoft\.edgemac|com\.anthropic\.claudefordesktop|com\.openai\.chat)$/,
+    // Windows reports the app as its .exe path.
+    exe: /^(chrome|msedge|firefox|brave|arc|opera|vivaldi|claude|chatgpt)\.exe$/i,
     guidance: 'It will be pasted into a chat assistant such as claude.ai. Make it self-contained, with all needed context stated up front.',
   },
   {
     key: 'design',
     label: 'a design tool',
     match: /^com\.figma\.Desktop$/,
+    // Windows reports the app as its .exe path.
+    exe: /^figma\.exe$/i,
     guidance: 'It will be used for design work. Emphasise visual intent, layout, states and constraints.',
   },
   {
     key: 'writing',
     label: 'a writing or messaging app',
     match: /^(notion\.id|com\.apple\.Notes|com\.apple\.iWork\.Pages|com\.microsoft\.Word|com\.tinyspeck\.slackmacgap|com\.apple\.mail|md\.obsidian)$/,
+    // Windows reports the app as its .exe path.
+    exe: /^(notion|winword|slack|outlook|olk|obsidian|onenote|thunderbird)\.exe$/i,
     guidance: 'It will be used for writing. Focus on audience, tone and structure.',
   },
 ];
 
+// bundleId is a Mac bundle id, or on Windows the app's .exe path (the helper has no bundle ids).
 function destinationFor(bundleId) {
   if (!bundleId) return null;
+  if (/\.exe$/i.test(bundleId)) {
+    const exe = bundleId.split(/[\\/]/).pop();
+    return DESTINATIONS.find((d) => d.exe && d.exe.test(exe)) || null;
+  }
   return DESTINATIONS.find((d) => d.match.test(bundleId)) || null;
 }
 

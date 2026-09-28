@@ -177,6 +177,9 @@ async function blockedBinaries() {
 // The hold-to-talk helper's file name (vendor/helper → Contents/Resources/helper).
 const HELPER_BIN = 'promptly-helper';
 
+// The menu bar draws template images, tinted by macOS for light and dark menu bars.
+const TRAY_TEMPLATE_ICONS = true;
+
 // ── Starting command-line tools ──
 
 // The path module for this system's paths.
@@ -315,4 +318,5 @@ module.exports = {
   checkPrerequisites,
   blockedBinaries,
   HELPER_BIN,
+  TRAY_TEMPLATE_ICONS,
 };

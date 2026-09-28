@@ -24,7 +24,7 @@ const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/p
 const { tidyDictation } = require('./main/dictation');
 const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
 const harness = require('./main/harness');
-const { drawMicIconPng, isTemplateState } = require('./main/tray-icon');
+const { drawMicIconPng, isTemplateState, drawWinTrayIcons } = require('./main/tray-icon');
 const { keysFor } = require('./main/keys');
 
 // End-to-end tests run against a throwaway profile and leave system-wide shortcuts alone.
@@ -131,6 +131,7 @@ let pillSession = false;        // this recording is shown in the floating pill,
 let pillMirror = false;
 let lastDictation = null;       // { text, typed } for the dictation just finished from another app
 let lastTypedText = null;       // text Promptly typed for you: not copied again, clipboard restored
+let lastPasteRefusal = null;    // why the helper couldn't paste ('elevated': the app runs as administrator)
 let lastPillState = null;
 let recordRequestedAt = 0;
 
@@ -288,6 +289,7 @@ async function typeIntoApp(text) {
   const saved = snapshotClipboard();
   clipboard.writeText(text);
   const reply = await helper.paste();
+  lastPasteRefusal = reply && !reply.ok ? reply.reason || null : null;
   if (!reply || !reply.ok) { restoreClipboard(saved); return false; }
   lastTypedText = text;
   // The target app reads the clipboard when it handles ⌘V; give it a moment first.
@@ -300,7 +302,7 @@ async function runDictation(transcript) {
   const { text, removed } = tidyDictation(transcript, { removeFillers: prefs.removeFillers, symbols: prefs.symbols });
   if (!text) return { success: false, error: "Didn't catch anything", errorType: 'empty' };
   const typed = pillSession && prefs.typeIn ? await typeIntoApp(text) : false;
-  if (pillSession) lastDictation = { text, typed };
+  if (pillSession) lastDictation = { text, typed, refused: typed ? null : lastPasteRefusal };
   return { success: true, prompt: text, dictation: { removed, typed } };
 }
 
@@ -339,6 +341,13 @@ function throttledDelta(ms, shape = (text) => text) {
 // ── Menu bar ──────────────────────────────────────────────────────────────────
 
 function createMicIcon(state, isDark, showDot = true) {
+  if (!platform.TRAY_TEMPLATE_ICONS) {
+    const img = nativeImage.createEmpty();
+    for (const r of drawWinTrayIcons(state, showDot).representations) {
+      img.addRepresentation({ scaleFactor: r.scaleFactor, width: r.width, height: r.height, buffer: r.buffer });
+    }
+    return img;
+  }
   const img = nativeImage.createFromBuffer(drawMicIconPng(state, isDark, showDot), { scaleFactor: 2.0 });
   if (isTemplateState(state)) img.setTemplateImage(true);
   return img;
@@ -718,7 +727,7 @@ function updatePill(appState) {
     // Dictation from another app stays there: the words are typed (or copied), and the pill
     // offers to turn them into a prompt instead. The window doesn't open.
     pillSession = false;
-    pillSend({ state: 'dictated', typed: lastDictation.typed });
+    pillSend({ state: 'dictated', typed: lastDictation.typed, refused: lastDictation.refused });
     hidePillSoon(6000);
   } else if (appState === 'PROMPT_READY' || appState === 'EMAIL_READY') {
     // A prompt made from another app: you stay there with it on the clipboard. The pill offers
@@ -1021,7 +1030,11 @@ app.whenReady().then(async () => {
 
   // What the setup screen says for this system, and anything that stops setup working on it:
   // Git for Windows missing, or an antivirus that quarantined the speech engine or the helper.
-  ipcMain.handle('setup-info', async () => {
+  // Wording answers at once; the checks can take seconds (they start the binaries), so they
+  // have their own channel and the setup screen never shows the wrong system's words meanwhile.
+  ipcMain.handle('setup-info', () => ({ installCommand: claudeSetup.INSTALL_COMMAND, terminal: platform.SETUP_TERMINAL, copy: platform.SETUP_COPY }));
+
+  ipcMain.handle('setup-checks', async () => {
     const [{ gitMissing }, blocked] = await Promise.all([
       platform.checkPrerequisites(),
       platform.blockedBinaries([
@@ -1029,7 +1042,7 @@ app.whenReady().then(async () => {
         { file: HELPER_PATH, args: ['--version'] },
       ]),
     ]);
-    return { installCommand: claudeSetup.INSTALL_COMMAND, terminal: platform.SETUP_TERMINAL, copy: platform.SETUP_COPY, gitMissing, blocked };
+    return { gitMissing, blocked };
   });
 
   ipcMain.handle('claude-install', async () => {
