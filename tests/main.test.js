@@ -449,6 +449,13 @@ describe('starting Claude Code on Windows', () => {
     expect(again.USERNAME).toBe('zoe')
   })
 
+  it('Whisper keeps a Windows Path key instead of adding a second PATH', () => {
+    const env = makeWhisperEnv(null, { Path: 'C:\\Windows' }, '/home/x')
+    expect(Object.keys(env).filter((k) => k.toUpperCase() === 'PATH')).toEqual(['Path'])
+    expect(env.Path.endsWith('C:\\Windows')).toBe(true)
+    expect(makeWhisperEnv(null, { PATH: '/usr/bin' }, '/home/x').PATH.endsWith('/usr/bin')).toBe(true)
+  })
+
   it('an empty Windows environment falls back to the system folders', () => {
     const env = makeClaudeEnv(CMD, {}, win32)
     expect(env.PATH.endsWith(win32.DEFAULT_PATH)).toBe(true)

@@ -143,6 +143,9 @@ async function removeInstalledApp(bundlePath) {
   }
 }
 
+// The built-in speech engine's file name (vendor/whisper → Contents/Resources/whisper).
+const WHISPER_CLI = 'whisper-cli';
+
 // ── Starting command-line tools ──
 
 // The path module for this system's paths.
@@ -232,4 +235,5 @@ module.exports = {
   executableNames,
   spawnArgs,
   USER_ENV_VARS,
+  WHISPER_CLI,
 };

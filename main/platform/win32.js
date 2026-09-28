@@ -165,6 +165,9 @@ function removeInstalledApp(installDir, { run = execFile } = {}) {
   });
 }
 
+// The built-in speech engine's file name (vendor/whisper → resources\\whisper).
+const WHISPER_CLI = 'whisper-cli.exe';
+
 // ── Starting command-line tools ──
 
 const paths = path;
@@ -258,4 +261,5 @@ module.exports = {
   executableNames,
   spawnArgs,
   USER_ENV_VARS,
+  WHISPER_CLI,
 };

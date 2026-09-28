@@ -76,6 +76,19 @@ echo "[00:00:00.000 --> 00:00:02.000]   ARGS $*"
     expect(findBundledEngine(dir).vad).toBe(path.join(dir, 'ggml-silero-v5.1.2.bin'))
   })
 
+  it('on Windows the engine is whisper-cli.exe, and a Mac-named engine is not enough', () => {
+    const win32 = require('../main/platform/win32.js')
+    const winDir = path.join(tmp, 'engine-win')
+    fs.mkdirSync(winDir, { recursive: true })
+    fs.writeFileSync(path.join(winDir, 'ggml-base.en-q5_1.bin'), 'model')
+    fs.writeFileSync(path.join(winDir, 'whisper-cli'), '', { mode: 0o755 })
+    expect(findBundledEngine(winDir, win32)).toBe(null)
+    fs.writeFileSync(path.join(winDir, 'whisper-cli.exe'), '', { mode: 0o755 })
+    expect(findBundledEngine(winDir, win32)).toEqual({ cli: path.join(winDir, 'whisper-cli.exe'), model: path.join(winDir, 'ggml-base.en-q5_1.bin') })
+    // The Mac still looks for the name without .exe.
+    expect(findBundledEngine(dir).cli).toBe(path.join(dir, 'whisper-cli'))
+  })
+
   it('uses voice detection and the built-in English model by default', async () => {
     const audio = path.join(tmp, 'short.wav')
     fs.writeFileSync(audio, silentWav(2))

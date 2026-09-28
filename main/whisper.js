@@ -9,8 +9,9 @@ const { PYTHON_WHISPER, terminate } = require('./binaries');
 
 // ── Built-in engine (whisper.cpp, shipped in the app) ─────────────────────────
 // scripts/fetch-whisper.sh builds these into vendor/whisper/; electron-builder copies that
-// folder to Contents/Resources/whisper/.
-const BUNDLED_CLI = 'whisper-cli';
+// folder to Contents/Resources/whisper/. The engine's file name comes from the platform
+// (whisper-cli, or whisper-cli.exe on Windows).
+const BUNDLED_CLI = platform.WHISPER_CLI;
 const BUNDLED_MODEL = 'ggml-base.en-q5_1.bin';
 // Silero voice-activity model: cuts silence out before transcribing, so pauses can't make the
 // model stop early or invent words. Optional: an older vendor/whisper without it still works.
@@ -21,9 +22,10 @@ const BUNDLED_VAD = 'ggml-silero-v5.1.2.bin';
 const WHISPER_MODEL = 'base';
 const MIN_MODEL_BYTES = 100 * 1024 * 1024;
 
-function findBundledEngine(dir) {
+// plat is only passed by tests, to look for the Windows engine on a Mac.
+function findBundledEngine(dir, plat = platform) {
   if (!dir) return null;
-  const cli = path.join(dir, BUNDLED_CLI);
+  const cli = path.join(dir, plat.WHISPER_CLI);
   const model = path.join(dir, BUNDLED_MODEL);
   try {
     fs.accessSync(cli, fs.constants.X_OK);
@@ -36,9 +38,11 @@ function findBundledEngine(dir) {
 }
 
 function makeWhisperEnv(ffmpegPath, env = process.env, home = os.homedir()) {
+  // Windows spells it Path, and a copied environment is no longer case-insensitive: keep one key.
+  const pathKey = Object.keys(env).find((k) => k.toUpperCase() === 'PATH') || 'PATH';
   return {
     ...env,
-    PATH: [...platform.whisperPathDirs(home), ffmpegPath ? path.dirname(ffmpegPath) : null, env.PATH]
+    [pathKey]: [...platform.whisperPathDirs(home), ffmpegPath ? path.dirname(ffmpegPath) : null, env[pathKey]]
       .filter(Boolean).join(platform.PATH_DELIMITER),
     PYTHONUNBUFFERED: '1',
     ...platform.SSL_ENV,
