@@ -12,7 +12,7 @@ const baseRules = {
 
 module.exports = [
   {
-    ignores: ['node_modules/**', 'dist/**', 'dist-renderer/**', 'vibe/**', 'build/**', '.cache/**', 'vendor/**', 'test-results/**'],
+    ignores: ['node_modules/**', 'dist/**', 'dist-renderer/**', 'vibe/**', 'build/**', '.cache/**', 'vendor/**', 'test-results/**', '.claude/**'],
   },
   {
     // Electron main process, preload, and Node scripts (CommonJS)

@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
-import { keys, titleBarPadding, CAPTION_BUTTONS_WIDTH } from '../src/renderer/utils/keys.js'
+import { keys, titleBarPadding, CAPTION_BUTTONS_WIDTH, panelTopStrip } from '../src/renderer/utils/keys.js'
 
 const require = createRequire(import.meta.url)
 const darwin = require('../main/platform/darwin.js')
@@ -11,6 +11,12 @@ const splash = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'splash.h
 
 describe('title bar room for the window buttons', () => {
   afterEach(() => { keys.os = 'darwin' })
+
+  it('full-window panels start below the Windows caption buttons (Shortcuts Done at the 760 px minimum)', () => {
+    expect(panelTopStrip()).toBe(36)
+    keys.os = 'win32'
+    expect(panelTopStrip()).toBe(56)
+  })
 
   it('keeps the Mac padding exactly as written', () => {
     expect(titleBarPadding('0 16px 0 84px', 16)).toBe('0 16px 0 84px')

@@ -4,7 +4,7 @@ import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import ShortcutsPanel from './ShortcutsPanel.jsx'
-import { isHistoryToggleKey } from '../utils/keys.js'
+import { isHistoryToggleKey, panelTopStrip } from '../utils/keys.js'
 
 // Builders lay out two columns of their own; below this width the history list would squeeze
 // them, so it steps aside (Cmd-H still opens history).
@@ -234,7 +234,7 @@ export default function ExpandedView({
           background: 'var(--bg)',
           display: 'flex', flexDirection: 'column',
         }}>
-          <div style={{ height: '36px', WebkitAppRegion: 'drag', flexShrink: 0 }} />
+          <div style={{ height: `${panelTopStrip()}px`, WebkitAppRegion: 'drag', flexShrink: 0 }} />
           <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <ShortcutsPanel onClose={onCloseShortcuts} />
           </div>

@@ -37,6 +37,10 @@ export function titleBarPadding(mac, gutter) {
   return `0 ${gutter + CAPTION_BUTTONS_WIDTH}px 0 ${gutter}px`
 }
 
+// Height of the drag strip above a full-window panel: the Mac's 36 px, or on Windows the caption
+// overlay's 56 px, so a panel's own buttons start below minimise/maximise/close.
+export const panelTopStrip = () => (keys.os === 'win32' ? 56 : 36)
+
 export function isHistoryToggleKey(e) {
   if (e.key.toLowerCase() !== 's') return false
   return keys.os === 'win32' ? e.ctrlKey && e.shiftKey && !e.altKey : e.ctrlKey && e.metaKey
