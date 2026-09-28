@@ -7,6 +7,7 @@ import os from 'os'
 import path from 'path'
 import { HARNESS_LOOP, HARNESS_PIPELINE, HARNESS_FILES } from './harness-fixtures.mjs'
 import { auditLayout, formatIssues } from './layout-audit.mjs'
+import { installFake } from './fakes/install.mjs'
 
 // These walk the real window for a minute each. If someone is using the Mac at the same time,
 // focus changes can hide the bar mid-walk; one retry absorbs that (a real layout problem fails
@@ -75,58 +76,12 @@ function writeFakeClaude(dir) {
   Object.assign(answers, { harnessLoop: HARNESS_LOOP, harnessPipeline: HARNESS_PIPELINE, harnessFiles: HARNESS_FILES })
   const answersFile = path.join(dir, 'answers.json')
   fs.writeFileSync(answersFile, JSON.stringify(answers))
-  const claude = path.join(dir, 'claude')
-  fs.writeFileSync(claude, `#!/usr/bin/env node
-const fs = require('fs')
-const args = process.argv.slice(2)
-if (args[0] === '--version') { console.log('2.1.0 (Claude Code)'); process.exit(0) }
-if (args[0] === 'auth') { console.log(JSON.stringify({ loggedIn: !fs.existsSync(${JSON.stringify(path.join(dir, 'signed-out'))}) })); process.exit(0) }
-const a = JSON.parse(fs.readFileSync(${JSON.stringify(answersFile)}, 'utf8'))
-let input = ''
-process.stdin.on('data', (d) => { input += d })
-process.stdin.on('end', () => {
-  const delayFile = ${JSON.stringify(path.join(dir, 'delay'))}
-  const delay = fs.existsSync(delayFile) ? Number(fs.readFileSync(delayFile, 'utf8')) * 1000 : 0
-  setTimeout(() => {
-    if (fs.existsSync(${JSON.stringify(path.join(dir, 'fail'))})) { process.stderr.write('simulated failure'); process.exit(1) }
-    const has = (s) => input.includes(s)
-    const out =
-      has("Analyse the user's spoken image idea") ? a.imageAnalysis
-      : has('Generate exactly 3 distinct prompt variations') ? a.imageVariations
-      : has('Assemble a final') ? a.imageAssembly
-      : has('expert email writer') ? a.email
-      : has('POLISHED:') ? a.polish
-      : has('write short style notes') ? a.styleNotes
-      : has("Veo 3.1 (Google's") ? a.videoDefaults
-      : has('Assemble the following parameters') ? a.videoPrompt
-      : has('n8n workflow engineer. Analyse') ? a.workflowAnalysis
-      : has('Generate a complete, valid n8n workflow JSON') ? a.workflowJson
-      : has('You judge how well a request would work') ? a.eval
-      : has('You design harnesses') ? (has('TypeScript') ? a.harnessPipeline : a.harnessLoop)
-      : has('You write harnesses for Claude Code') ? a.harnessFiles
-      : a.prompt
-    if (args.includes('stream-json')) console.log(JSON.stringify({ type: 'result', is_error: false, result: out }))
-    else process.stdout.write(out + '\\n')
-  }, delay)
-})
-`, { mode: 0o755 })
-  return claude
+  // The script is e2e/fakes/claude-ui.mjs; this folder (answers and switches) is its first argument.
+  return installFake('claude-ui', path.join(dir, 'claude'), [dir])
 }
 
 function writeFakeHelper(dir, trusted) {
-  const helper = path.join(dir, 'promptly-helper')
-  fs.writeFileSync(helper, `#!/usr/bin/env node
-const rl = require('readline').createInterface({ input: process.stdin })
-const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
-out({ type: 'ready', trusted: ${trusted}, tap: ${trusted} })
-rl.on('line', (line) => {
-  const m = JSON.parse(line)
-  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Visual Studio Code', bundleId: 'com.microsoft.VSCode', pid: 1 }, selectedText: 'TypeError: cannot read properties of undefined' })
-  else out({ type: 'status', id: m.id, trusted: ${trusted}, tap: ${trusted} })
-})
-rl.on('close', () => process.exit(0))
-`, { mode: 0o755 })
-  return helper
+  return installFake('helper-ui', path.join(dir, 'promptly-helper'), [trusted ? 'trusted' : 'untrusted'])
 }
 
 async function launch(theme, { setupComplete = true, helper = null, config = {} } = {}) {
@@ -136,7 +91,7 @@ async function launch(theme, { setupComplete = true, helper = null, config = {} 
   const claude = writeFakeClaude(dir)
   const engine = path.join(dir, 'engine')
   fs.mkdirSync(engine)
-  fs.writeFileSync(path.join(engine, 'whisper-cli'), '#!/bin/bash\necho "Um, so for the support dashboard, we should pull tickets from Zendesk every five minutes and group them by product area. New paragraph. Uh, and highlight anything that has been waiting more than four hours."\n', { mode: 0o755 })
+  installFake('whisper-cli-ui', path.join(engine, 'whisper-cli'))
   fs.writeFileSync(path.join(engine, 'ggml-base.en-q5_1.bin'), 'x')
   fs.writeFileSync(path.join(userData, 'config.json'), JSON.stringify({ setupComplete, theme, claudePath: claude, ...config }))
   const app = await electron.launch({

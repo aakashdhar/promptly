@@ -8,78 +8,15 @@ import http from 'http'
 import os from 'os'
 import path from 'path'
 import { HARNESS_LOOP, HARNESS_FILES } from './harness-fixtures.mjs'
+import { installFake } from './fakes/install.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 
-// The fake CLI records its arguments and stdin, waits $FAKE_DIR/delay seconds if that
-// file exists, then prints a prompt built from the last line of stdin (the transcript).
+// The fakes are Node scripts in e2e/fakes/ (see each for what it does), so they run on the Mac
+// and on Windows. The fake CLI records its arguments and stdin, waits $FAKE_DIR/delay seconds if
+// that file exists, then prints a prompt built from the last line of stdin (the transcript).
 function writeFakeTools(dir) {
-  const claude = path.join(dir, 'claude')
-  fs.writeFileSync(claude, `#!/bin/bash
-# Setup checks: version, and sign-in state (signed out while $FAKE_DIR/signed-out exists)
-if [ "$1" = "--version" ]; then echo "9.9.9 (Claude Code)"; exit 0; fi
-if [ "$1" = "auth" ]; then
-  if [ -f "$FAKE_DIR/signed-out" ]; then echo '{"loggedIn": false}'; else echo '{"loggedIn": true}'; fi
-  exit 0
-fi
-n=$(ls "$FAKE_DIR"/call-*.args 2>/dev/null | wc -l | tr -d ' ')
-printf '%s\\n' "$@" > "$FAKE_DIR/call-$n.args"
-input=$(cat)
-printf '%s' "$input" > "$FAKE_DIR/call-$n.stdin"
-if [ -f "$FAKE_DIR/fail" ]; then echo "simulated failure" >&2; exit 1; fi
-[ -f "$FAKE_DIR/delay" ] && sleep "$(cat "$FAKE_DIR/delay")"
-# Image builder phases get the JSON they ask for.
-if printf '%s' "$input" | grep -q "Analyse the user's spoken image idea"; then
-  printf '%s' '{"subject":{"subject":"Red fox","setting":"Snowy forest","emotion":"Calm","framing":"Close-up","negativePrompts":[]},"lighting":{"timeOfDay":"Golden hour","lightType":"Directional sun","quality":"Warm amber","lensFlare":"None"},"camera":{"lens":"85mm portrait","aperture":"f/1.4 shallow","aspectRatio":"4:5 portrait","angle":"Eye level","filmSim":"Kodak Portra 400"},"style":{"visualStyle":"Cinematic film still","colorGrade":"Warm teal-orange","filmGrain":"35mm grain","reference":"Emmanuel Lubezki"},"technical":{"resolution":"Ultra HD 4K","renderQuality":"Photorealistic","stylise":750,"chaos":20,"weird":0,"seed":null}}'
-  exit 0
-fi
-if printf '%s' "$input" | grep -q "Generate exactly 3 distinct prompt variations"; then
-  printf '%s' '{"variations":[{"id":1,"prompt":"A red fox in snow","focus":"natural"},{"id":2,"prompt":"A red fox, dramatic","focus":"editorial"},{"id":3,"prompt":"A red fox, cinematic","focus":"cinematic"}]}'
-  exit 0
-fi
-if printf '%s' "$input" | grep -q "Assemble a final"; then
-  [ -f "$FAKE_DIR/assemble-delay" ] && sleep "$(cat "$FAKE_DIR/assemble-delay")"
-  printf '%s' '{"prompt":"A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic","flags":"--ar 4:5 --stylize 750 --chaos 20"}'
-  exit 0
-fi
-if printf '%s' "$input" | grep -q "You design harnesses"; then cat "$FAKE_DIR/harness-plan.json"; exit 0; fi
-if printf '%s' "$input" | grep -q "write short style notes"; then
-  printf '%s' '- Short sentences
-- Signs off with "Cheers, Sam"'
-  exit 0
-fi
-# The request: a spoken change (Iterate), or the <transcript> of a prompt mode, or the last line.
-tagged() { printf '%s' "$input" | awk -v t="$1" '$0 ~ "</" t ">" {f=0} f {print} $0 ~ "<" t ">" {f=1}' | tail -n 1; }
-last=$(tagged requested_change)
-[ -z "$last" ] && last=$(tagged transcript)
-[ -z "$last" ] && last=$(printf '%s' "$input" | tail -n 1 | tr -d '"')
-# Polish and Email answer in their own formats.
-if printf '%s' "$input" | grep -q "expert email writer"; then
-  node -e 'console.log(JSON.stringify({subject:"About "+process.argv[1],body:"Hi team,\\n\\n"+process.argv[1]+"\\n\\nThanks",toneAnalysis:{recipient:"Team",tone:"Friendly",coreMessage:process.argv[1],approach:"Direct",whyThisTone:"Internal"}}))' "$last"
-  exit 0
-fi
-if printf '%s' "$input" | grep -q "n8n workflow engineer. Analyse"; then cat "$FAKE_DIR/workflow-analysis.json"; exit 0; fi
-if printf '%s' "$input" | grep -q "Generate a complete, valid n8n workflow JSON"; then cat "$FAKE_DIR/workflow.json"; exit 0; fi
-if printf '%s' "$input" | grep -q "You write harnesses for Claude Code"; then
-  out=$(cat "$FAKE_DIR/harness-files.txt")
-elif printf '%s' "$input" | grep -q "POLISHED:"; then
-  out=$(printf 'POLISHED:\\n%s (polished)\\n\\nCHANGES:\\n· Tidied the wording' "$last")
-else
-  out=$(printf 'Role:\\nYou are a test assistant.\\n\\nTask:\\n%s' "$last")
-fi
-if [[ " $* " == *" stream-json "* ]]; then
-  # Stream in two halves so tests can watch text arrive.
-  half=$(( \${#out} / 2 ))
-  node -e 'console.log(JSON.stringify({type:"stream_event",event:{type:"content_block_delta",delta:{type:"text_delta",text:process.argv[1]}}}))' "\${out:0:$half}"
-  [ -f "$FAKE_DIR/stream-pause" ] && sleep "$(cat "$FAKE_DIR/stream-pause")"
-  node -e 'console.log(JSON.stringify({type:"stream_event",event:{type:"content_block_delta",delta:{type:"text_delta",text:process.argv[1]}}}))' "\${out:$half}"
-  node -e 'console.log(JSON.stringify({type:"result",is_error:false,result:process.argv[1]}))' "$out"
-else
-  printf '%s\n' "$out"
-fi
-touch "$FAKE_DIR/call-$n.done"
-`)
-  fs.chmodSync(claude, 0o755)
+  const claude = installFake('claude', path.join(dir, 'claude'))
   fs.writeFileSync(path.join(dir, 'workflow-analysis.json'), JSON.stringify({ workflowName: 'Form to Slack', trigger: 'A form is sent', nodes: [{ id: 1, name: 'Webhook', type: 'n8n-nodes-base.webhook', purpose: 'Receives the form', parameters: { path: 'PATH' }, placeholders: ['path'] }, { id: 2, name: 'Post to Slack', type: 'n8n-nodes-base.slack', purpose: 'Tells the team', parameters: { channel: 'CHANNEL' }, placeholders: ['channel'] }], connections: 'linear 1→2', connectionsMap: { Webhook: ['Post to Slack'] } }))
   fs.writeFileSync(path.join(dir, 'workflow.json'), '```json\n' + JSON.stringify({ name: 'Form to Slack', nodes: [{ name: 'Webhook', type: 'n8n-nodes-base.webhook', typeVersion: 2, position: [240, 300], parameters: { path: 'forms' } }], connections: {} }) + '\n```')
   fs.writeFileSync(path.join(dir, 'harness-plan.json'), HARNESS_LOOP)
@@ -87,40 +24,13 @@ touch "$FAKE_DIR/call-$n.done"
   // Fake built-in engine (whisper-cli + model): only accepts WAV, like the real one.
   const engineDir = path.join(dir, 'engine')
   fs.mkdirSync(engineDir)
-  fs.writeFileSync(path.join(engineDir, 'whisper-cli'), `#!/bin/bash
-f=""; prev=""
-for a in "$@"; do [ "$prev" = "-f" ] && f="$a"; prev="$a"; done
-[ "$(head -c 4 "$f")" = "RIFF" ] || { echo "expected WAV input" >&2; exit 1; }
-[ -f "$FAKE_DIR/whisper-fail" ] && case "$f" in *warmup*) ;; *) echo "engine failed" >&2; exit 1;; esac
-cp "$f" "$FAKE_DIR/last-audio.wav"
-printf '%s\n' "$*" > "$FAKE_DIR/whisper-args"
-if [ -f "$FAKE_DIR/transcript" ]; then cat "$FAKE_DIR/transcript"; else echo "spoken words from the fake mic"; fi
-`, { mode: 0o755 })
+  installFake('whisper-cli', path.join(engineDir, 'whisper-cli'))
   fs.writeFileSync(path.join(engineDir, 'ggml-base.en-q5_1.bin'), 'fake model')
-  const whisper = path.join(dir, 'whisper')
-  fs.writeFileSync(whisper, '#!/bin/bash\nexit 1\n', { mode: 0o755 })
-  const ffmpeg = path.join(dir, 'ffmpeg')
-  fs.writeFileSync(ffmpeg, '#!/bin/bash\nexit 0\n')
-  fs.chmodSync(ffmpeg, 0o755)
+  const whisper = installFake('whisper', path.join(dir, 'whisper'))
+  const ffmpeg = installFake('ffmpeg', path.join(dir, 'ffmpeg'))
   // Fake promptly-helper: Accessibility granted, Terminal in front with some text selected.
-  const helper = path.join(dir, 'promptly-helper')
-  fs.writeFileSync(helper, `#!/usr/bin/env node
-const rl = require('readline').createInterface({ input: process.stdin })
-const out = (o) => process.stdout.write(JSON.stringify(o) + '\\n')
-out({ type: 'ready', trusted: true, tap: true })
-rl.on('line', (line) => {
-  const m = JSON.parse(line)
-  if (m.cmd === 'context') out({ type: 'context', id: m.id, app: { name: 'Terminal', bundleId: 'com.apple.Terminal', pid: 1 }, selectedText: require('fs').existsSync(process.env.FAKE_DIR + '/no-selection') ? null : 'TypeError: cannot read properties of undefined' })
-  else if (m.cmd === 'paste') {
-    // Records what ⌘V would have pasted: the clipboard at that moment.
-    require('fs').writeFileSync(process.env.FAKE_DIR + '/pasted', require('child_process').execFileSync('pbpaste'))
-    out({ type: 'pasted', id: m.id, ok: true })
-  }
-  else out({ type: 'status', id: m.id, trusted: true, tap: true })
-})
-rl.on('close', () => process.exit(0))
-`, { mode: 0o755 })
-  return { claude, whisper, ffmpeg: path.join(dir, 'ffmpeg'), engineDir, helper }
+  const helper = installFake('helper', path.join(dir, 'promptly-helper'))
+  return { claude, whisper, ffmpeg, engineDir, helper }
 }
 
 // mode: most tests below are about prompt modes, so they start in Prompt; pass mode: null to
@@ -169,7 +79,7 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
       ...env,
     },
   })
-  if (!setupComplete) return { app, dir, fakeDir, tmpDir }
+  if (!setupComplete) return { app, dir, fakeDir, tmpDir, claude: tools.claude }
   // Setup is complete, so the bar opens directly (no splash).
   await expect.poll(async () => app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
@@ -436,10 +346,11 @@ test('first-run setup: microphone, then Claude Code sign-in is picked up on its 
 
 test('a missing Claude Code offers the installer', async () => {
   ctx = await launch({ setupComplete: false })
-  const { app, fakeDir } = ctx
+  const { app, claude } = ctx
   const setup = await app.waitForEvent('window', { predicate: (w) => w.url().includes('splash.html') })
-  // Claude Code goes missing (a saved path to nothing is refused, so remove the program itself).
-  fs.rmSync(path.join(fakeDir, 'claude'))
+  // Claude Code goes missing (a saved path to nothing is refused, so remove the program itself;
+  // its launcher is claude.cmd on Windows).
+  fs.rmSync(claude)
   await setup.getByRole('button', { name: 'Set up Promptly' }).click()
   await setup.locator('#mic-next').click()
   await expect(setup.getByText("Claude Code isn't installed yet.")).toBeVisible({ timeout: 10000 })
