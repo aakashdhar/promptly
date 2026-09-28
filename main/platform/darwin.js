@@ -143,6 +143,24 @@ async function removeInstalledApp(bundlePath) {
   }
 }
 
+// ── Starting command-line tools ──
+
+// The path module for this system's paths.
+const paths = path;
+
+// A binary's file names on disk (Windows adds .exe/.cmd).
+function executableNames(name) {
+  return [name];
+}
+
+// [file, args, options] for spawn/execFile. macOS runs every binary as it is.
+function spawnArgs(file, args, options = {}) {
+  return [file, args, options];
+}
+
+// Claude Code reads its login from the keychain and reports "logged out" when USER is unset.
+const USER_ENV_VARS = ['USER', 'LOGNAME'];
+
 // System Settings panes Promptly sends people to.
 const PRIVACY_SETTINGS = {
   accessibility: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility',
@@ -210,4 +228,8 @@ module.exports = {
   appBundlePath,
   uninstallScriptPath,
   removeInstalledApp,
+  paths,
+  executableNames,
+  spawnArgs,
+  USER_ENV_VARS,
 };

@@ -165,6 +165,45 @@ function removeInstalledApp(installDir, { run = execFile } = {}) {
   });
 }
 
+// ── Starting command-line tools ──
+
+const paths = path;
+
+// Real executables first: when both exist, claude.exe runs without cmd.exe in between.
+function executableNames(name) {
+  return [`${name}.exe`, `${name}.cmd`];
+}
+
+// Characters cmd.exe treats specially; each gets a ^ in front.
+const CMD_META = /([()\][%!^"`<>&|;, *?])/g;
+
+// One argument as the C runtime reads it (quotes, backslashes before quotes), then escaped
+// for cmd.exe. npm's .cmd launchers pass arguments on through %*, which cmd reads a second
+// time, so the escaping is doubled (as cross-spawn does for npm shims).
+function quoteForCmd(arg) {
+  let quoted = String(arg)
+    .replace(/(\\*)"/g, '$1$1\\"')
+    .replace(/(\\*)$/, '$1$1');
+  quoted = `"${quoted}"`;
+  return quoted.replace(CMD_META, '^$1').replace(CMD_META, '^$1');
+}
+
+// Node won't start a .cmd/.bat without a shell (CVE-2024-27980), so those go through
+// cmd.exe with a command line built here, every piece escaped. Anything else runs as it is.
+// Only fixed flags reach the command line: prompts always go on stdin.
+function spawnArgs(file, args, options = {}) {
+  if (!/\.(cmd|bat)$/i.test(file)) return [file, args, options];
+  const line = [file.replace(CMD_META, '^$1'), ...args.map(quoteForCmd)].join(' ');
+  return [
+    process.env.ComSpec || 'cmd.exe',
+    ['/d', '/s', '/c', `"${line}"`],
+    { ...options, windowsVerbatimArguments: true, windowsHide: true },
+  ];
+}
+
+// Claude Code on Windows identifies the user by USERNAME.
+const USER_ENV_VARS = ['USERNAME'];
+
 // Settings pages Promptly sends people to. Windows has no Accessibility permission.
 const PRIVACY_SETTINGS = {
   accessibility: null,
@@ -215,4 +254,8 @@ module.exports = {
   appBundlePath,
   uninstallScriptPath,
   removeInstalledApp,
+  paths,
+  executableNames,
+  spawnArgs,
+  USER_ENV_VARS,
 };

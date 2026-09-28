@@ -3,6 +3,7 @@ import { createRequire } from 'module'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { EventEmitter } from 'events'
 
 const require = createRequire(import.meta.url)
 const { fillTemplate, buildModePrompt, buildEvalPrompt, normalizeEval, getMode, MODES } = require('../main/prompts.js')
@@ -368,6 +369,89 @@ describe('platform modules', () => {
     expect(win32.harnessLaunchAgents('C:\\Users\\a')).toEqual([])
     expect(await win32.unloadLaunchAgent('x')).toEqual({ ok: true })
     expect((await win32.loadLaunchAgent('x', 'y')).ok).toBe(false)
+  })
+})
+
+describe('starting Claude Code on Windows', () => {
+  const win32 = require('../main/platform/win32.js')
+  const CMD = 'C:\\Users\\Zoë Smith\\AppData\\Roaming\\npm\\claude.cmd'
+
+  it('macOS runs every binary exactly as asked', () => {
+    const opts = { env: { PATH: '/usr/bin' } }
+    const [file, args, options] = darwin.spawnArgs('/usr/local/bin/claude', ['-p', '--model', 'x'], opts)
+    expect([file, args]).toEqual(['/usr/local/bin/claude', ['-p', '--model', 'x']])
+    expect(options).toBe(opts)
+    expect(darwin.executableNames('claude')).toEqual(['claude'])
+  })
+
+  it('a .exe runs as it is, with no shell', () => {
+    const opts = { env: {} }
+    expect(win32.spawnArgs('C:\\Users\\a\\.local\\bin\\claude.exe', ['-p'], opts)).toEqual(['C:\\Users\\a\\.local\\bin\\claude.exe', ['-p'], opts])
+  })
+
+  it('a .cmd goes through cmd.exe /d /s /c with every piece escaped', () => {
+    const [file, args, options] = win32.spawnArgs(CMD, ['-p', '--tools', '', '--system-prompt', "Follow the user's instructions & output"], { env: { A: '1' } })
+    expect(file).toMatch(/cmd\.exe$/i)
+    expect(args.slice(0, 3)).toEqual(['/d', '/s', '/c'])
+    expect(args).toHaveLength(4)
+    expect(options).toEqual({ env: { A: '1' }, windowsVerbatimArguments: true, windowsHide: true })
+    const line = args[3]
+    expect(line.startsWith('"') && line.endsWith('"')).toBe(true)
+    // The space in the user name is escaped, not left to split the command.
+    expect(line).toContain('C:\\Users\\Zoë^ Smith\\AppData\\Roaming\\npm\\claude.cmd')
+    // Each argument is quoted, and its quotes escaped twice for npm's %* launcher.
+    expect(line).toContain(' ^^^"-p^^^" ')
+    expect(line).toContain(' ^^^"^^^" ') // the empty --tools value survives
+    // cmd.exe metacharacters never appear unescaped.
+    expect(line).toContain('^^^&')
+    expect(line).not.toMatch(/[^^]&/)
+  })
+
+  it('.bat and upper-case extensions count too', () => {
+    expect(win32.spawnArgs('C:\\x\\CLAUDE.CMD', [], {})[2].windowsVerbatimArguments).toBe(true)
+    expect(win32.spawnArgs('C:\\x\\claude.bat', [], {})[2].windowsVerbatimArguments).toBe(true)
+  })
+
+  it('in nvm-windows folders, claude.exe is tried before claude.cmd', () => {
+    expect(win32.executableNames('claude')).toEqual(['claude.exe', 'claude.cmd'])
+  })
+
+  it('the Mac Claude process starts exactly as before, with the prompt on stdin', async () => {
+    const calls = []
+    let stdin = ''
+    const runner = createClaudeRunner({
+      getClaudePath: () => '/usr/local/bin/claude',
+      spawnImpl: (...call) => {
+        calls.push(call)
+        const child = new EventEmitter()
+        child.stdout = new EventEmitter(); child.stderr = new EventEmitter()
+        child.stdin = { on() {}, end: (text) => { stdin = text; setTimeout(() => { child.stdout.emit('data', 'ok'); child.emit('close', 0) }, 5) } }
+        return child
+      },
+    })
+    await runner.run('secret prompt text')
+    expect(calls[0][0]).toBe('/usr/local/bin/claude')
+    expect(Object.keys(calls[0][2])).toEqual(['env'])
+    expect(calls[0][1].join(' ')).not.toContain('secret prompt text')
+    expect(stdin).toBe('secret prompt text')
+  })
+
+  it('a Windows environment keeps its Path key, uses ; and sets USERNAME', () => {
+    const env = makeClaudeEnv(CMD, { Path: 'C:\\Windows\\System32;C:\\Windows', APPDATA: 'C:\\x' }, win32)
+    expect(env.PATH).toBeUndefined()
+    expect(env.Path).toBe('C:\\Users\\Zoë Smith\\AppData\\Roaming\\npm;C:\\Windows\\System32;C:\\Windows')
+    expect(env.APPDATA).toBe('C:\\x')
+    expect(env.USERNAME).toBeTruthy()
+    expect(env.USER).toBeUndefined()
+    // A folder already on the Path isn't added twice, and an existing USERNAME is kept.
+    const again = makeClaudeEnv(CMD, { Path: 'C:\\Users\\Zoë Smith\\AppData\\Roaming\\npm;C:\\Windows', USERNAME: 'zoe' }, win32)
+    expect(again.Path).toBe('C:\\Users\\Zoë Smith\\AppData\\Roaming\\npm;C:\\Windows')
+    expect(again.USERNAME).toBe('zoe')
+  })
+
+  it('an empty Windows environment falls back to the system folders', () => {
+    const env = makeClaudeEnv(CMD, {}, win32)
+    expect(env.PATH.endsWith(win32.DEFAULT_PATH)).toBe(true)
   })
 })
 

@@ -2,6 +2,7 @@
 
 const { spawn } = require('child_process');
 const { makeClaudeEnv, terminate } = require('./binaries');
+const platform = require('./platform');
 
 const DEFAULT_MODEL = 'claude-sonnet-5';
 // Earlier defaults. Settings saved while one of these was the default follow the new default.
@@ -80,7 +81,8 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
       // The CLI thinks before answering by default; for a long answer that can add minutes
       // without making it better, so callers can turn it off.
       const env = thinking ? makeClaudeEnv(claudePath) : { ...makeClaudeEnv(claudePath), MAX_THINKING_TOKENS: '0' };
-      const child = spawnImpl(claudePath, args, { env });
+      // On Windows an npm-installed claude.cmd goes through cmd.exe; the prompt still goes on stdin.
+      const child = spawnImpl(...platform.spawnArgs(claudePath, args, { env }));
       children.add(child);
       let stdout = '';
       let stderr = '';
@@ -167,7 +169,7 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
     const claudePath = getClaudePath();
     if (!claudePath) return Promise.resolve(null);
     return new Promise((resolve) => {
-      const child = spawnImpl(claudePath, ['--version'], { env: makeClaudeEnv(claudePath) });
+      const child = spawnImpl(...platform.spawnArgs(claudePath, ['--version'], { env: makeClaudeEnv(claudePath) }));
       let out = '';
       const timer = setTimeout(() => terminate(child), 5000);
       child.stdout?.setEncoding?.('utf8');

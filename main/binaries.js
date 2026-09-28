@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const os = require('os');
-const path = require('path');
 const platform = require('./platform');
 
 const PYTHON_WHISPER = 'python3 -m whisper';
@@ -23,7 +22,8 @@ async function resolveBinary(name, stored, { home = os.homedir(), searchNodeVers
   const found = platform.binaryCandidates(name, home).find(exists);
   if (found) return found;
   if (searchNodeVersions) {
-    const inNvm = platform.nodeVersionBinDirs(home, fs.readdirSync).map((d) => path.join(d, name)).find(exists);
+    const inNvm = platform.nodeVersionBinDirs(home, fs.readdirSync)
+      .flatMap((d) => platform.executableNames(name).map((n) => platform.paths.join(d, n))).find(exists);
     if (inNvm) return inNvm;
   }
   return platform.shellWhich(name);
@@ -47,21 +47,24 @@ function resolveFfmpegPath(stored, opts) {
 // Claude CLI is a Node.js script (#!/usr/bin/env node). In a packaged .app the PATH is
 // minimal and excludes nvm's bin dir, so add the binary's own dir (which holds `node` for
 // nvm installs) and the dir its symlink resolves to (covers /usr/local/bin symlinks).
-function makeClaudeEnv(binPath, env = process.env) {
-  const originalDir = path.dirname(binPath);
+// plat is only passed by tests, to build a Windows environment on a Mac.
+function makeClaudeEnv(binPath, env = process.env, plat = platform) {
+  const originalDir = plat.paths.dirname(binPath);
   let resolvedDir = originalDir;
-  try { resolvedDir = path.dirname(fs.realpathSync(binPath)); } catch { /* use original */ }
-  const base = env.PATH || platform.DEFAULT_PATH;
-  const present = new Set(base.split(platform.PATH_DELIMITER));
+  try { resolvedDir = plat.paths.dirname(fs.realpathSync(binPath)); } catch { /* use original */ }
+  // Windows spells it Path, and a copied environment is no longer case-insensitive: keep one key.
+  const pathKey = Object.keys(env).find((k) => k.toUpperCase() === 'PATH') || 'PATH';
+  const base = env[pathKey] || plat.DEFAULT_PATH;
+  const present = new Set(base.split(plat.PATH_DELIMITER));
   const dirs = [originalDir, resolvedDir].filter((d, i, a) => a.indexOf(d) === i && !present.has(d));
-  // Claude Code reads its login from the keychain and reports "logged out" when USER is unset.
+  // Claude Code reports "logged out" when it can't tell who the user is (USER on macOS, USERNAME on Windows).
   let username = '';
   try { username = os.userInfo().username; } catch { /* leave unset */ }
+  const userVars = username ? Object.fromEntries(plat.USER_ENV_VARS.filter((v) => !env[v]).map((v) => [v, username])) : {};
   return {
     ...env,
-    ...(!env.USER && username && { USER: username }),
-    ...(!env.LOGNAME && username && { LOGNAME: username }),
-    PATH: dirs.length ? dirs.join(platform.PATH_DELIMITER) + platform.PATH_DELIMITER + base : base,
+    ...userVars,
+    [pathKey]: dirs.length ? dirs.join(plat.PATH_DELIMITER) + plat.PATH_DELIMITER + base : base,
   };
 }
 

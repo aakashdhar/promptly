@@ -9,6 +9,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 const { makeClaudeEnv } = require('./binaries');
+const platform = require('./platform');
 
 // Anthropic's official native installer. It puts `claude` in ~/.local/bin, which
 // binaries.js already searches.
@@ -16,7 +17,7 @@ const INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash';
 
 function execJson(file, args, env, timeoutMs) {
   return new Promise((resolve) => {
-    execFile(file, args, { env, timeout: timeoutMs }, (err, stdout) => {
+    execFile(...platform.spawnArgs(file, args, { env, timeout: timeoutMs }), (err, stdout) => {
       if (err && !stdout) { resolve(null); return; }
       try { resolve(JSON.parse(stdout)); } catch { resolve(null); }
     });
@@ -25,7 +26,7 @@ function execJson(file, args, env, timeoutMs) {
 
 function execText(file, args, env, timeoutMs) {
   return new Promise((resolve) => {
-    execFile(file, args, { env, timeout: timeoutMs }, (err, stdout) => resolve(err ? null : stdout.trim() || null));
+    execFile(...platform.spawnArgs(file, args, { env, timeout: timeoutMs }), (err, stdout) => resolve(err ? null : stdout.trim() || null));
   });
 }
 
