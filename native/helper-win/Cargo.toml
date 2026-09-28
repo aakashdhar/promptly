@@ -2,7 +2,7 @@
 name = "promptly-helper"
 version = "1.0.0"
 edition = "2021"
-description = "Promptly's Windows helper: hold-to-talk hotkey watching over JSON lines (see main/helper.js)"
+description = "Promptly's Windows helper: hold-to-talk, the app you're in, selected text and paste, over JSON lines (see main/helper.js)"
 publish = false
 
 [[bin]]
@@ -15,10 +15,23 @@ serde_json = "1"
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_DataExchange",
+    "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_Ole",
     "Win32_System_Threading",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_WindowsAndMessaging",
+] }
+# UI Automation (selected text) is COM: windows-sys has no interface vtables, so this one part
+# uses the `windows` crate's wrappers rather than hand-written vtables nobody could test on a Mac.
+windows = { version = "0.62", features = [
+    "Win32_System_Com",
+    "Win32_UI_Accessibility",
 ] }
 
 [profile.release]

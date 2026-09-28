@@ -567,7 +567,29 @@ const holdToTalk = createHoldToTalk({
   onCancel: cancelFromHotkey,
 });
 
-function onHelperHotkey(phase) {
+// Hold-to-talk latency, key down → recording (Windows target: under 150 ms). The Windows helper
+// stamps hotkey events with `t` on its own clock; the smallest arrival-minus-t seen since it
+// (re)started maps that clock onto ours. The Swift helper sends no `t`, so the Mac logs nothing.
+let helperClockOffset = null;
+let hotkeyDownAt = 0;
+
+function noteHotkeyTime(phase, t) {
+  if (typeof t !== 'number') return;
+  const lag = Date.now() - t;
+  if (helperClockOffset == null || lag < helperClockOffset) helperClockOffset = lag;
+  if (phase === 'down') hotkeyDownAt = t + helperClockOffset;
+}
+
+function logHotkeyLatency() {
+  if (!hotkeyDownAt) return;
+  const ms = Date.now() - hotkeyDownAt;
+  hotkeyDownAt = 0;
+  // A down that didn't start a recording (already recording, a tap) is stale by the next one.
+  if (ms < 5000) log.info(`Hotkey latency: ${ms} ms (key down → recording)`);
+}
+
+function onHelperHotkey(phase, t) {
+  noteHotkeyTime(phase, t);
   if (phase === 'down') holdToTalk.down();
   else if (phase === 'up') holdToTalk.up();
   else if (phase === 'cancel') holdToTalk.cancel();
@@ -584,6 +606,8 @@ const helper = createHelper({
   binaryPath: HELPER_PATH,
   onHotkey: onHelperHotkey,
   onStatus: (status) => {
+    // A restarted helper's clock starts again from zero.
+    helperClockOffset = null;
     log.info('Helper status', status);
     applyHotkey();
     winSend('accessibility-changed', status);
@@ -1627,6 +1651,7 @@ app.whenReady().then(async () => {
     if (appState !== currentAppState && (appState === 'RECORDING' || currentAppState === 'RECORDING')) {
       log.info(`Recording: ${currentAppState} → ${appState}${pillSession ? ' (pill)' : ''}`);
     }
+    if (appState === 'RECORDING' && currentAppState !== 'RECORDING') logHotkeyLatency();
     currentAppState = appState;
     // Each recording judges the speaker's volume afresh (pausing and resuming carries on).
     if (appState !== 'RECORDING' && appState !== 'PAUSED') {

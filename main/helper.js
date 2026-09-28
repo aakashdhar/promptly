@@ -29,7 +29,8 @@ function createHelper({ binaryPath, onHotkey = () => {}, onStatus = () => {}, lo
       pending.delete(msg.id);
       resolve(msg);
     }
-    if (msg.type === 'hotkey') onHotkey(msg.phase);
+    // `t` (ms on the helper's clock) comes from the Windows helper only, for the latency log.
+    if (msg.type === 'hotkey') onHotkey(msg.phase, msg.t);
     if (msg.type === 'status' || msg.type === 'ready') {
       const next = { trusted: !!msg.trusted, tap: !!msg.tap };
       const changed = next.trusted !== lastStatus.trusted || next.tap !== lastStatus.tap;

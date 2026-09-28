@@ -1,8 +1,9 @@
 // promptly-helper.exe — the Windows twin of native/helper/main.swift, for the things Electron
 // can't do on its own:
 //   • hold-to-talk: sees the hotkey go down AND up (Electron's globalShortcut only sees presses)
-//   • the app you're in and the text you've selected (context.rs, WIN-013)
-//   • typing dictation into the app you're in (paste.rs, WIN-013)
+//   • the app you're in and the text you've selected (context.rs: UI Automation, then a Ctrl+C
+//     that puts your clipboard back)
+//   • typing dictation into the app you're in (paste.rs)
 // It speaks the same JSON lines on stdin/stdout as the Swift helper (see main/helper.js and
 // protocol.rs). The GUI subsystem keeps a console window from flashing up; Promptly talks to
 // it over pipes, which work the same without a console.
@@ -10,13 +11,17 @@
 // Built elsewhere only for `cargo test`; without the Windows hook the engine looks unused.
 #![cfg_attr(not(windows), allow(dead_code))]
 
+mod apps;
+mod clipboard;
 mod clock;
 mod context;
 mod engine;
 mod hook;
+mod keys;
 mod output;
 mod paste;
 mod protocol;
+mod uia;
 
 use std::io::BufRead;
 

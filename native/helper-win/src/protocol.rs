@@ -69,18 +69,31 @@ pub fn handle_request(line: &str) -> Option<Value> {
             }
             status("status", hook::is_live(), Some(id))
         }
-        "context" => json!({
-            "type": "context",
-            "id": id,
-            "app": context::frontmost_app(),
-            "selectedText": context::selected_text().map_or(Value::Null, Value::String),
-        }),
-        "paste" => json!({ "type": "pasted", "id": id, "ok": paste::paste_into_front_app() }),
+        "context" => {
+            let context = context::read();
+            json!({
+                "type": "context",
+                "id": id,
+                "app": context.app,
+                "selectedText": context.selected_text.map_or(Value::Null, Value::String),
+            })
+        }
+        "paste" => pasted(paste::paste_into_front_app(), id),
         // Nothing to ask for on Windows; reply with the status like the Mac does after prompting.
         "status" | "requestAccess" => status("status", hook::is_live(), Some(id)),
         other => json!({ "type": "error", "id": id, "message": format!("unknown command {other}") }),
     };
     Some(reply)
+}
+
+// Swift's { type: 'pasted', id, ok }; a failed paste may add why ('elevated'), which main can
+// show instead of a bare "press Ctrl+V".
+pub fn pasted(result: paste::Pasted, id: Value) -> Value {
+    let mut message = json!({ "type": "pasted", "id": id, "ok": result.ok });
+    if let Some(reason) = result.reason {
+        message["reason"] = Value::from(reason);
+    }
+    message
 }
 
 pub fn ready() -> Value {
@@ -201,6 +214,24 @@ mod tests {
         assert_eq!(pasted["type"], "pasted");
         assert_eq!(pasted["id"], 3);
         assert!(pasted["ok"].is_boolean());
+    }
+
+    #[test]
+    fn a_blocked_paste_says_why() {
+        assert_eq!(
+            pasted(
+                paste::Pasted {
+                    ok: false,
+                    reason: Some("elevated")
+                },
+                json!(9)
+            ),
+            json!({ "type": "pasted", "id": 9, "ok": false, "reason": "elevated" })
+        );
+        assert_eq!(
+            pasted(paste::Pasted { ok: true, reason: None }, json!(10)),
+            json!({ "type": "pasted", "id": 10, "ok": true })
+        );
     }
 
     #[test]
