@@ -816,7 +816,7 @@ and executables in the Windows build; then repeat the WIN-023 checklist plus Har
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- **Deferred by the owner, 2026-09-28: stay unsigned for now.** Options weighed: unsigned (SmartScreen More info → Run anyway), Azure Artifact Signing (~$10/month, individual eligibility by country — check India), Certum Open Source (~€30–70/yr), OV (~$200–400/yr, HSM/cloud key), EV (no SmartScreen advantage since 2024). Owner's lean if signing later: Azure Artifact Signing if eligible, else Certum Open Source.
 ---
 
 ---

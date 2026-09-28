@@ -987,6 +987,6 @@ Say "next" to begin.
    Branch feature/windows-version pushed
 
 ## What's next
-⬜ WIN-023 · You: install the CI build on the Windows laptop and run the checklist in FEATURE_TASKS.md (WIN-023)
+⬜ WIN-023 · You: install the CI build (run 36411920416, artifact Promptly-Setup-windows-x64) on the Windows laptop and run the checklist in FEATURE_TASKS.md (WIN-023)
    Anything that fails comes back as `bug:`; the partial tasks (012, 013, 015, 017, 024, 025) get ticked from your results.
-⬜ WIN-026 · Signing — needs your choice of method (code-signing certificate, or Azure Trusted Signing)
+⏸ WIN-026 · Signing — deferred: stays unsigned for now (D-WINDOWS-SIGNING)

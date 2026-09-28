@@ -2264,3 +2264,9 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Deviations from the spec**: Windows Harness task names are ASCII (`Promptly Harness - …`) because schtasks lists names in the console code page; `setup-info` split into instant `setup-info` + slow `setup-checks`; setup scripts stay in the temp folder on both systems.
 - **Open**: WIN-023 hands-on pass on the owner's Windows PC; WIN-026 signing method (owner's choice).
 ---
+
+---
+### D-WINDOWS-SIGNING — Windows installer stays unsigned for now
+- **Date**: 2026-09-28 · **Type**: product
+- **Decision**: ship the Windows installer unsigned while the owner and friends test; SmartScreen's More info → Run anyway is explained on the site. WIN-026 reopens when the owner picks a method (lean: Azure Artifact Signing if eligible in India, else Certum Open Source).
+---
