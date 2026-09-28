@@ -38,3 +38,16 @@
   platform on the URL/query (would need BrowserWindow changes in main.js for three windows).
 - **Touches**: src/renderer/main.jsx, src/renderer/utils/keys.js (`keys`, `loadKeys`, `combo`), main/keys.js, main.js (`get-platform`), preload.js (`getPlatform`)
 ---
+
+---
+### 2026-09-28 · WIN-008 · Setup blockers come from a new setup-info channel, detected by "did it start"
+- **Decision**: a new `setup-info` IPC (not extra fields on `claude-status`) carries the install command, terminal
+  name, `gitMissing` and `blocked`. A binary counts as blocked when it fails to start (string error code), not when it
+  exits non-zero or times out.
+- **Why**: keeps every existing response shape as it is (Ask-first rule). Quarantine and SmartScreen blocks surface
+  as spawn failures, while a working whisper-cli/helper may legitimately exit non-zero for `--help`/`--version`.
+- **Alternatives**: extending `claude-status` (shape change); checking Windows Defender's history via PowerShell
+  (slow, needs parsing, only covers Defender).
+- **Touches**: main.js (`setup-info`, claude-install/login via `platform.openSetupScript`, HELPER_PATH),
+  preload.js (`setupInfo`), splash.html (`applySetupInfo`), main/platform/{darwin,win32}.js, main/claude-setup.js
+---

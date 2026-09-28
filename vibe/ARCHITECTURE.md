@@ -170,6 +170,7 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `set-last-prompt` | Last prompt for the tray "Copy last prompt" item |
 | renderer → main | `get-theme` | `{ dark }` |
 | renderer → main | `get-platform` | `{ os, mod, alt, ctrl, shift, enter }` from main/keys.js — ⌘ ⌥ ⌃ ⇧ ↵ on a Mac, Ctrl Alt Ctrl Shift Enter on Windows |
+| renderer → main | `setup-info` | `{ installCommand, terminal, gitMissing, blocked[] }` for the setup screen — Windows reports missing Git for Windows and exes an antivirus stopped; a Mac always `gitMissing: false, blocked: []` |
 | renderer → main | `get-stored-paths` | Paths, `claudeModel` and `modelOptions` for Settings |
 | renderer → main | `save-paths` | Save any of `claudePath`, `whisperPath`, `ffmpegPath`, `claudeModel` |
 | renderer → main | `browse-for-binary` | Native file picker |

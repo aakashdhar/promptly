@@ -936,7 +936,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (7/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (8/26)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
@@ -947,7 +947,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
    [x] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
    [x] WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
    [x] WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
-   [ ] WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
+   [x] WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
    [ ] WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
    [ ] WIN-010 · Toolbar room for caption buttons — nothing sits under minimise/maximise/close
    [ ] WIN-011 · Windows icons — tray icons per state and an installer icon
@@ -981,11 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space, right Alt, Ctrl+Alt+Space and Ctrl+Shift+Space; a Mac-only choice falls back to the default
-   Est. cost: ~$0.12 · Session running total: ~$0.73
-   Committed: feat(windows-version): WIN-007 (branch feature/windows-version)
+✅ WIN-008 · Setup through PowerShell — Install and Sign in open PowerShell with Anthropic's Windows installer; setup warns about missing Git for Windows and names any file an antivirus blocked
+   Est. cost: ~$0.15 · Session running total: ~$0.88
+   Committed: feat(windows-version): WIN-008 (branch feature/windows-version) · Mac e2e 48/48
 
 ## What's next
-⬜ WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
-   Nothing changes on the Mac; on Windows, setup can install and sign in to Claude Code.
+⬜ WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
+   Nothing changes on the Mac; on Windows, the window, tray icon and permission prompts behave like a Windows app.
 Say "next" to begin.

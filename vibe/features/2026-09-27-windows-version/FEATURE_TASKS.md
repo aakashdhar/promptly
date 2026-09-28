@@ -240,7 +240,7 @@ A stored Mac-only preset on Windows falls back to the default. The hold/tap stat
 
 ---
 ### WIN-008 · Claude Code install and sign-in through PowerShell
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (11), #8
 - **Dependencies**: WIN-002, WIN-003
@@ -255,10 +255,10 @@ Antivirus/SmartScreen check: at setup, run `whisper-cli.exe --help` and ask the 
 fails to start (blocked or quarantined), the wizard names the file that was blocked and says to allow it. Mac: no-op.
 
 **Acceptance criteria**:
-- [ ] Mac install/sign-in scripts are byte-for-byte unchanged
-- [ ] The Windows script contains the official PowerShell install line and is launched without a shell string
-- [ ] A missing Git for Windows is reported, not a crash
-- [ ] A blocked whisper-cli.exe or promptly-helper.exe is named in setup
+- [x] Mac install/sign-in scripts are byte-for-byte unchanged
+- [x] The Windows script contains the official PowerShell install line and is launched without a shell string
+- [x] A missing Git for Windows is reported, not a crash
+- [x] A blocked whisper-cli.exe or promptly-helper.exe is named in setup
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (11). Tick every criterion.
 **Test requirement**: unit tests for the Windows script contents and launch arguments (stubbed execFile).
@@ -268,7 +268,13 @@ fails to start (blocked or quarantined), the wizard names the file that was bloc
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- New platform keys: `INSTALL_COMMAND`, `SETUP_SCRIPT` ('bash'/'powershell'), `SETUP_TERMINAL`, `openSetupScript(file, {openPath|run})`, `checkPrerequisites()`, `blockedBinaries(checks)`, `HELPER_BIN`. The Mac still opens the .command with shell.openPath; its scripts are asserted byte-for-byte.
+- PowerShell is started with `spawn` (detached, not `execFile`): with `-NoExit` the window stays open, so execFile would never return. The .ps1 is UTF-8 with a BOM and CRLF so Windows PowerShell 5.1 reads "—" and "…" correctly.
+- Scripts stay in `os.tmpdir()/promptly-setup` on both systems (not userData as the task text said): same place as the Mac, cleared by the system, nothing to uninstall.
+- New IPC `setup-info` → `{ installCommand, terminal, gitMissing, blocked }` rather than new fields on `claude-status`, so no existing response shape changes. splash.html (outside this task's Touches, but required by the criteria) reads it: install command, "Terminal"/"PowerShell" in two hints, and two Windows-only warnings (Git link to git-scm.com; the blocked file names). Mac text unchanged.
+- Blocked = the process couldn't start (string error code such as EACCES/ENOENT/EPERM); any exit number or a timeout counts as running. **Contract for WIN-012**: promptly-helper.exe must accept `--version` and exit.
+- HELPER_PATH in main.js uses `platform.HELPER_BIN` (promptly-helper.exe on Windows).
+- **Later (WIN-009)**: splash copy still says "on your Mac", "macOS opens System Settings", Accessibility.
 ---
 
 ---
