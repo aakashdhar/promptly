@@ -147,8 +147,18 @@ if ((Test-Path -LiteralPath $CliOut) -and $builtTag -eq $WhisperTag) {
 }
 
 # ── Models ────────────────────────────────────────────────────────────────────
+# SHA-256 through .NET, not Get-FileHash: Windows PowerShell 5.1 started from PowerShell 7 (as npm
+# does in a pwsh terminal or on CI) inherits 7's module path and loses Get-FileHash, which is a
+# script function in 5.1's Utility module.
+function Get-Sha256([string]$File) {
+  $stream = [IO.File]::OpenRead($File)
+  try {
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return -join ($sha.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) } finally { $sha.Dispose() }
+  } finally { $stream.Dispose() }
+}
 function Test-Checksum([string]$File, [string]$Sha256) {
-  (Test-Path -LiteralPath $File) -and ((Get-FileHash -LiteralPath $File -Algorithm SHA256).Hash -eq $Sha256.ToUpperInvariant())
+  (Test-Path -LiteralPath $File) -and ((Get-Sha256 $File) -eq $Sha256.ToLowerInvariant())
 }
 function Get-VerifiedFile([string]$Name, [string]$Url, [string]$Sha256) {
   $file = Join-Path $Out $Name
