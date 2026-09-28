@@ -6,6 +6,10 @@ import http from 'http'
 import os from 'os'
 import path from 'path'
 
+// Tests that need bash or check Mac-only behaviour are skipped on Windows, each with its reason;
+// they still run on every Mac.
+const onWindows = process.platform === 'win32'
+
 const require = createRequire(import.meta.url)
 const { segmentsToText, bundledArgs, wavSeconds, looksIncomplete, silentWav, findBundledEngine, createWhisperRunner } = require('../main/whisper.js')
 const { createSpeechModels } = require('../main/speech-models.js')
@@ -72,7 +76,9 @@ echo "[00:00:00.000 --> 00:00:02.000]   ARGS $*"
     fs.writeFileSync(path.join(dir, 'ggml-silero-v5.1.2.bin'), 'vad')
   })
 
-  it('finds the voice activity model next to the engine', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('finds the voice activity model next to the engine', () => {
     expect(findBundledEngine(dir).vad).toBe(path.join(dir, 'ggml-silero-v5.1.2.bin'))
   })
 
@@ -86,10 +92,12 @@ echo "[00:00:00.000 --> 00:00:02.000]   ARGS $*"
     fs.writeFileSync(path.join(winDir, 'whisper-cli.exe'), '', { mode: 0o755 })
     expect(findBundledEngine(winDir, win32)).toEqual({ cli: path.join(winDir, 'whisper-cli.exe'), model: path.join(winDir, 'ggml-base.en-q5_1.bin') })
     // The Mac still looks for the name without .exe.
-    expect(findBundledEngine(dir).cli).toBe(path.join(dir, 'whisper-cli'))
+    expect(findBundledEngine(dir, require('../main/platform/darwin.js')).cli).toBe(path.join(dir, 'whisper-cli'))
   })
 
-  it('uses voice detection and the built-in English model by default', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('uses voice detection and the built-in English model by default', async () => {
     const audio = path.join(tmp, 'short.wav')
     fs.writeFileSync(audio, silentWav(2))
     const w = createWhisperRunner({ getBundledDir: () => dir, getWhisperPath: () => null, getFfmpegPath: () => null })
@@ -100,7 +108,9 @@ echo "[00:00:00.000 --> 00:00:02.000]   ARGS $*"
     expect(text).toContain('--no-gpu')
   })
 
-  it('uses the accurate model, its language and the GPU when chosen', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('uses the accurate model, its language and the GPU when chosen', async () => {
     const audio = path.join(tmp, 'short.wav')
     fs.writeFileSync(audio, silentWav(2))
     const w = createWhisperRunner({
@@ -113,7 +123,9 @@ echo "[00:00:00.000 --> 00:00:02.000]   ARGS $*"
     expect(text).not.toContain('--no-gpu')
   })
 
-  it('runs a second pass without voice detection when too little came back', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('runs a second pass without voice detection when too little came back', async () => {
     const audio = path.join(tmp, 'long.wav')
     fs.writeFileSync(audio, silentWav(30))
     process.env.LOSE_WITH_VAD = '1'

@@ -1,2 +1,13 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Text files keep LF line endings on every checkout. A Windows checkout with core.autocrlf
+# would otherwise turn prompt text (main/prompts/*.txt) into CRLF, sending stray \r to
+# Claude and breaking the tests that compare prompt text.
+* text=auto eol=lf
+
+# Binary assets, never touched.
+*.png binary
+*.ico binary
+*.icns binary
+*.bin binary
+*.exe binary
+*.dmg binary
+*.zip binary

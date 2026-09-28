@@ -72,6 +72,7 @@ function makeClaudeEnv(binPath, env = process.env, plat = platform) {
 // that ignores SIGTERM would otherwise keep working (and spending) after a cancel or quit.
 function terminate(child, graceMs = 3000) {
   if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  if (platform.killTree(child)) return;
   try { child.kill(); } catch { return; }
   const force = setTimeout(() => {
     if (child.exitCode === null && child.signalCode === null) {

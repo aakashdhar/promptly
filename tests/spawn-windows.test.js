@@ -132,3 +132,19 @@ describe('a .cmd engine or helper on Windows goes through cmd.exe', () => {
     expect(w.engine()).toBe(null)
   })
 })
+
+describe('stopping a process on Windows ends its whole tree', () => {
+  const win32 = require('../main/platform/win32.js')
+  const darwin = require('../main/platform/darwin.js')
+
+  it('uses taskkill /T /F on the pid, as an argument array', () => {
+    const calls = []
+    expect(win32.killTree({ pid: 4321 }, { run: (cmd, args, opts, cb) => { calls.push([cmd, args]); cb(null) } })).toBe(true)
+    expect(calls).toEqual([['taskkill', ['/T', '/F', '/PID', '4321']]])
+    expect(win32.killTree({}, { run: () => { throw new Error('not called') } })).toBe(false)
+  })
+
+  it('leaves the Mac to SIGTERM then SIGKILL, as before', () => {
+    expect(darwin.killTree({ pid: 1 })).toBe(false)
+  })
+})

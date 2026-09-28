@@ -225,6 +225,15 @@ const HELPER_BIN = 'promptly-helper.exe';
 // Windows trays have no template images: each state is its own colour icon (main/tray-icon.js).
 const TRAY_TEMPLATE_ICONS = false;
 
+// Windows has no signals: child.kill() ends only the process Node started, and for claude.cmd
+// that's cmd.exe — Claude itself would keep running (and spending) after a cancel. taskkill /T
+// ends the whole tree. Returns true: handled here.
+function killTree(child, { run = execFile } = {}) {
+  if (!child || !child.pid) return false;
+  run('taskkill', ['/T', '/F', '/PID', String(child.pid)], { timeout: 5000, windowsHide: true }, () => { /* already gone */ });
+  return true;
+}
+
 // ── Starting command-line tools ──
 
 const paths = path;
@@ -393,4 +402,5 @@ module.exports = {
   blockedBinaries,
   HELPER_BIN,
   TRAY_TEMPLATE_ICONS,
+  killTree,
 };

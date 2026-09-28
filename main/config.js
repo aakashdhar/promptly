@@ -10,6 +10,10 @@ const path = require('path');
 // read() is called several times per request, so the parsed file is kept and only read again
 // when its modification time or size changes (an edit by hand is still picked up). Callers get
 // their own copy, so changing it can't change what the next caller sees.
+// A file changed in the last RACY_MS isn't cached: some file systems (NTFS, FAT, network
+// drives) keep coarse timestamps, so an edit in the same tick with the same size would look
+// unchanged — the same guard git uses for its index.
+const RACY_MS = 2000;
 function createConfigStore(filePath, { onCorrupt } = {}) {
   let cache = null; // { mtimeMs, size, data }
 
@@ -22,7 +26,7 @@ function createConfigStore(filePath, { onCorrupt } = {}) {
     try {
       const data = JSON.parse(text);
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        cache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
+        cache = Date.now() - stat.mtimeMs >= RACY_MS ? { mtimeMs: stat.mtimeMs, size: stat.size, data } : null;
         return structuredClone(data);
       }
     } catch { /* handled below */ }

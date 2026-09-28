@@ -53,7 +53,9 @@ function runScript(args) {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 const calls = () => { try { return fs.readFileSync(path.join(tmp, 'calls.log'), 'utf8') } catch { return '' } }
 
-describe('uninstall runs after Promptly has quit', () => {
+// Mac only: scripts/uninstall.sh and its Finder fallback are macOS; Windows uninstall is
+// platform.uninstallLaunch (tests/main.test.js) and a hands-on check in WIN-023.
+describe.skipIf(process.platform === 'win32')('uninstall runs after Promptly has quit', () => {
   it('the app only starts a removal command: an argument array with its PID, bundle and data paths', () => {
     const { uninstallCommand } = require('../main/uninstall.js')
     const [cmd, args] = uninstallCommand({

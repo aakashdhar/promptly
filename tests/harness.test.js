@@ -4,6 +4,10 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
+// Tests that need bash or check Mac-only behaviour are skipped on Windows, each with its reason;
+// they still run on every Mac.
+const onWindows = process.platform === 'win32'
+
 const require = createRequire(import.meta.url)
 const { parseWords, serializeWords, hintWords, applyCorrections, replacedRuns, suggestCorrections } = require('../main/words.js')
 const harness = require('../main/harness.js')
@@ -152,7 +156,9 @@ describe('Harness mode', () => {
     beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-')) })
     afterEach(() => fs.rmSync(dir, { recursive: true, force: true }))
 
-    it('writes the files, makes scripts executable, and merges settings', () => {
+    // Mac only: launchd and POSIX execute bits: Harness on Windows is phase 2 (WIN-024/025).
+
+    it.skipIf(onWindows)('writes the files, makes scripts executable, and merges settings', () => {
       fs.mkdirSync(path.join(dir, '.claude'))
       fs.writeFileSync(path.join(dir, '.claude/settings.json'), JSON.stringify({ model: 'opus' }))
       fs.mkdirSync(path.join(dir, '.harness'))
@@ -185,7 +191,9 @@ describe('Harness mode', () => {
     expect(harness.scheduleLabel({ every: 'hour', time: '00:00' })).toBe('every hour')
   })
 
-  it('writes a launchd job that runs the harness from the project folder', () => {
+  // Mac only: launchd and POSIX execute bits: Harness on Windows is phase 2 (WIN-024/025).
+
+  it.skipIf(onWindows)('writes a launchd job that runs the harness from the project folder', () => {
     expect(harness.calendarIntervals({ every: 'weekday', time: '09:30' })).toHaveLength(5)
     expect(harness.calendarIntervals({ every: 'hour', time: '00:15' })).toEqual([{ Minute: 15 }])
     const label = harness.agentLabel('/Users/me/My App')

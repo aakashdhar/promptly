@@ -8,6 +8,10 @@ import crypto from 'crypto'
 import { EventEmitter } from 'events'
 import * as rendererKeys from '../src/renderer/utils/keys.js'
 
+// Tests that need bash or check Mac-only behaviour are skipped on Windows, each with its reason;
+// they still run on every Mac.
+const onWindows = process.platform === 'win32'
+
 const require = createRequire(import.meta.url)
 const { fillTemplate, buildModePrompt, buildEvalPrompt, normalizeEval, getMode, MODES } = require('../main/prompts.js')
 const { createClaudeRunner, parseJsonOutput, classifyError } = require('../main/llm.js')
@@ -156,7 +160,9 @@ describe('createClaudeRunner', () => {
     return createClaudeRunner({ getClaudePath: () => fake, getModel: () => 'test-model', ...extra })
   }
 
-  it('sends the prompt on stdin, not as an argument, and always passes --model', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('sends the prompt on stdin, not as an argument, and always passes --model', async () => {
     const r = await runner('echo').run('secret prompt text')
     expect(r.success).toBe(true)
     expect(r.prompt).toContain('STDIN:secret prompt text')
@@ -241,30 +247,40 @@ describe('createClaudeRunner', () => {
     expect(r.error).toMatch(/SIGSEGV/)
   })
 
-  it('retries without the lean flags on an older CLI', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('retries without the lean flags on an older CLI', async () => {
     const r = await runner('old-cli').run('hi')
     expect(r).toEqual({ success: true, prompt: 'ok-without-lean-flags' })
   })
 
-  it('reports auth errors', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('reports auth errors', async () => {
     const r = await runner('auth').run('hi')
     expect(r.success).toBe(false)
     expect(r.errorType).toBe('auth')
     expect(r).not.toHaveProperty('stderr')
   })
 
-  it('reports empty output', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('reports empty output', async () => {
     const r = await runner('empty').run('hi')
     expect(r.errorType).toBe('empty')
   })
 
-  it('times out and kills the process', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('times out and kills the process', async () => {
     const r = await runner('slow').run('hi', { timeoutMs: 300, slowWarningMs: 0 })
     expect(r.timedOut).toBe(true)
     expect(r.errorType).toBe('timeout')
   })
 
-  it('cancels in-flight runs', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('cancels in-flight runs', async () => {
     const children = new Set()
     const claude = runner('slow', { children })
     const pending = claude.run('hi', { timeoutMs: 5000, slowWarningMs: 0 })
@@ -276,7 +292,9 @@ describe('createClaudeRunner', () => {
     expect(children.size).toBe(0)
   })
 
-  it('fires the slow warning', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('fires the slow warning', async () => {
     let slow = false
     await runner('slow', { onSlow: () => { slow = true } }).run('hi', { timeoutMs: 400, slowWarningMs: 100 })
     expect(slow).toBe(true)
@@ -348,7 +366,9 @@ describe('binaries', () => {
     expect(await resolveFfmpegPath(bin)).toBe(bin)
   })
 
-  it('adds the binary directory to PATH for the Claude CLI', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('adds the binary directory to PATH for the Claude CLI', () => {
     const env = makeClaudeEnv('/some/nvm/bin/claude', { PATH: '/usr/bin' })
     expect(env.PATH.split(':')[0]).toBe('/some/nvm/bin')
     expect(env.PATH.endsWith('/usr/bin')).toBe(true)
@@ -738,7 +758,9 @@ describe('whisper helpers', () => {
     expect(findDownloadedModel(home)).toEqual({ path: model, sizeMB: 101 })
   })
 
-  it('adds the ffmpeg dir and SSL bundle to the Whisper env', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('adds the ffmpeg dir and SSL bundle to the Whisper env', () => {
     const env = makeWhisperEnv('/custom/bin/ffmpeg', { PATH: '/usr/bin' }, '/Users/x')
     expect(env.PATH.split(':')).toContain('/custom/bin')
     expect(env.SSL_CERT_FILE).toBe('/etc/ssl/cert.pem')
@@ -847,7 +869,9 @@ echo "ARGS $*" >&2
     fs.writeFileSync(path.join(dir, 'ggml-base.en-q5_1.bin'), 'model')
   })
 
-  it('is found only when both the binary and model exist', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('is found only when both the binary and model exist', () => {
     expect(findBundledEngine(dir)).toEqual({ cli: path.join(dir, 'whisper-cli'), model: path.join(dir, 'ggml-base.en-q5_1.bin') })
     expect(findBundledEngine(path.join(tmp, 'nope'))).toBeNull()
     expect(findBundledEngine(null)).toBeNull()
@@ -865,7 +889,9 @@ echo "ARGS $*" >&2
     expect(wav.length).toBe(44 + 32000)
   })
 
-  it('prefers the built-in engine and uses the CPU until warmed up', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('prefers the built-in engine and uses the CPU until warmed up', async () => {
     const w = createWhisperRunner({ getBundledDir: () => dir, getWhisperPath: () => '/should/not/be/used', getFfmpegPath: () => null })
     expect(w.engine().type).toBe('bundled')
     const audio = path.join(tmp, 'in.wav')
@@ -876,7 +902,9 @@ echo "ARGS $*" >&2
     expect(w.isGpuReady()).toBe(true)
   })
 
-  it('reports a clear error for audio it cannot read', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('reports a clear error for audio it cannot read', async () => {
     const w = createWhisperRunner({ getBundledDir: () => dir, getWhisperPath: () => null, getFfmpegPath: () => null })
     const bad = path.join(tmp, 'in.webm')
     fs.writeFileSync(bad, 'webm bytes')
@@ -898,7 +926,9 @@ describe('Claude Code setup', () => {
     return file
   }
 
-  it('reports installed and signed in', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('reports installed and signed in', async () => {
     const bin = fakeClaude('claude-ok', 'case "$1" in --version) echo "2.1.0 (Claude Code)";; auth) echo \'{"loggedIn": true}\';; esac')
     expect(await getClaudeStatus(bin)).toEqual({ installed: true, path: bin, version: '2.1.0 (Claude Code)', loggedIn: true })
   })
@@ -908,7 +938,9 @@ describe('Claude Code setup', () => {
     expect((await getClaudeStatus(bin)).loggedIn).toBe(false)
   })
 
-  it('returns loggedIn null for CLIs without auth status', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('returns loggedIn null for CLIs without auth status', async () => {
     const bin = fakeClaude('claude-old', 'case "$1" in --version) echo "1.0.0";; *) echo "unknown command" >&2; exit 1;; esac')
     expect(await getClaudeStatus(bin)).toMatchObject({ installed: true, loggedIn: null })
   })
@@ -918,7 +950,9 @@ describe('Claude Code setup', () => {
     expect(await getClaudeStatus(path.join(tmp, 'missing-claude'))).toMatchObject({ installed: false })
   })
 
-  it('writes Terminal scripts with the official installer and a safely quoted path', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('writes Terminal scripts with the official installer and a safely quoted path', () => {
     const install = fs.readFileSync(installScript(path.join(tmp, 'scripts')), 'utf8')
     expect(install).toContain(INSTALL_COMMAND)
     expect(INSTALL_COMMAND).toBe('curl -fsSL https://claude.ai/install.sh | bash')
@@ -927,7 +961,9 @@ describe('Claude Code setup', () => {
     expect(shellQuote("it's")).toBe(`'it'\\''s'`)
   })
 
-  it('sets USER so Claude Code can read its login from the keychain', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('sets USER so Claude Code can read its login from the keychain', () => {
     const env = makeClaudeEnv('/x/claude', { PATH: '/usr/bin' })
     expect(env.USER).toBe(os.userInfo().username)
     expect(makeClaudeEnv('/x/claude', { PATH: '/usr/bin', USER: 'someone' }).USER).toBe('someone')
@@ -938,7 +974,9 @@ describe('Claude Code setup on Windows', () => {
   const win32 = require('../main/platform/win32.js')
   const dir = () => path.join(tmp, 'win-scripts')
 
-  it('the Mac install and sign-in scripts are exactly what they were', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('the Mac install and sign-in scripts are exactly what they were', () => {
     expect(fs.readFileSync(installScript(path.join(tmp, 'mac-scripts')), 'utf8')).toBe([
       '#!/bin/bash', 'clear',
       'echo "Installing Claude Code for Promptly…"', 'echo',
@@ -1078,7 +1116,9 @@ describe('hold to talk', () => {
     expect(events).toEqual(['start', 'cancel'])
   })
 
-  it('has presets, falling back to the default (double-tap Control)', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('has presets, falling back to the default (double-tap Control)', () => {
     expect(getPreset('nope')).toBe(HOTKEY_PRESETS['double-control'])
     expect(HOTKEY_PRESETS.fn.accelerator).toBeNull()
     expect(HOTKEY_PRESETS['right-option'].helper).toEqual({ keyCode: 61, modifiers: [], modifierOnly: true })
@@ -1103,7 +1143,9 @@ rl.on('close', () => process.exit(0))
 `, { mode: 0o755 })
   })
 
-  it('reports status, answers context requests and forwards hotkey events', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('reports status, answers context requests and forwards hotkey events', async () => {
     const statuses = []
     const phases = []
     const h = createHelper({ binaryPath: fake, onStatus: (s) => statuses.push(s), onHotkey: (p) => phases.push(p) })
@@ -1171,7 +1213,9 @@ describe('streaming', () => {
     expect(p.result().result).toBe('Role: You are')
   })
 
-  it('streams through the runner and falls back on CLIs without stream flags', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('streams through the runner and falls back on CLIs without stream flags', async () => {
     const bin = path.join(tmp, 'claude-stream')
     fs.writeFileSync(bin, `#!/bin/bash
 cat > /dev/null
@@ -1189,7 +1233,9 @@ fi
     expect(deltas).toEqual(['Hello', 'Hello there'])
   })
 
-  it('reports errors from the result event', async () => {
+  // Mac only: uses a bash stand-in for the tool; Windows runs these paths in e2e (WIN-019).
+
+  it.skipIf(onWindows)('reports errors from the result event', async () => {
     const bin = path.join(tmp, 'claude-stream-err')
     fs.writeFileSync(bin, `#!/bin/bash\ncat > /dev/null\necho '{"type":"result","is_error":true,"result":"Not logged in · Please run /login"}'\nexit 1\n`, { mode: 0o755 })
     const r = await createClaudeRunner({ getClaudePath: () => bin }).run('hi', { onDelta: () => {} })
@@ -1330,7 +1376,9 @@ describe('Double-tap Control', () => {
     expect(log).toEqual(['start', 'stop'])
   })
 
-  it('always names the chosen shortcut, and what it needs', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+
+  it.skipIf(onWindows)('always names the chosen shortcut, and what it needs', () => {
     expect(hotkeyWords('double-control', { helperActive: true })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap Control', needsAccess: false })
     // Without Accessibility it still names double-tap Control, says what it needs, and what works meanwhile.
     expect(hotkeyWords('double-control', { helperActive: false })).toEqual({ short: 'double-tap ⌃', action: 'Double-tap Control', needsAccess: true, fallback: 'Press ⌥ Space' })
@@ -1408,7 +1456,8 @@ describe('eval scorecard shape', () => {
 })
 
 describe('terminate', () => {
-  it('forces a process that ignores SIGTERM', async () => {
+  // Mac only: Windows has no SIGTERM; terminate() on Windows is covered separately.
+  it.skipIf(onWindows)('forces a process that ignores SIGTERM', async () => {
     const child = spawn(process.execPath, ['-e', "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"])
     await new Promise((r) => setTimeout(r, 300))
     const exited = new Promise((r) => child.on('exit', (_code, signal) => r(signal)))
@@ -1424,7 +1473,8 @@ describe('terminate', () => {
 })
 
 describe('small main-process edges', () => {
-  it('adds the claude folder to PATH unless that exact folder is already there', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+  it.skipIf(onWindows)('adds the claude folder to PATH unless that exact folder is already there', () => {
     const env = makeClaudeEnv('/opt/x/bin/claude', { PATH: '/opt/x/bin2:/usr/bin' })
     expect(env.PATH.split(':')).toContain('/opt/x/bin')
     const same = makeClaudeEnv('/opt/x/bin/claude', { PATH: '/opt/x/bin:/usr/bin' })
@@ -1440,7 +1490,8 @@ describe('small main-process edges', () => {
 })
 
 describe('uninstall', () => {
-  it('finds the .app Promptly runs from, wherever it was installed', () => {
+  // Mac only: checks the macOS platform module (Mac paths, presets or scripts); win32 has its own tests.
+  it.skipIf(onWindows)('finds the .app Promptly runs from, wherever it was installed', () => {
     expect(darwin.appBundlePath('/Users/x/Applications/Promptly.app/Contents/MacOS/Promptly')).toBe('/Users/x/Applications/Promptly.app')
     expect(darwin.appBundlePath('/usr/local/bin/electron')).toBeNull()
   })
