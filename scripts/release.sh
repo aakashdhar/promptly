@@ -21,8 +21,16 @@ export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 # (Not -u: nvm.sh, sourced above, isn't safe under it.)
 set -eo pipefail
 
+# Use the Node version the project pins (.nvmrc). electron-builder 26 require()s ES modules, which
+# needs Node 20.19+ or 22.12+; an older Node in the current shell failed the 2.19.3 build.
+if command -v nvm >/dev/null 2>&1 && [ -f "$ROOT_DIR/.nvmrc" ]; then
+  nvm use --silent "$(cat "$ROOT_DIR/.nvmrc")" >/dev/null 2>&1 || true
+fi
+
 # ── preflight ──────────────────────────────────────────────────────────────────
 command -v node >/dev/null 2>&1 || fail "node not found — install Node.js or ensure nvm is configured"
+node -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit(a > 22 || (a === 22 && b >= 12) || (a === 20 && b >= 19) ? 0 : 1)' \
+  || fail "Node $(node -v) is too old to package the app. Run: nvm install 22 && nvm use 22"
 command -v npx  >/dev/null 2>&1 || fail "npx not found — ensure npm is installed alongside node"
 
 # ── arg check ──────────────────────────────────────────────────────────────────
