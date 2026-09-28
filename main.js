@@ -24,6 +24,7 @@ const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/p
 const { tidyDictation } = require('./main/dictation');
 const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
 const harness = require('./main/harness');
+const { createScheduler } = require('./main/platform/scheduler');
 const { drawMicIconPng, isTemplateState, drawWinTrayIcons } = require('./main/tray-icon');
 const { keysFor } = require('./main/keys');
 
@@ -416,6 +417,20 @@ function updateMenuBarIcon(iconState) {
   }
 }
 
+// Harness schedules: launchd on a Mac, Task Scheduler on Windows (main/platform/scheduler.js).
+// Tests keep their launchd jobs inside the throwaway profile and never load or register one.
+let harnessSchedulerInstance = null;
+function harnessScheduler() {
+  if (!harnessSchedulerInstance) {
+    harnessSchedulerInstance = createScheduler({
+      kind: platform.HARNESS_SCHEDULER,
+      agentsDir: IS_E2E ? path.join(app.getPath('userData'), 'LaunchAgents') : platform.launchAgentsDir(os.homedir()),
+      dryRun: IS_E2E,
+    });
+  }
+  return harnessSchedulerInstance;
+}
+
 async function handleUninstall() {
   const { response } = await dialog.showMessageBox({
     type: 'warning',
@@ -437,10 +452,10 @@ async function handleUninstall() {
   for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.hide();
 
   // Scheduled harnesses would otherwise keep running every day with Promptly gone.
-  for (const { label, plistPath } of platform.harnessLaunchAgents(os.homedir())) {
-    const stopped = await platform.unloadLaunchAgent(label);
-    if (!stopped.ok) { log.warn('Uninstall: could not stop harness schedule', { label, error: stopped.error }); continue; }
-    try { fs.rmSync(plistPath, { force: true }); } catch { /* ignore */ }
+  const scheduler = harnessScheduler();
+  for (const { label } of await scheduler.list()) {
+    const stopped = await scheduler.remove(label);
+    if (!stopped.ok) log.warn('Uninstall: could not stop harness schedule', { label, error: stopped.error });
   }
   const bundle = app.isPackaged ? platform.appBundlePath(app.getPath('exe')) : null;
   const source = app.isPackaged ? platform.uninstallScriptPath(process.resourcesPath) : path.join(__dirname, 'scripts', 'uninstall.sh');
@@ -1264,14 +1279,10 @@ app.whenReady().then(async () => {
   // ── Harness mode ──
 
   // The files and run command are kept here, as Claude wrote them. Saving and scheduling use
-  // this copy, never what the window sends back, because launchd runs `run` through bash.
+  // this copy, never what the window sends back, because a schedule runs `run` as a command
+  // (bash under launchd, PowerShell under Task Scheduler).
   let lastHarnessFiles = null; // { run, schedule, files } from the last harness-files result
   let lastSavedHarness = null; // { dir, run } from the last Save to project…
-  // Tests keep their launchd jobs inside the throwaway profile, never in the real LaunchAgents.
-  const harnessPlistPath = (dir) => path.join(
-    IS_E2E ? path.join(app.getPath('userData'), 'LaunchAgents') : platform.launchAgentsDir(os.homedir()),
-    `${harness.agentLabel(dir)}.plist`,
-  );
 
   ipcMain.handle('harness-plan', async (_event, { transcript, context = {} } = {}) => {
     const stored = config.read();
@@ -1329,36 +1340,29 @@ app.whenReady().then(async () => {
       const written = harness.writeFiles(dir, list);
       log.info('Saved harness', { dir, files: written.length });
       lastSavedHarness = { dir, run: String(lastHarnessFiles.run || '').trim() };
-      const alreadyScheduled = fs.existsSync(harnessPlistPath(dir));
+      const scheduler = harnessScheduler();
+      const alreadyScheduled = await scheduler.has(scheduler.labelFor(dir));
       return { ok: true, dir, written, alreadyScheduled };
     } catch (err) {
       return { ok: false, error: err.message };
     }
   });
 
-  // Runs the harness saved last on a schedule, as a launchd job in the user's LaunchAgents
-  // (one per project folder; scheduling again replaces it). Only the folder and command from
-  // that save are used, never paths sent by the window.
+  // Runs the harness saved last on a schedule: a launchd job in the user's LaunchAgents on a Mac,
+  // a Task Scheduler task on Windows (one per project folder; scheduling again replaces it).
+  // Only the folder and command from that save are used, never paths sent by the window.
   ipcMain.handle('schedule-harness', async (event, { schedule } = {}) => {
     if (!fromWindow(event, win)) return { ok: false, error: 'Not allowed' };
     const sched = harness.checkSchedule(schedule);
     if (!lastSavedHarness?.run) return { ok: false, error: 'Save the harness to a project first' };
     if (!sched) return { ok: false, error: 'Pick when it should run' };
     const { dir, run } = lastSavedHarness;
-    const label = harness.agentLabel(dir);
-    const plistPath = harnessPlistPath(dir);
-    const claudeDir = claudePath ? path.dirname(claudePath) : '';
+    const scheduler = harnessScheduler();
+    const label = scheduler.labelFor(dir);
+    const claudeDir = claudePath ? platform.paths.dirname(claudePath) : '';
     const pathEnv = [claudeDir, platform.SCHEDULE_PATH].filter(Boolean).join(platform.PATH_DELIMITER);
-    try {
-      fs.mkdirSync(path.dirname(plistPath), { recursive: true });
-      // launchd won't create the log's folder, and without it every scheduled run's output is lost.
-      fs.mkdirSync(path.join(dir, '.harness'), { recursive: true });
-      fs.writeFileSync(plistPath, harness.launchAgentPlist({ label, dir, run, schedule: sched, pathEnv }));
-    } catch (err) {
-      return { ok: false, error: err.message };
-    }
-    const loaded = IS_E2E ? { ok: true } : await platform.loadLaunchAgent(plistPath, label);
-    if (!loaded.ok) return { ok: false, error: `macOS didn't accept the schedule: ${loaded.error}` };
+    const installed = await scheduler.install({ label, dir, run, schedule: sched, pathEnv });
+    if (!installed.ok) return { ok: false, error: installed.refused ? `${scheduler.systemName} didn't accept the schedule: ${installed.error}` : installed.error };
     log.info('Scheduled harness', { dir, label, schedule: sched });
     return { ok: true, label: harness.scheduleLabel(sched) };
   });
@@ -1366,11 +1370,10 @@ app.whenReady().then(async () => {
   ipcMain.handle('unschedule-harness', async (event) => {
     if (!fromWindow(event, win)) return { ok: false, error: 'Not allowed' };
     if (!lastSavedHarness) return { ok: false, error: 'No saved harness' };
-    const label = harness.agentLabel(lastSavedHarness.dir);
-    const unloaded = IS_E2E ? { ok: true } : await platform.unloadLaunchAgent(label);
-    // Keep the plist while the job may still be loaded, so a retry can find and stop it.
-    if (!unloaded.ok) return { ok: false, error: `macOS didn't stop the schedule: ${unloaded.error}` };
-    try { fs.rmSync(harnessPlistPath(lastSavedHarness.dir), { force: true }); } catch (err) { return { ok: false, error: err.message }; }
+    const scheduler = harnessScheduler();
+    const label = scheduler.labelFor(lastSavedHarness.dir);
+    const removed = await scheduler.remove(label);
+    if (!removed.ok) return { ok: false, error: removed.refused ? `${scheduler.systemName} didn't stop the schedule: ${removed.error}` : removed.error };
     log.info('Removed harness schedule', { dir: lastSavedHarness.dir, label });
     return { ok: true };
   });

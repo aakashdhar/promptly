@@ -247,6 +247,9 @@ const PRIVACY_SETTINGS = {
 
 // ── Scheduled harnesses (launchd) ──
 
+// Which backend main/platform/scheduler.js uses: a launchd plist loaded with launchctl.
+const HARNESS_SCHEDULER = 'launchd';
+
 // launchd starts jobs with a bare PATH; the harness needs claude, git, node and Homebrew tools.
 const SCHEDULE_PATH = '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin';
 
@@ -274,9 +277,9 @@ async function unloadLaunchAgent(label) {
   return r.ok || /no such process|could not find/i.test(r.error) ? { ok: true } : r;
 }
 
-// Every harness job Promptly created, for uninstall.
-function harnessLaunchAgents(home) {
-  const dir = launchAgentsDir(home);
+// Every harness job Promptly created, for uninstall. dir: scheduler.js passes its own
+// (e2e tests keep their plists inside the test profile).
+function harnessLaunchAgents(home, dir = launchAgentsDir(home)) {
   try {
     return fs.readdirSync(dir).filter((f) => /^com\.promptly\.harness\..+\.plist$/.test(f))
       .map((f) => ({ label: f.slice(0, -'.plist'.length), plistPath: path.join(dir, f) }));
@@ -291,6 +294,7 @@ module.exports = {
   uninstallLaunch,
   microphoneAccess,
   SCHEDULE_PATH,
+  HARNESS_SCHEDULER,
   launchAgentsDir,
   loadLaunchAgent,
   unloadLaunchAgent,

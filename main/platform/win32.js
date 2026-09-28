@@ -1,8 +1,8 @@
 'use strict';
 
 // Everything that knows where Windows keeps things — the same exports as darwin.js.
-// Scheduled harnesses (Task Scheduler) are placeholders until phase 2: they answer
-// "nothing here" so callers take the same paths as on a Mac with nothing scheduled.
+// Scheduled harnesses run through Task Scheduler in main/platform/scheduler.js; the
+// launchd-shaped keys here answer "nothing here" and exist only for the shared shape.
 
 const fs = require('fs');
 const { execFile, spawn } = require('child_process');
@@ -339,8 +339,13 @@ const PRIVACY_SETTINGS = {
   microphone: 'ms-settings:privacy-microphone',
 };
 
-// ── Scheduled harnesses (Task Scheduler, phase 2) ──
+// ── Scheduled harnesses (Task Scheduler) ──
 
+// main/platform/scheduler.js schedules harnesses here with schtasks. The launchd-shaped keys
+// below only keep the same shape as darwin.js; nothing on Windows calls them.
+const HARNESS_SCHEDULER = 'task-scheduler';
+// Task Scheduler runs a task with the user's own PATH, so nothing needs adding beyond
+// Claude's folder (main.js prepends that).
 const SCHEDULE_PATH = '';
 
 function launchAgentsDir() {
@@ -368,6 +373,7 @@ module.exports = {
   uninstallLaunch,
   microphoneAccess,
   SCHEDULE_PATH,
+  HARNESS_SCHEDULER,
   launchAgentsDir,
   loadLaunchAgent,
   unloadLaunchAgent,
