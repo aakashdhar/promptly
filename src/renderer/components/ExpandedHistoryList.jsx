@@ -44,7 +44,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
   const [activeFilter, setActiveFilter] = useState('all')
   const filterRef = useRef(null)
 
-  // ⌘H (and the menu's History) jump straight to searching your history.
+  // Cmd-H (and the menu's History) jump straight to searching your history.
   useEffect(() => {
     const open = () => setSearchOpen(true)
     window.addEventListener('promptly:search-history', open)

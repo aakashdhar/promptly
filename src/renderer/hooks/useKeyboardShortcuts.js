@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-// Where ⌘T and the Type button open the typing box: anywhere you're not in the middle of
+// Where Cmd-T and the Type button open the typing box: anywhere you're not in the middle of
 // something (recording, Claude writing, filling in a builder). A result on screen is already
 // in history, so starting a new request loses nothing.
 export const CAN_START_TYPING = new Set([

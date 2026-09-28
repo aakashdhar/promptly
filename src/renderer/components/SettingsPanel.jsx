@@ -3,6 +3,7 @@ import { readableColor } from '../utils/promptUtils.js'
 import YouSection from './YouSection.jsx'
 import SpeechSection from './SpeechSection.jsx'
 import YourWordsSection from './YourWordsSection.jsx'
+import { keys, combo } from '../utils/keys.js'
 
 // Settings, one short tab at a time: icon tabs down the side, and in each tab sections of rows
 // (the setting and a line about it on the left, its control on the right). Changes save as you
@@ -238,7 +239,7 @@ export default function SettingsPanel({ onClose }) {
   const hotkeyHint = !prefs ? '' : prefs.hotkey === 'double-control'
     ? (prefs.accessibility?.tap
       ? 'Double-tap Control to start, tap it once to stop. Or double-tap and hold while you talk.'
-      : 'Needs Accessibility (General → Permissions). Until then, tap ⌥ Space to start and stop.')
+      : `Needs Accessibility (General → Permissions). Until then, tap ${combo(keys.alt, 'Space')} to start and stop.`)
     : (prefs.accessibility?.tap
       ? 'Hold it while you talk and let go to finish, or tap it to start and stop.'
       : 'Tap to start and stop. Allow Accessibility (General → Permissions) to hold it while you talk.')
@@ -302,7 +303,7 @@ export default function SettingsPanel({ onClose }) {
     if (tab === 'dictation') return (
       <>
         <Section title="While you dictate">
-          <Row label="Type into the app I'm in" hint={prefs.accessibility?.trusted ? 'Otherwise it waits on the clipboard for ⌘V.' : "Needs Accessibility (General → Permissions). Until then it's copied for ⌘V."}>
+          <Row label="Type into the app I'm in" hint={prefs.accessibility?.trusted ? `Otherwise it waits on the clipboard for ${combo(keys.mod, 'V')}.` : `Needs Accessibility (General → Permissions). Until then it's copied for ${combo(keys.mod, 'V')}.`}>
             <Switch id="settings-dictationTypeIn" label="Type into the app I'm in" checked={!!prefs.dictationTypeIn} onChange={v => savePrefs({ dictationTypeIn: v })} />
           </Row>
           <Row label="Remove um, uh and similar" hint="Nothing else is changed.">

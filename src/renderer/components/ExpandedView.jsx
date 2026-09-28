@@ -6,7 +6,7 @@ import SettingsPanel from './SettingsPanel.jsx'
 import ShortcutsPanel from './ShortcutsPanel.jsx'
 
 // Builders lay out two columns of their own; below this width the history list would squeeze
-// them, so it steps aside (⌘H still opens history).
+// them, so it steps aside (Cmd-H still opens history).
 const BUILDER_STATES = new Set(['IMAGE_BUILDER', 'VIDEO_BUILDER', 'WORKFLOW_BUILDER', 'HARNESS_BUILDER', 'IMAGE_BUILDER_DONE', 'VIDEO_BUILDER_DONE', 'WORKFLOW_BUILDER_DONE', 'HARNESS_BUILDER_DONE', 'EMAIL_READY'])
 const ROOMY_WIDTH = 1180
 // A finished result: picking a history entry replaces it on the right.
@@ -86,7 +86,7 @@ export default function ExpandedView({
   const [selected, setSelected] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
-  // History can be hidden (the toolbar button or ⌃⌘S) so the result, and the Ribbon while you
+  // History can be hidden (the toolbar button or Ctrl-Cmd-S) so the result, and the Ribbon while you
   // talk, use the full width. The choice is remembered.
   const [historyHidden, setHistoryHidden] = useState(false)
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function ExpandedView({
     function onKey(e) {
       if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 's') { e.preventDefault(); setHistoryHidden((h) => { window.electronAPI?.setPreferences?.({ historyHidden: !h }); return !h }) }
     }
-    // ⌘H searches history, so it brings the list back if it was hidden.
+    // Cmd-H searches history, so it brings the list back if it was hidden.
     const onSearch = () => setHistoryHidden((h) => { if (h) window.electronAPI?.setPreferences?.({ historyHidden: false }); return false })
     window.addEventListener('keydown', onKey)
     window.addEventListener('promptly:search-history', onSearch)

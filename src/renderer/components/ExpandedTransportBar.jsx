@@ -3,6 +3,7 @@ import { readableColor } from '../utils/promptUtils.js'
 import { modeTone } from '../utils/modes.js'
 import ModeDropdown from './ModeDropdown.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
+import { keys, combo } from '../utils/keys.js'
 
 // The slim toolbar: one row beside the window buttons. Controls appear only when they mean
 // something (pause and the timer only while recording); what's happening is said once, here or
@@ -68,7 +69,7 @@ export default function ExpandedTransportBar({
   if (isRecording) { hint = micQuiet ? 'Speak up or move closer to the mic' : 'Tap stop when done'; warn = micQuiet }
   else if (isPaused) { label = 'Paused'; hint = 'Tap resume to continue' }
   else if (isIterating) { label = 'Iterating'; hint = 'Tap stop when done' }
-  else if (isTyping) { label = 'Type your prompt'; hint = '⌘↵ to generate' }
+  else if (isTyping) { label = 'Type your prompt'; hint = `${combo(keys.mod, keys.enter)} to generate` }
   else if (isThinking) { label = '' }
   else if (currentState === 'EMAIL_READY') { label = 'Email ready' }
   else if (currentState === 'TRANSCRIPTION_ERROR') { label = 'Transcription failed' }
@@ -111,7 +112,7 @@ export default function ExpandedTransportBar({
           onClick={onToggleHistory}
           aria-label={historyHidden ? 'Show history' : 'Hide history'}
           aria-pressed={historyHidden}
-          title={`${historyHidden ? 'Show' : 'Hide'} history (⌃⌘S)`}
+          title={`${historyHidden ? 'Show' : 'Hide'} history (${combo(keys.ctrl, keys.mod, 'S')})`}
           style={{ ...iconBtn(historyHidden), background: historyHidden ? 'rgba(var(--ink),0.08)' : 'transparent', border: historyHidden ? '0.5px solid rgba(var(--ink),0.12)' : '0.5px solid transparent', color: historyHidden ? 'rgba(var(--ink),0.85)' : 'var(--text-secondary)' }}
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M9 5v14" /><path d="M5.5 9h1.5M5.5 12h1.5" strokeLinecap="round" /></svg>
@@ -158,7 +159,7 @@ export default function ExpandedTransportBar({
 
         {!busy && modePill}
         {!busy && (
-          <button type="button" onClick={onTypePrompt} aria-label="Type instead" title="Type instead (⌘T)" style={iconBtn(isTyping)}>
+          <button type="button" onClick={onTypePrompt} aria-label="Type instead" title={`Type instead (${combo(keys.mod, 'T')})`} style={iconBtn(isTyping)}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10" strokeLinecap="round" /></svg>
           </button>
         )}
@@ -177,7 +178,7 @@ export default function ExpandedTransportBar({
         <div style={{ flex: 1 }} />
         {busy && modePill}
         {onOpenSettings && (
-          <button type="button" onClick={onOpenSettings} aria-label="Settings" title="Settings (⌘/)" style={iconBtn()}>
+          <button type="button" onClick={onOpenSettings} aria-label="Settings" title={`Settings (${combo(keys.mod, '/')})`} style={iconBtn()}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
           </button>
         )}

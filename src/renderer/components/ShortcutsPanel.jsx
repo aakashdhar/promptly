@@ -1,8 +1,9 @@
 import { readableColor } from '../utils/promptUtils.js'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
+import { keys } from '../utils/keys.js'
 
 export default function ShortcutsPanel({ onClose }) {
-  // The talk key is whatever is chosen in Settings (or ⌥ Space while it needs Accessibility).
+  // The talk key is whatever is chosen in Settings (or Option-Space while it needs Accessibility).
   const words = useHotkeyWords()
   const talk = words.needsAccess && words.fallback ? words.fallback.replace(/^Press /, '') : words.short
   const talkKeys = /^double-tap/i.test(talk) ? [talk] : talk.split(' ')
@@ -13,25 +14,25 @@ export default function ShortcutsPanel({ onClose }) {
       color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
         { desc: 'Start / stop recording', keys: talkKeys },
-        { desc: 'Pause / resume recording', keys: ['⌥', 'P'] },
+        { desc: 'Pause / resume recording', keys: [keys.alt, 'P'] },
       ]
     },
     {
       label: 'Prompt',
       color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
-        { desc: 'Type prompt', keys: ['⌘', 'T'] },
-        { desc: 'Copy last prompt', keys: ['⌘', 'C'] },
-        { desc: 'Export prompt', keys: ['⌘', 'E'] },
-        { desc: 'Iterate on last prompt', keys: ['⌘', 'I'] },
+        { desc: 'Type prompt', keys: [keys.mod, 'T'] },
+        { desc: 'Copy last prompt', keys: [keys.mod, 'C'] },
+        { desc: 'Export prompt', keys: [keys.mod, 'E'] },
+        { desc: 'Iterate on last prompt', keys: [keys.mod, 'I'] },
       ]
     },
     {
       label: 'Navigation',
       color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
       items: [
-        { desc: 'Open history', keys: ['⌘', 'H'] },
-        { desc: 'Open path settings', keys: ['⌘', '/'] },
+        { desc: 'Open history', keys: [keys.mod, 'H'] },
+        { desc: 'Open path settings', keys: [keys.mod, '/'] },
         { desc: 'Reset to idle', keys: ['Esc'] },
       ]
     }

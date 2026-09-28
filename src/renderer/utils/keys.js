@@ -13,5 +13,6 @@ export async function loadKeys() {
 
 // combo(keys.mod, 'T') → '⌘T' on a Mac, 'Ctrl+T' on Windows (same rule as main's formatCombo).
 export function combo(...parts) {
-  return parts.join(keys.os === 'win32' ? '+' : '')
+  if (keys.os === 'win32') return parts.filter((p, i) => parts.indexOf(p) === i).join('+')
+  return parts.map((p, i) => (i > 0 && p.length > 1 ? ` ${p}` : p)).join('')
 }

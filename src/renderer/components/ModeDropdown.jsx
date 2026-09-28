@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import MODE_REGISTRY from '../../../shared/modes.json'
+import { keys, combo } from '../utils/keys.js'
 
 const { modes: MODES } = MODE_REGISTRY
 
@@ -140,14 +141,14 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '0.5px solid rgba(var(--ink),0.08)' }}>
-        {[['Keyboard shortcuts', '⌘?', onShowShortcuts], ['History', '⌘H', onShowHistory]].map(([label, keys, action]) => (
+        {[['Keyboard shortcuts', combo(keys.mod, '?'), onShowShortcuts], ['History', combo(keys.mod, 'H'), onShowHistory]].map(([label, shortcut, action]) => (
           <button
             key={label}
             type="button"
             onClick={() => { action(); onClose() }}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', color: 'var(--text-secondary)' }}
           >
-            {label}<span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{keys}</span>
+            {label}<span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{shortcut}</span>
           </button>
         ))}
       </div>

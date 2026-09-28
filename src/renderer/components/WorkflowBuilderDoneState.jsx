@@ -1,3 +1,4 @@
+import { keys, combo } from '../utils/keys.js'
 
 export default function WorkflowBuilderDoneState({
   transcript,
@@ -218,8 +219,8 @@ export default function WorkflowBuilderDoneState({
               {[
                 'Copy the JSON →',
                 'Open n8n → New workflow',
-                '⌘A to select all → Delete',
-                '⌘V to paste JSON',
+                `${combo(keys.mod, 'A')} to select all → Delete`,
+                `${combo(keys.mod, 'V')} to paste JSON`,
                 'Map your credentials in each node',
                 'Fill placeholder values',
                 'Activate workflow ✓',

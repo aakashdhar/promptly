@@ -11,9 +11,11 @@ function keysFor(platform) {
   return { ...(platform === 'win32' ? WINDOWS : MAC) };
 }
 
-// ['⌘', 'T'] → '⌘T' on a Mac, ['Ctrl', 'T'] → 'Ctrl+T' on Windows.
+// ['⌘', 'T'] → '⌘T' and ['⌥', 'Space'] → '⌥ Space' on a Mac; 'Ctrl+T' and 'Alt+Space' on
+// Windows, where ⌃ and ⌘ are both Ctrl and a repeated key is named once.
 function formatCombo(parts, platform) {
-  return parts.join(platform === 'win32' ? '+' : '');
+  if (platform === 'win32') return parts.filter((p, i) => parts.indexOf(p) === i).join('+');
+  return parts.map((p, i) => (i > 0 && p.length > 1 ? ` ${p}` : p)).join('');
 }
 
 module.exports = { keysFor, formatCombo };

@@ -98,6 +98,9 @@ let view = null;      // 'listening' | 'hover' | 'quiet' | 'paused' | 'working' 
 let hovering = false;
 let workLabel = 'Transcribing';
 let doneText = '';
+// "press Cmd-V" on a Mac, "press Ctrl+V" on Windows — key names come from main/keys.js.
+let pasteKeys = '';
+window.electronAPI.getPlatform?.().then((k) => { pasteKeys = k.os === 'win32' ? `${k.mod}+V` : `${k.mod}V`; }).catch(() => {});
 
 function seconds() {
   if (!rec.startedAt) return 0;
@@ -185,7 +188,7 @@ window.electronAPI.onPillState((state) => {
     render('copied');
   } else if (state.state === 'dictated') {
     // Typed where the cursor was, or (without Accessibility) left on the clipboard.
-    doneText = state.typed ? (rec.app ? `Typed into ${rec.app}` : 'Typed') : 'Copied, press ⌘V';
+    doneText = state.typed ? (rec.app ? `Typed into ${rec.app}` : 'Typed') : (pasteKeys ? `Copied, press ${pasteKeys}` : 'Copied');
     render('typed');
   } else if (state.state === 'error') {
     render('error');

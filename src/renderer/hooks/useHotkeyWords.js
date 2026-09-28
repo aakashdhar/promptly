@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
+import { keys } from '../utils/keys.js'
 
 // Until main answers: the default shortcut, so the first paint never shows a different one.
-const FALLBACK = { short: 'double-tap ⌃', action: 'Double-tap Control', needsAccess: false }
+// A function, so it reads the key names after main.jsx has loaded them.
+const fallback = () => ({ short: `double-tap ${keys.ctrl}`, action: 'Double-tap Control', needsAccess: false })
 
 // How the talk shortcut is named in hints ("Double-tap Control and talk"). It follows Settings and
-// changes when Accessibility is allowed (a key that needs the helper falls back to ⌥ Space).
+// changes when Accessibility is allowed (a key that needs the helper falls back to Option-Space).
 export default function useHotkeyWords() {
-  const [words, setWords] = useState(FALLBACK)
+  const [words, setWords] = useState(fallback)
   useEffect(() => {
     if (!window.electronAPI?.getPreferences) return
     const refresh = () => window.electronAPI.getPreferences().then((p) => { if (p?.hotkeyWords) setWords(p.hotkeyWords) }).catch(() => {})

@@ -249,7 +249,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
 
     <div class="state visible" id="hold-ask">
       <div class="actions"><button class="btn" id="hold-allow">Allow Accessibility</button></div>
-      <p class="hint">macOS opens System Settings. Turn on Promptly in the list, then come back — Promptly notices on its own. Without it, tap ⌥ Space to start and stop, and your words are copied for ⌘V instead of typed.</p>
+      <p class="hint">macOS opens System Settings. Turn on Promptly in the list, then come back — Promptly notices on its own. Without it, tap <span data-combo="alt Space"></span> to start and stop, and your words are copied for <span data-combo="mod V"></span> instead of typed.</p>
     </div>
     <div class="state" id="hold-ok">
       <div class="status ok"><span class="dot"></span><div>Talking from any app is on.<div class="detail">Promptly only watches your talk shortcut, and reads selected text when you start recording.</div></div></div>
@@ -267,19 +267,19 @@ details.manual summary { cursor: pointer; width: fit-content; }
     <h1 id="done-title">You're set</h1>
     <p class="lede" id="done-lede">Double-tap this anywhere on your Mac and talk. Tap it once when you're done: your words are typed where your cursor is.</p>
     <div class="keys" id="keys" aria-label="Double-tap Control">
-      <div class="key" id="key-opt" hidden>⌥</div>
+      <div class="key" id="key-opt" data-combo="alt" hidden></div>
       <div class="key" id="key-space">control</div>
     </div>
     <div class="status warn" id="done-needs-access" hidden>
       <span class="dot"></span>
       <div>Double-tap Control needs Accessibility.
-        <div class="detail">Until it's on, press ⌥ Space to start and again to stop, and your words are copied for ⌘V.</div>
+        <div class="detail">Until it's on, press <span data-combo="alt Space"></span> to start and again to stop, and your words are copied for <span data-combo="mod V"></span>.</div>
         <div class="actions" style="margin-top:10px"><button class="btn" id="done-allow">Allow Accessibility</button></div>
       </div>
     </div>
     <ul class="tips">
       <li>Promptly lives in the menu bar. Click the microphone icon to show or hide it.</li>
-      <li>Prefer typing? Open Promptly and press <b>⌘T</b>.</li>
+      <li>Prefer typing? Open Promptly and press <b data-combo="mod T"></b>.</li>
     </ul>
     <div class="spacer"></div>
     <div class="actions"><button class="btn" id="done-start">Start using Promptly</button></div>
@@ -288,6 +288,18 @@ details.manual summary { cursor: pointer; width: fit-content; }
 
 <script>
 const api = window.electronAPI;
+
+// Key names come from main/keys.js: data-combo="mod V" reads Cmd-V (as the symbol) on a Mac and Ctrl+V on Windows
+// (same rule as formatCombo there). Filled once, before any screen that shows them.
+function fillKeyNames(k) {
+  document.querySelectorAll('[data-combo]').forEach((el) => {
+    const parts = el.dataset.combo.split(' ').map((name) => k[name] || name);
+    el.textContent = k.os === 'win32'
+      ? parts.filter((p, i) => parts.indexOf(p) === i).join('+')
+      : parts.map((p, i) => (i > 0 && p.length > 1 ? ` ${p}` : p)).join('');
+  });
+}
+api.getPlatform?.().then(fillKeyNames).catch(() => {});
 const STEPS = ['mic', 'claude', 'hold', 'done'];
 let holdPoll = null;
 let claudePoll = null;
@@ -477,7 +489,7 @@ document.getElementById('speech-skip').addEventListener('click', () => showHold(
 
 // ── Ready ────────────────────────────────────────────────────────────────────
 // The shortcut is double-tap Control. It needs Accessibility: until that's on, this screen says
-// so (with a button) rather than quietly showing the ⌥ Space fallback. Someone who picked
+// so (with a button) rather than quietly showing the Option-Space fallback. Someone who picked
 // Option + Space in Settings sees that instead.
 function showNeedsAccess(on) {
   document.getElementById('done-needs-access').hidden = !on;

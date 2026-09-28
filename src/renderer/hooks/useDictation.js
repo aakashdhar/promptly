@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { runStep } from '../utils/claudeStep.js'
 import { saveToHistory } from '../utils/history.js'
+import { keys, combo } from '../utils/keys.js'
 
 // Dictation and "Make it a prompt". A dictation result keeps both versions of what you said:
 // the words as spoken (tidied locally, never rewritten) and, once asked for, a prompt built
@@ -73,7 +74,7 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
     if (!result) return
     setThinkingLabel('')
     if (!result?.success) {
-      const message = result?.errorType === 'auth' ? 'Claude Code is signed out. Sign in from Settings (⌘/)' : "Couldn't write the prompt"
+      const message = result?.errorType === 'auth' ? `Claude Code is signed out. Sign in from Settings (${combo(keys.mod, '/')})` : "Couldn't write the prompt"
       transitionRef.current(STATES.ERROR, { message })
       return
     }

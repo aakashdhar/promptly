@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { pressable } from '../utils/pressable.js'
 import { modeInfo } from '../utils/modes.js'
+import { keys, combo } from '../utils/keys.js'
 
 export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchToVoice }) {
   const [typingText, setTypingText] = useState('')
@@ -120,7 +121,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
           Clear
         </button>
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>or press ⌘↵</span>
+        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>or press {combo(keys.mod, keys.enter)}</span>
         <button
           onClick={() => typingText.trim() && onTypingSubmit(typingText.trim())}
           disabled={!typingText.trim()}

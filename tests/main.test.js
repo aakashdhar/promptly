@@ -469,12 +469,37 @@ describe('key names', () => {
     expect(keysFor('darwin')).toEqual({ os: 'darwin', mod: '⌘', alt: '⌥', ctrl: '⌃', shift: '⇧', enter: '↵' })
     expect(formatCombo(['⌘', 'T'], 'darwin')).toBe('⌘T')
     expect(formatCombo(['⌃', '⌘', 'S'], 'darwin')).toBe('⌃⌘S')
+    expect(formatCombo(['⌘', '↵'], 'darwin')).toBe('⌘↵')
+    // A named key keeps the space the app has always shown before it.
+    expect(formatCombo(['⌥', 'Space'], 'darwin')).toBe('⌥ Space')
   })
 
   it('Windows gets words joined with +', () => {
     expect(keysFor('win32')).toEqual({ os: 'win32', mod: 'Ctrl', alt: 'Alt', ctrl: 'Ctrl', shift: 'Shift', enter: 'Enter' })
     expect(formatCombo(['Ctrl', 'T'], 'win32')).toBe('Ctrl+T')
     expect(formatCombo(['Alt', 'Space'], 'win32')).toBe('Alt+Space')
+    // ⌃ and ⌘ are both Ctrl on Windows: named once, not Ctrl+Ctrl+S.
+    expect(formatCombo(['Ctrl', 'Ctrl', 'S'], 'win32')).toBe('Ctrl+S')
+  })
+
+  it('the renderer, pill and setup screens join keys by the same rule as main', () => {
+    for (const os of ['darwin', 'win32']) {
+      const k = keysFor(os)
+      const saved = { ...rendererKeys.keys }
+      Object.assign(rendererKeys.keys, k)
+      try {
+        for (const parts of [[k.mod, 'T'], [k.alt, 'Space'], [k.ctrl, k.mod, 'S'], [k.mod, k.enter]]) {
+          expect(rendererKeys.combo(...parts)).toBe(formatCombo(parts, os))
+        }
+      } finally { Object.assign(rendererKeys.keys, saved) }
+    }
+  })
+
+  it('no screen names a Mac key directly; they all go through the key names', () => {
+    const files = ['pill.html', 'splash.html', ...fs.readdirSync(path.join(import.meta.dirname, '..', 'src/renderer'), { recursive: true })
+      .filter((f) => /\.(jsx?|html)$/.test(f) && !f.endsWith('keys.js')).map((f) => path.join('src/renderer', f))]
+    const offenders = files.filter((f) => /[⌘⌥⌃]/.test(fs.readFileSync(path.join(import.meta.dirname, '..', f), 'utf8')))
+    expect(offenders).toEqual([])
   })
 
   it('other systems fall back to the Mac set, and callers cannot change the shared one', () => {
