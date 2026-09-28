@@ -71,3 +71,17 @@ describe('Windows tray icons are used instead of template images', () => {
     expect(win32.TRAY_TEMPLATE_ICONS).toBe(false)
   })
 })
+
+describe('the Harness run command copied for a terminal', () => {
+  it('a Mac copies exactly what it did before; Windows gets PowerShell that 5.1 understands', async () => {
+    const { commandInFolder } = await import('../src/renderer/utils/promptUtils.js')
+    const run = 'bash .harness/run.sh'
+    // The Mac string the panel built before this change.
+    const before = (savedTo) => `cd ${`'${String(savedTo).replace(/'/g, `'\\''`)}'`} && ${run}`
+    for (const dir of ['/Users/a/proj', "/Users/a/it's here", '/Users/a/$HOME `x` "y"']) {
+      expect(commandInFolder(dir, run, 'darwin')).toBe(before(dir))
+    }
+    expect(commandInFolder("C:\\Users\\Zoë O'Neil\\proj", 'powershell -File .harness/run.ps1', 'win32'))
+      .toBe("Set-Location -LiteralPath 'C:\\Users\\Zoë O''Neil\\proj'; powershell -File .harness/run.ps1")
+  })
+})

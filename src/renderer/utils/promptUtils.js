@@ -178,3 +178,11 @@ export function readableColor(color) {
   const opaque = color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[0-9.]+\)/, 'rgb($1,$2,$3)')
   return `color-mix(in oklab, ${opaque} var(--accent-text-strength), rgb(var(--ink)))`
 }
+
+// The harness run command, started from the project folder, for pasting into a terminal. The
+// folder is single-quoted so a name with $, ` or " can't change what runs: POSIX quoting in a
+// Mac Terminal; on Windows PowerShell (5.1 has no &&), Set-Location with '' for a quote.
+export function commandInFolder(folder, run, os) {
+  if (os === 'win32') return `Set-Location -LiteralPath '${String(folder).replace(/'/g, "''")}'; ${run}`
+  return `cd '${String(folder).replace(/'/g, `'\\''`)}' && ${run}`
+}

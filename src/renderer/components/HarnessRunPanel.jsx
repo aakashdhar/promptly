@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { readableColor } from '../utils/promptUtils.js'
+import { readableColor, commandInFolder } from '../utils/promptUtils.js'
 import useCopy from '../hooks/useCopy.js'
+import { keys } from '../utils/keys.js'
 
 // Under the harness files: the command that starts it (always visible, with Copy), and once the
-// files are saved into a project, a schedule macOS runs it on (a launchd job, removable here).
+// files are saved into a project, a schedule the system runs it on (launchd on a Mac, Task
+// Scheduler on Windows; removable here).
 
 const MONO = "'SF Mono', ui-monospace, Menlo, monospace"
 const GREEN = readableColor('rgba(48,209,88,1)')
@@ -26,11 +28,9 @@ export default function HarnessRunPanel({ run, suggested, savedTo, scheduled, al
   const [error, setError] = useState('')
   if (!run) return null
 
-  // Once saved, the copied command works from any Terminal window. The folder is single-quoted,
-  // so a name with $, ` or " in it can't change what the shell runs.
+  // Once saved, the copied command works from any terminal window (see commandInFolder).
   function copyRun() {
-    const folder = `'${String(savedTo).replace(/'/g, `'\\''`)}'`
-    copy(savedTo ? `cd ${folder} && ${run}` : run, 'copied', onCopy)
+    copy(savedTo ? commandInFolder(savedTo, run, keys.os) : run, 'copied', onCopy)
   }
 
   async function act(fn) {
