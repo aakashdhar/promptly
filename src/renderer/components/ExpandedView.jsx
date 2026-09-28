@@ -4,6 +4,7 @@ import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import ShortcutsPanel from './ShortcutsPanel.jsx'
+import { isHistoryToggleKey } from '../utils/keys.js'
 
 // Builders lay out two columns of their own; below this width the history list would squeeze
 // them, so it steps aside (Cmd-H still opens history).
@@ -98,7 +99,7 @@ export default function ExpandedView({
   }
   useEffect(() => {
     function onKey(e) {
-      if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === 's') { e.preventDefault(); setHistoryHidden((h) => { window.electronAPI?.setPreferences?.({ historyHidden: !h }); return !h }) }
+      if (isHistoryToggleKey(e)) { e.preventDefault(); setHistoryHidden((h) => { window.electronAPI?.setPreferences?.({ historyHidden: !h }); return !h }) }
     }
     // Cmd-H searches history, so it brings the list back if it was hidden.
     const onSearch = () => setHistoryHidden((h) => { if (h) window.electronAPI?.setPreferences?.({ historyHidden: false }); return false })

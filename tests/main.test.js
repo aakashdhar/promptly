@@ -495,6 +495,27 @@ describe('key names', () => {
     }
   })
 
+  it('Generate and Hide history listen for the keys their labels name, on both systems', () => {
+    const saved = { ...rendererKeys.keys }
+    const ev = (key, mods = {}) => ({ key, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...mods })
+    try {
+      // Mac: exactly as before.
+      expect(rendererKeys.isGenerateKey(ev('Enter', { metaKey: true }))).toBe(true)
+      expect(rendererKeys.isGenerateKey(ev('Enter', { ctrlKey: true }))).toBe(false)
+      expect(rendererKeys.isHistoryToggleKey(ev('s', { ctrlKey: true, metaKey: true }))).toBe(true)
+      expect(rendererKeys.isHistoryToggleKey(ev('S', { ctrlKey: true, shiftKey: true }))).toBe(false)
+      expect(rendererKeys.combo(...rendererKeys.historyToggleKeys())).toBe('⌃⌘S')
+      // Windows: Ctrl+Enter and Ctrl+Shift+S; plain Ctrl+S (Save) does nothing.
+      Object.assign(rendererKeys.keys, keysFor('win32'))
+      expect(rendererKeys.isGenerateKey(ev('Enter', { ctrlKey: true }))).toBe(true)
+      expect(rendererKeys.isGenerateKey(ev('Enter', { metaKey: true }))).toBe(false)
+      expect(rendererKeys.isHistoryToggleKey(ev('S', { ctrlKey: true, shiftKey: true }))).toBe(true)
+      expect(rendererKeys.isHistoryToggleKey(ev('s', { ctrlKey: true }))).toBe(false)
+      expect(rendererKeys.combo(...rendererKeys.historyToggleKeys())).toBe('Ctrl+Shift+S')
+      expect(rendererKeys.combo(rendererKeys.keys.mod, rendererKeys.keys.enter)).toBe('Ctrl+Enter')
+    } finally { Object.assign(rendererKeys.keys, saved) }
+  })
+
   it('no screen names a Mac key directly; they all go through the key names', () => {
     const files = ['pill.html', 'splash.html', ...fs.readdirSync(path.join(import.meta.dirname, '..', 'src/renderer'), { recursive: true })
       .filter((f) => /\.(jsx?|html)$/.test(f) && !f.endsWith('keys.js')).map((f) => path.join('src/renderer', f))]

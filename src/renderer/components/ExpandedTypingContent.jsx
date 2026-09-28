@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { pressable } from '../utils/pressable.js'
 import { modeInfo } from '../utils/modes.js'
-import { keys, combo } from '../utils/keys.js'
+import { keys, combo, isGenerateKey } from '../utils/keys.js'
 
 export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchToVoice }) {
   const [typingText, setTypingText] = useState('')
@@ -55,7 +55,7 @@ export default function ExpandedTypingContent({ mode, onTypingSubmit, onSwitchTo
             value={typingText}
             onChange={e => setTypingText(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && e.metaKey && typingText.trim()) {
+              if (isGenerateKey(e) && typingText.trim()) {
                 onTypingSubmit(typingText.trim())
               }
             }}

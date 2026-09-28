@@ -3,7 +3,7 @@ import { readableColor } from '../utils/promptUtils.js'
 import { modeTone } from '../utils/modes.js'
 import ModeDropdown from './ModeDropdown.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
-import { keys, combo } from '../utils/keys.js'
+import { keys, combo, historyToggleKeys } from '../utils/keys.js'
 
 // The slim toolbar: one row beside the window buttons. Controls appear only when they mean
 // something (pause and the timer only while recording); what's happening is said once, here or
@@ -112,7 +112,7 @@ export default function ExpandedTransportBar({
           onClick={onToggleHistory}
           aria-label={historyHidden ? 'Show history' : 'Hide history'}
           aria-pressed={historyHidden}
-          title={`${historyHidden ? 'Show' : 'Hide'} history (${combo(keys.ctrl, keys.mod, 'S')})`}
+          title={`${historyHidden ? 'Show' : 'Hide'} history (${combo(...historyToggleKeys())})`}
           style={{ ...iconBtn(historyHidden), background: historyHidden ? 'rgba(var(--ink),0.08)' : 'transparent', border: historyHidden ? '0.5px solid rgba(var(--ink),0.12)' : '0.5px solid transparent', color: historyHidden ? 'rgba(var(--ink),0.85)' : 'var(--text-secondary)' }}
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M9 5v14" /><path d="M5.5 9h1.5M5.5 12h1.5" strokeLinecap="round" /></svg>
