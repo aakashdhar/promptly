@@ -975,3 +975,16 @@ Final review gate run 2026-05-19. See blocking tasks below.
 ⬜ WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
    Nothing changes on the Mac; it's the seam every later Windows task plugs into.
 Say "next" to begin.
+
+---
+
+✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
+   (Windows feature paused at WIN-001)
+
+## What just happened
+✅ Uninstall bug fixed (4/4) — regression tests, fix, full-suite check, docs
+   Committed: fix(uninstall) c92660e + docs
+
+## What's next
+⬜ Try it on an installed build (2.19.3) — Uninstall from the menu bar: Promptly quits, the Mac stays responsive, a notification confirms
+   Then the Windows version resumes at WIN-001 when you're ready.

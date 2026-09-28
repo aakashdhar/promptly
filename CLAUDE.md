@@ -140,4 +140,3 @@ Never: change behaviour of existing features · modify existing passing tests (e
 
 **Between tasks:** "next" triggers, in order: `npm test` · `npm run lint` · commit code `feat(windows-version): WIN-0NN — …` · log meaningful implementation decisions in vibe/IMPLEMENTATION_LOG.md · commit docs `docs(FEATURE_TASKS+TASKS): mark WIN-0NN done — windows` · re-read TASKS.md, state the next task, wait for "next".
 ---
-

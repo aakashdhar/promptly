@@ -1016,7 +1016,8 @@ Hardened runtime entitlements (`com.apple.security.device.audio-input`) only app
 - **Fix approach**: `isQuitting` flag at module scope + `app.on('before-quit')` to set it + `app.requestSingleInstanceLock()` + `second-instance` handler + `win.on('close')` hide-intercept in `createWindow()` + tray Quit label → 'Quit Promptly'
 - **CODEBASE.md update**: No — no new functions or IPC channels
 - **ARCHITECTURE.md update**: Yes — window lifecycle section added (hide-on-close pattern, isQuitting flag, single-instance lock requirement)
-- **Deviations from BUG_PLAN.md**: none yet
+- **Deviations from BUG_PLAN.md**: one addition — uninstall.sh removes only a file named promptly-uninstall-*.sh (its temp copy), so a test run can't delete the original
+- **Status**: fixed 2026-09-28 (c92660e); owner to confirm on an installed build
 ---
 
 ### D-POL-001 — FEATURE-015 is an unplanned addition
@@ -2240,4 +2241,16 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > P0: 0 · P1: 5 · P2: 6
 > Action: fully resolved — all 5 P1 fixed (selection: Ctrl+C fallback kept), 1 P2 fixed, 5 P2 open
 > Report: vibe/spec-reviews/2026-09-28-add-feature-windows.md
+---
+
+---
+### D-BUG-UNINSTALL — Bug fix: Uninstall freezes the Mac
+- **Date**: 2026-09-28 · **Type**: drift
+- **Folder**: vibe/bugs/2026-09-28-uninstall-freezes-mac/
+- **Root cause**: the running app deleted its own bundle and live data with the helper's session-wide event tap still active, then blocked on a dialog so it never quit
+- **Files in scope**: main/uninstall.js (new), main.js, main/platform/darwin.js, scripts/uninstall.sh, tests/uninstall.test.js
+- **Fix approach**: stop the helper first; a detached copy of uninstall.sh removes everything after Promptly exits (Finder fallback for App Management)
+- **CODEBASE.md update**: Yes — main/uninstall.js, uninstall.sh
+- **ARCHITECTURE.md update**: No
+- **Deviations from BUG_PLAN.md**: none yet
 ---

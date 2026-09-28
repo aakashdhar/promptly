@@ -57,10 +57,12 @@
 | `src/renderer/utils/spokenMode.js` | "code mode, …" prefix detection | `detectSpokenMode` |
 | `scripts/build-helper.sh` | swiftc → universal vendor/helper/promptly-helper | — |
 | `main/binaries.js` | Binary lookup order (Settings → known paths → nvm → login shell) | `resolveClaudePath`, `resolveWhisperPath`, `resolveFfmpegPath`, `makeClaudeEnv`, `PYTHON_WHISPER`, `terminate(child)` (SIGTERM, then SIGKILL after 3 s; used for every timeout, cancel and quit) |
-| `main/platform/darwin.js` | Every macOS-specific path and command (binary locations, shell lookup, pyenv shims, Whisper PATH + SSL env, model cache dirs, uninstall paths, tccutil, launchd jobs incl. `harnessLaunchAgents(home)` for uninstall) | see file |
+| `main/platform/darwin.js` | Every macOS-specific path and command (binary locations, shell lookup, pyenv shims, Whisper PATH + SSL env, model cache dirs, uninstall paths, `uninstallScriptPath(resourcesPath)`, tccutil, launchd jobs incl. `harnessLaunchAgents(home)` for uninstall) | see file |
 | `main/platform/index.js` | Picks the platform module (darwin only today) | — |
 | `main/prompts.js` | Builds prompts from main/prompts/*.txt and shared/modes.json; single-pass placeholder fill | `buildModePrompt`, `buildEvalPrompt`, `normalizeEval` (the scorecard reduced to what EvalPanel renders), `fillTemplate`, `getMode`, `MODES` |
 | `main/prompts/*.txt` | All prompt text: prompt/code/design/polish/email.txt (modes), revise/polish-revise/email-revise.txt (Iterate and email tone chips), image-*/video-*/workflow-*.txt (builder steps), eval.txt (scorecard), learn-style.txt | — |
+| `main/uninstall.js` | Tray › Uninstall hands removal to `uninstall.sh` (temp copy, detached) and quits: the app never deletes itself while running (it froze the Mac — vibe/bugs/2026-09-28-uninstall-freezes-mac) | `uninstallCommand({ scriptPath, pid, bundlePath, dataPaths })` → `['/bin/bash', args]` |
+| `scripts/uninstall.sh` | Shipped as Contents/uninstall.sh. No args: interactive Terminal uninstall (`npm run uninstall`). `--yes --wait-pid PID [--app PATH] [--data PATH]…`: run by the app — waits for Promptly to exit, removes data + app (Finder moves it to the Bin if macOS refuses), resets mic, notifies | — |
 | `main/config.js` | config.json store with atomic writes; a file that won't parse is renamed `config.json.corrupt-<ts>` before anything writes over it; the parsed file is cached until its mtime/size changes, and callers get copies | `createConfigStore(path, { onCorrupt })` → `{ read, write, update }` |
 | `main/log.js` | File logger: ~/Library/Logs/Promptly/main.log, rotates at 1 MB | `createLogger(dir)` |
 | `main/tray-icon.js` | Draws the menu bar mic icon as a PNG buffer | `drawMicIconPng`, `isTemplateState` |
