@@ -1005,7 +1005,7 @@ app.whenReady().then(async () => {
         { file: HELPER_PATH, args: ['--version'] },
       ]),
     ]);
-    return { installCommand: claudeSetup.INSTALL_COMMAND, terminal: platform.SETUP_TERMINAL, gitMissing, blocked };
+    return { installCommand: claudeSetup.INSTALL_COMMAND, terminal: platform.SETUP_TERMINAL, copy: platform.SETUP_COPY, gitMissing, blocked };
   });
 
   ipcMain.handle('claude-install', async () => {

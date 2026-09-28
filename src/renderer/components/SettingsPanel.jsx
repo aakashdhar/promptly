@@ -3,7 +3,7 @@ import { readableColor } from '../utils/promptUtils.js'
 import YouSection from './YouSection.jsx'
 import SpeechSection from './SpeechSection.jsx'
 import YourWordsSection from './YourWordsSection.jsx'
-import { keys, combo } from '../utils/keys.js'
+import { keys, combo, titleBarPadding } from '../utils/keys.js'
 
 // Settings, one short tab at a time: icon tabs down the side, and in each tab sections of rows
 // (the setting and a line about it on the left, its control on the right). Changes save as you
@@ -393,8 +393,9 @@ export default function SettingsPanel({ onClose }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {/* Title bar: the traffic lights sit on the left; the whole bar drags the window. */}
-      <div style={{ height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '0 18px 0 96px', borderBottom: '0.5px solid rgba(var(--ink),0.1)', WebkitAppRegion: 'drag' }}>
+      {/* Title bar: the traffic lights sit on the left (the caption buttons on the right on
+          Windows); the whole bar drags the window. */}
+      <div style={{ height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: titleBarPadding('0 18px 0 96px', 18), borderBottom: '0.5px solid rgba(var(--ink),0.1)', WebkitAppRegion: 'drag' }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(var(--ink),0.95)' }}>Settings</span>
         <button type="button" onClick={onClose} style={{ ...btn, height: 30, marginLeft: 'auto', fontSize: 13 }}>Done</button>
       </div>

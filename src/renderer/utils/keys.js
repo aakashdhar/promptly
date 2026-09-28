@@ -26,6 +26,17 @@ export function isGenerateKey(e) {
 
 export const historyToggleKeys = () => (keys.os === 'win32' ? [keys.ctrl, keys.shift, 'S'] : [keys.ctrl, keys.mod, 'S'])
 
+// Title-bar padding that keeps the window's own buttons clear. A Mac keeps its traffic-light
+// inset on the left (`mac`, as written today); on Windows the minimise/maximise/close buttons sit
+// top right over a 56 px overlay (main/platform/win32.js windowChrome), so the left keeps only
+// the bar's own gutter and the right reserves their 140 px on top of it.
+export const CAPTION_BUTTONS_WIDTH = 140
+
+export function titleBarPadding(mac, gutter) {
+  if (keys.os !== 'win32') return mac
+  return `0 ${gutter + CAPTION_BUTTONS_WIDTH}px 0 ${gutter}px`
+}
+
 export function isHistoryToggleKey(e) {
   if (e.key.toLowerCase() !== 's') return false
   return keys.os === 'win32' ? e.ctrlKey && e.shiftKey && !e.altKey : e.ctrlKey && e.metaKey

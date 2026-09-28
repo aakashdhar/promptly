@@ -174,6 +174,19 @@ const WHISPER_CLI = 'whisper-cli.exe';
 const INSTALL_COMMAND = 'irm https://claude.ai/install.ps1 | iex';
 const SETUP_SCRIPT = 'powershell';
 const SETUP_TERMINAL = 'PowerShell';
+// Setup screen wording for Windows, keyed by splash.html's data-copy names (the splash's own
+// text is the Mac wording). There's no Accessibility step here, so none of that text changes.
+const SETUP_COPY = {
+  thisComputer: 'this PC',
+  yourComputer: 'your PC',
+  micAsks: 'Windows may ask once.',
+  micSettingsDetail: 'Turn on microphone access, and "Let desktop apps access your microphone", in Settings → Privacy & security → Microphone, then come back.',
+  micSettingsButton: 'Open Settings',
+  doubleTapKey: 'ctrl',
+  doubleTapLabel: 'Double-tap Ctrl',
+  altSpaceLabel: 'Alt plus Space',
+  trayTip: 'Promptly lives in the taskbar, by the clock (it may be under ^). Click the microphone icon to show or hide it.',
+};
 
 // Runs a setup .ps1 in its own PowerShell window, left open so the person can read it.
 // The script is a file passed with -File, never a command string. Resolves '' or an error
@@ -371,6 +384,7 @@ module.exports = {
   INSTALL_COMMAND,
   SETUP_SCRIPT,
   SETUP_TERMINAL,
+  SETUP_COPY,
   openSetupScript,
   checkPrerequisites,
   blockedBinaries,

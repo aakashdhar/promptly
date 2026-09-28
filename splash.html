@@ -144,7 +144,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
     <h1 id="welcome-title">Say it. Get a prompt.</h1>
     <p class="lede">Promptly turns what you say into a clear, structured prompt for Claude. Setup takes about a minute.</p>
     <ul class="tips" style="margin-bottom:28px">
-      <li><b>Microphone</b> — so Promptly can hear you. Speech is transcribed on this Mac.</li>
+      <li><b>Microphone</b> — so Promptly can hear you. Speech is transcribed on <span data-copy="thisComputer">this Mac</span>.</li>
       <li><b>Claude Code</b> — writes the prompts, using your own Claude account.</li>
     </ul>
     <div class="spacer"></div>
@@ -154,7 +154,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
   <!-- Step 1: Microphone -->
   <section class="screen" id="screen-mic" aria-labelledby="mic-title">
     <h1 id="mic-title">Let Promptly hear you</h1>
-    <p class="lede">macOS will ask once. Recordings are transcribed on this Mac and deleted right after.</p>
+    <p class="lede"><span data-copy="micAsks">macOS will ask once.</span> Recordings are transcribed on <span data-copy="thisComputer">this Mac</span> and deleted right after.</p>
 
     <div class="state visible" id="mic-ask">
       <div class="actions"><button class="btn" id="mic-allow">Allow microphone</button></div>
@@ -164,10 +164,10 @@ details.manual summary { cursor: pointer; width: fit-content; }
     </div>
     <div class="state" id="mic-denied">
       <div class="status warn"><span class="dot"></span>
-        <div>Microphone access is off.<div class="detail">Turn on Promptly in System Settings → Privacy &amp; Security → Microphone, then come back.</div></div>
+        <div>Microphone access is off.<div class="detail" data-copy="micSettingsDetail">Turn on Promptly in System Settings → Privacy &amp; Security → Microphone, then come back.</div></div>
       </div>
       <div class="actions">
-        <button class="btn" id="mic-open-settings">Open System Settings</button>
+        <button class="btn" id="mic-open-settings" data-copy="micSettingsButton">Open System Settings</button>
         <button class="btn secondary" id="mic-recheck">Check again</button>
       </div>
     </div>
@@ -179,7 +179,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
   <!-- Step 2: Claude Code -->
   <section class="screen" id="screen-claude" aria-labelledby="claude-title">
     <h1 id="claude-title">Connect Claude Code</h1>
-    <p class="lede">Promptly uses Claude Code on your Mac to write prompts, signed in with your Claude account.</p>
+    <p class="lede">Promptly uses Claude Code on <span data-copy="yourComputer">your Mac</span> to write prompts, signed in with your Claude account.</p>
 
     <div class="state visible" id="claude-checking">
       <div class="status"><span class="spin" aria-hidden="true"></span><div>Looking for Claude Code…</div></div>
@@ -280,10 +280,10 @@ details.manual summary { cursor: pointer; width: fit-content; }
   <!-- Step 4: Ready -->
   <section class="screen" id="screen-done" aria-labelledby="done-title">
     <h1 id="done-title">You're set</h1>
-    <p class="lede" id="done-lede">Double-tap this anywhere on your Mac and talk. Tap it once when you're done: your words are typed where your cursor is.</p>
+    <p class="lede" id="done-lede">Double-tap this anywhere on <span data-copy="yourComputer">your Mac</span> and talk. Tap it once when you're done: your words are typed where your cursor is.</p>
     <div class="keys" id="keys" aria-label="Double-tap Control">
       <div class="key" id="key-opt" data-combo="alt" hidden></div>
-      <div class="key" id="key-space">control</div>
+      <div class="key" id="key-space" data-copy="doubleTapKey">control</div>
     </div>
     <div class="status warn" id="done-needs-access" hidden>
       <span class="dot"></span>
@@ -293,7 +293,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
       </div>
     </div>
     <ul class="tips">
-      <li>Promptly lives in the menu bar. Click the microphone icon to show or hide it.</li>
+      <li data-copy="trayTip">Promptly lives in the menu bar. Click the microphone icon to show or hide it.</li>
       <li>Prefer typing? Open Promptly and press <b data-combo="mod T"></b>.</li>
     </ul>
     <div class="spacer"></div>
@@ -315,6 +315,20 @@ function fillKeyNames(k) {
   });
 }
 api.getPlatform?.().then(fillKeyNames).catch(() => {});
+
+// Wording that differs by system comes from main (setup-info's copy, keyed by data-copy);
+// the text written here is the Mac wording and stays as it is when main has no replacement.
+let setupCopy = {};
+function fillSetupCopy(copy) {
+  setupCopy = copy || {};
+  document.querySelectorAll('[data-copy]').forEach((el) => {
+    const text = setupCopy[el.dataset.copy];
+    if (text) el.textContent = text;
+  });
+  const label = setupCopy.doubleTapLabel;
+  if (label && document.getElementById('key-space').dataset.copy) document.getElementById('keys').setAttribute('aria-label', label);
+}
+api.setupInfo?.().then((info) => fillSetupCopy(info && info.copy)).catch(() => {});
 const STEPS = ['mic', 'claude', 'hold', 'done'];
 let holdPoll = null;
 let claudePoll = null;
@@ -533,18 +547,21 @@ async function animateKeys() {
   const s = await api.accessibilityStatus();
   const prefs = api.getPreferences ? await api.getPreferences() : null;
   const tap = !!(s && s.tap);
-  const optionSpace = !!prefs && prefs.hotkey === 'option-space';
+  // 'alt-space' is the same preset on Windows (main/hotkey.js); a Mac never has it.
+  const optionSpace = !!prefs && (prefs.hotkey === 'option-space' || prefs.hotkey === 'alt-space');
   const opt = document.getElementById('key-opt');
   const space = document.getElementById('key-space');
   const doubleTap = !optionSpace;
   if (optionSpace) {
     opt.hidden = false;
+    delete space.dataset.copy;   // a late fillSetupCopy mustn't turn it back into the double-tap key
     space.textContent = 'space';
     space.classList.add('wide');
-    document.getElementById('keys').setAttribute('aria-label', 'Option plus Space');
+    document.getElementById('keys').setAttribute('aria-label', setupCopy.altSpaceLabel || 'Option plus Space');
+    const where = setupCopy.yourComputer || 'your Mac';
     document.getElementById('done-lede').textContent = tap
-      ? "Hold this anywhere on your Mac and talk. Let go when you're done."
-      : "Press this anywhere on your Mac to start talking. Press it again when you're done.";
+      ? `Hold this anywhere on ${where} and talk. Let go when you're done.`
+      : `Press this anywhere on ${where} to start talking. Press it again when you're done.`;
   } else {
     showNeedsAccess(!tap);
   }

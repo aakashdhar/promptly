@@ -154,6 +154,9 @@ const INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash';
 // Setup scripts are bash .command files, which open in Terminal.
 const SETUP_SCRIPT = 'bash';
 const SETUP_TERMINAL = 'Terminal';
+// Setup screen wording that differs by system, keyed by splash.html's data-copy names.
+// Empty on a Mac: the splash's own text is the Mac wording.
+const SETUP_COPY = {};
 
 // Opening a .command runs it in a new Terminal window; no Automation permission needed.
 // openPath is Electron's shell.openPath (resolves '' or an error message).
@@ -307,6 +310,7 @@ module.exports = {
   INSTALL_COMMAND,
   SETUP_SCRIPT,
   SETUP_TERMINAL,
+  SETUP_COPY,
   openSetupScript,
   checkPrerequisites,
   blockedBinaries,

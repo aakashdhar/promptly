@@ -3,7 +3,7 @@ import { readableColor } from '../utils/promptUtils.js'
 import { modeTone } from '../utils/modes.js'
 import ModeDropdown from './ModeDropdown.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
-import { keys, combo, historyToggleKeys } from '../utils/keys.js'
+import { keys, combo, historyToggleKeys, titleBarPadding } from '../utils/keys.js'
 
 // The slim toolbar: one row beside the window buttons. Controls appear only when they mean
 // something (pause and the timer only while recording); what's happening is said once, here or
@@ -104,7 +104,7 @@ export default function ExpandedTransportBar({
     <>
       <div style={{
         height: '56px', flexShrink: 0, position: 'relative',
-        display: 'flex', alignItems: 'center', gap: '12px', padding: '0 16px 0 84px',
+        display: 'flex', alignItems: 'center', gap: '12px', padding: titleBarPadding('0 16px 0 84px', 16),
         borderBottom: '0.5px solid rgba(var(--ink),0.08)', WebkitAppRegion: 'drag',
       }}>
         <button
