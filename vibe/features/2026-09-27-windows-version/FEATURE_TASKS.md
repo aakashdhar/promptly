@@ -279,7 +279,7 @@ fails to start (blocked or quarantined), the wizard names the file that was bloc
 
 ---
 ### WIN-009 · Window, tray and permissions that behave like Windows
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (2, 3, 11, 12, 17)
 - **Dependencies**: WIN-001, WIN-005
@@ -293,8 +293,8 @@ skips the Accessibility step on Windows; "open microphone settings" uses `platfo
 `%APPDATA%\Promptly` (NSIS uninstaller); the tray's "Uninstall Promptly…" removes the app and its data, as on the Mac.
 
 **Acceptance criteria**:
-- [ ] Mac window, tray and permission flows are unchanged (e2e green on the Mac)
-- [ ] No `x-apple.systempreferences` or `trafficLightPosition` is used on win32
+- [x] Mac window, tray and permission flows are unchanged (e2e green on the Mac)
+- [x] No `x-apple.systempreferences` or `trafficLightPosition` is used on win32
 
 **Self-verify**: Re-read FEATURE_SPEC.md#3 (2, 3, 11). Tick every criterion.
 **Test requirement**: unit test for windowChrome on both platforms; Mac e2e suite green.
@@ -304,7 +304,10 @@ skips the Accessibility step on Windows; "open microphone settings" uses `platfo
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 1 (parallel), 183cf2d. New platform keys: `windowChrome({dark, background})` (Mac: hiddenInset + traffic lights as before; Windows: titleBarStyle hidden + titleBarOverlay in theme colours, height 56, updated with setTitleBarOverlay on theme change), `TRAY_CLICK_BLURS` (Windows: a window that lost focus <300 ms before the tray click still counts as in front), `microphoneAccess(systemPreferences, {prompt})` (Mac code moved verbatim; Windows: only 'denied' blocks), `uninstallLaunch(...)` + `UNINSTALL_TEXT`.
+- Windows has no Accessibility permission: `accessibility-status` reports `available: false`, so setup skips that step (splash already handles it).
+- Tray Uninstall on Windows: a temp .ps1 (hidden `powershell.exe -File`, each path its own argument) waits for Promptly to exit, runs `Uninstall Promptly.exe /S _?=<dir>` (so it doesn't return early), then removes the install folder and %APPDATA%/%LOCALAPPDATA%\Promptly — same "nothing is deleted while Promptly runs" rule as the Mac fix.
+- Verify on the Windows PC (WIN-023): titleBarOverlay together with the window's `frame: false`; the uninstall flow end to end.
 ---
 
 ---
@@ -313,10 +316,12 @@ skips the Accessibility step on Windows; "open microphone settings" uses `platfo
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (3), FEATURE_PLAN.md#5
 - **Dependencies**: WIN-005, WIN-009
-- **Touches**: src/renderer/components/ExpandedTransportBar.jsx, src/renderer/components/SettingsPanel.jsx
+- **Touches**: src/renderer/components/ExpandedTransportBar.jsx, src/renderer/components/SettingsPanel.jsx, splash.html (Windows copy only)
 
 **What to do**: Toolbars reserve 96 px on the left on Mac (traffic lights). On Windows reserve 0 px left and 140 px
 right (caption buttons) instead, from `keys.os`. Every clickable item stays `no-drag`.
+
+> **Upstream note from Wave 1 (WIN-009)**: splash.html copy is still Mac-only in places ("on your Mac", "Double-tap Control needs Accessibility", "macOS opens System Settings"). Accessibility is skipped on Windows (available:false), but the lede and done-screen text should come from data (setup-info / key names), with Mac text unchanged.
 
 **Acceptance criteria**:
 - [ ] Mac padding unchanged (screenshots identical)
@@ -363,7 +368,7 @@ and ready, since Windows has no template images. generate-icon.js also writes `b
 
 ---
 ### WIN-012 · Windows helper: protocol, status and hotkeys (Rust)
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: L
 - **Spec ref**: FEATURE_SPEC.md#5 (helper protocol), #3 (4), #9 (latency)
 - **Dependencies**: WIN-007
@@ -377,9 +382,9 @@ message loop implements modifier-only holds, double-tap Ctrl (same timing as Swi
 recording (latency NFR). stdout is flushed per line; stdin EOF exits.
 
 **Acceptance criteria**:
-- [ ] Same messages and fields as the Swift helper for configure/status/hotkey
-- [ ] Hold-to-talk key down → `hotkey down` in under 150 ms
-- [ ] Double-tap Ctrl, hold Right Alt, Alt+Space all work
+- [x] Same messages and fields as the Swift helper for configure/status/hotkey
+- [~] Hold-to-talk key down → `hotkey down` in under 150 ms
+- [~] Double-tap Ctrl, hold Right Alt, Alt+Space all work
 
 **Self-verify**: Re-read FEATURE_SPEC.md#5. Tick every criterion.
 **Test requirement**: Rust unit tests for the tap/double-tap timing logic; main/helper.js tests pass unchanged against the protocol.
@@ -389,7 +394,8 @@ recording (latency NFR). stdout is flushed per line; stdin EOF exits.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 1 (parallel), da125d1. **Partial = written and tested as far as a Mac allows**: `cargo test` 36/36 (engine timings, protocol), `cargo check`/`clippy --target x86_64-pc-windows-msvc` clean, and the Mac-built binary driven through the real main/helper.js. Key presses and latency need the Windows PC (WIN-023).
+- Modules: engine.rs (platform-independent state machine, Swift timings 350/400 ms), hook.rs (cfg(windows): WH_KEYBOARD_LL + WH_MOUSE_LL on a high-priority thread; ignores injected keys; drops AltGr's fake left Ctrl, scan code 0x21D; taps unassigned VK 0xE8 so a swallowed Alt/Win doesn't open menus or Start), protocol.rs, output.rs (one writer thread; the hook only queues), clock.rs (`t` on hotkey events), context.rs/paste.rs (stubs for WIN-013). `--version` prints `promptly-helper 1.0.0` (WIN-008 contract). Static CRT via .cargo/config.toml; deps windows-sys 0.61 + serde_json, Cargo.lock committed.
 ---
 
 ---
@@ -406,6 +412,8 @@ recording (latency NFR). stdout is flushed per line; stdin EOF exits.
 fall back to: save the clipboard (all formats), send Ctrl+C, read the text within 300 ms, restore the clipboard exactly.
 Skip the fallback when a password field has focus (UIA `IsPassword`). `paste` → `SendInput` Ctrl+V; if the foreground window is elevated and we are
 not, return `{ ok: false, reason: 'elevated' }` so main falls back to "Copied — press Ctrl+V".
+
+> **Upstream notes from Wave 1 (WIN-012)**: context.rs and paste.rs are stubs to fill; the context stub answers `app: null` (not Swift's `{}`) so main.js skips it. main/helper.js calls `onHotkey(msg.phase)` and drops `msg.t` — passing `t` through and logging key-down→recording latency in main.js would let WIN-023 measure the 150 ms target.
 
 **Acceptance criteria**:
 - [ ] Selection is read in Notepad, VS Code, Chrome and Word (UIA or the Ctrl+C fallback); apps with nothing selected return none, no error
@@ -436,6 +444,8 @@ not, return `{ ok: false, reason: 'elevated' }` so main falls back to "Copied �
 copy to `vendor/helper/promptly-helper.exe`, skip when up to date. `HELPER_PATH` uses the platform's helper file
 name. npm script `build-helper:win`.
 
+> **Upstream note from Wave 1 (WIN-012)**: the static CRT flag lives in native/helper-win/.cargo/config.toml, which cargo only reads when run from that folder — the build script must `Push-Location native/helper-win; cargo build --release` (or set RUSTFLAGS `-C target-feature=+crt-static`), not rely on `--manifest-path`. main.js already uses `platform.HELPER_BIN` (WIN-008), so HELPER_PATH may need no change.
+
 **Acceptance criteria**:
 - [ ] `npm run build-helper:win` produces vendor/helper/promptly-helper.exe
 - [ ] Mac helper path and build unchanged
@@ -453,7 +463,7 @@ name. npm script `build-helper:win`.
 
 ---
 ### WIN-015 · Build whisper.cpp and fetch the models on Windows
-- **Status**: `[ ]`
+- **Status**: `[~]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (9)
 - **Dependencies**: WIN-004
@@ -464,8 +474,8 @@ commit, build `whisper-cli.exe` with CMake + MSVC (`-DBUILD_SHARED_LIBS=OFF`, CP
 download base + VAD models and verify their checksums into vendor/whisper/. npm script `fetch-whisper:win`.
 
 **Acceptance criteria**:
-- [ ] Refuses to build a commit other than WHISPER_COMMIT; refuses a model with the wrong checksum
-- [ ] vendor/whisper/whisper-cli.exe transcribes a sample WAV
+- [~] Refuses to build a commit other than WHISPER_COMMIT; refuses a model with the wrong checksum
+- [~] vendor/whisper/whisper-cli.exe transcribes a sample WAV
 
 **Self-verify**: Tick every criterion.
 **Test requirement**: run on the Windows PC / Windows CI.
@@ -475,12 +485,14 @@ download base + VAD models and verify their checksums into vendor/whisper/. npm 
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 1 (parallel), 02f0ab6. **Partial = written, not run** (no PowerShell on the Mac) — first run on the Windows PC or Windows CI (WIN-018).
+- Reads every pin (tag, commit, model URLs + SHA-256s, cmake version) from fetch-whisper.sh at run time, so there's one source of truth; the .sh's top-level `NAME="..."` lines are now load-bearing.
+- Static MSVC runtime and GGML_OPENMP=OFF, so whisper-cli.exe needs no VC++ redistributable or vcomp140.dll — WIN-017 ships only the exe + models. `npm run fetch-whisper:win`. Logs in .cache/whisper-build/.
 ---
 
 ---
 ### WIN-016 · Node fakes so the e2e suite runs on both systems
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_PLAN.md#9
 - **Dependencies**: WIN-003, WIN-004
@@ -491,8 +503,8 @@ behaviour (args/stdin logging, FAKE_DIR switches, delays, stream-json). On macOS
 on Windows a `.cmd` shim calling `node`. The specs call one helper that returns the right paths.
 
 **Acceptance criteria**:
-- [ ] The Mac e2e suite passes with the Node fakes (48/48)
-- [ ] No bash-only syntax left in the fakes
+- [x] The Mac e2e suite passes with the Node fakes (48/48)
+- [x] No bash-only syntax left in the fakes
 
 **Self-verify**: Tick every criterion.
 **Test requirement**: `npm run test:e2e` on the Mac green; later on the Windows PC.
@@ -502,7 +514,7 @@ on Windows a `.cmd` shim calling `node`. The specs call one helper that returns 
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Wave 1 (parallel), 128a7d8. Fakes are Node scripts in e2e/fakes/; `installFake(script, dest, fixedArgs)` writes a launcher at the path the app expects: a /bin/sh `exec` shim on the Mac (cancel's SIGTERM still reaches the fake), `<dest>.cmd` on Windows; both run the test runner's own Node. Fakes set `process.exitCode` instead of calling exit(), so piped answers aren't cut short. Mac e2e 48/48.
 ---
 
 ---
@@ -518,6 +530,8 @@ Promptly-Setup-${version}.exe`. `build.nsis`: oneClick false, perMachine false,
 allowToChangeInstallationDirectory true, deleteAppDataOnUninstall false. extraResources for win:
 vendor/helper/promptly-helper.exe → helper/, vendor/whisper/*.exe + models → whisper/. Unsigned in phase 1.
 npm script `dist:win`.
+
+> **Upstream note from Wave 1 (WIN-015)**: whisper-cli.exe is built with the static MSVC runtime and no OpenMP — package only the exe and the two models, no DLLs.
 
 **Acceptance criteria**:
 - [ ] `npm run dist:win` on Windows produces an installer that installs, starts and uninstalls
@@ -567,11 +581,13 @@ No e2e (owner, 2026-09-28).
 - **Size**: S
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (13)
 - **Dependencies**: WIN-016
-- **Touches**: e2e/app.spec.mjs, e2e/ui.spec.mjs
+- **Touches**: e2e/app.spec.mjs, e2e/ui.spec.mjs, main/whisper.js, main/helper.js (only if needed so .cmd fakes start)
 
 **What to do**: Skip Mac-only assertions on win32 with a stated reason (Accessibility step, launchd plist,
 pbpaste/pbcopy → PowerShell `Get-Clipboard`/`Set-Clipboard` equivalents). ui.spec's layout audit also runs at
 150% device scale factor on Windows.
+
+> **Upstream notes from Wave 1 (WIN-016)**: on Windows the fakes are `.cmd` launchers. Claude already starts through `platform.spawnArgs`, but main/whisper.js runs `<PROMPTLY_WHISPER_DIR>/whisper-cli.exe` with execFile and main/helper.js runs `spawn(PROMPTLY_HELPER, [])` — neither goes through spawnArgs, so the fake engine/helper can't start. Route those spawns through `platform.spawnArgs` (identity on the Mac) or let the e2e env name the engine file; also check resolveWhisperPath/resolveFfmpegPath accept `.cmd`.
 
 **Acceptance criteria**:
 - [ ] Every skip names why; no test is silently skipped on the Mac

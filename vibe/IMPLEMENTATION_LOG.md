@@ -51,3 +51,25 @@
 - **Touches**: main.js (`setup-info`, claude-install/login via `platform.openSetupScript`, HELPER_PATH),
   preload.js (`setupInfo`), splash.html (`applySetupInfo`), main/platform/{darwin,win32}.js, main/claude-setup.js
 ---
+
+---
+### 2026-09-28 · Wave 1 · WIN-009 · Windows tray Uninstall runs a generated PowerShell script after Promptly exits
+- **Decision**: `platform.uninstallLaunch` writes a temp .ps1 run by hidden `powershell.exe -File` (pid, install dir, data paths as separate args); it waits for exit, runs `Uninstall Promptly.exe /S _?=<dir>`, then deletes the install folder and %APPDATA%/%LOCALAPPDATA%\Promptly. Windows setup skips Accessibility through `accessibility-status` `available: false`.
+- **Why**: same rule as the Mac freeze fix — nothing deleted while Promptly runs; NSIS keeps user data and `_?=` stops it returning before it's done. Reusing `available: false` needed no splash change.
+- **Touches**: main/platform/{darwin,win32}.js (`uninstallLaunch`, `UNINSTALL_TEXT`, `windowChrome`, `TRAY_CLICK_BLURS`, `microphoneAccess`), main.js (`handleUninstall`, `createWindow`, tray click, `accessibility-status`, `request-microphone`)
+---
+### 2026-09-28 · Wave 1 · WIN-012 · Windows helper: platform-independent engine, thin Win32 hook
+- **Decision**: hotkey timing lives in engine.rs (no Windows calls, `cargo test` on the Mac); hook.rs only adapts WH_KEYBOARD_LL events. AltGr counts as right Alt (its fake left Ctrl, scan 0x21D, is dropped); VK 0xE8 is tapped after a swallowed Alt/Win so menus/Start don't open; stdout goes through one writer thread so the hook never blocks (Windows silently removes hooks that time out). Static CRT; deps windows-sys + serde_json only.
+- **Alternatives**: a single cfg(windows) file (untestable off Windows); the `windows` crate (larger); writing stdout from the hook (can stall typing system-wide).
+- **Touches**: native/helper-win/src/{engine,hook,output,protocol}.rs, .cargo/config.toml, Cargo.toml
+---
+### 2026-09-28 · Wave 1 · WIN-015 · fetch-whisper.ps1 reads its pins from fetch-whisper.sh
+- **Decision**: the PowerShell script parses the .sh's `NAME="..."` pins (tag, commit, model URLs, SHA-256s, cmake version) at run time; builds with the static MSVC runtime and GGML_OPENMP=OFF.
+- **Why**: one source of truth for every pin; a whisper-cli.exe that needs no VC++ redistributable or vcomp140.dll, so the installer ships just the exe and models.
+- **Touches**: scripts/fetch-whisper.ps1, scripts/fetch-whisper.sh (its top-level format is now load-bearing)
+---
+### 2026-09-28 · Wave 1 · WIN-016 · e2e fakes start through a generated launcher running the test runner's Node
+- **Decision**: `installFake` writes a /bin/sh `exec` shim (Mac) or `.cmd` (Windows) at the path the app expects, running `process.execPath` on the .mjs.
+- **Why**: tests delete/relocate fakes per run; makeClaudeEnv rewrites PATH so `node` may not be found; `exec` keeps cancel's SIGTERM reaching the fake; `.cmd` lets spawnArgs start it on Windows.
+- **Touches**: e2e/fakes/install.mjs, e2e/app.spec.mjs, e2e/ui.spec.mjs
+---

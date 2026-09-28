@@ -936,7 +936,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (8/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (10/26 · 2 of them written, need a Windows run)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
@@ -948,14 +948,14 @@ Final review gate run 2026-05-19. See blocking tasks below.
    [x] WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
    [x] WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
    [x] WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
-   [ ] WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
+   [x] WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
    [ ] WIN-010 · Toolbar room for caption buttons — nothing sits under minimise/maximise/close
    [ ] WIN-011 · Windows icons — tray icons per state and an installer icon
-   [ ] WIN-012 · Windows helper: hotkeys — a small Rust helper that hears hold-to-talk
+   [~] WIN-012 · Windows helper: hotkeys — a small Rust helper that hears hold-to-talk
    [ ] WIN-013 · Windows helper: app, selection, paste — selected text as context and typing into the app you're in
    [ ] WIN-014 · Build the Windows helper — one command builds promptly-helper.exe
-   [ ] WIN-015 · Speech engine for Windows — whisper.cpp built and models checked, same pins as Mac
-   [ ] WIN-016 · Tests that run on both systems — the test fakes move from bash to Node
+   [~] WIN-015 · Speech engine for Windows — whisper.cpp built and models checked, same pins as Mac
+   [x] WIN-016 · Tests that run on both systems — the test fakes move from bash to Node
    [ ] WIN-017 · Windows installer — an NSIS installer that installs, runs and uninstalls
    [ ] WIN-018 · Windows build in CI — every push builds the installer (no e2e in CI)
    [ ] WIN-019 · Windows-aware e2e tests — Mac-only checks skipped with reasons; layout at 150%
@@ -981,11 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ WIN-008 · Setup through PowerShell — Install and Sign in open PowerShell with Anthropic's Windows installer; setup warns about missing Git for Windows and names any file an antivirus blocked
-   Est. cost: ~$0.15 · Session running total: ~$0.88
-   Committed: feat(windows-version): WIN-008 (branch feature/windows-version) · Mac e2e 48/48
+✅ Wave 1 (parallel, autonomous) — WIN-009 ✅ · WIN-016 ✅ · WIN-012 🟡 · WIN-015 🟡
+   Windows window/tray/microphone/uninstall behind the platform module; e2e fakes in Node; Rust helper for hold-to-talk (tests pass, key presses need Windows); speech-engine build script (written, needs a Windows run)
+   Mac: 253 unit tests, e2e 48/48 · Rust: 36/36, Windows build compiles
+   Log: vibe/parallel/windows-wave-1-status.md
 
 ## What's next
-⬜ WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
-   Nothing changes on the Mac; on Windows, the window, tray icon and permission prompts behave like a Windows app.
-Say "next" to begin.
+🔄 Wave 2 (parallel) — WIN-010 toolbar room + Windows setup copy · WIN-011 tray icons · WIN-013 helper app/selection/paste · WIN-014 helper build script
+   Runs automatically (VIBE_MODE=autonomous).
