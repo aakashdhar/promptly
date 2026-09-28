@@ -363,12 +363,86 @@ describe('platform modules', () => {
     for (const key of Object.keys(darwin)) expect([key, typeof win32[key]]).toEqual([key, typeof darwin[key]])
   })
 
-  it('win32 placeholders answer "nothing here" instead of throwing', async () => {
+  it('win32 scheduling placeholders answer "nothing here" instead of throwing', async () => {
     expect(win32.PATH_DELIMITER).toBe(';')
-    expect(win32.binaryCandidates('claude', 'C:\\Users\\a')).toEqual([])
-    expect(await win32.shellWhich('claude')).toBe(null)
+    expect(win32.harnessLaunchAgents('C:\\Users\\a')).toEqual([])
     expect(await win32.unloadLaunchAgent('x')).toEqual({ ok: true })
-    expect((await win32.removeInstalledApp('C:\\x')).ok).toBe(false)
+    expect((await win32.loadLaunchAgent('x', 'y')).ok).toBe(false)
+  })
+})
+
+describe('finding tools on Windows', () => {
+  const win32 = require('../main/platform/win32.js')
+  const HOME = 'C:\\Users\\Zoë Smith'
+  const ENV = { APPDATA: `${HOME}\\AppData\\Roaming`, LOCALAPPDATA: `${HOME}\\AppData\\Local` }
+  // Stands in for execFile('where.exe', …) so the tests run on any system.
+  const whereReturns = (stdout, err = null) => (cmd, args, opts, cb) => { expect([cmd, args]).toEqual(['where.exe', ['claude']]); cb(err, stdout) }
+
+  it('looks where the native installer, npm, nvm-windows, Scoop and Chocolatey put Claude Code', () => {
+    const c = win32.binaryCandidates('claude', HOME, ENV)
+    expect(c).toContain(`${HOME}\\.local\\bin\\claude.exe`)
+    expect(c).toContain(`${HOME}\\AppData\\Roaming\\npm\\claude.cmd`)
+    expect(c).toContain('C:\\Program Files\\nodejs\\claude.cmd')
+    expect(c).toContain(`${HOME}\\scoop\\shims\\claude.exe`)
+    expect(c).toContain('C:\\ProgramData\\chocolatey\\bin\\claude.exe')
+    // A real .exe is preferred over npm's .cmd launcher.
+    expect(c.findIndex((p) => p.endsWith('.exe'))).toBeLessThan(c.findIndex((p) => p.endsWith('.cmd')))
+  })
+
+  it('keeps user names with spaces and accents intact', () => {
+    for (const name of ['claude', 'whisper', 'ffmpeg']) {
+      const c = win32.binaryCandidates(name, HOME, ENV)
+      expect(c.length).toBeGreaterThan(0)
+      for (const p of c.filter((p) => p.includes('Users'))) expect(p.startsWith(HOME + '\\')).toBe(true)
+    }
+    expect(win32.uninstallDataPaths(HOME, 'io.betacraft.promptly', ENV)).toEqual([
+      `${HOME}\\AppData\\Roaming\\Promptly`, `${HOME}\\AppData\\Local\\Promptly`,
+    ])
+  })
+
+  it('works out the per-user folders from the profile when the environment lacks them', () => {
+    expect(win32.binaryCandidates('claude', HOME, {})).toContain(`${HOME}\\AppData\\Roaming\\npm\\claude.cmd`)
+  })
+
+  it('finds Whisper and ffmpeg as .exe files', () => {
+    expect(win32.binaryCandidates('whisper', HOME, ENV)).toContain(`${HOME}\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\whisper.exe`)
+    expect(win32.binaryCandidates('ffmpeg', HOME, ENV)).toContain(`${HOME}\\scoop\\shims\\ffmpeg.exe`)
+    expect(win32.binaryCandidates('something-else', HOME, ENV)).toEqual([])
+  })
+
+  it('where.exe: several CRLF lines resolve to the first file that exists', async () => {
+    const stdout = 'C:\\gone\\claude.exe\r\nC:\\Users\\Zoë Smith\\AppData\\Roaming\\npm\\claude.cmd\r\nC:\\other\\claude.cmd\r\n'
+    const fileExists = (p) => !p.startsWith('C:\\gone')
+    expect(await win32.shellWhich('claude', { run: whereReturns(stdout), fileExists }))
+      .toBe('C:\\Users\\Zoë Smith\\AppData\\Roaming\\npm\\claude.cmd')
+  })
+
+  it('where.exe: nothing found, or only a WSL copy, means not found', async () => {
+    expect(await win32.shellWhich('claude', { run: whereReturns('', new Error('INFO: Could not find files')), fileExists: () => true })).toBe(null)
+    expect(await win32.shellWhich('claude', { run: whereReturns('\\\\wsl$\\Ubuntu\\usr\\bin\\claude\r\n'), fileExists: () => true })).toBe(null)
+    expect(await win32.shellWhich('claude', { run: whereReturns('\\\\wsl.localhost\\Ubuntu\\bin\\claude\r\n'), fileExists: () => true })).toBe(null)
+  })
+
+  it('nvm-windows versions are listed from NVM_HOME', () => {
+    const readdir = (dir) => { expect(dir).toBe('D:\\nvm'); return ['v20.19.0', 'v22.12.0', 'settings.txt'] }
+    expect(win32.nodeVersionBinDirs(HOME, readdir, { NVM_HOME: 'D:\\nvm' })).toEqual(['D:\\nvm\\v20.19.0', 'D:\\nvm\\v22.12.0'])
+    expect(win32.nodeVersionBinDirs(HOME, () => { throw new Error('ENOENT') }, ENV)).toEqual([])
+  })
+
+  it('the install folder is where Promptly runs from, but only when its uninstaller is there', () => {
+    const exe = `${HOME}\\AppData\\Local\\Programs\\Promptly\\Promptly.exe`
+    const dir = `${HOME}\\AppData\\Local\\Programs\\Promptly`
+    expect(win32.appBundlePath(exe, { fileExists: (p) => p === `${dir}\\Uninstall Promptly.exe` })).toBe(dir)
+    expect(win32.appBundlePath('C:\\dev\\node_modules\\electron\\electron.exe', { fileExists: () => false })).toBe(null)
+  })
+
+  it('removing the app runs its uninstaller silently, as an argument array', async () => {
+    const calls = []
+    const run = (cmd, args, opts, cb) => { calls.push([cmd, args]); cb(null) }
+    expect(await win32.removeInstalledApp('C:\\Program Files\\Promptly', { run })).toEqual({ ok: true })
+    expect(calls).toEqual([['C:\\Program Files\\Promptly\\Uninstall Promptly.exe', ['/S']]])
+    expect((await win32.removeInstalledApp(null, { run })).ok).toBe(false)
+    expect(await win32.resetMicrophonePermission()).toEqual({ ok: true })
   })
 })
 
