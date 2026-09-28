@@ -984,7 +984,7 @@ Say "next" to begin.
 ✅ WIN-006 · Key labels everywhere — every hint, tooltip, shortcut list, the pill and setup read key names from one place; Mac screens look the same
    Est. cost: ~$0.15 · Session running total: ~$0.61
    Committed: feat(windows-version): WIN-006 — c78f375 (branch feature/windows-version) · Mac e2e 48/48
-   Open question: Generate (⌘↵) and Hide history (⌃⌘S) only listen for Mac keys — fix for Windows?
+   + Generate and Hide history now listen for Ctrl+Enter and Ctrl+Shift+S on Windows (34b1e0d, Mac unchanged)
 
 ## What's next
 ⬜ WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
