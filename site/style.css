@@ -17,6 +17,9 @@
 @media (min-width: 700px) { :root { --gutter: 32px; } }
 
 *, *::before, *::after { box-sizing: border-box; }
+/* The Mac/Windows install copy swaps with the hidden attribute; classes like .install-grid set their
+   own display, which would otherwise beat the browser's [hidden] rule and show both. */
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }

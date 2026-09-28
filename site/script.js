@@ -11,6 +11,19 @@
     window.MotionPathPlugin && window.DrawSVGPlugin && !reduce);
   const hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+  /* ====================================================================
+     Windows visitors: the Windows copy is already in the HTML (hidden, or in data-win-* attributes),
+     so the page without JS, and every non-Windows visitor, gets the Mac download exactly as before.
+     This runs before SplitText and the motion setup so they split and measure the Windows text.
+     ==================================================================== */
+  const onWindows = navigator.userAgentData?.platform === 'Windows' || /Windows/.test(navigator.userAgent);
+  if (onWindows) {
+    $$('[data-win-href]').forEach((a) => { a.href = a.dataset.winHref; });
+    $$('[data-win-text]').forEach((el) => { el.textContent = el.dataset.winText; });
+    $$('[data-os="mac"]').forEach((el) => { el.hidden = true; });
+    $$('[data-os="win"]').forEach((el) => { el.hidden = false; });
+  }
+
   if (motion) {
     G.registerPlugin(ScrollTrigger, SplitText, Flip, MotionPathPlugin, DrawSVGPlugin);
     document.documentElement.classList.add('motion');
