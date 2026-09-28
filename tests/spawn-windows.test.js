@@ -90,8 +90,11 @@ describe.runIf(onMac)('spawns on the Mac are unchanged', () => {
 })
 
 describe('a .cmd engine or helper on Windows goes through cmd.exe', () => {
+  // Kept before any spy: on a Windows runner `platform` is this same module, so mocking with
+  // win32.spawnArgs looked up later would call the spy itself.
+  const winSpawnArgs = win32.spawnArgs
   it('starts a .cmd helper through cmd.exe /d /s /c', () => {
-    vi.spyOn(platform, 'spawnArgs').mockImplementation(win32.spawnArgs)
+    vi.spyOn(platform, 'spawnArgs').mockImplementation(winSpawnArgs)
     const bin = path.join(tmp, 'promptly-helper.cmd')
     fs.writeFileSync(bin, '')
     const calls = []
@@ -105,7 +108,7 @@ describe('a .cmd engine or helper on Windows goes through cmd.exe', () => {
   })
 
   it('runs a .cmd engine (named by the e2e suite) through cmd.exe, arguments on the command line', async () => {
-    vi.spyOn(platform, 'spawnArgs').mockImplementation(win32.spawnArgs)
+    vi.spyOn(platform, 'spawnArgs').mockImplementation(winSpawnArgs)
     const dir = engineDir('whisper-cli.cmd')
     const audio = path.join(tmp, 'win.wav')
     fs.writeFileSync(audio, silentWav(1))
