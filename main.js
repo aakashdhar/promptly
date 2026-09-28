@@ -120,6 +120,10 @@ let shortcutsRegistered = false;
 let registeredAccelerator = null;
 let pillWin = null;
 let pillSession = false;        // this recording is shown in the floating pill, not the bar
+// The window fills the screen (full screen or zoomed) and is in front, so the pill at the bottom
+// is where people look while talking. The pill then mirrors recording and thinking only; the
+// result stays in the window, and nothing is typed into another app.
+let pillMirror = false;
 let lastDictation = null;       // { text, typed } for the dictation just finished from another app
 let lastTypedText = null;       // text Promptly typed for you: not copied again, clipboard restored
 let lastPillState = null;
@@ -511,7 +515,7 @@ async function startFromHotkey() {
       selectedText: ctx.selectedText || null,
     };
     winSend('recording-context', context);
-    if (pillSession && hotkeyRecordingLive) pillSend({ state: 'recording', mode: currentModeLabel, context });
+    if ((pillSession || pillMirror) && hotkeyRecordingLive) pillSend({ state: 'recording', mode: currentModeLabel, context });
   }
 }
 
@@ -639,7 +643,23 @@ function pillSend(payload) {
 }
 
 // Moves a pill session along as the app state changes: recording → writing → done.
+function windowFillsScreen() {
+  return !!win && !win.isDestroyed() && win.isVisible() && (win.isFullScreen() || win.isMaximized());
+}
+
 function updatePill(appState) {
+  if (!pillSession && !pillMirror && appState === 'RECORDING' && windowFillsScreen()) pillMirror = true;
+  if (pillMirror) {
+    if (appState === 'RECORDING' || appState === 'PAUSED') {
+      pillSend({ ...(lastPillState?.state === 'recording' ? lastPillState : { mode: currentModeLabel }), state: 'recording', paused: appState === 'PAUSED' });
+    } else if (appState === 'THINKING' || appState === 'ITERATING') {
+      pillSend({ ...(lastPillState || {}), state: 'thinking', text: '' });
+    } else {
+      pillMirror = false;
+      pillSend({ state: 'hidden' });
+    }
+    return;
+  }
   if (!pillSession) return;
   if (appState === 'RECORDING' || appState === 'PAUSED') {
     pillSend({ ...(lastPillState || {}), state: 'recording', paused: appState === 'PAUSED' });
@@ -967,7 +987,7 @@ app.whenReady().then(async () => {
   // ── Hold to talk, pill, preferences ──
 
   ipcMain.on('audio-level', (_event, level) => {
-    if (pillSession && pillWin && !pillWin.isDestroyed()) pillWin.webContents.send('audio-level', level);
+    if ((pillSession || pillMirror) && pillWin && !pillWin.isDestroyed()) pillWin.webContents.send('audio-level', level);
     const wasQuiet = quietDetector.isQuiet();
     if (quietDetector.push(level) !== wasQuiet) sendMicQuiet(!wasQuiet);
   });
