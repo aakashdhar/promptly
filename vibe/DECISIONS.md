@@ -2219,3 +2219,25 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 >   both touch every screen); an AddInput component for ImageBuilderState's three add fields; linting the inline
 >   scripts in pill.html/splash.html (needs a new ESLint plugin); handleAbort's builder/email branches stay as
 >   defensive fallbacks.
+
+---
+## — Feature Start: Promptly for Windows — 2026-09-28
+> Folder: vibe/features/2026-09-27-windows-version/
+> Dictation, Craft modes, tray, hold-to-talk, selected text, setup and an NSIS installer on Windows 10 22H2+/11 x64; Harness scheduling and signing in phase 2.
+> Tasks: WIN-001 … WIN-026 | Estimated: approx. 69 hours
+> Drift logged below.
+---
+
+## D-WINDOWS-START — Windows version approved; e2e local-only — 2026-09-28
+> Unplanned addition. It reverses SPEC.md's "Windows / Linux — macOS only" line for Windows (Linux stays out);
+>   SPEC.md is updated in WIN-022 once the platform exists. Owner decisions from the spec (2026-09-27) stand:
+>   testing on a real Windows PC, unsigned first, Harness in phase 2, Rust helper.
+> CI on Windows builds and runs unit tests only; the e2e suite runs on the Windows PC. This follows the owner's
+>   2026-09-28 call to take e2e out of CI (flaky on hosted runners; the release bar is "works locally").
+
+---
+## 2026-09-28 — Spec review: add-feature (Promptly for Windows)
+> P0: 0 · P1: 5 · P2: 6
+> Action: fully resolved — all 5 P1 fixed (selection: Ctrl+C fallback kept), 1 P2 fixed, 5 P2 open
+> Report: vibe/spec-reviews/2026-09-28-add-feature-windows.md
+---

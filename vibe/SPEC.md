@@ -163,7 +163,7 @@ The user's speech transcript is appended after the system prompt as the user mes
 - ~~Multi-language speech~~ — out of scope
 - ~~User accounts / cloud sync~~ — out of scope
 - ~~Custom shortcuts~~ — out of scope
-- ~~Windows / Linux support~~ — macOS only
+- ~~Linux support~~ — out of scope (Windows is being added: vibe/features/2026-09-27-windows-version/, D-WINDOWS-START)
 
 ---
 

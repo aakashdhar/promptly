@@ -118,3 +118,26 @@ bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Releas
 ## Execution mode
 VIBE_MODE=manual
 
+---
+### Active Feature: Promptly for Windows
+> Folder: vibe/features/2026-09-27-windows-version/ | Added: 2026-09-28
+
+**Feature summary**: The same app on Windows 10 22H2+/11 x64 — Dictation, Craft modes, tray, hold-to-talk, selected text, setup, NSIS installer — behind the existing platform seams; Harness scheduling + signing in phase 2.
+**Files in scope**: main/platform/{index,win32,scheduler}.js · main/keys.js · main/{binaries,whisper,claude-setup,helper,tray-icon,hotkey,harness,llm}.js · main.js · preload.js · src/renderer/utils/keys.js + renderer files with ⌘⌥⌃ labels · ExpandedTransportBar.jsx · pill.html · splash.html · native/helper-win/ · scripts/{fetch-whisper.ps1,build-helper-win.ps1,publish-release.sh} · .github/workflows/windows.yml · e2e/fakes/ + e2e specs · package.json (build.win/nsis) · build/icon.ico · index.html + site/script.js · main/prompts/harness-files-win.txt (phase 2) · tests/
+**Files out of scope**: native/helper/main.swift behaviour · scripts/release.sh Mac steps, DMG layout, signing identity · main/llm.js call shape · history/config/profile formats · any Mac UI layout
+**Design system**: no new visual design — reuse index.css tokens; Windows only moves the title-bar controls right.
+
+**Conventions** (vibe/ARCHITECTURE.md): Claude only via main/llm.js with makeClaudeEnv · external binaries via execFile/spawn arg arrays (PowerShell and schtasks too; never shell strings) · OS specifics only in main/platform/* and the native helpers · IPC = preload method + ipcMain.handle, contract test green · modes in shared/modes.json, prompt text in main/prompts/ · theme tokens, 11–17 px type · zero runtime npm deps · code and doc commits separate.
+
+**Scope changes**: If user says "change:" — stop and run vibe-change-spec immediately.
+
+**Boundaries:**
+Always: follow ARCHITECTURE.md · run tests after every change · keep changes additive (Mac paths behave exactly as today) · update CODEBASE.md for new files/IPC · update TASKS.md after every task in plain English
+Ask first: changing an existing IPC response shape · touching shared components beyond key labels · anything that changes Mac behaviour
+Never: change behaviour of existing features · modify existing passing tests (extend them) · touch files not in FEATURE_PLAN.md
+
+**Session startup:** CLAUDE.md → vibe/CODEBASE.md → vibe/ARCHITECTURE.md → vibe/SPEC_INDEX.md → vibe/TASKS.md → FEATURE_TASKS.md → confirm the task before writing code.
+
+**Between tasks:** "next" triggers, in order: `npm test` · `npm run lint` · commit code `feat(windows-version): WIN-0NN — …` · log meaningful implementation decisions in vibe/IMPLEMENTATION_LOG.md · commit docs `docs(FEATURE_TASKS+TASKS): mark WIN-0NN done — windows` · re-read TASKS.md, state the next task, wait for "next".
+---
+

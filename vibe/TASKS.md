@@ -933,3 +933,45 @@ Final review gate run 2026-05-19. See blocking tasks below.
 ## Final gate — 2026-05-19 (Pass 2 — corrected)
 ✅ PASS — Score 9.8/10 — Grade A — 0 P0, 0 P1, 0 P2 — 2 P3 (monitor only)
 → Full report: vibe/reviews/final-review-2026-05-19-pass2.md
+
+---
+
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (0/26)
+> Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
+> Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
+
+   [ ] WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
+   [ ] WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
+   [ ] WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
+   [ ] WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
+   [ ] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
+   [ ] WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
+   [ ] WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
+   [ ] WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
+   [ ] WIN-009 · Windows window, tray and permissions — caption buttons, tray click, microphone settings link
+   [ ] WIN-010 · Toolbar room for caption buttons — nothing sits under minimise/maximise/close
+   [ ] WIN-011 · Windows icons — tray icons per state and an installer icon
+   [ ] WIN-012 · Windows helper: hotkeys — a small Rust helper that hears hold-to-talk
+   [ ] WIN-013 · Windows helper: app, selection, paste — selected text as context and typing into the app you're in
+   [ ] WIN-014 · Build the Windows helper — one command builds promptly-helper.exe
+   [ ] WIN-015 · Speech engine for Windows — whisper.cpp built and models checked, same pins as Mac
+   [ ] WIN-016 · Tests that run on both systems — the test fakes move from bash to Node
+   [ ] WIN-017 · Windows installer — an NSIS installer that installs, runs and uninstalls
+   [ ] WIN-018 · Windows build in CI — every push builds the installer (no e2e in CI)
+   [ ] WIN-019 · Windows-aware e2e tests — Mac-only checks skipped with reasons; layout at 150%
+   [ ] WIN-020 · Publish the installer — each release carries Promptly-Setup.exe
+   [ ] WIN-021 · Right download per visitor — the site offers Windows users the installer
+   [ ] WIN-022 · Docs for two platforms — where every platform seam lives
+   [ ] WIN-023 · Hands-on test on the Windows PC — the phase-1 checklist, end to end
+   [ ] WIN-024 · Scheduler for both systems — Harness schedules via launchd or Task Scheduler
+   [ ] WIN-025 · PowerShell harness files — Harness writes .ps1 on Windows
+   [ ] WIN-026 · Windows code signing — signed installer once you pick a signing method
+   → Full specs: vibe/features/2026-09-27-windows-version/FEATURE_TASKS.md (agent use)
+
+## What just happened
+✅ Windows feature kit ready — spec, plan (approved 2026-09-28) and 26 tasks
+
+## What's next
+⬜ WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
+   Nothing changes on the Mac; it's the seam every later Windows task plugs into.
+Say "next" to begin.

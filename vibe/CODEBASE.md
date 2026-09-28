@@ -2,6 +2,7 @@
 > Live codebase snapshot. Updated after every task that adds or modifies a file.
 > Agent reads this at session start to understand current state without re-reading all files.
 > Last updated: 2026-09-24 (Foundation pass — main/ modules, shared/modes.json, tests + e2e, defect fixes)
+> 📝 2026-09-28 · Verified during Windows version planning (current through v2.19.1 and the audit fixes)
 
 ---
 
