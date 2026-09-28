@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- a stand-in CLI: printing its answer is its job */
 // Fake `claude` CLI for ui.spec: answers each Promptly request with realistic content from
 // <dir>/answers.json. Its first argument (fixed by the launcher) is that folder, which also holds
 // the switches: signed-out, delay (seconds), fail.
