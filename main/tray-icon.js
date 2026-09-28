@@ -1,6 +1,7 @@
 'use strict';
 
-// Draws the 22pt (@2x) menu bar microphone as a PNG buffer, with no Electron dependency.
+// Draws the 22pt (@2x) menu bar microphone as a PNG buffer, with no Electron dependency,
+// and the coloured 16/32 px Windows tray icons.
 // States: idle | hidden | recording | thinking | ready | builder.
 
 const { deflateSync } = require('zlib');
@@ -122,4 +123,88 @@ function isTemplateState(state) {
   return state === 'idle' || state === 'hidden';
 }
 
-module.exports = { drawMicIconPng, isTemplateState, pngEncode };
+// ── Windows tray ──────────────────────────────────────────────────────────────
+// Windows has no template images and the taskbar may be light or dark, so each state is a
+// coloured disc with a light mic: the disc reads on a light taskbar, the mic on a dark one.
+// Drawn at 16 px and 32 px for 100% and 200% display scaling.
+
+const WIN_TRAY_SIZES = [16, 32];
+
+// Disc colours match the Mac status dots; idle is the app icon's navy.
+const WIN_DISC = {
+  idle:      [28, 28, 46],
+  recording: [255, 59, 48],
+  thinking:  [10, 132, 255],
+  ready:     [52, 199, 89],
+};
+const WIN_IDLE_MIC = [130, 190, 255];
+
+// Shapes on a 32-unit grid, so both sizes share one drawing.
+function inWinMic(x, y) {
+  // Capsule body, x 12.5..19.5, y 5.5..19.5
+  const cy = Math.min(Math.max(y, 9), 16);
+  if ((x - 16) ** 2 + (y - cy) ** 2 <= 3.5 ** 2) return true;
+  // Stand arc below the body
+  const d2 = (x - 16) ** 2 + (y - 15) ** 2;
+  if (y >= 15 && d2 >= 5.75 ** 2 && d2 <= 7.75 ** 2) return true;
+  // Stem and base
+  if (x >= 15 && x <= 17 && y >= 22 && y <= 25.5) return true;
+  return x >= 11.5 && x <= 20.5 && y >= 24.5 && y <= 26.5;
+}
+
+function inWinSlash(x, y) {
+  return Math.abs(x - y) <= 1.5 && x >= 7 && x <= 25;
+}
+
+// RGBA pixels for one state at one size. With showDot off, recording and thinking fall back
+// to the idle disc, so the pulse blinks the whole icon the way the Mac pulse blinks the dot.
+function drawWinTrayIconRgba(state, size, showDot = true) {
+  const hidden = state === 'hidden';
+  const lit = !hidden && state !== 'idle' && showDot;
+  const disc = lit ? (WIN_DISC[state] || WIN_DISC.ready) : WIN_DISC.idle;
+  const mic = lit ? [255, 255, 255] : WIN_IDLE_MIC;
+  // The hidden icon is the idle one, dimmed and struck through like the Mac mic-off icon, but
+  // dimmed less: hidden is a tray app's resting state, so it must stay easy to spot.
+  const alpha = hidden ? 0.8 : 1;
+
+  const SS = 4;
+  const unit = 32 / size;
+  const px = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let r = 0, g = 0, b = 0, a = 0;
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) {
+          const ux = (x + (sx + 0.5) / SS) * unit;
+          const uy = (y + (sy + 0.5) / SS) * unit;
+          let c = null;
+          if ((ux - 16) ** 2 + (uy - 16) ** 2 <= 15.5 ** 2) c = disc;
+          if (c && (inWinMic(ux, uy) || (hidden && inWinSlash(ux, uy)))) c = mic;
+          if (c) { r += c[0]; g += c[1]; b += c[2]; a += 1; }
+        }
+      }
+      if (!a) continue;
+      const i = (y * size + x) * 4;
+      px[i] = Math.round(r / a);
+      px[i + 1] = Math.round(g / a);
+      px[i + 2] = Math.round(b / a);
+      px[i + 3] = Math.round((a / (SS * SS)) * alpha * 255);
+    }
+  }
+  return px;
+}
+
+// The Windows tray image for a state: one PNG per scale factor, never a template image.
+function drawWinTrayIcons(state, showDot = true) {
+  return {
+    template: false,
+    representations: WIN_TRAY_SIZES.map((size) => ({
+      scaleFactor: size / 16,
+      width: size,
+      height: size,
+      buffer: pngEncode(size, size, drawWinTrayIconRgba(state, size, showDot)),
+    })),
+  };
+}
+
+module.exports = { drawMicIconPng, isTemplateState, pngEncode, WIN_TRAY_SIZES, drawWinTrayIconRgba, drawWinTrayIcons };

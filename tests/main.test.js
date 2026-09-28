@@ -3,6 +3,8 @@ import { createRequire } from 'module'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import zlib from 'zlib'
+import crypto from 'crypto'
 import { EventEmitter } from 'events'
 import * as rendererKeys from '../src/renderer/utils/keys.js'
 
@@ -16,7 +18,7 @@ const darwin = require('../main/platform/darwin.js')
 const { spawn } = require('child_process')
 const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv, findBundledEngine, cleanTranscript, silentWav, createWhisperRunner } = require('../main/whisper.js')
 const { getClaudeStatus, installScript, loginScript, shellQuote, psQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
-const { drawMicIconPng, isTemplateState } = require('../main/tray-icon.js')
+const { drawMicIconPng, isTemplateState, drawWinTrayIcons, drawWinTrayIconRgba, WIN_TRAY_SIZES } = require('../main/tray-icon.js')
 const { keysFor, formatCombo } = require('../main/keys.js')
 
 let tmp
@@ -751,6 +753,81 @@ describe('tray icon', () => {
     }
     expect(isTemplateState('idle')).toBe(true)
     expect(isTemplateState('recording')).toBe(false)
+  })
+
+  // Header + inflated pixels, so a zlib version change can't fail it but any pixel change does.
+  function pngPixels(png) {
+    const parts = []
+    for (let off = 8; off < png.length;) {
+      const len = png.readUInt32BE(off)
+      const type = png.toString('ascii', off + 4, off + 8)
+      if (type === 'IHDR') parts.push(png.subarray(off + 8, off + 8 + len))
+      if (type === 'IDAT') parts.push(zlib.inflateSync(png.subarray(off + 8, off + 8 + len)))
+      off += 12 + len
+    }
+    return Buffer.concat(parts)
+  }
+
+  it('keeps the Mac menu bar icons pixel for pixel', () => {
+    const hash = crypto.createHash('sha256')
+    for (const state of ['idle', 'hidden', 'recording', 'thinking', 'ready', 'builder'])
+      for (const isDark of [false, true])
+        for (const showDot of [true, false]) hash.update(pngPixels(drawMicIconPng(state, isDark, showDot)))
+    expect(hash.digest('hex')).toBe('c32bb911dd02641f5130e6b76563011980af73cb0e3243fbd4d19c70e7fdfa07')
+  })
+
+  it('draws Windows tray icons in colour at 16 and 32 px, never as template images', () => {
+    expect(WIN_TRAY_SIZES).toEqual([16, 32])
+    for (const state of ['idle', 'hidden', 'recording', 'thinking', 'ready', 'builder']) {
+      for (const showDot of [true, false]) {
+        const icon = drawWinTrayIcons(state, showDot)
+        expect(icon.template).toBe(false)
+        expect(icon.representations.map((r) => [r.scaleFactor, r.buffer.readUInt32BE(16), r.buffer.readUInt32BE(20)]))
+          .toEqual([[1, 16, 16], [2, 32, 32]])
+      }
+    }
+  })
+
+  it('gives each Windows state its own colour, readable on light and dark taskbars', () => {
+    const centre = (state, showDot = true) => {
+      // A disc pixel left of the mic: the state colour.
+      const px = drawWinTrayIconRgba(state, 32, showDot)
+      const i = (16 * 32 + 5) * 4
+      return [px[i], px[i + 1], px[i + 2], px[i + 3]]
+    }
+    const colours = ['idle', 'recording', 'thinking', 'ready'].map((s) => centre(s).join())
+    expect(new Set(colours).size).toBe(4)
+    // The pulse's off phase falls back to idle.
+    expect(centre('recording', false)).toEqual(centre('idle'))
+    // Every icon has a dark part (seen on a light taskbar) and a light part (seen on a dark one).
+    const luma = (px, i) => 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]
+    for (const state of ['idle', 'hidden', 'recording', 'thinking', 'ready']) {
+      const px = drawWinTrayIconRgba(state, 16)
+      let min = 255, max = 0
+      for (let i = 0; i < px.length; i += 4) {
+        if (px[i + 3] < 200) continue
+        min = Math.min(min, luma(px, i)); max = Math.max(max, luma(px, i))
+      }
+      expect(max - min).toBeGreaterThan(60)
+    }
+  })
+
+  it('build/icon.ico holds every Windows size from 16 to 256 px', () => {
+    const { ICO_SIZES } = require('../scripts/generate-icon.js')
+    const ico = fs.readFileSync(path.join(import.meta.dirname, '..', 'build', 'icon.ico'))
+    expect(ico.readUInt16LE(2)).toBe(1)
+    const count = ico.readUInt16LE(4)
+    const sizes = []
+    for (let k = 0; k < count; k++) {
+      const e = 6 + 16 * k
+      const size = ico[e] || 256
+      const data = ico.subarray(ico.readUInt32LE(e + 12), ico.readUInt32LE(e + 12) + ico.readUInt32LE(e + 8))
+      if (size === 256) expect(data.subarray(1, 4).toString()).toBe('PNG')
+      else expect([data.readUInt32LE(0), data.readInt32LE(4), data.readUInt16LE(14)]).toEqual([40, size, 32])
+      sizes.push(size)
+    }
+    expect(sizes).toEqual(ICO_SIZES)
+    expect(sizes).toEqual(expect.arrayContaining([16, 32, 48, 256]))
   })
 })
 
