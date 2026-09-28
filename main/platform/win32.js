@@ -5,7 +5,7 @@
 // "nothing here" so callers take the same paths as on a Mac with nothing scheduled.
 
 const fs = require('fs');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 // Windows paths are built with path.win32 so they come out the same when tests run on a Mac.
 const path = require('path').win32;
 
@@ -168,6 +168,47 @@ function removeInstalledApp(installDir, { run = execFile } = {}) {
 // The built-in speech engine's file name (vendor/whisper → resources\\whisper).
 const WHISPER_CLI = 'whisper-cli.exe';
 
+// ── Claude Code setup ──
+
+// Anthropic's official installer for Windows.
+const INSTALL_COMMAND = 'irm https://claude.ai/install.ps1 | iex';
+const SETUP_SCRIPT = 'powershell';
+const SETUP_TERMINAL = 'PowerShell';
+
+// Runs a setup .ps1 in its own PowerShell window, left open so the person can read it.
+// The script is a file passed with -File, never a command string. Resolves '' or an error
+// message, like shell.openPath on the Mac.
+function openSetupScript(file, { run = spawn } = {}) {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-NoExit', '-File', file],
+        { detached: true, stdio: 'ignore', windowsHide: false });
+    } catch (err) { resolve(err.message); return; }
+    child.once('spawn', () => { child.unref(); resolve(''); });
+    child.once('error', (err) => resolve(err.message));
+  });
+}
+
+// Claude Code on Windows runs its shell commands through Git Bash.
+async function checkPrerequisites({ which = shellWhich } = {}) {
+  return { gitMissing: !(await which('git')) };
+}
+
+// Antivirus or SmartScreen can quarantine an unsigned exe; then it fails to start at all
+// (an error code like EACCES or ENOENT), where a working one exits with some number.
+// Returns the file names of the ones that couldn't start.
+async function blockedBinaries(checks, { run = execFile, fileExists = exists } = {}) {
+  const results = await Promise.all(checks.filter((c) => c.file && fileExists(c.file)).map((c) => new Promise((resolve) => {
+    run(c.file, c.args, { timeout: 5000, windowsHide: true }, (err) => {
+      resolve(err && typeof err.code === 'string' && !err.killed ? path.basename(c.file) : null);
+    });
+  })));
+  return results.filter(Boolean);
+}
+
+const HELPER_BIN = 'promptly-helper.exe';
+
 // ── Starting command-line tools ──
 
 const paths = path;
@@ -262,4 +303,11 @@ module.exports = {
   spawnArgs,
   USER_ENV_VARS,
   WHISPER_CLI,
+  INSTALL_COMMAND,
+  SETUP_SCRIPT,
+  SETUP_TERMINAL,
+  openSetupScript,
+  checkPrerequisites,
+  blockedBinaries,
+  HELPER_BIN,
 };

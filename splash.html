@@ -193,7 +193,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
       <div class="status warn"><span class="dot"></span><div>Claude Code isn't installed yet.</div></div>
       <div class="actions"><button class="btn" id="claude-install">Install Claude Code</button></div>
       <div class="cmd"><code id="install-cmd">curl -fsSL https://claude.ai/install.sh | bash</code><button class="btn link" id="copy-install">Copy</button></div>
-      <p class="hint">This opens Terminal and runs Anthropic's installer. Promptly notices when it's done.</p>
+      <p class="hint">This opens <span data-terminal>Terminal</span> and runs Anthropic's installer. Promptly notices when it's done.</p>
       <details class="manual">
         <summary>Already installed somewhere else?</summary>
         <div class="path-row">
@@ -206,7 +206,7 @@ details.manual summary { cursor: pointer; width: fit-content; }
     <div class="state" id="claude-logged-out">
       <div class="status warn"><span class="dot"></span><div>Claude Code is installed, but not signed in.</div></div>
       <div class="actions"><button class="btn" id="claude-login">Sign in to Claude</button></div>
-      <p class="hint">This opens Terminal and your browser to sign in. Promptly notices when it's done.</p>
+      <p class="hint">This opens <span data-terminal>Terminal</span> and your browser to sign in. Promptly notices when it's done.</p>
     </div>
 
     <div class="state" id="s1-notresponding">
@@ -221,6 +221,21 @@ details.manual summary { cursor: pointer; width: fit-content; }
           <button class="btn secondary" onclick="s1NotrespondingUseManualPath()">Use this path</button>
         </div>
       </details>
+    </div>
+
+    <!-- Windows only: shown when setup-info reports a problem (never on a Mac). -->
+    <div class="status warn" id="setup-git" hidden>
+      <span class="dot"></span>
+      <div>Claude Code needs Git for Windows.
+        <div class="detail">Install it, then come back and choose Check again.</div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" id="setup-git-link">Get Git for Windows</button></div>
+      </div>
+    </div>
+    <div class="status warn" id="setup-blocked" hidden>
+      <span class="dot"></span>
+      <div>Your antivirus stopped <span id="setup-blocked-names"></span> from running.
+        <div class="detail">Promptly needs it to work. Allow it in Windows Security (Protection history → Allow) or in your antivirus, then restart Promptly.</div>
+      </div>
     </div>
 
     <div class="spacer"></div>
@@ -363,8 +378,20 @@ async function runScreen1(opts = {}) {
     claudeChecking = false;
   }
 }
+// The install command and terminal name for this system, and any setup blocker (Windows only).
+async function applySetupInfo() {
+  const info = api.setupInfo ? await api.setupInfo().catch(() => null) : null;
+  if (!info) return;
+  document.getElementById('install-cmd').textContent = info.installCommand;
+  document.querySelectorAll('[data-terminal]').forEach((el) => { el.textContent = info.terminal; });
+  document.getElementById('setup-git').hidden = !info.gitMissing;
+  document.getElementById('setup-blocked').hidden = !info.blocked.length;
+  document.getElementById('setup-blocked-names').textContent = info.blocked.join(' and ');
+}
+document.getElementById('setup-git-link').addEventListener('click', () => api.splashOpenURL('https://git-scm.com/download/win'));
+
 async function checkClaudeScreen({ quiet = false } = {}) {
-  if (!quiet) showState('claude', 'claude-checking');
+  if (!quiet) { showState('claude', 'claude-checking'); applySetupInfo(); }
   const status = await api.claudeStatus();
   if (!status.installed && !status.path) {
     showState('claude', 'claude-not-installed');

@@ -146,6 +146,33 @@ async function removeInstalledApp(bundlePath) {
 // The built-in speech engine's file name (vendor/whisper → Contents/Resources/whisper).
 const WHISPER_CLI = 'whisper-cli';
 
+// ── Claude Code setup ──
+
+// Anthropic's official native installer; puts `claude` in ~/.local/bin.
+const INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash';
+// Setup scripts are bash .command files, which open in Terminal.
+const SETUP_SCRIPT = 'bash';
+const SETUP_TERMINAL = 'Terminal';
+
+// Opening a .command runs it in a new Terminal window; no Automation permission needed.
+// openPath is Electron's shell.openPath (resolves '' or an error message).
+function openSetupScript(file, { openPath }) {
+  return openPath(file);
+}
+
+// Nothing extra to install on a Mac.
+async function checkPrerequisites() {
+  return { gitMissing: false };
+}
+
+// The Mac's binaries run from inside the signed app; there's no antivirus quarantine to detect.
+async function blockedBinaries() {
+  return [];
+}
+
+// The hold-to-talk helper's file name (vendor/helper → Contents/Resources/helper).
+const HELPER_BIN = 'promptly-helper';
+
 // ── Starting command-line tools ──
 
 // The path module for this system's paths.
@@ -236,4 +263,11 @@ module.exports = {
   spawnArgs,
   USER_ENV_VARS,
   WHISPER_CLI,
+  INSTALL_COMMAND,
+  SETUP_SCRIPT,
+  SETUP_TERMINAL,
+  openSetupScript,
+  checkPrerequisites,
+  blockedBinaries,
+  HELPER_BIN,
 };

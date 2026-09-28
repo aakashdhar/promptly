@@ -85,7 +85,7 @@ const BUNDLED_WHISPER_DIR = (IS_E2E && process.env.PROMPTLY_WHISPER_DIR)
 
 // Hold-to-talk / context helper (native/helper), built by scripts/build-helper.sh.
 const HELPER_PATH = (IS_E2E && process.env.PROMPTLY_HELPER)
-  || (app.isPackaged ? path.join(process.resourcesPath, 'helper', 'promptly-helper') : path.join(__dirname, 'vendor', 'helper', 'promptly-helper'));
+  || (app.isPackaged ? path.join(process.resourcesPath, 'helper', platform.HELPER_BIN) : path.join(__dirname, 'vendor', 'helper', platform.HELPER_BIN));
 
 // Window backgrounds per theme; must match --bg in src/renderer/index.css and splash.html.
 const WINDOW_BG = { dark: '#1C1C1F', light: '#F4F4F6' };
@@ -986,9 +986,22 @@ app.whenReady().then(async () => {
     return claudeSetup.getClaudeStatus(claudePath);
   });
 
+  // What the setup screen says for this system, and anything that stops setup working on it:
+  // Git for Windows missing, or an antivirus that quarantined the speech engine or the helper.
+  ipcMain.handle('setup-info', async () => {
+    const [{ gitMissing }, blocked] = await Promise.all([
+      platform.checkPrerequisites(),
+      platform.blockedBinaries([
+        { file: path.join(BUNDLED_WHISPER_DIR, platform.WHISPER_CLI), args: ['--help'] },
+        { file: HELPER_PATH, args: ['--version'] },
+      ]),
+    ]);
+    return { installCommand: claudeSetup.INSTALL_COMMAND, terminal: platform.SETUP_TERMINAL, gitMissing, blocked };
+  });
+
   ipcMain.handle('claude-install', async () => {
     const script = claudeSetup.installScript(claudeSetup.defaultScriptDir());
-    const error = await shell.openPath(script);
+    const error = await platform.openSetupScript(script, { openPath: (file) => shell.openPath(file) });
     return { ok: !error, error: error || null, command: claudeSetup.INSTALL_COMMAND };
   });
 
@@ -996,7 +1009,7 @@ app.whenReady().then(async () => {
     if (!claudePath) claudePath = await resolveClaudePath(config.read().claudePath);
     if (!claudePath) return { ok: false, error: 'Claude Code is not installed yet' };
     const script = claudeSetup.loginScript(claudeSetup.defaultScriptDir(), claudePath);
-    const error = await shell.openPath(script);
+    const error = await platform.openSetupScript(script, { openPath: (file) => shell.openPath(file) });
     return { ok: !error, error: error || null };
   });
 

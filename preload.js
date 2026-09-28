@@ -57,6 +57,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   splashOpenURL: (url) =>
     ipcRenderer.invoke('splash-open-url', url),
 
+  setupInfo: () =>
+    ipcRenderer.invoke('setup-info'),
+
   checkSetupComplete: () =>
     ipcRenderer.invoke('check-setup-complete'),
 

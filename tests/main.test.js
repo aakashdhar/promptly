@@ -15,7 +15,7 @@ const { resolveFfmpegPath, makeClaudeEnv, terminate } = require('../main/binarie
 const darwin = require('../main/platform/darwin.js')
 const { spawn } = require('child_process')
 const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv, findBundledEngine, cleanTranscript, silentWav, createWhisperRunner } = require('../main/whisper.js')
-const { getClaudeStatus, installScript, loginScript, shellQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
+const { getClaudeStatus, installScript, loginScript, shellQuote, psQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
 const { drawMicIconPng, isTemplateState } = require('../main/tray-icon.js')
 const { keysFor, formatCombo } = require('../main/keys.js')
 
@@ -767,6 +767,84 @@ describe('Claude Code setup', () => {
     const env = makeClaudeEnv('/x/claude', { PATH: '/usr/bin' })
     expect(env.USER).toBe(os.userInfo().username)
     expect(makeClaudeEnv('/x/claude', { PATH: '/usr/bin', USER: 'someone' }).USER).toBe('someone')
+  })
+})
+
+describe('Claude Code setup on Windows', () => {
+  const win32 = require('../main/platform/win32.js')
+  const dir = () => path.join(tmp, 'win-scripts')
+
+  it('the Mac install and sign-in scripts are exactly what they were', () => {
+    expect(fs.readFileSync(installScript(path.join(tmp, 'mac-scripts')), 'utf8')).toBe([
+      '#!/bin/bash', 'clear',
+      'echo "Installing Claude Code for Promptly…"', 'echo',
+      'echo "$ curl -fsSL https://claude.ai/install.sh | bash"', 'curl -fsSL https://claude.ai/install.sh | bash',
+      'echo', 'echo "You can close this window and go back to Promptly — it will notice on its own."', '',
+    ].join('\n'))
+    expect(fs.readFileSync(loginScript(path.join(tmp, 'mac-scripts'), '/Users/a/.local/bin/claude'), 'utf8')).toBe([
+      '#!/bin/bash', 'clear',
+      'echo "Signing in to Claude Code for Promptly. Your browser will open to finish signing in."', 'echo',
+      "'/Users/a/.local/bin/claude' auth login",
+      'echo', 'echo "You can close this window and go back to Promptly — it will notice on its own."', '',
+    ].join('\n'))
+  })
+
+  it('the Windows install script is a UTF-8 .ps1 with the official PowerShell installer', () => {
+    const file = installScript(dir(), win32)
+    expect(file.endsWith('Install Claude Code.ps1')).toBe(true)
+    const body = fs.readFileSync(file, 'utf8')
+    expect(body.startsWith('\ufeff')).toBe(true)
+    expect(body.split('\r\n')).toContain('irm https://claude.ai/install.ps1 | iex')
+    expect(win32.INSTALL_COMMAND).toBe('irm https://claude.ai/install.ps1 | iex')
+    expect(body).toContain('go back to Promptly')
+  })
+
+  it('the Windows sign-in script calls the claude path quoted for PowerShell', () => {
+    const claude = "C:\\Users\\Zoë O'Neil\\AppData\\Roaming\\npm\\claude.cmd"
+    const body = fs.readFileSync(loginScript(dir(), claude, win32), 'utf8')
+    expect(body.split('\r\n')).toContain(`& 'C:\\Users\\Zoë O''Neil\\AppData\\Roaming\\npm\\claude.cmd' auth login`)
+    expect(psQuote("it's")).toBe("'it''s'")
+  })
+
+  it('PowerShell runs the script as a file in its own window, never a command string', async () => {
+    const calls = []
+    const run = (cmd, args, opts) => {
+      calls.push([cmd, args, opts])
+      const child = new EventEmitter(); child.unref = () => { child.unrefed = true }
+      setTimeout(() => child.emit('spawn'), 1)
+      return child
+    }
+    expect(await win32.openSetupScript('C:\\x\\Install Claude Code.ps1', { run })).toBe('')
+    expect(calls).toEqual([['powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-NoExit', '-File', 'C:\\x\\Install Claude Code.ps1'],
+      { detached: true, stdio: 'ignore', windowsHide: false }]])
+    const failing = () => { const c = new EventEmitter(); setTimeout(() => c.emit('error', new Error('spawn powershell.exe ENOENT')), 1); return c }
+    expect(await win32.openSetupScript('C:\\x\\a.ps1', { run: failing })).toMatch(/ENOENT/)
+  })
+
+  it('the Mac opens its script with the system opener, as before', async () => {
+    const opened = []
+    expect(await darwin.openSetupScript('/tmp/x.command', { openPath: async (f) => { opened.push(f); return '' } })).toBe('')
+    expect(opened).toEqual(['/tmp/x.command'])
+    expect(await darwin.checkPrerequisites()).toEqual({ gitMissing: false })
+    expect(await darwin.blockedBinaries([{ file: '/x', args: [] }])).toEqual([])
+  })
+
+  it('a missing Git for Windows is reported, not a crash', async () => {
+    expect(await win32.checkPrerequisites({ which: async () => null })).toEqual({ gitMissing: true })
+    expect(await win32.checkPrerequisites({ which: async () => 'C:\\Program Files\\Git\\cmd\\git.exe' })).toEqual({ gitMissing: false })
+  })
+
+  it('names a speech engine or helper the antivirus stopped from starting', async () => {
+    const errorFor = { 'whisper-cli.exe': Object.assign(new Error('spawn EACCES'), { code: 'EACCES' }), 'promptly-helper.exe': null }
+    const run = (file, args, opts, cb) => cb(errorFor[path.win32.basename(file)])
+    const checks = [{ file: 'C:\\P\\whisper\\whisper-cli.exe', args: ['--help'] }, { file: 'C:\\P\\helper\\promptly-helper.exe', args: ['--version'] }]
+    expect(await win32.blockedBinaries(checks, { run, fileExists: () => true })).toEqual(['whisper-cli.exe'])
+    // Running and exiting with an error number means it isn't blocked; a timeout isn't either; a missing file is skipped.
+    const exits = (file, args, opts, cb) => cb(Object.assign(new Error('exit'), { code: 1 }))
+    expect(await win32.blockedBinaries(checks, { run: exits, fileExists: () => true })).toEqual([])
+    const slow = (file, args, opts, cb) => cb(Object.assign(new Error('timeout'), { code: 'ETIMEDOUT', killed: true }))
+    expect(await win32.blockedBinaries(checks, { run: slow, fileExists: () => true })).toEqual([])
+    expect(await win32.blockedBinaries(checks, { run, fileExists: () => false })).toEqual([])
   })
 })
 
