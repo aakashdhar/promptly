@@ -147,7 +147,7 @@ Audit whisper.js and main.js for `/tmp` or `/`-joined paths; everything goes thr
 
 ---
 ### WIN-005 · One source for key names (⌘ vs Ctrl) and a get-platform IPC
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#7-ipc--api-changes, #3 (5)
 - **Dependencies**: None
@@ -160,8 +160,8 @@ Renderer `utils/keys.js` loads it once at startup (default: the Mac set, so firs
 and exposes `keys` + `combo(...)`.
 
 **Acceptance criteria**:
-- [ ] On macOS every value equals the symbols used today
-- [ ] IPC contract test passes with the new channel
+- [x] On macOS every value equals the symbols used today
+- [x] IPC contract test passes with the new channel
 
 **Self-verify**: Re-read FEATURE_SPEC.md#7. Tick every criterion.
 **Test requirement**: unit tests for keysFor/formatCombo on both platforms.
@@ -171,7 +171,9 @@ and exposes `keys` + `combo(...)`.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- Mac Enter is `↵` (what the renderer shows today in ⌘↵), not `↩` as the task text said — the criterion is "equals the symbols used today".
+- main.jsx awaits `loadKeys()` before the first render, so Windows never flashes ⌘ then Ctrl; a failed or missing IPC keeps the Mac set. Costs one IPC round trip before first paint (e2e 48/48).
+- The renderer's Mac default duplicates main's set; tests/main.test.js asserts they're equal. pill.html and splash.html (vanilla) pick up `getPlatform()` in WIN-006.
 ---
 
 ---

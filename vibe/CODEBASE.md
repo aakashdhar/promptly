@@ -37,6 +37,7 @@
 | `e2e/layout-audit.mjs` | In-page checks: clipped or cut-off text, off-window/edge-hugging content (<12 px), overlapping controls, sideways-scrolling text, text under 11 px, contrast under 4.5:1 (3:1 large) | `auditLayout`, `formatIssues` |
 | `native/helper/main.swift` | promptly-helper: JSON-lines protocol; active event tap for the talk key (down/up/cancel), frontmost app, selected text via AX | — |
 | `main/helper.js` | Spawns the helper, request/response with ids + timeouts, restarts on crash, reports trust/tap status | `createHelper()` → `{ start, stop, isRunning, status, configure, context, requestAccess, refreshStatus }` |
+| `main/keys.js` | Key names per system: ⌘ ⌥ ⌃ ⇧ ↵ on a Mac, Ctrl/Alt/Shift/Enter on Windows; combos join with `+` only on Windows. Served to the renderer by `get-platform` | `keysFor(platform)`, `formatCombo(parts, platform)` |
 | `main/hotkey.js` | Hotkey presets and the hold (≥350 ms) vs tap state machine | `HOTKEY_PRESETS`, `getPreset`, `createHoldToTalk` |
 | `main/dictation.js` | Dictation tidy: drops only hesitation sounds (um, uh, er, hmm), writes spoken money and percentages as symbols (12,450 rupees → ₹12,450, 25 percent → 25%), turns "new line"/"new paragraph" into breaks, reports what it removed; never rewrites | `tidyDictation(text, { removeFillers, symbols })` → `{ text, removed }`, `describeRemoved`, `formatSymbols` |
 | `src/renderer/hooks/useHotkeyWords.js` | Names the talk shortcut that works right now for hints ("Double-tap ⌃ and talk"), refreshed on focus and when Accessibility changes | `useHotkeyWords()` → `{ short, action }` |
@@ -67,6 +68,7 @@
 | `main/config.js` | config.json store with atomic writes; a file that won't parse is renamed `config.json.corrupt-<ts>` before anything writes over it; the parsed file is cached until its mtime/size changes, and callers get copies | `createConfigStore(path, { onCorrupt })` → `{ read, write, update }` |
 | `main/log.js` | File logger: ~/Library/Logs/Promptly/main.log, rotates at 1 MB | `createLogger(dir)` |
 | `main/tray-icon.js` | Draws the menu bar mic icon as a PNG buffer | `drawMicIconPng`, `isTemplateState` |
+| `src/renderer/utils/keys.js` | Renderer key names: `keys` starts as the Mac set, `loadKeys()` (awaited in main.jsx before the first render) takes main's set via `getPlatform()`, `combo(...parts)` | — |
 | `src/renderer/utils/modes.js` | Renderer view of the registry: resolveModeKey (aliases), modeInfo, modeLabel, isScorable (Score only on prompts), `modeTone`/`modeTextColor` (tag, pill and accent colours from each mode's `tone`), `isBuilderMode` | — |
 | `src/renderer/components/VideoBuilderState.constants.js` | Video chip rows (incl. 4/6/8-second length) and `chipOptionsText()` for the first Claude call | — |
 | `shared/modes.json` | The single mode registry: key, label, group, kind (dictation/standalone/builder), description, dot colour, `tone` (`rgb` for tags/pill/accents, `text` for coloured words), profile, `destination` (told where the result goes), `promptStyle` (offered for Make it a prompt); `aliases` maps retired keys to their replacements | — |

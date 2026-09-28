@@ -936,7 +936,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (4/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (5/26)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
@@ -944,7 +944,7 @@ Final review gate run 2026-05-19. See blocking tasks below.
    [x] WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
    [x] WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
    [x] WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
-   [ ] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
+   [x] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
    [ ] WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
    [ ] WIN-007 · Windows hotkeys — double-tap Ctrl by default, plus Alt+Space and three more
    [ ] WIN-008 · Setup through PowerShell — Install Claude Code and Sign in open PowerShell on Windows
@@ -981,11 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ WIN-004 · Whisper names from the platform — the built-in speech engine is whisper-cli.exe on Windows (unchanged on Mac); Whisper's environment keeps Windows' Path key
-   Est. cost: ~$0.05 · Session running total: ~$0.34
-   Committed: feat(windows-version): WIN-004 (branch feature/windows-version)
+✅ WIN-005 · One source for key names — main/keys.js gives ⌘ ⌥ ⌃ on Mac and Ctrl/Alt on Windows; the window learns them through get-platform before it first draws
+   Est. cost: ~$0.12 · Session running total: ~$0.46
+   Committed: feat(windows-version): WIN-005 — 7b336b4 (branch feature/windows-version) · Mac e2e 48/48
 
 ## What's next
-⬜ WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
-   Nothing changes on the Mac; it's the groundwork for Windows showing Ctrl and Alt instead of Mac symbols.
+⬜ WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
+   Nothing changes on the Mac; on Windows, hints like ⌘H and ⌥ Space read Ctrl+H and Alt+Space.
 Say "next" to begin.

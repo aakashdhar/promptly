@@ -169,6 +169,7 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | renderer → main | `update-menubar-state` | App state → menu bar icon, hide-on-blur rules, Option+P registration |
 | renderer → main | `set-last-prompt` | Last prompt for the tray "Copy last prompt" item |
 | renderer → main | `get-theme` | `{ dark }` |
+| renderer → main | `get-platform` | `{ os, mod, alt, ctrl, shift, enter }` from main/keys.js — ⌘ ⌥ ⌃ ⇧ ↵ on a Mac, Ctrl Alt Ctrl Shift Enter on Windows |
 | renderer → main | `get-stored-paths` | Paths, `claudeModel` and `modelOptions` for Settings |
 | renderer → main | `save-paths` | Save any of `claudePath`, `whisperPath`, `ffmpegPath`, `claudeModel` |
 | renderer → main | `browse-for-binary` | Native file picker |

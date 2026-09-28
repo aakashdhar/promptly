@@ -27,3 +27,14 @@
   main/llm.js (`runOnce`, `version`), main/claude-setup.js (`execJson`, `execText`), main/binaries.js
   (`resolveBinary`, `makeClaudeEnv`), tests/main.test.js
 ---
+
+---
+### 2026-09-28 · WIN-005 · Key names load before the first render
+- **Decision**: src/renderer/main.jsx awaits `loadKeys()` (one `get-platform` IPC) before `createRoot().render`,
+  and `keys` is a plain module object components read at render time — no React context or state.
+- **Why**: key names never change while the app runs, so a context/re-render path adds nothing; loading first means
+  Windows never flashes ⌘ before Ctrl. A failed call keeps the Mac set, so a Mac can't regress.
+- **Alternatives**: React context with a post-mount update (label flicker, every consumer re-renders); passing the
+  platform on the URL/query (would need BrowserWindow changes in main.js for three windows).
+- **Touches**: src/renderer/main.jsx, src/renderer/utils/keys.js (`keys`, `loadKeys`, `combo`), main/keys.js, main.js (`get-platform`), preload.js (`getPlatform`)
+---
