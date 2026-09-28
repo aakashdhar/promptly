@@ -475,4 +475,27 @@
 
     ScrollTrigger.refresh();
   });
+
+  /* ---------- Install: copy the Terminal line (works with or without motion) ---------- */
+  $$('.cmd-copy').forEach((btn) => {
+    let timer = null;
+    btn.addEventListener('click', async () => {
+      const text = $(btn.dataset.copy)?.textContent.trim();
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied';
+      } catch {
+        // No clipboard access (older browser or insecure context): select it for ⌘C instead.
+        const range = document.createRange();
+        range.selectNodeContents($(btn.dataset.copy));
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = 'Press ⌘C';
+      }
+      clearTimeout(timer);
+      timer = setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    });
+  });
 })();
