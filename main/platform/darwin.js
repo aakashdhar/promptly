@@ -128,6 +128,11 @@ function appBundlePath(exePath) {
   return bundle.endsWith('.app') ? bundle : null;
 }
 
+// The uninstall script inside the installed app (package.json extraFiles → Contents/uninstall.sh).
+function uninstallScriptPath(resourcesPath) {
+  return path.join(resourcesPath, '..', 'uninstall.sh');
+}
+
 async function removeInstalledApp(bundlePath) {
   if (!bundlePath) return { ok: false, error: 'Not running from an installed app' };
   try {
@@ -203,5 +208,6 @@ module.exports = {
   uninstallDataPaths,
   resetMicrophonePermission,
   appBundlePath,
+  uninstallScriptPath,
   removeInstalledApp,
 };

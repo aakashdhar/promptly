@@ -4,9 +4,10 @@ const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nati
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 
 const { createConfigStore } = require('./main/config');
+const { uninstallCommand } = require('./main/uninstall');
 const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
 const { resolveClaudePath, resolveWhisperPath, resolveFfmpegPath } = require('./main/binaries');
@@ -407,27 +408,41 @@ async function handleUninstall() {
   });
   if (response === 0) return { cancelled: true };
 
+  // Nothing is deleted while Promptly runs. Removing the app from inside itself froze the Mac: the
+  // helper's system-wide key and click hook stayed active while the running app deleted its own
+  // bundle and live data, and a dialog then kept it from quitting. So: release the hook first, hand
+  // the removal to the uninstall script (it waits for this process to exit), and quit.
+  helper.stop();
+  globalShortcut.unregisterAll();
+  for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.hide();
+
   // Scheduled harnesses would otherwise keep running every day with Promptly gone.
   for (const { label, plistPath } of platform.harnessLaunchAgents(os.homedir())) {
     const stopped = await platform.unloadLaunchAgent(label);
     if (!stopped.ok) { log.warn('Uninstall: could not stop harness schedule', { label, error: stopped.error }); continue; }
     try { fs.rmSync(plistPath, { force: true }); } catch { /* ignore */ }
   }
-  const failed = [];
-  for (const p of platform.uninstallDataPaths(os.homedir(), BUNDLE_ID)) {
-    try { fs.rmSync(p, { recursive: true, force: true }); } catch (err) { failed.push(`${p}: ${err.message}`); }
-  }
-  await platform.resetMicrophonePermission(BUNDLE_ID);
   const bundle = app.isPackaged ? platform.appBundlePath(app.getPath('exe')) : null;
-  const removed = await platform.removeInstalledApp(bundle);
-  if (!removed.ok) failed.push(bundle ? `${bundle}: ${removed.error}` : 'The app itself (not running from an installed copy)');
-  if (failed.length) {
-    log.warn('Uninstall left things behind', failed);
+  const source = app.isPackaged ? platform.uninstallScriptPath(process.resourcesPath) : path.join(__dirname, 'scripts', 'uninstall.sh');
+  try {
+    // A temp copy, because the original lives inside the bundle it is about to remove.
+    const script = path.join(os.tmpdir(), `promptly-uninstall-${process.pid}.sh`);
+    fs.copyFileSync(source, script);
+    const [cmd, args] = uninstallCommand({
+      scriptPath: script,
+      pid: process.pid,
+      bundlePath: bundle,
+      dataPaths: platform.uninstallDataPaths(os.homedir(), BUNDLE_ID),
+    });
+    spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
+    log.info('Uninstall handed to the uninstall script', { bundle });
+  } catch (err) {
+    log.error('Uninstall script could not start', err);
     await dialog.showMessageBox({
       type: 'warning',
       title: 'Uninstall Promptly',
-      message: "Promptly couldn't remove everything",
-      detail: `Remove these yourself in Finder:\n\n${failed.join('\n')}`,
+      message: "Promptly couldn't start its uninstaller",
+      detail: 'It will quit now. Then drag Promptly from Applications to the Bin.',
     });
   }
   isQuitting = true;
