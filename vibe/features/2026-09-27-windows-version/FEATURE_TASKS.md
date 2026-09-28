@@ -83,7 +83,7 @@ is not found (never look inside `\\wsl$`).
 
 ---
 ### WIN-003 · Run Claude's `.cmd` shim safely and build a Windows PATH
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Size**: M
 - **Spec ref**: FEATURE_SPEC.md#3-acceptance-criteria (10), #8
 - **Dependencies**: WIN-002
@@ -97,9 +97,9 @@ also carry `USERPROFILE`, `APPDATA`, `LOCALAPPDATA` and set `USERNAME` when miss
 over `claude.cmd` when both exist.
 
 **Acceptance criteria**:
-- [ ] On macOS the spawn arguments are byte-for-byte what they are today
-- [ ] A `.cmd` path is run through `cmd.exe /d /s /c` with the prompt still on stdin, never on the command line
-- [ ] preflight CHECK 7 (makeClaudeEnv everywhere) still passes
+- [x] On macOS the spawn arguments are byte-for-byte what they are today
+- [x] A `.cmd` path is run through `cmd.exe /d /s /c` with the prompt still on stdin, never on the command line
+- [x] preflight CHECK 7 (makeClaudeEnv everywhere) still passes
 
 **Self-verify**: Re-read FEATURE_SPEC.md#9 (architecture rules). Tick every criterion.
 **Test requirement**: unit tests for spawnArgs on both platforms (inject platform) and for makeClaudeEnv with `;` PATHs.
@@ -109,7 +109,11 @@ over `claude.cmd` when both exist.
 
 **Decisions**:
 > Filled in by agent after completing.
-- None yet.
+- `spawnArgs(file, args, options)` returns `[file, args, options]` so callers spread it into spawn/execFile; the .cmd case adds `windowsVerbatimArguments` + `windowsHide`. Keeping `claudePath` inside the call keeps preflight CHECK 7 enforcing makeClaudeEnv.
+- Escaping follows cross-spawn: C-runtime quoting, then `^` before cmd metacharacters, doubled because npm's launchers re-read `%*`. Only fixed flags reach the command line (the prompt stays on stdin). Needs a real run on the Windows PC (WIN-023).
+- darwin.js gained additive helpers (`paths`, `executableNames`, `spawnArgs` identity, `USER_ENV_VARS` ['USER','LOGNAME']) so the modules keep one shape; Mac behaviour unchanged (e2e 48/48).
+- `makeClaudeEnv` finds the PATH key case-insensitively: a copied Windows env has `Path`, and adding `PATH` beside it would leave two. `makeClaudeEnv(bin, env, plat)` takes the platform for tests.
+- The nvm handoff from WIN-002 is fixed (`executableNames`). **Handoff to WIN-004**: `makeWhisperEnv` in whisper.js still writes `PATH` directly — same Path-key issue.
 ---
 
 ---

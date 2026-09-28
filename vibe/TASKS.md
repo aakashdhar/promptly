@@ -936,13 +936,13 @@ Final review gate run 2026-05-19. See blocking tasks below.
 
 ---
 
-## 🔄 Promptly for Windows — the same app on Windows 10/11 (2/26)
+## 🔄 Promptly for Windows — the same app on Windows 10/11 (3/26)
 > Unplanned addition, approved 2026-09-28 · Estimated: approx. 69 hours (S: 10, M: 14, L: 2)
 > Stages: 1A foundations on the Mac (WIN-001–011) → 1B helper + build, needs Windows (012–019) → 1C ship (020–023) → 2 parity (024–026)
 
    [x] WIN-001 · Platform selector — Mac and Windows get their own OS module with the same shape
    [x] WIN-002 · Find the tools on Windows — Claude, Whisper and ffmpeg are found in their usual Windows install folders
-   [ ] WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
+   [x] WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
    [ ] WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
    [ ] WIN-005 · One source for key names — ⌘/⌥/⌃ on Mac, Ctrl/Alt on Windows, from one helper
    [ ] WIN-006 · Key labels everywhere — every hint and shortcut shows Windows key names on Windows
@@ -981,11 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ WIN-002 · Find the tools on Windows — Claude Code, Whisper and ffmpeg are looked for in the native installer, npm, nvm-windows, Scoop, Chocolatey and winget folders; where.exe as a last resort (WSL copies ignored)
-   Est. cost: ~$0.12 · Session running total: ~$0.17
-   Committed: feat(windows-version): WIN-002 — 2267c29 (branch feature/windows-version)
+✅ WIN-003 · Run Claude's Windows shim safely — an npm-installed claude.cmd starts through an escaped cmd.exe line, prompt still on stdin; Windows Path and USERNAME handled
+   Est. cost: ~$0.12 · Session running total: ~$0.29
+   Committed: feat(windows-version): WIN-003 — 641b13a (branch feature/windows-version) · Mac e2e 48/48
 
 ## What's next
-⬜ WIN-003 · Run Claude's Windows shim safely — claude.cmd runs without a shell string; PATH uses ;
-   Nothing changes on the Mac; on Windows, a Claude Code installed with npm can actually be started.
+⬜ WIN-004 · Whisper names from the platform — the speech engine is found as whisper-cli.exe
+   Nothing changes on the Mac; on Windows, the built-in speech engine and its temp files are found by their Windows names.
 Say "next" to begin.
