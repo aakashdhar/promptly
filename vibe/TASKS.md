@@ -981,12 +981,11 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ Promptly for Windows is built — WIN-022 docs, WIN-024/025 Harness on Windows, and a green Windows CI build
-   Windows CI (run 36410102005): lint, 274 unit tests, cargo test, helper, whisper.cpp + models, NSIS installer → artifact Promptly-Setup-windows-x64 (138 MB)
-   Mac: 289 unit tests, e2e 48/48 — unchanged behaviour
-   Branch feature/windows-version pushed
+✅ v2.20.0 released — Mac DMG + Windows installer on one GitHub Release; the site offers each visitor the right download
+   feature/windows-version merged to main (fast-forward) · Windows installer from CI run 36413253755 · both latest links checked
+   Live site checked with Windows and Mac browsers (JS on and off)
 
 ## What's next
-⬜ WIN-023 · You: install the CI build (run 36411920416, artifact Promptly-Setup-windows-x64) on the Windows laptop and run the checklist in FEATURE_TASKS.md (WIN-023)
-   Anything that fails comes back as `bug:`; the partial tasks (012, 013, 015, 017, 024, 025) get ticked from your results.
-⏸ WIN-026 · Signing — deferred: stays unsigned for now (D-WINDOWS-SIGNING)
+⬜ WIN-023 · You: install from aakashdhar.me/promptly on the Windows laptop and run the checklist (FEATURE_TASKS.md WIN-023)
+   Anything that fails comes back as `bug:`; the partial tasks get ticked from your results.
+⏸ WIN-026 · Signing — deferred (D-WINDOWS-SIGNING)
