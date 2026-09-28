@@ -1,0 +1,131 @@
+name: Windows
+
+# Builds the unsigned Windows installer (NSIS, x64) and runs lint + unit tests on Windows.
+# No e2e here (owner's decision, 2026-09-28). The Mac checks live in preflight.yml.
+
+on:
+  push:
+    branches: [main, feature/windows-version]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      # Phase 1 ships unsigned; stop electron-builder hunting for a certificate in the store.
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+
+      # ── Windows helper (Rust) ──────────────────────────────────────────────
+      - name: Rust toolchain (stable, x86_64-pc-windows-msvc)
+        id: rust
+        run: |
+          # pwsh steps don't stop on a failing native command, so each one is checked.
+          rustup toolchain install stable --profile minimal --target x86_64-pc-windows-msvc --no-self-update
+          if ($LASTEXITCODE -ne 0) { throw 'rustup toolchain install failed' }
+          rustup default stable
+          if ($LASTEXITCODE -ne 0) { throw 'rustup default failed' }
+          "version=$(rustc --version)" >> $env:GITHUB_OUTPUT
+      - name: Cache cargo registry and helper build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            native/helper-win/target
+          key: cargo-win-${{ steps.rust.outputs.version }}-${{ hashFiles('native/helper-win/Cargo.lock', 'native/helper-win/Cargo.toml', 'native/helper-win/.cargo/config.toml') }}
+      - name: Helper unit tests (cargo test)
+        # From native/helper-win so .cargo/config.toml (static CRT) applies, as in the build script.
+        working-directory: native/helper-win
+        run: cargo test --locked --target x86_64-pc-windows-msvc
+      - name: Build helper
+        run: npm run build-helper:win
+
+      # ── whisper.cpp + models ───────────────────────────────────────────────
+      # Keyed on both scripts: the .ps1 holds the build flags, the .sh holds every pin. A hit
+      # skips the compile; the script still re-verifies each model's SHA-256.
+      - name: Cache whisper build
+        id: whisper-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: vendor/whisper
+          key: whisper-win-${{ hashFiles('scripts/fetch-whisper.sh', 'scripts/fetch-whisper.ps1') }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: steps.whisper-cache.outputs.cache-hit != 'true'
+        with:
+          python-version: '3.12'
+      # The runner image already has a cmake on PATH, which fetch-whisper.ps1 would use instead
+      # of the pinned one. Install the pin (read from fetch-whisper.sh, like the script does) into
+      # the same .cache\buildtools venv the script uses and put it first on PATH.
+      - name: Pinned cmake
+        if: steps.whisper-cache.outputs.cache-hit != 'true'
+        run: |
+          $m = [regex]::Match((Get-Content -LiteralPath scripts/fetch-whisper.sh -Raw), 'cmake==([0-9][0-9A-Za-z.]*)')
+          if (-not $m.Success) { throw 'fetch-whisper.sh has no cmake== pin' }
+          $venv = Join-Path $env:GITHUB_WORKSPACE '.cache\buildtools'
+          python -m venv $venv
+          if ($LASTEXITCODE -ne 0) { throw 'python -m venv failed' }
+          & (Join-Path $venv 'Scripts\python.exe') -m pip install --quiet "cmake==$($m.Groups[1].Value)"
+          if ($LASTEXITCODE -ne 0) { throw 'pip install cmake failed' }
+          Join-Path $venv 'Scripts' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Build whisper.cpp and fetch models
+        run: |
+          (Get-Command cmake -ErrorAction SilentlyContinue | Select-Object -First 1).Path
+          npm run fetch-whisper:win
+
+      # ── Installer ──────────────────────────────────────────────────────────
+      - name: Build renderer
+        run: npm run build:renderer
+      # electron-builder's extraResources filters skip missing files silently; fail loudly instead.
+      - name: Check bundled binaries
+        run: |
+          foreach ($f in 'vendor/helper/promptly-helper.exe', 'vendor/whisper/whisper-cli.exe', 'vendor/whisper/ggml-base.en-q5_1.bin', 'vendor/whisper/ggml-silero-v5.1.2.bin') {
+            if (-not (Test-Path -LiteralPath $f)) { throw "$f is missing" }
+            '{0}  {1:N1} MB' -f $f, ((Get-Item -LiteralPath $f).Length / 1MB)
+          }
+      - name: Build installer (NSIS, x64, unsigned)
+        run: npx electron-builder --win nsis --x64 --publish never
+      - name: Check installer
+        run: |
+          $exe = @(Get-ChildItem -Path dist -Filter 'Promptly-Setup-*.exe' -File)
+          if ($exe.Count -ne 1) { throw "expected one dist/Promptly-Setup-*.exe, found $($exe.Count)" }
+          '{0}  {1:N1} MB' -f $exe[0].Name, ($exe[0].Length / 1MB)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Promptly-Setup-windows-x64
+          path: dist/Promptly-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-build-logs
+          path: |
+            .cache/whisper-build/*.log
+            .cache/helper-build/*.log
+          if-no-files-found: ignore
+          retention-days: 7
