@@ -75,9 +75,15 @@ if ([Text.Encoding]::ASCII.GetString($bytes).IndexOf('VCRUNTIME140', [StringComp
 }
 
 # Setup runs `promptly-helper.exe --version` to tell a working helper from a blocked one, so a
-# binary that can't answer it must not be shipped.
-$version = & $Built --version
-$versionCode = $LASTEXITCODE
+# binary that can't answer it must not be shipped. The helper is a windowed (GUI-subsystem) exe,
+# so no console flashes up; PowerShell neither waits for nor captures such a program when called
+# with &, so run it through Start-Process with its output sent to a file. (Node's execFile, which
+# setup uses, does capture it.)
+$versionFile = Join-Path $Tmp 'version.txt'
+$proc = Start-Process -FilePath $Built -ArgumentList '--version' -NoNewWindow -Wait -PassThru -RedirectStandardOutput $versionFile
+$versionCode = $proc.ExitCode
+$version = if (Test-Path -LiteralPath $versionFile) { (Get-Content -LiteralPath $versionFile -Raw) } else { '' }
+Remove-Item -LiteralPath $versionFile -Force -ErrorAction SilentlyContinue
 $version = "$version".Trim()
 if ($versionCode -ne 0 -or $version -notmatch '^promptly-helper \d+\.\d+\.\d+') {
   Fail "promptly-helper.exe --version printed '$version' (exit $versionCode)"
