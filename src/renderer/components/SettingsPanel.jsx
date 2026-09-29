@@ -309,8 +309,8 @@ export default function SettingsPanel({ onClose }) {
           <Row label="Type into the app I'm in" hint={prefs.accessibility?.trusted ? `Otherwise it waits on the clipboard for ${combo(keys.mod, 'V')}.` : `Needs Accessibility (General → Permissions). Until then it's copied for ${combo(keys.mod, 'V')}.`}>
             <Switch id="settings-dictationTypeIn" label="Type into the app I'm in" checked={!!prefs.dictationTypeIn} onChange={v => savePrefs({ dictationTypeIn: v })} />
           </Row>
-          <Row label="Fix misheard words with Claude" hint="Claude corrects names, misheard words and punctuation. Your wording stays. Adds a few seconds.">
-            <Switch id="settings-dictationCleanup" label="Fix misheard words with Claude" checked={!!prefs.dictationCleanup} onChange={v => savePrefs({ dictationCleanup: v })} />
+          <Row label="Fix misheard words with AI" hint="Claude Code (or your own key, in Settings › AI) corrects names, misheard words and punctuation. Your wording stays. Adds a few seconds.">
+            <Switch id="settings-dictationCleanup" label="Fix misheard words with AI" checked={!!prefs.dictationCleanup} onChange={v => savePrefs({ dictationCleanup: v })} />
           </Row>
           <Row label="Remove um, uh and similar" hint="Nothing else is changed.">
             <Switch id="settings-dictationRemoveFillers" label="Remove um, uh and similar" checked={!!prefs.dictationRemoveFillers} onChange={v => savePrefs({ dictationRemoveFillers: v })} />

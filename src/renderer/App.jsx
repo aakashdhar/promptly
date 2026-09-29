@@ -269,6 +269,7 @@ export default function App() {
       setGenerationError({
         error: genResult.error || '',
         errorType: genResult.errorType || (genResult.timedOut ? 'timeout' : 'unknown'),
+        provider: genResult.provider || null,
         canRetry: true,
       })
       transitionRef.current(STATES.GENERATION_ERROR)
@@ -409,7 +410,7 @@ export default function App() {
       isIterated.current = true
       acceptRevisedEmail(result, adjustment)
     } else {
-      setGenerationError({ errorType: result?.errorType || 'unknown', error: result?.error || 'Tone adjustment failed', canRetry: true })
+      setGenerationError({ errorType: result?.errorType || 'unknown', error: result?.error || 'Tone adjustment failed', provider: result?.provider || null, canRetry: true })
       transitionRef.current(STATES.GENERATION_ERROR)
     }
   }

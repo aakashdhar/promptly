@@ -74,7 +74,9 @@ export default function useDictation({ STATES, transitionRef, opIdRef, contextRe
     if (!result) return
     setThinkingLabel('')
     if (!result?.success) {
-      const message = result?.errorType === 'auth' ? `Claude Code is signed out. Sign in from Settings (${combo(keys.mod, '/')})` : "Couldn't write the prompt"
+      // An API key's errors already name the provider and the fix (D-AI-PROVIDERS).
+      const message = result?.provider && result.provider !== 'claude' ? result.error || "Couldn't write the prompt"
+        : result?.errorType === 'auth' ? `Claude Code is signed out. Sign in from Settings (${combo(keys.mod, '/')})` : "Couldn't write the prompt"
       transitionRef.current(STATES.ERROR, { message })
       return
     }
