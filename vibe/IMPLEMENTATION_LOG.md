@@ -89,3 +89,9 @@
 - **Why**: the checks can take up to 5 s; with one channel the Windows welcome screen showed Mac wording until they finished.
 - **Touches**: main.js, preload.js (`setupChecks`), splash.html (`applySetupInfo`)
 ---
+---
+### 2026-09-29 · D-LOGO · Icons rendered from one SVG through Playwright's Chromium
+- **Decision**: generate-icon.js now builds the mark as SVG and rasterises each size in headless Chromium (already a dev dependency for e2e) instead of drawing with the `canvas` package; each size is rendered directly, not downscaled, so 16/32 px get their own cuts. The ICO writer keeps its package-free BMP/PNG entries.
+- **Why**: one source of truth for every icon file, and crisp small sizes; the old path needed a native `canvas` build and could only downscale one 1024 px image.
+- **Touches**: scripts/generate-icon.js, main/tray-icon.js (`drawMicIconPng` now strokes the mark with coverage-based anti-aliasing; Windows discs use the same shapes on a 32-unit grid), tests/main.test.js (pinned menu bar hash updated)
+---

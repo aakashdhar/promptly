@@ -41,7 +41,7 @@ promptly/
 │   ├── prompts/        #   All prompt text: one file per mode, revise*, builder steps, eval.txt
 │   ├── config.js       #   config.json store with atomic writes
 │   ├── log.js          #   ~/Library/Logs/Promptly/main.log with rotation
-│   └── tray-icon.js    #   Menu bar microphone icon drawing
+│   └── tray-icon.js    #   Menu bar icon drawing (the Promptly mark)
 ├── shared/modes.json   # Single mode registry, read by main and renderer
 ├── preload.js          # contextBridge — exposes window.electronAPI (sandboxed)
 ├── splash.html         # Setup wizard / quick-check splash, vanilla HTML/JS

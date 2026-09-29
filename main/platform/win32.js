@@ -185,7 +185,7 @@ const SETUP_COPY = {
   doubleTapKey: 'ctrl',
   doubleTapLabel: 'Double-tap Ctrl',
   altSpaceLabel: 'Alt plus Space',
-  trayTip: 'Promptly lives in the taskbar, by the clock (it may be under ^). Click the microphone icon to show or hide it.',
+  trayTip: 'Promptly lives in the taskbar, by the clock (it may be under ^). Click its icon, three short lines, to show or hide it.',
 };
 
 // Runs a setup .ps1 in its own PowerShell window, left open so the person can read it.
