@@ -15,7 +15,11 @@
 main() {
   set -euo pipefail
 
-  local URL="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly.dmg"
+  # One download per Mac chip. hw.optional.arm64 is 1 on Apple Silicon even when this shell runs
+  # under Rosetta, where `uname -m` would wrongly say x86_64.
+  local DMG="Promptly.dmg" CHIP="Apple Silicon"
+  if [ "$(sysctl -in hw.optional.arm64 2>/dev/null)" != "1" ]; then DMG="Promptly-Intel.dmg"; CHIP="Intel"; fi
+  local URL="https://github.com/aakashdhar/promptly/releases/latest/download/$DMG"
   local DEST_DIR="${PROMPTLY_INSTALL_DIR:-/Applications}"
   local APP="Promptly.app"
   local SIGNER="Promptly Signing"   # the author's signing identity; anything else is refused
@@ -41,7 +45,7 @@ main() {
   }
   trap cleanup EXIT
 
-  say "Downloading the latest release (about 235 MB)…"
+  say "Downloading the latest release for $CHIP…"
   curl -fL --progress-bar --retry 2 -o "$WORK/Promptly.dmg" "$URL" || fail "The download failed. Check your connection and try again."
   ok "Downloaded"
 

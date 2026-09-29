@@ -431,6 +431,11 @@ section { padding: 136px 0; position: relative; }
 .cmd-copy { flex-shrink: 0; border: 0; border-left: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font: 600 14px/1 var(--sans); padding: 0 18px; cursor: pointer; }
 .cmd-copy:hover { background: var(--surface-2); }
 .install-note { color: var(--muted); font-size: 14.5px; }
+/* The Intel download under each Mac button, and how to tell which Mac you have. */
+.mac-alt { color: var(--muted); font-size: 14px; line-height: 1.5; margin-top: 14px; max-width: 46ch; }
+.mac-alt-hint { display: block; margin-top: 2px; font-size: 13px; }
+.hero .mac-alt { margin-left: auto; margin-right: auto; text-align: center; }
+.foot-dl { display: flex; flex-direction: column; align-items: flex-start; }
 .install-steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--muted); }
 .install-steps strong { color: var(--ink); font-weight: 600; }
 
@@ -507,7 +512,7 @@ section { padding: 136px 0; position: relative; }
 .talk { background: var(--ink); color: var(--surface); }
 .talk-dot { background: var(--surface); }
 .top.is-solid { background: rgba(255,255,255,.88); }
-.top nav a:hover, .made a, .foot a { color: var(--secondary); }
+.top nav a:hover, .made a, .foot a:not(.btn) { color: var(--secondary); }
 .hero-kicker { color: var(--ink); background: var(--hl); padding: 6px 12px; border-radius: 8px; }
 .chip { background: var(--surface); }
 .missing { border-left-color: var(--secondary); background: color-mix(in srgb, var(--hl) 40%, var(--surface)); }

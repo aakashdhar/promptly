@@ -1,7 +1,6 @@
 #!/bin/bash
 
 CERT_NAME="Promptly Signing"
-APP_PATH="dist/mac-universal/Promptly.app"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -109,94 +108,128 @@ npm run build:renderer > /tmp/promptly-renderer.log 2>&1 \
   || { cat /tmp/promptly-renderer.log; fail "Renderer build failed"; }
 ok "Renderer built"
 
-# ── 4. Package with electron-builder (unsigned) ───────────────────────────────
-step "Packaging with electron-builder (unsigned)"
-npx electron-builder --mac dir --universal --config.mac.identity=null \
-  > /tmp/promptly-builder.log 2>&1 \
-  || { cat /tmp/promptly-builder.log; fail "electron-builder failed"; }
-ok "App packaged → $APP_PATH"
+# ── 4–7. One signed DMG per Mac chip ──────────────────────────────────────────
+# Separate Apple Silicon and Intel builds instead of one universal app: the universal Electron
+# carries both chips' copies of Chromium, which doubled the download (234 MB → ~120 MB each).
+#   arm64 → dist/mac-arm64/Promptly.app → Promptly-X.Y.Z-arm64-signed.dmg
+#   x64   → dist/mac/Promptly.app       → Promptly-X.Y.Z-x64-signed.dmg
+dmg_path() { echo "dist/Promptly-${VERSION}-$1-signed.dmg"; }
+app_path() { if [ "$1" = arm64 ]; then echo "dist/mac-arm64/Promptly.app"; else echo "dist/mac/Promptly.app"; fi; }
 
-# ── 5. Sign ───────────────────────────────────────────────────────────────────
-step "Signing with \"$CERT_NAME\""
+# vendor/ holds universal builds of the speech engine and helper (the dev app runs on either
+# chip); each app keeps only its own chip's half.
+thin_binary() {
+  local file="$1" arch="$2"
+  lipo "$file" -thin "$arch" -output "$file.thin" || fail "Couldn't thin $(basename "$file") to $arch"
+  mv "$file.thin" "$file"
+}
 
-[ -d "$APP_PATH" ] || fail "$APP_PATH not found"
+sign_app() {
+  local APP_PATH="$1"
+  [ -d "$APP_PATH" ] || fail "$APP_PATH not found"
 
-# Frameworks + dylibs first (order matters for deep signing)
-find "$APP_PATH/Contents/Frameworks" -name "*.dylib" -o -name "*.framework" \
-  | while read -r f; do
-      codesign --force --sign "$CERT_NAME" --timestamp=none "$f" 2>/dev/null || true
-    done
+  # Frameworks + dylibs first (order matters for deep signing)
+  find "$APP_PATH/Contents/Frameworks" -name "*.dylib" -o -name "*.framework" \
+    | while read -r f; do
+        codesign --force --sign "$CERT_NAME" --timestamp=none "$f" 2>/dev/null || true
+      done
 
-# Built-in speech engine (a plain executable under Resources, which --deep does not cover)
-WHISPER_CLI="$APP_PATH/Contents/Resources/whisper/whisper-cli"
-[ -f "$WHISPER_CLI" ] || fail "Speech engine missing from the app bundle"
-codesign --force --sign "$CERT_NAME" --timestamp=none --options runtime "$WHISPER_CLI" \
-  || fail "codesign failed for whisper-cli"
+  # Built-in speech engine (a plain executable under Resources, which --deep does not cover)
+  local WHISPER_CLI="$APP_PATH/Contents/Resources/whisper/whisper-cli"
+  [ -f "$WHISPER_CLI" ] || fail "Speech engine missing from the app bundle"
+  codesign --force --sign "$CERT_NAME" --timestamp=none --options runtime "$WHISPER_CLI" \
+    || fail "codesign failed for whisper-cli"
 
-# Hold-to-talk helper (same identity, so the Accessibility grant stays valid across updates)
-HELPER_BIN="$APP_PATH/Contents/Resources/helper/promptly-helper"
-[ -f "$HELPER_BIN" ] || fail "promptly-helper missing from the app bundle"
-codesign --force --sign "$CERT_NAME" --timestamp=none --options runtime "$HELPER_BIN" \
-  || fail "codesign failed for promptly-helper"
+  # Hold-to-talk helper (same identity, so the Accessibility grant stays valid across updates)
+  local HELPER_BIN="$APP_PATH/Contents/Resources/helper/promptly-helper"
+  [ -f "$HELPER_BIN" ] || fail "promptly-helper missing from the app bundle"
+  codesign --force --sign "$CERT_NAME" --timestamp=none --options runtime "$HELPER_BIN" \
+    || fail "codesign failed for promptly-helper"
 
-# Helper .app bundles
-find "$APP_PATH/Contents" -name "*.app" \
-  | while read -r helper; do
-      codesign --force --sign "$CERT_NAME" --timestamp=none \
-        --entitlements entitlements.plist "$helper" 2>/dev/null || true
-    done
+  # Helper .app bundles
+  find "$APP_PATH/Contents" -name "*.app" \
+    | while read -r helper; do
+        codesign --force --sign "$CERT_NAME" --timestamp=none \
+          --entitlements entitlements.plist "$helper" 2>/dev/null || true
+      done
 
-# Main bundle
-codesign --deep --force --sign "$CERT_NAME" \
-  --entitlements entitlements.plist \
-  --options runtime \
-  --timestamp=none \
-  "$APP_PATH" \
-  || fail "codesign failed"
-ok "App signed"
+  # Main bundle
+  codesign --deep --force --sign "$CERT_NAME" \
+    --entitlements entitlements.plist \
+    --options runtime \
+    --timestamp=none \
+    "$APP_PATH" \
+    || fail "codesign failed"
+}
 
-# ── 6. Verify signature ───────────────────────────────────────────────────────
-step "Verifying signature"
-codesign --verify --deep --strict "$APP_PATH" \
-  || fail "Signature verification failed — check cert name: \"$CERT_NAME\""
-ok "Signature verified"
-
-# ── 7. Create versioned DMG ───────────────────────────────────────────────────
-DMG_NAME="Promptly-${VERSION}-signed.dmg"
-DMG_PATH="dist/$DMG_NAME"
-
-step "Creating $DMG_NAME"
 # electron-builder lays out the DMG window (Applications shortcut + first-open instructions
 # background from build/dmg-background.png) around the already-signed app.
 # scripts/dmgbuild-wrapper.sh moves the DMG's hidden files below the window, so people who show
 # hidden files in Finder don't see them over the instructions. It uses electron-builder's own
 # cached dmgbuild, so on a machine that has never built a DMG, one plain build fetches it first.
 build_dmg() {
-  npx electron-builder --mac dmg --universal --prepackaged "$APP_PATH" \
+  local arch="$1" app="$2" name="$3"
+  npx electron-builder --mac dmg "--$arch" --prepackaged "$app" \
     --config.mac.identity=null \
-    --config.dmg.artifactName="$DMG_NAME" \
+    --config.dmg.artifactName="$name" \
     > /tmp/promptly-dmg.log 2>&1
 }
-if ! ls "$HOME"/Library/Caches/electron-builder/dmg-builder@*/dmgbuild-bundle-*/dmgbuild >/dev/null 2>&1; then
-  build_dmg || { cat /tmp/promptly-dmg.log; fail "DMG build failed"; }
-fi
-CUSTOM_DMGBUILD_PATH="$ROOT_DIR/scripts/dmgbuild-wrapper.sh" build_dmg \
-  || { cat /tmp/promptly-dmg.log; fail "DMG build failed"; }
-[ -f "$DMG_PATH" ] || fail "DMG not found at $DMG_PATH"
-ok "DMG created → $DMG_PATH"
+
+for ARCH in arm64 x64; do
+  LIPO_ARCH=$([ "$ARCH" = arm64 ] && echo arm64 || echo x86_64)
+  APP_PATH="$(app_path "$ARCH")"
+  DMG_PATH="$(dmg_path "$ARCH")"
+  DMG_NAME="$(basename "$DMG_PATH")"
+
+  step "Packaging for $ARCH with electron-builder (unsigned)"
+  npx electron-builder --mac dir "--$ARCH" --config.mac.identity=null \
+    > /tmp/promptly-builder.log 2>&1 \
+    || { cat /tmp/promptly-builder.log; fail "electron-builder failed ($ARCH)"; }
+  [ -d "$APP_PATH" ] || fail "$APP_PATH not found after packaging"
+  thin_binary "$APP_PATH/Contents/Resources/whisper/whisper-cli" "$LIPO_ARCH"
+  thin_binary "$APP_PATH/Contents/Resources/helper/promptly-helper" "$LIPO_ARCH"
+  ok "App packaged → $APP_PATH"
+
+  step "Signing the $ARCH app with \"$CERT_NAME\""
+  sign_app "$APP_PATH"
+  ok "App signed"
+
+  step "Verifying the $ARCH signature"
+  codesign --verify --deep --strict "$APP_PATH" \
+    || fail "Signature verification failed — check cert name: \"$CERT_NAME\""
+  # Every executable in the app must be this chip's only: a stray other-chip binary would mean
+  # the wrong half was shipped.
+  [ "$(lipo -archs "$APP_PATH/Contents/MacOS/Promptly")" = "$LIPO_ARCH" ] || fail "Promptly isn't a $LIPO_ARCH binary"
+  [ "$(lipo -archs "$APP_PATH/Contents/Resources/whisper/whisper-cli")" = "$LIPO_ARCH" ] || fail "whisper-cli isn't $LIPO_ARCH"
+  ok "Signature verified ($LIPO_ARCH only)"
+
+  step "Creating $DMG_NAME"
+  if ! ls "$HOME"/Library/Caches/electron-builder/dmg-builder@*/dmgbuild-bundle-*/dmgbuild >/dev/null 2>&1; then
+    build_dmg "$ARCH" "$APP_PATH" "$DMG_NAME" || { cat /tmp/promptly-dmg.log; fail "DMG build failed ($ARCH)"; }
+  fi
+  CUSTOM_DMGBUILD_PATH="$ROOT_DIR/scripts/dmgbuild-wrapper.sh" build_dmg "$ARCH" "$APP_PATH" "$DMG_NAME" \
+    || { cat /tmp/promptly-dmg.log; fail "DMG build failed ($ARCH)"; }
+  [ -f "$DMG_PATH" ] || fail "DMG not found at $DMG_PATH"
+  ok "DMG created → $DMG_PATH"
+done
 
 # ── 8. Product site: version and download size ────────────────────────────────
-# The download buttons point at releases/latest/download/Promptly.dmg, which never changes;
-# only the version and size shown on the page do. scripts/publish-release.sh uploads the DMG.
+# The download buttons point at releases/latest/download/Promptly.dmg (Apple Silicon) and
+# Promptly-Intel.dmg, which never change; only the version and sizes shown on the page do.
+# scripts/publish-release.sh uploads the DMGs.
 step "Updating the product site (index.html)"
-SIZE_MB=$(( ($(stat -f%z "$DMG_PATH") + 500000) / 1000000 ))  # decimal MB, as Finder shows
+mb() { echo $(( ($(stat -f%z "$1") + 500000) / 1000000 )); }  # decimal MB, as Finder shows
+ARM_MB=$(mb "$(dmg_path arm64)")
+INTEL_MB=$(mb "$(dmg_path x64)")
 sed -i '' -E \
   -e "s/Promptly [0-9]+\.[0-9]+\.[0-9]+ for macOS/Promptly $VERSION for macOS/" \
-  -e "s/Download for Mac \([0-9]+ MB\)/Download for Mac ($SIZE_MB MB)/" \
+  -e "s/Download for Mac \([0-9]+ MB\)/Download for Mac ($ARM_MB MB)/" \
+  -e "s/Intel version \([0-9]+ MB\)/Intel version ($INTEL_MB MB)/" \
   index.html || fail "Could not update index.html"
 grep -q "Promptly $VERSION for macOS" index.html || fail "index.html doesn't show v$VERSION"
-grep -q "Download for Mac ($SIZE_MB MB)" index.html || fail "index.html doesn't show the new size ($SIZE_MB MB)"
-ok "Site shows v$VERSION, $SIZE_MB MB"
+grep -q "Download for Mac ($ARM_MB MB)" index.html || fail "index.html doesn't show the Apple Silicon size ($ARM_MB MB)"
+grep -q "Intel version ($INTEL_MB MB)" index.html || fail "index.html doesn't show the Intel size ($INTEL_MB MB)"
+ok "Site shows v$VERSION: Apple Silicon $ARM_MB MB, Intel $INTEL_MB MB"
 # "Built with the vibe skills": commits, specs, reviews, bugs, tests and releases, recounted.
 node scripts/site-stats.js || fail "Could not update the site's numbers"
 RELEASED=1
@@ -205,7 +238,8 @@ RELEASED=1
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  ✓ Release complete — v$VERSION"
-echo "  Output: $DMG_PATH"
+echo "  Output: $(dmg_path arm64)"
+echo "          $(dmg_path x64)"
 echo "═══════════════════════════════════════════"
 echo ""
 echo "Next: commit package.json + index.html, push, then publish the download:"

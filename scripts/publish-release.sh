@@ -1,14 +1,16 @@
 #!/bin/bash
-# Publishes a built DMG as a GitHub Release, which is what the product site's download
-# buttons serve (releases/latest/download/Promptly.dmg). Run after release.sh, once the
-# release commit is pushed. If the installer from the Windows build has been put in dist/
+# Publishes the built DMGs (one per Mac chip) as a GitHub Release, which is what the product
+# site's download buttons serve: releases/latest/download/Promptly.dmg (Apple Silicon, the name
+# older links already use) and Promptly-Intel.dmg. Run after release.sh, once the release commit
+# is pushed. If the installer from the Windows build has been put in dist/
 # (Promptly-Setup-X.Y.Z.exe), it goes up too, with its own fixed-name link.
 #   bash scripts/publish-release.sh 2.19.0 [notes.md]
 
 set -euo pipefail
 
 REPO="aakashdhar/promptly"
-SITE_DMG="Promptly.dmg"   # fixed name: the site's download link never changes
+SITE_DMG="Promptly.dmg"               # fixed names: the site's download links never change
+SITE_DMG_INTEL="Promptly-Intel.dmg"
 SITE_EXE="Promptly-Setup.exe"   # same idea for the Windows installer
 ok()   { echo "  ✓ $1"; }
 fail() { echo "  ✗ $1"; exit 1; }
@@ -18,8 +20,10 @@ NOTES="${2:-}"
 echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || fail "Usage: bash scripts/publish-release.sh X.Y.Z [notes.md]"
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
-DMG="dist/Promptly-${VERSION}-signed.dmg"
+DMG="dist/Promptly-${VERSION}-arm64-signed.dmg"
+DMG_INTEL="dist/Promptly-${VERSION}-x64-signed.dmg"
 [ -f "$DMG" ] || fail "$DMG not found — run: npm run release -- $VERSION"
+[ -f "$DMG_INTEL" ] || fail "$DMG_INTEL not found — run: npm run release -- $VERSION"
 command -v gh >/dev/null 2>&1 || fail "GitHub CLI (gh) not found"
 grep -q "\"version\": \"$VERSION\"" package.json || fail "package.json isn't v$VERSION"
 grep -q "Promptly $VERSION for macOS" index.html || fail "index.html doesn't show v$VERSION — run release.sh"
@@ -37,7 +41,8 @@ HAS_EXE=0
 if [ -f "$EXE" ]; then HAS_EXE=1; fi
 
 cp "$DMG" "dist/$SITE_DMG" || fail "Couldn't copy the DMG to dist/$SITE_DMG"
-ASSETS=("$DMG" "dist/$SITE_DMG")
+cp "$DMG_INTEL" "dist/$SITE_DMG_INTEL" || fail "Couldn't copy the Intel DMG to dist/$SITE_DMG_INTEL"
+ASSETS=("$DMG" "dist/$SITE_DMG" "$DMG_INTEL" "dist/$SITE_DMG_INTEL")
 if [ "$HAS_EXE" = 1 ]; then
   cp "$EXE" "dist/$SITE_EXE" || fail "Couldn't copy the installer to dist/$SITE_EXE"
   ASSETS+=("$EXE" "dist/$SITE_EXE")
@@ -63,4 +68,5 @@ check_latest() {
   ok "$label serves v$VERSION"
 }
 check_latest "$SITE_DMG" "Site download link"
+check_latest "$SITE_DMG_INTEL" "Intel download link"
 if [ "$HAS_EXE" = 1 ]; then check_latest "$SITE_EXE" "Windows download link"; fi

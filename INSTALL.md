@@ -4,7 +4,7 @@ You need a Mac with macOS 12 or later and a Claude account. Everything else is s
 
 ## Install
 
-1. Open `Promptly-<version>-signed.dmg` and drag **Promptly** into **Applications**.
+1. Open `Promptly-<version>-arm64-signed.dmg` (Apple Silicon) or `Promptly-<version>-x64-signed.dmg` (Intel) and drag **Promptly** into **Applications**.
 2. Open Promptly from Applications. The first time, macOS blocks it because it isn't from the App Store or an identified developer. Click **Done**.
 3. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Promptly, then **Open**. You only do this once. (The DMG window shows these steps too.)
 4. Promptly's setup takes about a minute:

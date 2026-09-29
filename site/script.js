@@ -24,6 +24,35 @@
     $$('[data-os="win"]').forEach((el) => { el.hidden = false; });
   }
 
+  /* ====================================================================
+     Mac downloads come in two builds, one per chip. Every button defaults to Apple Silicon (every
+     Mac sold since 2020) with an "Intel Mac?" line under it. Safari can't tell which chip a Mac
+     has, but Chrome and Edge can: on an Intel Mac they get the Intel build on the buttons and the
+     line under them offers Apple Silicon instead.
+     ==================================================================== */
+  if (!onWindows && navigator.userAgentData?.getHighEntropyValues) {
+    navigator.userAgentData.getHighEntropyValues(['architecture']).then(({ architecture }) => {
+      if (architecture !== 'x86') return;
+      const size = (el) => (el.textContent.match(/\((\d+) MB\)/) || [])[1];
+      // The footer shows both sizes: the button's (Apple Silicon) and its line's (Intel).
+      const footBtn = $('.foot-dl [data-intel-href]');
+      const footAlt = $('.foot-dl [data-chip-link]');
+      const armMB = footBtn && size(footBtn);
+      const intelMB = footAlt && size(footAlt);
+      let armHref = '';
+      $$('[data-intel-href]').forEach((btn) => {
+        armHref = btn.getAttribute('href');
+        btn.setAttribute('href', btn.dataset.intelHref);
+      });
+      if (footBtn && armMB && intelMB) footBtn.textContent = footBtn.textContent.replace(`(${armMB} MB)`, `(${intelMB} MB)`);
+      $$('[data-chip-link]').forEach((link) => {
+        link.setAttribute('href', armHref);
+        link.textContent = size(link) && armMB ? `Apple Silicon version (${armMB} MB)` : 'Download the Apple Silicon version';
+        link.closest('[data-chip-other]').firstChild.textContent = 'On an Apple Silicon Mac? ';
+      });
+    }).catch(() => { /* keep the Apple Silicon default */ });
+  }
+
   if (motion) {
     G.registerPlugin(ScrollTrigger, SplitText, Flip, MotionPathPlugin, DrawSVGPlugin);
     document.documentElement.classList.add('motion');
