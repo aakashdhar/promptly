@@ -40,13 +40,13 @@
 - Router wraps the existing runners instead of changing them, so Claude calls are byte-for-byte the same; 'Claude ready' is unknown until the first status check and then optimistic when claudePath exists.
 ---
 ### AIP-004 · AI settings IPC
-- **Status**: `[ ]` · **Size**: M · **Spec ref**: #7 · **Dependencies**: AIP-003
+- **Status**: `[x]` · **Size**: M · **Spec ref**: #7 · **Dependencies**: AIP-003
 - **Touches**: main.js, preload.js, tests/ipc-contract.test.js
 
 **What to do**: handlers `get-ai-settings`, `save-ai-key` (validate by listModels, pick models, encrypt, save), `remove-ai-key`, `set-ai-settings`, `list-ai-models`, `test-ai`. Renderer never receives a key.
 **Acceptance criteria**: - [ ] contract test green - [ ] refused key not saved
 **Decisions**:
-- None yet.
+- Saving validates by listing models (one request both checks the key and fills the pickers); write handlers accept only the main and setup windows, like other handlers that change settings.
 ---
 ### AIP-005 · Settings › AI tab
 - **Status**: `[ ]` · **Size**: L · **Spec ref**: #3.1, #3.2 · **Dependencies**: AIP-004
