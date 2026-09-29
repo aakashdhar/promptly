@@ -22,7 +22,7 @@ const darwin = require('../main/platform/darwin.js')
 const { spawn } = require('child_process')
 const { whisperCommand, parseTqdmLine, findDownloadedModel, makeWhisperEnv, findBundledEngine, cleanTranscript, silentWav, createWhisperRunner } = require('../main/whisper.js')
 const { getClaudeStatus, installScript, loginScript, shellQuote, psQuote, INSTALL_COMMAND } = require('../main/claude-setup.js')
-const { drawMicIconPng, isTemplateState, drawWinTrayIcons, drawWinTrayIconRgba, WIN_TRAY_SIZES } = require('../main/tray-icon.js')
+const { drawMicIconPng, isTemplateState, computeMacMasks, drawWinTrayIcons, drawWinTrayIconRgba, WIN_TRAY_SIZES } = require('../main/tray-icon.js')
 const { keysFor, formatCombo } = require('../main/keys.js')
 
 let tmp
@@ -795,7 +795,13 @@ describe('tray icon', () => {
     for (const state of ['idle', 'hidden', 'recording', 'thinking', 'ready', 'builder'])
       for (const isDark of [false, true])
         for (const showDot of [true, false]) hash.update(pngPixels(drawMicIconPng(state, isDark, showDot)))
-    expect(hash.digest('hex')).toBe('f33fc77247c27b45a9ada34295988cf711ac1cb97d928d38380236f6cdcba4b9')
+    expect(hash.digest('hex')).toBe('af3cf6edc584b94c8e76a7b731ebdb163c43d782f68fa31265552af67542375b')
+  })
+
+  it('keeps main/tray-masks.json in step with the menu bar drawing (run scripts/generate-icon.js)', () => {
+    const saved = require('../main/tray-masks.json')
+    for (const [name, mask] of Object.entries(computeMacMasks()))
+      expect(saved[name], name).toBe(Buffer.from(mask).toString('base64'))
   })
 
   it('draws Windows tray icons in colour at 16 and 32 px, never as template images', () => {

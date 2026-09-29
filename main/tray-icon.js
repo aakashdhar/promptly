@@ -55,8 +55,8 @@ function pngEncode(w, h, rgba) {
   ]);
 }
 
-// Anti-aliased stroke coverage (0..1) at a point: distance to the nearest of `segs`
-// ([x1, y1, x2, y2] with round caps) against half the stroke width, 4×4 supersampled.
+// Stroke coverage for a pixel: its centre's distance to the nearest segment ([x1, y1, x2, y2],
+// round caps), smoothed over one pixel.
 function segDist2(px, py, [x1, y1, x2, y2]) {
   const dx = x2 - x1, dy = y2 - y1;
   const len2 = dx * dx + dy * dy;
@@ -64,15 +64,10 @@ function segDist2(px, py, [x1, y1, x2, y2]) {
   const ex = px - (x1 + t * dx), ey = py - (y1 + t * dy);
   return ex * ex + ey * ey;
 }
-function coverage(x, y, segs, width, SS = 4) {
-  const r2 = (width / 2) ** 2;
-  let hit = 0;
-  for (let sy = 0; sy < SS; sy++)
-    for (let sx = 0; sx < SS; sx++) {
-      const ux = x + (sx + 0.5) / SS, uy = y + (sy + 0.5) / SS;
-      if (segs.some((s) => segDist2(ux, uy, s) <= r2)) hit++;
-    }
-  return hit / (SS * SS);
+function coverage(x, y, segs, width) {
+  let d2 = Infinity;
+  for (let k = 0; k < segs.length; k++) d2 = Math.min(d2, segDist2(x + 0.5, y + 0.5, segs[k]));
+  return Math.max(0, Math.min(1, width / 2 + 0.5 - Math.sqrt(d2)));
 }
 // A polyline as segments: one sine period of `amp` along y between x0 and x1.
 function waveSegs(x0, x1, y, amp, n = 16) {
@@ -90,9 +85,39 @@ const MAC_MARK = [[7, 12, 14, 12], [18, 14, 26, 14], ...waveSegs(7, 37, 22, 3), 
 const MAC_STROKE = 4;
 const MAC_SLASH = [[7, 7, 37, 37]];
 
+// The mark's coverage masks (0–255 per pixel) are worked out ahead of time by
+// scripts/generate-icon.js into tray-masks.json: working them out at startup cost about 2 s under
+// the e2e debugger. tests/main.test.js checks the file still matches computeMacMasks().
+function computeMacMasks() {
+  const grid = (segs, width) => {
+    const m = new Uint8Array(44 * 44);
+    for (let y = 0; y < 44; y++) for (let x = 0; x < 44; x++) m[y * 44 + x] = Math.round(coverage(x, y, segs, width) * 255);
+    return m;
+  };
+  return { mark: grid(MAC_MARK, MAC_STROKE), gap: grid(MAC_SLASH, 8), slash: grid(MAC_SLASH, 3.5) };
+}
+let macMasks = null;
+function loadMacMasks() {
+  if (!macMasks) {
+    const json = require('./tray-masks.json');
+    macMasks = Object.fromEntries(Object.entries(json).map(([k, b64]) => [k, new Uint8Array(Buffer.from(b64, 'base64'))]));
+  }
+  return macMasks;
+}
+
+// Finished icons are cached: the recording pulse asks for the same two every 600 ms.
+const iconCache = new Map();
+
 function drawMicIconPng(state, isDark, showDot = true) {
+  const key = `${state}|${isDark}|${showDot}`;
+  if (!iconCache.has(key)) iconCache.set(key, drawMacIcon(state, isDark, showDot));
+  return iconCache.get(key);
+}
+
+function drawMacIcon(state, isDark, showDot) {
   const W = 44, H = 44;
   const px = new Uint8Array(W * H * 4);
+  const { mark, gap, slash } = loadMacMasks();
 
   const hidden = state === 'hidden';
   const alpha = hidden ? 115 : 255;
@@ -106,11 +131,12 @@ function drawMicIconPng(state, isDark, showDot = true) {
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i = (y * W + x) * 4;
-      let a = coverage(x, y, MAC_MARK, MAC_STROKE) * alpha;
-      // Hidden (mic off): a full-strength slash with a clear gap either side of it.
+      const k = y * W + x;
+      let a = (mark[k] / 255) * alpha;
+      // Hidden: a full-strength slash with a clear gap either side of it.
       if (hidden) {
-        a *= 1 - coverage(x, y, MAC_SLASH, 8);
-        a = Math.max(a, coverage(x, y, MAC_SLASH, 3.5) * 255);
+        a *= 1 - gap[k] / 255;
+        a = Math.max(a, slash[k]);
       }
       px[i] = mr; px[i + 1] = mg; px[i + 2] = mb; px[i + 3] = Math.round(a);
       if (dot) {
@@ -206,7 +232,13 @@ function drawWinTrayIconRgba(state, size, showDot = true) {
 }
 
 // The Windows tray image for a state: one PNG per scale factor, never a template image.
+const winCache = new Map();
 function drawWinTrayIcons(state, showDot = true) {
+  const key = `${state}|${showDot}`;
+  if (!winCache.has(key)) winCache.set(key, drawWinTray(state, showDot));
+  return winCache.get(key);
+}
+function drawWinTray(state, showDot) {
   return {
     template: false,
     representations: WIN_TRAY_SIZES.map((size) => ({
@@ -218,4 +250,4 @@ function drawWinTrayIcons(state, showDot = true) {
   };
 }
 
-module.exports = { drawMicIconPng, isTemplateState, pngEncode, WIN_TRAY_SIZES, drawWinTrayIconRgba, drawWinTrayIcons };
+module.exports = { drawMicIconPng, isTemplateState, computeMacMasks, pngEncode, WIN_TRAY_SIZES, drawWinTrayIconRgba, drawWinTrayIcons };

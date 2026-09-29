@@ -5,6 +5,7 @@
 //   build/icon.ico    16–256 px, full-bleed tile (Windows draws its own margins)
 //   site/assets/icon.png  512 px full-bleed tile: the site's header mark, large favicon, touch icon
 //   site/assets/favicon-32.png  the browser-tab icon, drawn in the heavy small-size cut
+//   main/tray-masks.json  the menu bar icon's coverage masks (main/tray-icon.js draws from them)
 //
 //   node scripts/generate-icon.js     (needs Playwright's Chromium: npx playwright install chromium)
 //
@@ -18,7 +19,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { pngEncode } = require('../main/tray-icon');
+const { pngEncode, computeMacMasks } = require('../main/tray-icon');
 
 const ROOT = path.join(__dirname, '..');
 const BUILD_DIR = path.join(ROOT, 'build');
@@ -192,13 +193,17 @@ async function main() {
     for (const size of ICO_SIZES) ico[size] = await r.render(iconSvg({ variant: 'full', cut: cutFor(size) }), size);
     fs.writeFileSync(path.join(BUILD_DIR, 'icon.ico'), buildIco(ico));
 
+    // The menu bar icon's shapes, worked out here so the app doesn't at startup.
+    const masks = computeMacMasks();
+    fs.writeFileSync(path.join(ROOT, 'main', 'tray-masks.json'), JSON.stringify(Object.fromEntries(Object.entries(masks).map(([k, m]) => [k, Buffer.from(m).toString('base64')])), null, 2) + '\n');
+
     const site = path.join(ROOT, 'site', 'assets');
     fs.writeFileSync(path.join(site, 'icon.png'), pngEncode(512, 512, await r.render(iconSvg({ variant: 'full' }), 512)));
     fs.writeFileSync(path.join(site, 'favicon-32.png'), pngEncode(32, 32, await r.render(iconSvg({ variant: 'full', cut: 'small' }), 32)));
   } finally {
     await r.close();
   }
-  console.log('Wrote build/icon.svg, icon.png, icon.icns, icon.ico and site/assets/icon.png, favicon-32.png');
+  console.log('Wrote build/icon.svg, icon.png, icon.icns, icon.ico, site/assets/icon.png, favicon-32.png and main/tray-masks.json');
 }
 
 if (require.main === module) main().catch((e) => { console.error(e); process.exit(1); });
