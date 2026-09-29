@@ -346,6 +346,8 @@ async function runDictation(transcript) {
   }
   const typed = pillSession && prefs.typeIn ? await typeIntoApp(text) : false;
   if (pillSession) lastDictation = { text, typed, refused: typed ? null : lastPasteRefusal };
+  // Where the words went (never the words themselves), so "nothing was typed" can be traced.
+  log.info(`Dictation: ${!pillSession ? 'shown in the window' : typed ? 'typed into the app in front' : !prefs.typeIn ? 'left on the clipboard (typing is off)' : `not typed (${lastPasteRefusal || 'no helper or Accessibility'}), left on the clipboard`}`);
   return { success: true, prompt: text, dictation: { removed, typed } };
 }
 
@@ -607,7 +609,15 @@ async function startFromHotkey() {
   winSend('hotkey-start');
   // Capture where the user is and what they've selected, for destination-aware prompts.
   const ctx = helper.isRunning() ? await helper.context() : null;
-  if (ctx && ctx.app && ctx.app.bundleId !== BUNDLE_ID && !String(ctx.app.bundleId || '').startsWith('com.github.Electron')) {
+  const otherAppInFront = !!(ctx && ctx.app && ctx.app.bundleId !== BUNDLE_ID && !String(ctx.app.bundleId || '').startsWith('com.github.Electron'));
+  // The window can still count as focused while another app is in front (the Promptly window was
+  // open behind Claude, and the words stayed in Promptly). The helper knows which app is really
+  // in front: if it isn't Promptly, the words go to that app, through the pill.
+  if (otherAppInFront && !pillSession && hotkeyRecordingLive) {
+    pillSession = true;
+    pillSend({ state: 'recording', mode: currentModeLabel });
+  }
+  if (otherAppInFront) {
     const destination = destinationFor(ctx.app.bundleId);
     const context = {
       appName: ctx.app.name || '',
@@ -725,6 +735,10 @@ function createPillWindow() {
   });
   pillWin.setAlwaysOnTop(true, 'screen-saver');
   pillWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  // To float over full-screen apps, Electron turns Promptly into a background (UIElement) app and
+  // is meant to turn it back; on macOS 26 it stays a background app, with no Dock icon and no menu
+  // bar of its own. Showing the Dock icon makes it a normal app again and keeps the pill's reach.
+  if (process.platform === 'darwin') app.dock?.show().catch(() => {});
   // Clicks pass through the transparent area around the pill; the pill itself takes the mouse
   // while the pointer is over it (pill.html reports hover), so it can be dragged and clicked.
   pillWin.setIgnoreMouseEvents(true, { forward: true });
