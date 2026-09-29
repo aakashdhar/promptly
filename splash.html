@@ -110,6 +110,13 @@ details.manual summary { cursor: pointer; width: fit-content; }
   flex: 1; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface);
   color: rgb(var(--ink)); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; -webkit-app-region: no-drag;
 }
+.path-row select {
+  height: 30px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface);
+  color: rgb(var(--ink)); font: inherit; font-size: 12px; -webkit-app-region: no-drag;
+}
+.apikey-msg { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.apikey-msg.bad { color: var(--warn, #b3261e); }
+.apikey-msg.ok { color: var(--ok, #1b7f3b); }
 
 /* The memorable thing: the shortcut, drawn as real keycaps. */
 .keys { display: flex; gap: 10px; align-items: flex-end; margin: 8px 0 22px; }
@@ -222,6 +229,22 @@ details.manual summary { cursor: pointer; width: fit-content; }
         </div>
       </details>
     </div>
+
+    <!-- No Claude Code: the user's own OpenAI, Gemini or Grok key instead (D-AI-PROVIDERS). -->
+    <details class="manual" id="apikey-box">
+      <summary>No Claude Code? Use an API key instead</summary>
+      <p class="hint">Your own OpenAI, Gemini or Grok key. It's checked, then stored encrypted on this computer. Everything except Harness works with it, and Promptly switches to Claude Code whenever you set it up.</p>
+      <div class="path-row">
+        <select id="apikey-provider" aria-label="API provider">
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Gemini</option>
+          <option value="grok">Grok</option>
+        </select>
+        <input id="apikey-key" type="password" placeholder="Paste your key" spellcheck="false" autocomplete="off" aria-label="API key">
+        <button class="btn secondary" id="apikey-save">Check key</button>
+      </div>
+      <div class="apikey-msg" id="apikey-msg" role="status"></div>
+    </details>
 
     <!-- Windows only: shown when setup-info reports a problem (never on a Mac). -->
     <div class="status warn" id="setup-git" hidden>
@@ -369,8 +392,11 @@ document.getElementById('mic-open-settings').addEventListener('click', () => api
 document.getElementById('mic-next').addEventListener('click', () => { show('claude'); runScreen1(); });
 
 // ── Claude Code ──────────────────────────────────────────────────────────────
+// A saved API key counts too: setup can go on without Claude Code (D-AI-PROVIDERS).
+let apiKeySaved = false;
+api.getAiSettings?.().then((s) => { apiKeySaved = !!(s && Object.values(s.keys || {}).some((k) => k.saved)); if (apiKeySaved) setClaudeReady(false); }).catch(() => {});
 function setClaudeReady(ready) {
-  document.getElementById('claude-next').disabled = !ready;
+  document.getElementById('claude-next').disabled = !(ready || apiKeySaved);
   document.getElementById('claude-recheck').hidden = ready;
 }
 
@@ -490,6 +516,28 @@ document.getElementById('copy-install').addEventListener('click', () => {
   api.copyToClipboard(document.getElementById('install-cmd').textContent);
   document.getElementById('copy-install').textContent = 'Copied';
 });
+// "Use an API key instead": a checked key lets setup continue without Claude Code.
+document.getElementById('apikey-save').addEventListener('click', async () => {
+  const button = document.getElementById('apikey-save');
+  const select = document.getElementById('apikey-provider');
+  const input = document.getElementById('apikey-key');
+  const msg = document.getElementById('apikey-msg');
+  if (!input.value.trim()) { msg.className = 'apikey-msg bad'; msg.textContent = 'Paste your key first.'; return; }
+  button.disabled = true;
+  msg.className = 'apikey-msg';
+  msg.textContent = 'Checking the key…';
+  const result = await api.saveAiKey(select.value, input.value).catch(() => ({ ok: false, error: "Couldn't check the key." }));
+  button.disabled = false;
+  if (!result.ok) { msg.className = 'apikey-msg bad'; msg.textContent = result.error; return; }
+  input.value = '';
+  apiKeySaved = true;
+  stopClaudePoll();
+  msg.className = 'apikey-msg ok';
+  msg.textContent = `${select.options[select.selectedIndex].text} key saved. Promptly will use it until Claude Code is set up.`;
+  setClaudeReady(true);
+});
+document.getElementById('apikey-key').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('apikey-save').click(); });
+
 document.getElementById('claude-next').addEventListener('click', () => {
   if (speechBuiltIn) showHold(); else { show('speech'); runScreen2(); }
 });
