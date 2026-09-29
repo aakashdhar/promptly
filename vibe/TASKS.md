@@ -1015,7 +1015,13 @@ Say "next" to begin.
    app.dock.show() after it), dictation goes to the app in front when the window is open behind it,
    and the log records where each dictation went. Owner to confirm on their Mac.
 
+✅ Launch splash on main (not released yet, D-LAUNCH-SPLASH): the showreel's words gather into
+   "Promptly" while the icon draws itself, about 2.2 s, then the window or the setup wizard.
+   Checked: unit tests 300/300, lint, the new e2e hand-off test and the splash's UI audit in both
+   themes (3/3). Not run: the full e2e suite (about 4 min, opens windows).
+
 ## What's next
+⬜ Owner: approve the splash on the canvas, then release it (2.20.6) and push main
 ⬜ Owner: install 2.20.5; check the Dock icon, the menu bar, and dictating into Claude with Promptly open behind
 ⬜ Owner: try Dictation on 2.20.4 with Indian names and questions; add frequent names to Your words
 ⬜ Run the full e2e suite once (about 4 min, opens test windows) to confirm the icon fix

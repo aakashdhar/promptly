@@ -2296,3 +2296,11 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Guard rails**: `acceptCleanup()` drops Claude's answer if it is empty, adds a preamble or extra lines, or changes the word count by more than 30% (min 2), so an answer to a dictated question or a rewrite never gets typed. Timeout 12 s. Claude missing, signed out or failing → the local text is typed as before. A cancel stops the call. Audio still never leaves the Mac; only the text goes to Claude on the user's own account.
 - **Also**: the local tidy ends a sentence that opens like a question with "?" (question word + verb, or verb + person/thing, with lead-ins like "so", "hey"), leaving statements ("What I mean is…") and orders ("Do the dishes") alone.
 ---
+
+---
+### D-LAUNCH-SPLASH — A launch splash while Promptly starts
+- **Date**: 2026-09-30 · **Type**: product / brand
+- **Why**: between opening Promptly and its window appearing there were 1–4 s with nothing on screen (finding Claude Code and speech-to-text, the setup check, the page load).
+- **Decision**: `launch.html` shows at every start. The showreel's spoken words drift in, "so", "um" and "like" fall away, the rest gather into "Promptly", and the icon draws itself in story order (words, wave, cobalt line), with "Say it rough. Get it right." and a status/version footer. About 2.2 s; the app waits for the intro to finish (never more than 3.5 s past ready), so a fast start is up to ~2 s later than before. The owner asked for the longer animation. Picked by the owner on the "Promptly launch splash" canvas: direction C (words resolve) with elements of A (the mark draws itself), over A (the reviewer's pick), B and D.
+- **How**: transparent, unfocusable, sandboxed window with no preload and a `default-src 'none'` CSP; main.js passes the version as `?v=` and ends it with `window.finishSplash()`. A Dock click or second launch cuts it short; it hides after 20 s whatever happens. Reduced motion shows the finished frame. The setup wizard (splash.html) is unchanged and follows it when setup is needed.
+---

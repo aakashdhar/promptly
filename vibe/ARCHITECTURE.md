@@ -45,6 +45,7 @@ promptly/
 ├── shared/modes.json   # Single mode registry, read by main and renderer
 ├── preload.js          # contextBridge — exposes window.electronAPI (sandboxed)
 ├── splash.html         # Setup wizard / quick-check splash, vanilla HTML/JS
+├── launch.html         # Launch splash while the app starts: no preload, no IPC, strict CSP
 ├── src/renderer/       # React app (App.jsx state machine, hooks/, components/, utils/)
 ├── tests/              # Vitest unit tests (npm test)
 ├── e2e/                # Playwright tests that drive the real app with a fake Claude CLI (npm run test:e2e)

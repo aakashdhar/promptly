@@ -3,6 +3,7 @@
 > Agent reads this at session start to understand current state without re-reading all files.
 > Last updated: 2026-09-24 (Foundation pass — main/ modules, shared/modes.json, tests + e2e, defect fixes)
 > 📝 2026-09-28 · Verified during Windows version planning (current through v2.19.1 and the audit fixes)
+> 📝 2026-09-30 · launch.html (launch splash) added
 
 ---
 
@@ -82,6 +83,7 @@
 | `src/renderer/components/VideoBuilderState.constants.js` | Video chip rows (incl. 4/6/8-second length) and `chipOptionsText()` for the first Claude call | — |
 | `shared/modes.json` | The single mode registry: key, label, group, kind (dictation/standalone/builder), description, dot colour, `tone` (`rgb` for tags/pill/accents, `text` for coloured words), profile, `destination` (told where the result goes), `promptStyle` (offered for Make it a prompt); `aliases` maps retired keys to their replacements | — |
 | `preload.js` | contextBridge — exposes window.electronAPI to renderer and splash. Kept in step with main by tests/ipc-contract.test.js | `window.electronAPI` — see ARCHITECTURE.md IPC surface |
+| `launch.html` | Launch splash, 480×300 panel in a 540×360 transparent window, shown at every start until the window (or the setup wizard) is ready. The showreel's words drift in, the fillers fall away, the rest gather into "Promptly" while the icon draws itself (words, wave, cobalt line); about 2.2 s, then the wave breathes. No preload and no IPC: main.js reads the version into `?v=` and calls `window.finishSplash()` (waits out the intro, plays the exit). Reduced motion shows the finished frame. Off in e2e unless `PROMPTLY_LAUNCH_SPLASH=1`. | — |
 | `splash.html` | Setup wizard: welcome → microphone → Claude Code (install / sign in, polls every 3 s, manual path escape hatches) → ready. Only shown when setup is needed. Themed with the same tokens as the renderer. | — |
 | `index.html` + `site/` | The product site at aakashdhar.me/promptly (GitHub Pages serves the repo root of `main`). `site/style.css`, `site/script.js` (GSAP + Lenis from jsDelivr), `site/assets/` (icon + favicon from generate-icon.js, light app screenshot, the 150 s showreel hero `reel-1080/720.mp4` + stills, the 24 s film + poster, share image). Not packaged into the app. The film's Remotion source lives outside the repo, in `../promptly-site-drafts/remotion-film/`. Mac download buttons link to `releases/latest/download/Promptly.dmg` (Apple Silicon) with an "Intel Mac?" line to `Promptly-Intel.dmg` (site/script.js swaps them on Intel Macs in Chrome/Edge; Windows visitors get `Promptly-Setup.exe`); `release.sh` builds one DMG per chip and updates the version and both sizes on the page, `scripts/site-stats.js` recounts the "Built with the vibe skills" numbers (committed files only), and `scripts/publish-release.sh` publishes the release | — |
 | `src/renderer/index.html` | Vite HTML entry point — `<div id="root">` + module script | — |
@@ -128,6 +130,7 @@
 | `vitest.config.mjs` | Vitest config — environment: node, include: tests/**/*.test.js | — |
 | `tests/utils.test.js` | Renderer utility tests, including structured-output validation (email, workflow, video, image) | — |
 | `tests/main.test.js` | main/ module tests: prompt building, Claude runner against a fake CLI (stdin, --model, fallback, errors, timeout, cancel), config, logger, binaries, Whisper helpers, tray icon | — |
+| `tests/launch.test.js` | Launch splash: packaged and loaded, offline with a strict CSP and no preload, `finishSplash` covers the whole intro, version and status elements, reduced motion | — |
 | `tests/ipc-contract.test.js` | Fails if preload and main IPC drift apart, or the renderer/splash calls a method preload doesn't expose | — |
 | `e2e/app.spec.mjs` | Playwright tests that drive the real app with fake claude/whisper scripts and Chromium's fake mic | 7 flows (typing, abort, dropdown, hotkey + voice, hide-on-blur, retry tone, ffmpeg path) |
 | `playwright.config.mjs` | Playwright config — testDir e2e, 1 worker | — |
