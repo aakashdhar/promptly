@@ -147,6 +147,7 @@ export default function ExpandedView({
         onOpenSettings={onOpenSettings}
         onTypePrompt={() => { setIsViewingHistory(false); onTypePrompt() }}
         generationErrorType={generationErrorProps?.errorType}
+        generationErrorProvider={generationErrorProps?.provider}
         onModeSelect={onModeSelect}
         onShowShortcuts={onShowShortcuts}
         onShowHistory={onShowHistory}

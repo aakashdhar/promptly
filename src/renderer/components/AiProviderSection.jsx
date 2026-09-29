@@ -52,8 +52,12 @@ export default function AiProviderSection() {
   const [msg, setMsg] = useState(null) // { ok, text }
   const [models, setModels] = useState([])
   const [test, setTest] = useState(null) // { ok, text } | 'running'
+  // The provider shown below (its key, its models). Choosing one that has a saved key also makes
+  // it the one in use; choosing one without a key only shows its key field, so adding a second
+  // key never leaves Promptly on a provider it can't use.
+  const [viewId, setViewId] = useState(null)
 
-  const provider = s?.provider || s?.providers?.[0]?.id || 'openai'
+  const provider = viewId || s?.provider || s?.providers?.[0]?.id || 'openai'
   const info = s?.providers?.find((p) => p.id === provider)
   const saved = s?.keys?.[provider]
   const chosen = s?.models?.[provider] || {}
@@ -82,6 +86,7 @@ export default function AiProviderSection() {
     if (!r.ok) { setMsg({ ok: false, text: r.error }); return }
     setDraftKey('')
     setReplacing(false)
+    setViewId(null)
     setS(r.settings)
     setModels(r.models || [])
     setMsg({ ok: true, text: `Key checked and saved. Using ${r.settings.models?.[provider]?.model || 'the default model'}.` })
@@ -102,6 +107,7 @@ export default function AiProviderSection() {
 
   // "My API key" needs a saved key for the chosen provider; until then it can't be picked.
   const apiUsable = !!(s.provider && s.keys?.[s.provider]?.saved)
+  const inUseLabel = s.providers.find((p) => p.id === s.provider)?.label
   const activeLabel = s.active === 'claude' ? 'Claude Code' : `${info?.label || 'Your key'}${chosen.model ? ` (${chosen.model})` : ''}`
   const modelOptions = (current) => [...new Set([current, ...models].filter(Boolean))]
 
@@ -129,8 +135,8 @@ export default function AiProviderSection() {
       </Section>
 
       <Section title="Your API key">
-        <Row label="Provider" hint="OpenAI, Gemini or Grok. Uses your own account." htmlFor="settings-ai-provider">
-          <select id="settings-ai-provider" value={provider} onChange={(e) => { setMsg(null); setReplacing(false); setDraftKey(''); update({ provider: e.target.value }) }} style={selectStyle}>
+        <Row label="Provider" hint={s.provider && provider !== s.provider && apiUsable ? `Your ${inUseLabel} key stays in use until you save a ${info?.label} key.` : 'OpenAI, Gemini or Grok. Uses your own account.'} htmlFor="settings-ai-provider">
+          <select id="settings-ai-provider" value={provider} onChange={(e) => { const id = e.target.value; setMsg(null); setReplacing(false); setDraftKey(''); setViewId(id); if (s.keys?.[id]?.saved && id !== s.provider) update({ provider: id }) }} style={selectStyle}>
             {s.providers.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
         </Row>

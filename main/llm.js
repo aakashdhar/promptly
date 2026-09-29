@@ -198,9 +198,11 @@ function parseJsonOutput(raw) {
 // when Claude Code isn't ready (mode 'auto') or when they chose it (mode 'api'). Without a saved
 // key it is always Claude Code, whatever the mode says. Same run() and result shape either way,
 // plus `provider`. apiOptions are passed to every API call (the Dictation clean-up asks for the
-// fast model). beforeRun lets the app re-check Claude Code before a call would go to the key, so
-// "Claude Code first" heals on its own. Claude calls go through exactly as before.
-function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = () => true, hasKey = () => false, apiOptions = {}, onClaudeAuthError = () => {}, beforeRun = async () => {} }) {
+// fast model). Claude calls go through exactly as before.
+// In Automatic with a key, a Claude call refused for sign-in is answered by the key instead (the
+// person never sees it fail), and onApiRoute lets the app look at Claude Code again in the
+// background, never holding up the call.
+function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = () => true, hasKey = () => false, apiOptions = {}, onClaudeAuthError = () => {}, onApiRoute = () => {} }) {
   function active() {
     if (!hasKey()) return 'claude';
     const mode = getMode();
@@ -208,11 +210,17 @@ function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = (
     if (mode === 'api') return 'api';
     return isClaudeReady() ? 'claude' : 'api';
   }
+  const callApi = (prompt, opts) => api.run(prompt, { timeoutMs: opts.timeoutMs, onDelta: opts.onDelta, ...apiOptions });
   async function run(prompt, opts = {}) {
-    if (active() === 'api') await beforeRun();
-    if (active() === 'api') return api.run(prompt, { timeoutMs: opts.timeoutMs, onDelta: opts.onDelta, ...apiOptions });
+    if (active() === 'api') {
+      onApiRoute();
+      return callApi(prompt, opts);
+    }
     const result = await claude.run(prompt, opts);
-    if (result.errorType === 'auth') onClaudeAuthError();
+    if (result.errorType === 'auth') {
+      onClaudeAuthError();
+      if (getMode() === 'auto' && hasKey()) return callApi(prompt, opts);
+    }
     return { ...result, provider: 'claude' };
   }
   function cancelAll() {
@@ -222,44 +230,58 @@ function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = (
   return { run, cancelAll, active, version: (...a) => claude.version(...a) };
 }
 
-// Whether Claude Code can answer now, for the router (D-AI-PROVIDERS). Unknown until the first
-// status check, and then Claude Code counts as ready if it was found. Once it looks unavailable,
-// recheckIfStale() looks again (at most every recheckMs, straight away after a sign-in error), so
-// someone with a key goes back to Claude Code by themselves after `claude login`, a slow startup
-// check, or installing Claude Code while Promptly is open. A timeout never decides it.
-function createClaudeReadiness({ getClaudePath, setClaudePath = () => {}, resolvePath = async () => null, getStatus, recheckMs = 15000, now = () => Date.now() }) {
+// Whether Claude Code can answer now, for the router (D-AI-PROVIDERS). Only matters to someone
+// with a saved key: without one the router always picks Claude Code.
+// - Unknown until the first status check; then Claude Code counts as ready if it was found.
+// - Refused for sign-in: the key answers for authCooldownMs, then Claude Code is tried again
+//   (`claude auth status` can say "signed in" for a token Claude rejects, so it isn't trusted here).
+// - Not installed / not signed in by the status check: looked at again in the background, every
+//   recheckMs while Claude Code is on disk, every missingRecheckMs while it isn't (finding it means
+//   a login-shell lookup, so not often), so installing it or signing in later is picked up.
+function createClaudeReadiness({ getClaudePath, setClaudePath = () => {}, resolvePath = async () => null, getStatus, recheckMs = 30000, missingRecheckMs = 300000, authCooldownMs = 60000, now = () => Date.now() }) {
   let ready = null;
-  let lastCheck = -Infinity; // never checked: the first recheck runs at once
+  let lastCheck = -Infinity;
+  let authRetryAt = 0;
   let inFlight = null;
-  const isReady = () => (ready === null ? !!getClaudePath() : ready);
+  function isReady() {
+    if (ready === false && authRetryAt && now() >= authRetryAt) { ready = null; authRetryAt = 0; }
+    return ready === null ? !!getClaudePath() : ready;
+  }
   function note(status) {
     ready = !!(status && status.installed && status.loggedIn !== false);
+    authRetryAt = 0;
     lastCheck = now();
   }
   function authFailed() {
     ready = false;
-    lastCheck = -Infinity; // look again on the next call, e.g. the retry after `claude login`
+    authRetryAt = now() + authCooldownMs;
+  }
+  function notReady() {
+    ready = false;
+    authRetryAt = 0;
+    lastCheck = now();
   }
   function working() {
     ready = true;
+    authRetryAt = 0;
     lastCheck = now();
   }
-  async function recheckIfStale() {
-    if (isReady() || now() - lastCheck < recheckMs) return;
-    if (!inFlight) {
-      lastCheck = now();
-      inFlight = (async () => {
-        let claudePath = getClaudePath();
-        if (!claudePath) {
-          claudePath = await resolvePath();
-          if (claudePath) setClaudePath(claudePath);
-        }
-        if (claudePath) note(await getStatus(claudePath));
-      })().catch(() => {}).finally(() => { inFlight = null; });
-    }
-    await inFlight;
+  // Fire and forget from the router; returns the check's promise for tests.
+  function recheckIfStale() {
+    if (isReady() || authRetryAt || inFlight) return inFlight || Promise.resolve();
+    if (now() - lastCheck < (getClaudePath() ? recheckMs : missingRecheckMs)) return Promise.resolve();
+    lastCheck = now();
+    inFlight = (async () => {
+      let claudePath = getClaudePath();
+      if (!claudePath) {
+        claudePath = await resolvePath();
+        if (claudePath) setClaudePath(claudePath);
+      }
+      if (claudePath) note(await getStatus(claudePath));
+    })().catch(() => {}).finally(() => { inFlight = null; });
+    return inFlight;
   }
-  return { isReady, note, authFailed, working, recheckIfStale };
+  return { isReady, note, authFailed, notReady, working, recheckIfStale };
 }
 
 module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, createClaudeReadiness, createStreamParser, classifyError, parseJsonOutput };

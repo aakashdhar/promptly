@@ -194,8 +194,9 @@ const routerOptions = {
   isClaudeReady,
   hasKey: hasApiKey,
   onClaudeAuthError: claudeReadiness.authFailed,
-  // Only in Automatic: someone who chose "My API key" asked for the key.
-  beforeRun: () => (aiMode() === 'auto' ? claudeReadiness.recheckIfStale() : undefined),
+  // While the key is answering in Automatic, look at Claude Code again in the background (never
+  // holding up the call), so it takes over again once it's ready. "My API key" means the key.
+  onApiRoute: () => { if (aiMode() === 'auto') claudeReadiness.recheckIfStale(); },
 };
 
 // Claude and Whisper processes behind the current operation, so an abort can stop them.
@@ -1411,15 +1412,21 @@ app.whenReady().then(async () => {
 
   // Harness runs on Claude Code only (D-AI-PROVIDERS): its files and schedules are built for
   // Claude Code, so an API key can't stand in. When prompts go to a key, it says so instead.
-  const HARNESS_NEEDS_CLAUDE = { success: false, errorType: 'needs-claude', error: 'Harness needs Claude Code. Set it up in Settings › Setup, or choose Claude Code in Settings › AI.' };
   // Only when the person chose their key, or has a key and no Claude Code. Otherwise Harness runs
   // on Claude Code as before, even if an earlier call fell back to the key.
   const harnessNeedsClaude = () => hasApiKey() && (aiMode() === 'api' || !claudePath);
+  const harnessNeedsClaudeResult = () => ({
+    success: false,
+    errorType: 'needs-claude',
+    error: aiMode() === 'api'
+      ? 'Harness needs Claude Code. Choose Automatic or Claude Code in Settings › AI.'
+      : 'Harness needs Claude Code. Set it up in Settings › Setup.',
+  });
 
   ipcMain.handle('harness-plan', async (_event, { transcript, context = {} } = {}) => {
     const stored = config.read();
     const block = buildContextBlock(getMode('harness'), { ...context, ...profileFor(getMode('harness'), stored), dictionary: dictionaryWords() });
-    if (harnessNeedsClaude()) return HARNESS_NEEDS_CLAUDE;
+    if (harnessNeedsClaude()) return harnessNeedsClaudeResult();
     const result = await claudeCli.run(harness.buildPlanPrompt(String(transcript || ''), block), { timeoutMs: 120000, slowWarningMs: 45000 });
     if (!result.success) return result;
     const plan = harness.parsePlan(result.prompt);
@@ -1432,7 +1439,7 @@ app.whenReady().then(async () => {
     // Thinking is off here: with it on, a pipeline's files took minutes longer and came out no
     // better. The window still shows each file as it's finished.
     const onDelta = throttledDelta(250, harness.progressText);
-    if (harnessNeedsClaude()) return HARNESS_NEEDS_CLAUDE;
+    if (harnessNeedsClaude()) return harnessNeedsClaudeResult();
     const result = await claudeCli.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
     if (!result.success) return result;
     const parsed = harness.parseFiles(result.prompt);
@@ -1684,7 +1691,7 @@ app.whenReady().then(async () => {
       providers: PROVIDER_IDS.map((id) => ({ id, label: PROVIDERS[id].label, keysUrl: PROVIDERS[id].keysUrl, keyHint: PROVIDERS[id].keyHint })),
       keys,
       models: stored.apiModels || {},
-      // Asking macOS whether it can encrypt reads (or creates) a "Promptly Safe Storage" Keychain
+      // Asking macOS whether it can encrypt reads (or creates) a "promptly Safe Storage" Keychain
       // item, so it only happens once a key is stored; save-ai-key checks for real when saving.
       canStoreKeys: Object.values(stored.apiKeys || {}).some(Boolean) ? secrets.available() : true,
       claudeReady: isClaudeReady(),
@@ -1721,9 +1728,15 @@ app.whenReady().then(async () => {
     const stored = config.read();
     const apiKeys = { ...(stored.apiKeys || {}) };
     delete apiKeys[provider];
-    // Removing the key "My API key" was using puts the choice back on Automatic (Claude Code).
-    const leavesApiModeKeyless = stored.aiMode === 'api' && (stored.apiProvider === provider || !apiKeys[stored.apiProvider]);
-    config.update({ apiKeys, ...(leavesApiModeKeyless && { aiMode: 'auto' }) });
+    // Removing the key in use switches to another saved key if there is one; with none left,
+    // "My API key" goes back to Automatic (Claude Code).
+    const patch = { apiKeys };
+    if (stored.apiProvider === provider) {
+      const other = PROVIDER_IDS.find((id) => apiKeys[id]);
+      if (other) patch.apiProvider = other;
+      else if (stored.aiMode === 'api') patch.aiMode = 'auto';
+    }
+    config.update(patch);
     log.info(`AI key removed for ${PROVIDERS[provider].label}`);
     return { ok: true, settings: aiSettingsView() };
   });
@@ -1734,7 +1747,8 @@ app.whenReady().then(async () => {
     const patch = {};
     // "My API key" only makes sense with a key saved; without one it would send every call nowhere.
     if (['auto', 'claude'].includes(mode) || (mode === 'api' && hasApiKey())) patch.aiMode = mode;
-    if (PROVIDERS[provider]) patch.apiProvider = provider;
+    // The provider in use is always one with a saved key (saving a key makes it the one in use).
+    if (PROVIDERS[provider] && stored.apiKeys?.[provider]) patch.apiProvider = provider;
     const target = patch.apiProvider || stored.apiProvider;
     if (PROVIDERS[target] && (typeof model === 'string' || typeof fastModel === 'string')) {
       const current = stored.apiModels?.[target] || {};
@@ -1775,9 +1789,11 @@ app.whenReady().then(async () => {
     const test = await evalCli.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
     const working = test.success && test.prompt.toLowerCase().includes('ready');
     const authError = test.errorType === 'auth';
-    // A working answer means ready; a sign-in error means not. A timeout decides nothing.
+    // A working answer means ready; a sign-in error or a broken CLI means not. A timeout (a cold
+    // start can be slow) decides nothing.
     if (working) claudeReadiness.working();
     else if (authError) claudeReadiness.authFailed();
+    else if (!test.timedOut) claudeReadiness.notReady();
     let error = null;
     if (!working) {
       if (test.timedOut) error = 'Claude is not responding (timed out after 15s)';

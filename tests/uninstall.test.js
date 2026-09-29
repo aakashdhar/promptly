@@ -91,7 +91,9 @@ describe.skipIf(process.platform === 'win32')('uninstall runs after Promptly has
     expect(fs.existsSync(app)).toBe(false)
     expect(fs.existsSync(data)).toBe(false)
     expect(calls()).toMatch(/tccutil reset Microphone io\.betacraft\.promptly/)
-    // The Keychain entry that encrypts saved API keys (D-AI-PROVIDERS) goes too.
+    // The Keychain entry that encrypts saved API keys (D-AI-PROVIDERS) goes too. Electron names it
+    // after package.json's "name" (lowercase); the capitalised spelling is removed as well.
+    expect(calls()).toMatch(/security delete-generic-password -s promptly Safe Storage/)
     expect(calls()).toMatch(/security delete-generic-password -s Promptly Safe Storage/)
   }, 30000)
 

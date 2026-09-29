@@ -151,7 +151,7 @@ describe('AI providers: who answers each call', () => {
   }
   const make = (o = {}) => {
     const claude = fakeRunner('claude', o.claudeResult), api = fakeRunner('api')
-    const router = createAiRouter({ claude, api, getMode: () => o.mode ?? 'auto', isClaudeReady: o.isReady ?? (() => o.ready ?? true), hasKey: () => o.key ?? false, apiOptions: o.apiOptions, onClaudeAuthError: o.onAuth, beforeRun: o.beforeRun })
+    const router = createAiRouter({ claude, api, getMode: () => o.mode ?? 'auto', isClaudeReady: o.isReady ?? (() => o.ready ?? true), hasKey: () => o.key ?? false, apiOptions: o.apiOptions, onClaudeAuthError: o.onAuth, onApiRoute: o.onApiRoute })
     return { router, claude, api }
   }
 
@@ -168,16 +168,23 @@ describe('AI providers: who answers each call', () => {
     expect(make({ mode: 'api', ready: true, key: false }).router.active()).toBe('claude')
   })
 
-  it('looks at Claude Code again before a call would go to the key, and switches back if it is fine', async () => {
-    let ready = false
-    let checks = 0
-    const a = make({ key: true, isReady: () => ready, beforeRun: async () => { checks++; ready = true } })
-    expect((await a.router.run('p')).provider).toBe('claude')
-    expect(checks).toBe(1)
-    expect(a.api.calls).toEqual([])
-    // Claude Code already fine: no extra check before the call.
-    await a.router.run('p')
-    expect(checks).toBe(1)
+  it('in Automatic, a Claude sign-in refusal is answered by the key instead of failing', async () => {
+    let flagged = 0
+    const a = make({ key: true, claudeResult: { success: false, errorType: 'auth', error: 'Please run /login' }, onAuth: () => flagged++ })
+    const result = await a.router.run('p', { timeoutMs: 5 })
+    expect(result.prompt).toBe('api answer')
+    expect(flagged).toBe(1)
+    expect(a.api.calls).toHaveLength(1)
+    // Without a key, or with "Claude Code" chosen, the Claude error comes back as before.
+    expect((await make({ key: false, claudeResult: { success: false, errorType: 'auth' } }).router.run('p')).errorType).toBe('auth')
+    expect((await make({ key: true, mode: 'claude', claudeResult: { success: false, errorType: 'auth' } }).router.run('p')).errorType).toBe('auth')
+  })
+
+  it('when the key answers in Automatic it asks for a background look at Claude Code, without waiting', async () => {
+    let looks = 0
+    const a = make({ key: true, ready: false, onApiRoute: () => { looks++; return new Promise(() => {}) } })
+    expect((await a.router.run('p')).prompt).toBe('api answer')
+    expect(looks).toBe(1)
   })
 
   it('passes Claude calls through unchanged and API calls with their options', async () => {
@@ -209,7 +216,9 @@ describe('AI providers: is Claude Code ready?', () => {
       setClaudePath: (p) => { claudePath = p },
       resolvePath: async () => o.resolved ?? null,
       getStatus: async () => { statusCalls++; return o.status ?? { installed: true, loggedIn: true } },
-      recheckMs: 15000,
+      recheckMs: 30000,
+      missingRecheckMs: 300000,
+      authCooldownMs: 60000,
       now: () => clock,
     })
     return { r, tick: (ms) => { clock += ms }, statusCalls: () => statusCalls, path: () => claudePath }
@@ -220,45 +229,59 @@ describe('AI providers: is Claude Code ready?', () => {
     expect(setup({ path: null }).r.isReady()).toBe(false)
   })
 
-  it('after a sign-in error it looks again straight away, then at most every 15 s', async () => {
-    const t = setup({ status: { installed: true, loggedIn: false } })
+  it('after a sign-in refusal the key answers for a minute, then Claude Code gets another try', async () => {
+    // `claude auth status` can say "signed in" for a token Claude rejects, so it isn't asked here.
+    const t = setup({ status: { installed: true, loggedIn: true } })
     t.r.authFailed()
     expect(t.r.isReady()).toBe(false)
     await t.r.recheckIfStale()
-    expect(t.statusCalls()).toBe(1)
-    await t.r.recheckIfStale()
-    expect(t.statusCalls()).toBe(1)
-    t.tick(15000)
-    await t.r.recheckIfStale()
-    expect(t.statusCalls()).toBe(2)
+    expect(t.statusCalls()).toBe(0)
+    t.tick(59000)
+    expect(t.r.isReady()).toBe(false)
+    t.tick(1000)
+    expect(t.r.isReady()).toBe(true)
   })
 
-  it('switches back once Claude Code is signed in again', async () => {
+  it('looks again in the background when Claude Code was not signed in, every 30 s', async () => {
     const status = { installed: true, loggedIn: false }
     const t = setup({ status })
     t.r.note(status)
     expect(t.r.isReady()).toBe(false)
-    status.loggedIn = true
-    t.tick(15000)
     await t.r.recheckIfStale()
+    expect(t.statusCalls()).toBe(0)
+    status.loggedIn = true
+    t.tick(30000)
+    await t.r.recheckIfStale()
+    expect(t.statusCalls()).toBe(1)
     expect(t.r.isReady()).toBe(true)
   })
 
-  it('finds Claude Code installed while Promptly was open', async () => {
+  it('finds Claude Code installed while Promptly was open, looking only every 5 minutes', async () => {
     const t = setup({ path: null, resolved: '/opt/claude' })
     t.r.note({ installed: false, loggedIn: false })
-    t.tick(15000)
+    t.tick(60000)
+    await t.r.recheckIfStale()
+    expect(t.path()).toBe(null)
+    t.tick(240000)
     await t.r.recheckIfStale()
     expect(t.path()).toBe('/opt/claude')
     expect(t.r.isReady()).toBe(true)
   })
 
-  it('checks nothing while Claude Code is ready, and runs one check for calls that arrive together', async () => {
+  it('a broken Claude Code is not ready until a check says otherwise', async () => {
     const t = setup()
+    t.r.notReady()
+    expect(t.r.isReady()).toBe(false)
     t.r.working()
+    expect(t.r.isReady()).toBe(true)
+  })
+
+  it('checks nothing while Claude Code is ready, and runs one check for calls that arrive together', async () => {
+    const t = setup({ status: { installed: true, loggedIn: false } })
     await t.r.recheckIfStale()
     expect(t.statusCalls()).toBe(0)
-    t.r.authFailed()
+    t.r.note({ installed: false })
+    t.tick(30000)
     await Promise.all([t.r.recheckIfStale(), t.r.recheckIfStale(), t.r.recheckIfStale()])
     expect(t.statusCalls()).toBe(1)
   })

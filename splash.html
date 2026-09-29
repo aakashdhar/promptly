@@ -73,7 +73,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
 .screen { display: none; flex: 1; flex-direction: column; }
 /* The Claude Code step can outgrow the fixed window (install help plus the API-key section): it
    scrolls rather than pushing Check key, its message or Continue out of reach. */
-#screen-claude { min-height: 0; overflow-y: auto; }
+#screen-claude { min-height: 0; overflow-y: auto; padding: 4px; margin: -4px; } /* room for focus rings */
 .screen.visible { display: flex; }
 h1 { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 8px; text-wrap: balance; }
 .lede { color: var(--muted); margin: 0 0 24px; max-width: 42ch; font-size: 14px; }
@@ -235,7 +235,8 @@ details.manual.saved summary { color: var(--ok); }
     </div>
 
     <!-- No Claude Code: the user's own OpenAI, Gemini or Grok key instead (D-AI-PROVIDERS). -->
-    <details class="manual" id="apikey-box">
+    <!-- Hidden until the Claude Code check says it's needed, so Claude users never see it. -->
+    <details class="manual" id="apikey-box" hidden>
       <summary>No Claude Code? Use an API key instead</summary>
       <p class="hint">Your own OpenAI, Gemini or Grok key. It's checked, then stored encrypted on this computer. Everything except Harness works with it, and Promptly switches to Claude Code whenever you set it up.</p>
       <div class="path-row">
@@ -396,13 +397,26 @@ document.getElementById('mic-open-settings').addEventListener('click', () => api
 document.getElementById('mic-next').addEventListener('click', () => { show('claude'); runScreen1(); });
 
 // ── Claude Code ──────────────────────────────────────────────────────────────
-// A saved API key counts too: setup can go on without Claude Code (D-AI-PROVIDERS).
+// A saved API key counts too: setup can go on without Claude Code (D-AI-PROVIDERS). It counts the
+// way the app does: the key of the provider in use, and not when "Claude Code" is chosen.
 let apiKeySaved = false;
 let claudeIsReady = false;
 function updateClaudeContinue() {
   document.getElementById('claude-next').disabled = !(claudeIsReady || apiKeySaved);
 }
-api.getAiSettings?.().then((s) => { apiKeySaved = !!(s && Object.values(s.keys || {}).some((k) => k.saved)); updateClaudeContinue(); }).catch(() => {});
+// The window can't grow, so a saved key folds the section up (keeping Continue in view) and says
+// so on the line that stays visible.
+function showKeySaved(label) {
+  const box = document.getElementById('apikey-box');
+  box.open = false;
+  box.classList.add('saved');
+  box.querySelector('summary').textContent = `${label} key saved. Promptly will use it until Claude Code is set up.`;
+}
+api.getAiSettings?.().then((s) => {
+  apiKeySaved = !!(s && s.mode !== 'claude' && s.provider && s.keys?.[s.provider]?.saved);
+  if (apiKeySaved) showKeySaved((s.providers || []).find((p) => p.id === s.provider)?.label || 'Your');
+  updateClaudeContinue();
+}).catch(() => {});
 function setClaudeReady(ready) {
   claudeIsReady = ready;
   updateClaudeContinue();
@@ -533,24 +547,22 @@ document.getElementById('apikey-save').addEventListener('click', async () => {
   const select = document.getElementById('apikey-provider');
   const input = document.getElementById('apikey-key');
   const msg = document.getElementById('apikey-msg');
-  if (!input.value.trim()) { msg.className = 'apikey-msg bad'; msg.textContent = 'Paste your key first.'; return; }
+  if (!input.value.trim()) { msg.className = 'apikey-msg bad'; msg.textContent = 'Paste your key first.'; msg.scrollIntoView({ block: 'nearest' }); return; }
   button.disabled = true;
   msg.className = 'apikey-msg';
   msg.textContent = 'Checking the key…';
+  msg.scrollIntoView({ block: 'nearest' });
   const result = await api.saveAiKey(select.value, input.value).catch(() => ({ ok: false, error: "Couldn't check the key." }));
   button.disabled = false;
   if (!result.ok) { msg.className = 'apikey-msg bad'; msg.textContent = result.error; msg.scrollIntoView({ block: 'nearest' }); return; }
   input.value = '';
+  // Saving a key here means "use it": someone who had chosen "Always Claude Code" goes to Automatic.
+  if (result.settings && result.settings.mode === 'claude') await api.setAiSettings({ mode: 'auto' }).catch(() => {});
   apiKeySaved = true;
   stopClaudePoll();
   msg.className = 'apikey-msg';
   msg.textContent = '';
-  // The window can't grow, so fold the section up (keeping Continue in view) and say it on the
-  // line that stays visible.
-  const box = document.getElementById('apikey-box');
-  box.open = false;
-  box.classList.add('saved');
-  box.querySelector('summary').textContent = `${select.options[select.selectedIndex].text} key saved. Promptly will use it until Claude Code is set up.`;
+  showKeySaved(select.options[select.selectedIndex].text);
   updateClaudeContinue();
 });
 document.getElementById('apikey-key').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('apikey-save').click(); });
