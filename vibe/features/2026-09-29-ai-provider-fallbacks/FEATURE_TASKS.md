@@ -49,13 +49,13 @@
 - Saving validates by listing models (one request both checks the key and fills the pickers); write handlers accept only the main and setup windows, like other handlers that change settings.
 ---
 ### AIP-005 · Settings › AI tab
-- **Status**: `[ ]` · **Size**: L · **Spec ref**: #3.1, #3.2 · **Dependencies**: AIP-004
+- **Status**: `[x]` · **Size**: L · **Spec ref**: #3.1, #3.2 · **Dependencies**: AIP-004
 - **Touches**: src/renderer/components/AiProviderSection.jsx (new), src/renderer/components/SettingsPanel.jsx
 
 **What to do**: tab with mode, provider, masked key + Save/Remove, model and fast model selects, Test with result line; theme tokens, 11–17 px.
 **Acceptance criteria**: - [ ] all controls work against the IPC - [ ] saved keys show only last 4
 **Decisions**:
-- None yet.
+- Local Row/Section copies (as SpeechSection does) rather than refactoring SettingsPanel's shared primitives; key refusals while saving say 'Check you copied all of it' instead of pointing back to Settings.
 ---
 ### AIP-006 · Setup: "Use an API key instead"
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: #3.7 · **Dependencies**: AIP-004
