@@ -58,13 +58,13 @@
 - Local Row/Section copies (as SpeechSection does) rather than refactoring SettingsPanel's shared primitives; key refusals while saving say 'Check you copied all of it' instead of pointing back to Settings.
 ---
 ### AIP-006 · Setup: "Use an API key instead"
-- **Status**: `[ ]` · **Size**: M · **Spec ref**: #3.7 · **Dependencies**: AIP-004
+- **Status**: `[x]` · **Size**: M · **Spec ref**: #3.7 · **Dependencies**: AIP-004
 - **Touches**: splash.html
 
 **What to do**: on the Claude Code step (every state), a secondary button reveals provider select + key input + "Check key"; success saves (mode stays auto) and continues to the next step.
 **Acceptance criteria**: - [ ] setup completes without Claude Code when a valid key is given - [ ] scripts/assert-splash.js still passes
 **Decisions**:
-- None yet.
+- A saved key counts as 'ready' for Continue (apiKeySaved), so the Claude Code poll can't disable it again; on a reopened wizard an existing key is picked up from get-ai-settings.
 ---
 ### AIP-007 · Provider-aware errors, Harness message, neutral wording
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: #3.6, #3.8, #3.9 · **Dependencies**: AIP-003
