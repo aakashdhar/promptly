@@ -31,13 +31,13 @@
 - Refuse rather than fall back to plain text when safeStorage is unavailable; unreadable ciphertext (moved profile, reset Keychain) reads as 'no key'.
 ---
 ### AIP-003 · Router and wiring in main
-- **Status**: `[ ]` · **Size**: M · **Spec ref**: #3.4, #3.5, #3.6, #3.10 · **Dependencies**: AIP-001, AIP-002
+- **Status**: `[x]` · **Size**: M · **Spec ref**: #3.4, #3.5, #3.6, #3.10 · **Dependencies**: AIP-001, AIP-002
 - **Touches**: main/llm.js, main.js, tests/ai.test.js
 
 **What to do**: `createAiRouter` in llm.js (mode resolution per call, `active()`, `cancelAll` both). In main.js wrap `claude`, `evalClaude`, `cleanupClaude` (fast model) with routers; track `claudeReady` from the startup/settings status checks; Harness handlers use the Claude runner and return `needs-claude` when the active provider isn't Claude; the settings Test uses the router.
 **Acceptance criteria**: - [ ] resolution matrix tested - [ ] no key saved → identical Claude calls (existing tests green) - [ ] Harness gated
 **Decisions**:
-- None yet.
+- Router wraps the existing runners instead of changing them, so Claude calls are byte-for-byte the same; 'Claude ready' is unknown until the first status check and then optimistic when claudePath exists.
 ---
 ### AIP-004 · AI settings IPC
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: #7 · **Dependencies**: AIP-003
