@@ -115,6 +115,11 @@ let splashWin = null;
 let isQuitting = false;
 let menuBarTray = null;
 let pulseInterval = null;
+// The green "ready" dot means "just finished", not "busy": it shows for a few seconds when a
+// result arrives, then the icon rests without a dot until the next result.
+const READY_DOT_MS = 3000;
+let readyDotTimer = null;
+let readyDotShown = false;
 let currentIconState = 'idle';
 let lastGeneratedPrompt = null;
 let lastTempAudioPath = null;
@@ -395,6 +400,8 @@ function updateMenuBarIcon(iconState) {
   if (!menuBarTray || menuBarTray.isDestroyed()) return;
   clearInterval(pulseInterval);
   pulseInterval = null;
+  clearTimeout(readyDotTimer);
+  readyDotTimer = null;
   currentIconState = iconState;
   const isDark = nativeTheme.shouldUseDarkColors;
   const tooltips = {
@@ -412,8 +419,17 @@ function updateMenuBarIcon(iconState) {
       dotOn = !dotOn;
       menuBarTray.setImage(createMicIcon(iconState, nativeTheme.shouldUseDarkColors, dotOn));
     }, 600);
+  } else if (iconState === 'ready' && readyDotShown) {
+    menuBarTray.setImage(createMicIcon('idle', isDark));
   } else {
     menuBarTray.setImage(createMicIcon(iconState, isDark));
+    if (iconState === 'ready') {
+      readyDotTimer = setTimeout(() => {
+        readyDotTimer = null;
+        readyDotShown = true;
+        refreshMenuBarIcon();
+      }, READY_DOT_MS);
+    }
   }
 }
 
@@ -490,6 +506,8 @@ function buildTrayMenu() {
       label: 'Copy last prompt',
       click: () => {
         clipboard.writeText(lastGeneratedPrompt);
+        // A short green flash confirms the copy, even after the result's own dot has gone.
+        readyDotShown = false;
         updateMenuBarIcon('ready');
         // Back to whatever the app is doing by then (a recording may have started meanwhile).
         setTimeout(() => refreshMenuBarIcon(), 1200);
@@ -1670,6 +1688,8 @@ app.whenReady().then(async () => {
       log.info(`Recording: ${currentAppState} → ${appState}${pillSession ? ' (pill)' : ''}`);
     }
     if (appState === 'RECORDING' && currentAppState !== 'RECORDING') logHotkeyLatency();
+    // A new result gets its green dot afresh.
+    if (appState === 'PROMPT_READY' && currentAppState !== 'PROMPT_READY') readyDotShown = false;
     currentAppState = appState;
     // Each recording judges the speaker's volume afresh (pausing and resuming carries on).
     if (appState !== 'RECORDING' && appState !== 'PAUSED') {
