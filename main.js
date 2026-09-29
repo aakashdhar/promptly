@@ -165,11 +165,12 @@ const evalClaude = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
 });
-// Dictation clean-up (D-DICTATION-CLEANUP) always uses Haiku, whatever model Craft uses: it's the
-// fastest and lightest on the user's plan. Its processes count as the current operation, so a
-// cancel stops them too.
-const DICTATION_CLEANUP_MODEL = 'haiku';
-const DICTATION_CLEANUP_TIMEOUT_MS = 10000;
+// Dictation clean-up (D-DICTATION-CLEANUP) always uses Sonnet, whatever model Craft uses: in
+// tests Haiku couldn't rebuild misheard Indian names ("super nah" → Supranaah; Sonnet: Suparna)
+// and was only about a second faster. Its processes count as the current operation, so a cancel
+// stops them too.
+const DICTATION_CLEANUP_MODEL = 'sonnet';
+const DICTATION_CLEANUP_TIMEOUT_MS = 12000;
 const cleanupClaude = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: () => DICTATION_CLEANUP_MODEL,
@@ -315,7 +316,7 @@ async function typeIntoApp(text) {
   return true;
 }
 
-// Haiku fixes misheard words and punctuation. Its answer is used only if acceptCleanup() finds it's
+// Claude fixes misheard words and punctuation. Its answer is used only if acceptCleanup() finds it's
 // the same text with a few fixes; otherwise, or when Claude is missing, slow or signed out, the
 // local text is typed as before.
 async function cleanUpDictation(text) {
