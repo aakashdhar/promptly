@@ -11,8 +11,8 @@ const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
 const { resolveClaudePath, resolveWhisperPath, resolveFfmpegPath } = require('./main/binaries');
 const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, parseJsonOutput } = require('./main/llm');
-const { createApiRunner } = require('./main/ai-api');
-const { PROVIDERS } = require('./main/ai-providers');
+const { createApiRunner, listModels } = require('./main/ai-api');
+const { PROVIDERS, PROVIDER_IDS, pickModels } = require('./main/ai-providers');
 const { createSecrets } = require('./main/secrets');
 const { createWhisperRunner, findDownloadedModel, whisperCommand } = require('./main/whisper');
 const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
@@ -1643,6 +1643,95 @@ app.whenReady().then(async () => {
   ipcMain.handle('get-platform', () => keysFor(process.platform));
 
   // ── Tool checks (setup wizard + Settings) ──
+
+  // ── AI provider (D-AI-PROVIDERS) ──
+  // A key goes in once (save-ai-key) and never comes back out: the windows only learn which
+  // providers have a key and its last four characters. Keys are never logged.
+
+  function aiSettingsView() {
+    const stored = config.read();
+    const keys = {};
+    for (const id of PROVIDER_IDS) {
+      const key = secrets.decrypt(stored.apiKeys?.[id]);
+      keys[id] = { saved: !!key, last4: key ? key.slice(-4) : '' };
+    }
+    return {
+      mode: aiMode(),
+      provider: PROVIDERS[stored.apiProvider] ? stored.apiProvider : null,
+      providers: PROVIDER_IDS.map((id) => ({ id, label: PROVIDERS[id].label, keysUrl: PROVIDERS[id].keysUrl, keyHint: PROVIDERS[id].keyHint })),
+      keys,
+      models: stored.apiModels || {},
+      canStoreKeys: secrets.available(),
+      claudeReady: isClaudeReady(),
+      active: claude.active(),
+    };
+  }
+
+  ipcMain.handle('get-ai-settings', () => aiSettingsView());
+
+  // Checks the key by listing the provider's models, then saves it encrypted with the picked models.
+  ipcMain.handle('save-ai-key', async (event, { provider, key } = {}) => {
+    if (!fromWindow(event, win, splashWin)) return { ok: false, error: 'Not allowed from this window.' };
+    if (!PROVIDERS[provider]) return { ok: false, error: 'Unknown AI provider.' };
+    const trimmed = String(key || '').trim();
+    const check = await listModels(provider, trimmed);
+    if (!check.ok) return { ok: false, error: check.error };
+    let encrypted;
+    try { encrypted = secrets.encrypt(trimmed); } catch (err) { return { ok: false, error: err.message }; }
+    const picked = pickModels(check.models, provider);
+    const stored = config.read();
+    config.update({
+      apiProvider: provider,
+      apiKeys: { ...(stored.apiKeys || {}), [provider]: encrypted },
+      apiModels: { ...(stored.apiModels || {}), [provider]: { model: picked.model, fastModel: picked.fastModel } },
+    });
+    log.info(`AI key saved for ${PROVIDERS[provider].label}; model ${picked.model}, fast ${picked.fastModel}`);
+    return { ok: true, models: picked.models, settings: aiSettingsView() };
+  });
+
+  ipcMain.handle('remove-ai-key', (event, provider) => {
+    if (!fromWindow(event, win, splashWin)) return { ok: false };
+    if (!PROVIDERS[provider]) return { ok: false };
+    const stored = config.read();
+    const apiKeys = { ...(stored.apiKeys || {}) };
+    delete apiKeys[provider];
+    config.update({ apiKeys });
+    log.info(`AI key removed for ${PROVIDERS[provider].label}`);
+    return { ok: true, settings: aiSettingsView() };
+  });
+
+  ipcMain.handle('set-ai-settings', (event, { mode, provider, model, fastModel } = {}) => {
+    if (!fromWindow(event, win, splashWin)) return aiSettingsView();
+    const stored = config.read();
+    const patch = {};
+    if (['auto', 'claude', 'api'].includes(mode)) patch.aiMode = mode;
+    if (PROVIDERS[provider]) patch.apiProvider = provider;
+    const target = patch.apiProvider || stored.apiProvider;
+    if (PROVIDERS[target] && (typeof model === 'string' || typeof fastModel === 'string')) {
+      const current = stored.apiModels?.[target] || {};
+      patch.apiModels = { ...(stored.apiModels || {}), [target]: { ...current, ...(typeof model === 'string' && { model }), ...(typeof fastModel === 'string' && { fastModel }) } };
+    }
+    if (Object.keys(patch).length) config.update(patch);
+    return aiSettingsView();
+  });
+
+  // The chat models the saved key can use, best first.
+  ipcMain.handle('list-ai-models', async (_event, provider) => {
+    if (!PROVIDERS[provider]) return { ok: false, models: [], error: 'Unknown AI provider.' };
+    const key = secrets.decrypt(config.read().apiKeys?.[provider]);
+    if (!key) return { ok: false, models: [], error: `No ${PROVIDERS[provider].label} key saved.` };
+    const check = await listModels(provider, key);
+    return check.ok ? { ok: true, models: pickModels(check.models, provider).models } : { ok: false, models: [], error: check.error };
+  });
+
+  // A tiny request to whoever answers prompts now: Claude Code or the saved key.
+  ipcMain.handle('test-ai', async () => {
+    const started = Date.now();
+    const result = await evalClaude.run('respond with only the word READY', { timeoutMs: 20000, slowWarningMs: 0 });
+    const ok = !!result.success && /ready/i.test(result.prompt || '');
+    const who = result.provider === 'claude' ? 'Claude Code' : PROVIDERS[result.provider]?.label || 'AI';
+    return { ok, provider: who, model: result.model || null, ms: Date.now() - started, error: ok ? null : result.error || `${who} gave an unexpected answer` };
+  });
 
   ipcMain.handle('check-claude', async () => {
     const resolvedPath = claudePath || await resolveClaudePath(config.read().claudePath);
