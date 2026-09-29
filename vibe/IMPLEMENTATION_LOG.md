@@ -101,3 +101,9 @@
 - **Why**: the clean-up must never block or change Dictation when Claude is unavailable, and must not answer a dictated question; checking locally is cheap and testable.
 - **Touches**: main.js (`cleanUpDictation`, `runDictation`, prefs `dictationCleanup`), main/dictation.js, main/prompts.js, main/prompts/dictation-cleanup.txt, SettingsPanel.jsx, e2e/fakes/claude.mjs, tests/speech.test.js
 ---
+---
+### 2026-09-29 · D-AI-PROVIDERS · A router wraps the existing Claude runners; keys only in main
+- **Decision**: `createAiRouter` in main/llm.js wraps each existing Claude runner (prompt, scorecard, Dictation clean-up) with an API runner and picks one per call (auto: Claude when ready, else a saved key). Claude runners, prompts and flags are untouched; Harness and Check Claude call the Claude runner directly. The OpenAI-format client (main/ai-api.js) serves OpenAI, Gemini and Grok; keys are safeStorage ciphertext in config.json, decrypted per call in main, never sent to the renderer. e2e uses PROMPTLY_AI_BASE_URL and a stand-in cipher (IS_E2E only).
+- **Why**: Claude Code users must see no change; one client covers three providers with no SDKs; the router keeps "every AI call through main/llm.js" true.
+- **Touches**: main/llm.js (`createAiRouter`), main/ai-api.js, main/ai-providers.js, main/secrets.js, main.js (runners, `claudeReady`, AI IPC, Harness gate), preload.js, splash.html, AiProviderSection.jsx, SettingsPanel.jsx, ExpandedErrorContent.jsx, useDictation.js, App.jsx, tests/ai.test.js, e2e/app.spec.mjs
+---

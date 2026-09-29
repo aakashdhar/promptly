@@ -83,7 +83,7 @@
 - Test-only hooks behind IS_E2E: PROMPTLY_AI_BASE_URL points API calls at a local stand-in; keys use a reversible stand-in instead of safeStorage so e2e never touches the Keychain.
 ---
 ### AIP-009 · Docs
-- **Status**: `[ ]` · **Size**: S · **Dependencies**: all
+- **Status**: `[x]` · **Size**: S · **Dependencies**: all
 - **Touches**: vibe/DECISIONS.md, vibe/ARCHITECTURE.md, CLAUDE.md, vibe/CODEBASE.md, vibe/IMPLEMENTATION_LOG.md
 ---
 

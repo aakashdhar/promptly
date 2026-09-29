@@ -1026,7 +1026,7 @@ Say "next" to begin.
 
 ---
 
-🔄 AI provider fallbacks — use your own OpenAI, Gemini or Grok key when Claude Code isn't there (7/9)
+🔄 AI provider fallbacks — use your own OpenAI, Gemini or Grok key when Claude Code isn't there (8/9, e2e not run)
    Branch: feature/ai-providers (not merged to main). Estimated: approx. 22 hours (S: 2, M: 5, L: 2)
    [x] AIP-001 · Provider list and API client — talks to OpenAI, Gemini and Grok, with streaming
    [x] AIP-002 · Encrypted key storage — keys kept in the Keychain-backed store, never in plain text
@@ -1036,6 +1036,17 @@ Say "next" to begin.
    [x] AIP-006 · Setup — "Use an API key instead" on the Claude Code step
    [x] AIP-007 · Clear errors — names the provider; Harness says it needs Claude Code
    [~] AIP-008 · End-to-end test with a fake provider — written, waiting for your go-ahead to run
-   [ ] AIP-009 · Docs
+   [x] AIP-009 · Docs
    → Full specs: vibe/features/2026-09-29-ai-provider-fallbacks/FEATURE_TASKS.md (agent use)
+
+## What just happened (feature/ai-providers — not merged)
+✅ AIP-001…007, 009 · Claude Code stays the default; your own OpenAI, Gemini or Grok key works when it isn't there
+   Settings › AI, setup "Use an API key instead", provider-named errors, Harness stays on Claude Code.
+   Unit tests 309/309 (22 new), lint clean; Settings tab and setup path checked in throwaway previews.
+⚠️ AIP-008 · e2e test written, not run (opens app windows; waiting for your go-ahead)
+
+## What's next
+⬜ You: say when the full e2e suite can run (about 5 minutes, opens app windows)
+⬜ You: try it with a real OpenAI/Gemini/Grok key (branch build) before we merge to main
+⬜ After merge: website copy ("only text goes to your AI provider"), release
 

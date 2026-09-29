@@ -199,7 +199,13 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | splash → main | `splash-check-cli` / `splash-check-whisper` | Quick checks (Whisper check honours a custom ffmpeg path) |
 | splash → main | `splash-open-url` | Open an https:// install link |
 | splash → main | `check-setup-complete` / `set-setup-complete` | `setupComplete` in config.json |
-| splash → main | `check-claude` | Version + a real `READY` test through `main/llm.js` |
+| splash → main | `check-claude` | Version + a real `READY` test of Claude Code itself (`evalCli`, not the router) |
+| window/splash → main | `get-ai-settings` | D-AI-PROVIDERS: mode, provider, which keys are saved (+ last 4 only), models, `active` |
+| window/splash → main | `save-ai-key` | Checks the key by listing models, saves it encrypted (safeStorage) with the picked models; never echoes the key |
+| window/splash → main | `remove-ai-key` | Deletes a provider's saved key |
+| window/splash → main | `set-ai-settings` | Mode (auto/claude/api), provider, model, fast model |
+| window → main | `list-ai-models` | The saved key's chat models, best first |
+| window → main | `test-ai` | One-word request to whoever answers now (router) |
 | splash → main | `check-whisper` / `check-ffmpeg` | Run the binary to verify it works |
 | splash → main | `check-whisper-model` / `download-whisper-model` | Model presence (same model transcription uses) and download |
 | main → renderer | `shortcut-pause` | Option+P while recording |
