@@ -67,12 +67,12 @@
 - A saved key counts as 'ready' for Continue (apiKeySaved), so the Claude Code poll can't disable it again; on a reopened wizard an existing key is picked up from get-ai-settings.
 ---
 ### AIP-007 · Provider-aware errors, Harness message, neutral wording
-- **Status**: `[ ]` · **Size**: M · **Spec ref**: #3.6, #3.8, #3.9 · **Dependencies**: AIP-003
+- **Status**: `[x]` · **Size**: M · **Spec ref**: #3.6, #3.8, #3.9 · **Dependencies**: AIP-003
 - **Touches**: src/renderer/hooks/useDictation.js, src/renderer/components/ExpandedErrorContent.jsx, src/renderer/hooks/useHarnessBuilder.js, splash.html, SettingsPanel.jsx copy
 
 **What to do**: auth/rate/offline messages come from main when the provider isn't Claude; Harness shows "Harness needs Claude Code" for `needs-claude`; "only text goes to Claude" copy in the app becomes provider-neutral.
 **Decisions**:
-- None yet.
+- Provider travels with generation errors (provider field); API errors reuse main's provider-named message rather than a second copy in the renderer. Spec criterion 9: no in-app copy promised Claude-only text; the website's privacy copy waits for the merge.
 ---
 ### AIP-008 · e2e fake provider
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: #10 · **Dependencies**: AIP-004

@@ -1026,7 +1026,7 @@ Say "next" to begin.
 
 ---
 
-🔄 AI provider fallbacks — use your own OpenAI, Gemini or Grok key when Claude Code isn't there (6/9)
+🔄 AI provider fallbacks — use your own OpenAI, Gemini or Grok key when Claude Code isn't there (7/9)
    Branch: feature/ai-providers (not merged to main). Estimated: approx. 22 hours (S: 2, M: 5, L: 2)
    [x] AIP-001 · Provider list and API client — talks to OpenAI, Gemini and Grok, with streaming
    [x] AIP-002 · Encrypted key storage — keys kept in the Keychain-backed store, never in plain text
@@ -1034,7 +1034,7 @@ Say "next" to begin.
    [x] AIP-004 · Settings plumbing — save, check and remove keys, list models, test
    [x] AIP-005 · Settings › AI tab — pick the provider, paste a key, choose models, test
    [x] AIP-006 · Setup — "Use an API key instead" on the Claude Code step
-   [ ] AIP-007 · Clear errors — names the provider; Harness says it needs Claude Code
+   [x] AIP-007 · Clear errors — names the provider; Harness says it needs Claude Code
    [ ] AIP-008 · End-to-end test with a fake provider (run only with your go-ahead)
    [ ] AIP-009 · Docs
    → Full specs: vibe/features/2026-09-29-ai-provider-fallbacks/FEATURE_TASKS.md (agent use)
