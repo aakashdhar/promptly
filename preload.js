@@ -80,8 +80,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAiSettings: () =>
     ipcRenderer.invoke('get-ai-settings'),
 
-  saveAiKey: (provider, key) =>
-    ipcRenderer.invoke('save-ai-key', { provider, key }),
+  saveAiKey: (provider, key, { claudeUnavailable = false } = {}) =>
+    ipcRenderer.invoke('save-ai-key', { provider, key, claudeUnavailable }),
 
   removeAiKey: (provider) =>
     ipcRenderer.invoke('remove-ai-key', provider),

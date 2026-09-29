@@ -48,6 +48,7 @@ export default function ExpandedErrorContent({
           body={apiHints[err.errorType] || null}
           onRetry={err.onRetry}
           onOpenSettings={err.onOpenSettings}
+          settingsHint="Open Settings › AI to check your key or pick another model."
         />
       )
     }

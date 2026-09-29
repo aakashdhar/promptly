@@ -193,7 +193,7 @@ const routerOptions = {
   getMode: aiMode,
   isClaudeReady,
   hasKey: hasApiKey,
-  onClaudeAuthError: claudeReadiness.authFailed,
+  onClaudeUnavailable: claudeReadiness.unavailable,
   // While the key is answering in Automatic, look at Claude Code again in the background (never
   // holding up the call), so it takes over again once it's ready. "My API key" means the key.
   onApiRoute: () => { if (aiMode() === 'auto') claudeReadiness.recheckIfStale(); },
@@ -1702,7 +1702,9 @@ app.whenReady().then(async () => {
   ipcMain.handle('get-ai-settings', () => aiSettingsView());
 
   // Checks the key by listing the provider's models, then saves it encrypted with the picked models.
-  ipcMain.handle('save-ai-key', async (event, { provider, key } = {}) => {
+  // claudeUnavailable: saved from the setup screen while Claude Code isn't working (missing, signed
+  // out, not responding), so the key takes over now instead of after a failed call.
+  ipcMain.handle('save-ai-key', async (event, { provider, key, claudeUnavailable = false } = {}) => {
     if (!fromWindow(event, win, splashWin)) return { ok: false, error: 'Not allowed from this window.' };
     if (!PROVIDERS[provider]) return { ok: false, error: 'Unknown AI provider.' };
     const trimmed = String(key || '').trim();
@@ -1719,6 +1721,7 @@ app.whenReady().then(async () => {
       apiModels: { ...(stored.apiModels || {}), [provider]: { model: picked.model, fastModel: picked.fastModel } },
     });
     log.info(`AI key saved for ${PROVIDERS[provider].label}; model ${picked.model}, fast ${picked.fastModel}`);
+    if (claudeUnavailable) claudeReadiness.unavailable('broken');
     return { ok: true, models: picked.models, settings: aiSettingsView() };
   });
 
@@ -1792,8 +1795,8 @@ app.whenReady().then(async () => {
     // A working answer means ready; a sign-in error or a broken CLI means not. A timeout (a cold
     // start can be slow) decides nothing.
     if (working) claudeReadiness.working();
-    else if (authError) claudeReadiness.authFailed();
-    else if (!test.timedOut) claudeReadiness.notReady();
+    else if (authError) claudeReadiness.unavailable('auth');
+    else if (!test.timedOut) claudeReadiness.unavailable('broken');
     let error = null;
     if (!working) {
       if (test.timedOut) error = 'Claude is not responding (timed out after 15s)';

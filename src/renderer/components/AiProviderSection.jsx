@@ -93,13 +93,23 @@ export default function AiProviderSection() {
   }
 
   async function removeKey() {
+    const removed = info?.label || 'The'
     const r = await api.removeAiKey(provider)
-    if (r?.ok) { setS(r.settings); setMsg(null); setModels([]) }
+    if (!r?.ok) return
+    // Stay on the provider whose key went, and say what's in use now, so a second click on
+    // Remove can't quietly delete the other key.
+    setViewId(provider)
+    setS(r.settings)
+    setModels([])
+    const next = r.settings.provider && r.settings.provider !== provider ? r.settings.providers.find((p) => p.id === r.settings.provider)?.label : null
+    setMsg({ ok: true, text: next ? `${removed} key removed. Now using your ${next} key.` : `${removed} key removed.` })
   }
 
   async function runTest() {
     setTest('running')
     const r = await api.testAi().catch(() => ({ ok: false, error: 'The test didn’t run.' }))
+    // The test may have moved things along (e.g. Claude Code turned it away and the key answered).
+    api.getAiSettings?.().then(setS).catch(() => {})
     setTest(r.ok
       ? { ok: true, text: `${r.provider}${r.model ? ` (${r.model})` : ''} answered in ${(r.ms / 1000).toFixed(1)} s.` }
       : { ok: false, text: r.error })
@@ -108,7 +118,8 @@ export default function AiProviderSection() {
   // "My API key" needs a saved key for the chosen provider; until then it can't be picked.
   const apiUsable = !!(s.provider && s.keys?.[s.provider]?.saved)
   const inUseLabel = s.providers.find((p) => p.id === s.provider)?.label
-  const activeLabel = s.active === 'claude' ? 'Claude Code' : `${info?.label || 'Your key'}${chosen.model ? ` (${chosen.model})` : ''}`
+  const inUseModel = s.models?.[s.provider]?.model
+  const activeLabel = s.active === 'claude' ? 'Claude Code' : `${inUseLabel || 'Your key'}${inUseModel ? ` (${inUseModel})` : ''}`
   const modelOptions = (current) => [...new Set([current, ...models].filter(Boolean))]
 
   return (
@@ -121,10 +132,11 @@ export default function AiProviderSection() {
           {MODES.map(([value, label, hint]) => {
             const off = value === 'api' && !apiUsable
             return (
-              <label key={value} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 9, cursor: off ? 'default' : 'pointer', opacity: off ? 0.55 : 1, border: `0.5px solid ${s.mode === value ? 'rgba(var(--ink),0.28)' : 'rgba(var(--ink),0.1)'}`, background: s.mode === value ? 'rgba(var(--ink),0.06)' : 'transparent', WebkitAppRegion: 'no-drag' }}>
+              <label key={value} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 9, cursor: off ? 'default' : 'pointer', border: `0.5px ${off ? 'dashed' : 'solid'} ${s.mode === value ? 'rgba(var(--ink),0.28)' : 'rgba(var(--ink),0.1)'}`, background: s.mode === value ? 'rgba(var(--ink),0.06)' : 'transparent', WebkitAppRegion: 'no-drag' }}>
                 <input type="radio" name="ai-mode" value={value} checked={s.mode === value} disabled={off} onChange={() => update({ mode: value })} style={{ marginTop: 2 }} />
                 <span style={{ display: 'grid', gap: 2 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>{label}</span>
+                  {/* Unavailable reads quieter through the secondary text token, never through opacity (contrast). */}
+                  <span style={{ fontSize: 13, fontWeight: 500, color: off ? 'var(--text-secondary)' : 'rgba(var(--ink),0.95)' }}>{label}</span>
                   <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{off ? 'Save a key below first.' : hint}</span>
                 </span>
               </label>
