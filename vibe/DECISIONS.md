@@ -2279,3 +2279,11 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Site**: every Mac button defaults to Apple Silicon with an "On an Intel Mac?" line and an About This Mac hint; Chrome/Edge report the chip (`userAgentData` architecture), so Intel Macs there get the Intel build automatically. Safari can't tell, hence the visible choice.
 - **Next steps for size, parked**: a lighter multilingual model for Hindi/Hinglish (the optional 547 MB model); Tauri (~75–80 MB installed, 6–9 weeks).
 ---
+
+---
+### D-LOGO — New mark: "rough to right"
+- **Date**: 2026-09-29 · **Type**: brand
+- **Decision**: the microphone-on-dark-glow icon is replaced by three strokes on pistachio paper: loose words (ink), a waveform (ink), one straight cobalt line. It is the showreel's think → say → get motif, so the film, the site and the app share one idea. Picked by the owner from five directions (Speech p, Rough to right, Wave to line, Cursor mic, Voice prompt) on the "Promptly logo" design canvas.
+- **Where it lives**: `scripts/generate-icon.js` holds the one SVG definition and renders build/icon.svg, icon.png, icon.icns (Mac tile 824/1024 with shadow), icon.ico (full-bleed tile), site/assets/icon.png and favicon-32.png. Cuts: regular; heavy at ≤32 px (two words, one wave); 16 px snapped to whole pixels. `main/tray-icon.js` draws the menu bar template image and the Windows tray discs from the same shapes. The films use the full-bleed tile (remotion-film/public/icon.png).
+- **Colours**: paper #F3F7EC, ink #1C2418, cobalt #2A3FC9 (the site's palette). Windows idle tray = paper disc with ink strokes and the cobalt line; other states keep their status colours.
+---
