@@ -1675,7 +1675,8 @@ app.whenReady().then(async () => {
     if (!PROVIDERS[provider]) return { ok: false, error: 'Unknown AI provider.' };
     const trimmed = String(key || '').trim();
     const check = await listModels(provider, trimmed);
-    if (!check.ok) return { ok: false, error: check.error };
+    // Here the person is looking at the key they just pasted, so "check it in Settings" won't help.
+    if (!check.ok) return { ok: false, error: check.errorType === 'auth' ? `${PROVIDERS[provider].label} refused this key. Check you copied all of it.` : check.error };
     let encrypted;
     try { encrypted = secrets.encrypt(trimmed); } catch (err) { return { ok: false, error: err.message }; }
     const picked = pickModels(check.models, provider);
