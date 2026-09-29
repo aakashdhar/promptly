@@ -293,20 +293,32 @@
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(layoutStage);
 
   /* ====================================================================
-     Film play/pause (works with or without motion)
+     Films: play muted on a loop while on screen, pause when scrolled away. With reduced motion
+     they wait for the button. Works with or without the motion libraries.
      ==================================================================== */
-  const video = $('#filmVideo');
-  const toggle = $('#filmToggle');
-  let userPaused = reduce;
-  const setToggle = () => { toggle.textContent = video.paused ? 'Play' : 'Pause'; toggle.setAttribute('aria-pressed', String(video.paused)); };
-  toggle.addEventListener('click', () => { if (video.paused) { userPaused = false; video.play(); } else { userPaused = true; video.pause(); } });
-  video.addEventListener('play', setToggle);
-  video.addEventListener('pause', setToggle);
-  setToggle();
-  new IntersectionObserver(([e]) => {
-    if (e.isIntersecting && !userPaused) video.play().catch(() => {});
-    else if (!e.isIntersecting) video.pause();
-  }, { threshold: 0.35 }).observe(video);
+  const player = (video, toggle, box) => {
+    let userPaused = reduce;
+    const sync = () => {
+      toggle.textContent = video.paused ? 'Play' : 'Pause';
+      toggle.setAttribute('aria-pressed', String(video.paused));
+      if (box) box.classList.toggle('is-paused', video.paused);
+    };
+    toggle.addEventListener('click', () => { if (video.paused) { userPaused = false; video.play(); } else { userPaused = true; video.pause(); } });
+    video.addEventListener('play', sync);
+    video.addEventListener('pause', sync);
+    sync();
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !userPaused) video.play().catch(() => {});
+      else if (!e.isIntersecting) video.pause();
+    }, { threshold: 0.35 }).observe(video);
+  };
+  const reelVideo = $('#reelVideo');
+  // Autoplay starts on frame 0 (a dot on the line), so that's the poster. Anyone who asked for less
+  // motion sees the headline frame instead until they press Play.
+  if (reduce) reelVideo.poster = 'site/assets/reel-still.jpg';
+  else reelVideo.preload = 'auto';
+  player(reelVideo, $('#reelToggle'), $('#reel'));
+  player($('#filmVideo'), $('#filmToggle'));
 
   if (!motion) return;
 
@@ -328,56 +340,10 @@
   });
 
   document.fonts.ready.then(() => {
-    /* ---------- hero: headline, floating field ---------- */
-    const title = SplitText.create('.hero-title', { type: 'lines,chars', mask: 'lines', linesClass: 'split-line', charsClass: 'char' });
-    const chips = $$('.chip');
-    const wrappers = chips.map((c) => {
-      const w = document.createElement('div');
-      w.className = 'chip-pos';
-      w.style.cssText = `position:absolute;left:${c.style.getPropertyValue('--x')};top:${c.style.getPropertyValue('--y')};`;
-      c.parentNode.insertBefore(w, c);
-      w.appendChild(c);
-      c.style.left = '0'; c.style.top = '0'; c.style.position = 'relative';
-      return w;
-    });
-    const depthOf = (c) => (c.classList.contains('d1') ? 1 : c.classList.contains('d2') ? 0.62 : 0.36);
-
-    const intro = G.timeline({ defaults: { ease: 'expo.out' } });
-    intro
+    /* ---------- hero: the film is already running; the bar under it rises in ---------- */
+    G.timeline({ defaults: { ease: 'expo.out' } })
       .from('.top', { yPercent: -100, duration: 0.9 }, 0)
-      .from(title.chars, { yPercent: 115, rotate: 8, duration: 1.2, stagger: 0.016 }, 0.1)
-      .from('[data-rise]', { y: 26, opacity: 0, filter: 'blur(10px)', duration: 1.1, stagger: 0.09 }, 0.55)
-      .from(chips, { opacity: 0, scale: 0.5, rotationX: -40, duration: 1.4, stagger: { each: 0.07, from: 'random' }, ease: 'back.out(1.5)' }, 0.5);
-
-    // Idle float: each output drifts at its own pace, like it's hanging in the air.
-    chips.forEach((c) => {
-      const d = depthOf(c);
-      G.to(c, {
-        y: G.utils.random(-16, 16) * (0.6 + d), rotation: G.utils.random(-3, 3),
-        duration: G.utils.random(3.2, 5.8), ease: 'sine.inOut', yoyo: true, repeat: -1, delay: G.utils.random(0, 2),
-      });
-    });
-
-    // Cursor parallax: nearer outputs move more.
-    if (hover) {
-      const tos = chips.map((c) => ({ d: depthOf(c), x: G.quickTo(c, 'xPercent', { duration: 1.2, ease: 'power3.out' }), y: G.quickTo(c, 'yPercent', { duration: 1.2, ease: 'power3.out' }) }));
-      $('.hero').addEventListener('pointermove', (e) => {
-        const nx = e.clientX / innerWidth - 0.5, ny = e.clientY / innerHeight - 0.5;
-        tos.forEach((t) => { t.x(-nx * 26 * t.d); t.y(-ny * 60 * t.d); });
-      });
-    }
-
-    // Scrolling away: the field scatters outward, the headline recedes.
-    wrappers.forEach((w, i) => {
-      const c = chips[i], d = depthOf(c);
-      const cx = parseFloat(c.style.getPropertyValue('--x')) - 50, cy = parseFloat(c.style.getPropertyValue('--y')) - 50;
-      G.to(w, {
-        x: cx * 9 * d, y: cy * 7 * d - 160 * d, opacity: 0, ease: 'none',
-        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
-      });
-    });
-    G.to('.hero-in', { yPercent: -22, scale: 0.94, opacity: 0.15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
-    G.to('.scroll-cue', { opacity: 0, scrollTrigger: { trigger: '.hero', start: 'top top', end: '15% top', scrub: true } });
+      .from('[data-rise]', { y: 26, opacity: 0, filter: 'blur(10px)', duration: 1.1, stagger: 0.09 }, 0.35);
 
     /* ---------- section headings: lines rise out of a mask ---------- */
     $$('.split-head').forEach((h) => {

@@ -16,7 +16,7 @@
 <link rel="icon" href="site/assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site/style.css">
 </head>
 <body>
@@ -45,32 +45,29 @@
 
 <main id="main">
 
-<!-- ============ HERO: a field of real outputs, floating ============ -->
+<!-- ============ HERO: the showreel ============ -->
 <section class="hero" id="top" aria-labelledby="hero-title">
-  <div class="field-layer" id="field" aria-hidden="true">
-    <div class="chip d3" style="--x:8%;--y:16%;--c:#2A3FC9"><i></i><span class="ck">Goal</span>Build a small internal dashboard that pulls support tickets from Zendesk…</div>
-    <div class="chip d1" style="--x:71%;--y:12%;--c:#3D7A1F"><i></i>Typeform Trigger <b>→</b> Google Sheets <b>→</b> Slack</div>
-    <div class="chip d2" style="--x:84%;--y:38%;--c:#B89400"><i></i><span class="ck">Veo 3.1</span>slow push-in at dawn · 16:9 · 1080p</div>
-    <div class="chip d1 chip-num" style="--x:4%;--y:44%;--c:#2A3FC9"><i></i><span class="ck">Score</span>58 <b>›</b> 86</div>
-    <div class="chip d2" style="--x:12%;--y:74%;--c:#E0569A"><i></i><span class="ck">daily 02:00</span>Nightly test fixer</div>
-    <div class="chip d3" style="--x:76%;--y:72%;--c:#0E7C86"><i></i><span class="ck">Subject</span>Invoice for March, a week later than planned</div>
-    <div class="chip d3" style="--x:60%;--y:93%;--c:#A0287A"><i></i><code>--ar 3:2 --style raw</code></div>
-    <div class="chip d2" style="--x:24%;--y:91%;--c:#4B6F8F"><i></i><span class="ck">Done when</span><code>npm test</code> passes</div>
-    <div class="chip d1" style="--x:74%;--y:23%;--c:#7B3FB8"><i></i>Cards stack in one column below 640 px</div>
-    <div class="chip d2 chip-num" style="--x:88%;--y:58%;--c:#7C8677"><i></i><span class="ck">Audio sent</span>0 B</div>
+  <div class="reel" id="reel">
+    <video id="reelVideo" muted loop playsinline preload="metadata" poster="site/assets/reel-poster.jpg" aria-label="Promptly showreel, 150 seconds: loose spoken words become a waveform, then one straight line; hold to talk, Dictation, Craft, ten output formats, the score, your own voice, privacy, Mac and Windows" aria-describedby="hero-title">
+      <source src="site/assets/reel-720.mp4" type="video/mp4" media="(max-width: 760px)">
+      <source src="site/assets/reel-1080.mp4" type="video/mp4">
+    </video>
+    <button class="reel-toggle" id="reelToggle" type="button" aria-pressed="false">Pause</button>
   </div>
 
-  <div class="wrap hero-in">
-    <p class="hero-kicker" data-rise data-win-text="A Windows tray app for people who talk to AI all day">A Mac menu-bar app for people who talk to AI all day</p>
-    <h1 id="hero-title" class="hero-title">Say it once.<br>It lands in the right format.</h1>
-    <p class="lede" data-rise>Hold a key and talk from any app. Dictation types your words where your cursor is, untouched. Craft hands them to Claude and brings back the finished thing: a prompt, a task brief, an n8n workflow, a Veo shot, a harness that runs overnight.</p>
-    <div class="hero-cta" data-rise>
-      <a class="btn magnetic" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly.dmg" data-intel-href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Intel.dmg" data-win-href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Setup.exe" data-win-text="Download for Windows">Download for Mac</a>
-      <a class="btn btn-ghost" href="#try">Try it on this page</a>
+  <div class="wrap hero-bar">
+    <div class="hero-words" data-rise>
+      <h1 id="hero-title" class="hero-title">Say it rough. <em>Get it right.</em></h1>
+      <p class="lede" data-win-text="A Windows tray app: hold a key and talk from any app. Dictation types your words where your cursor is; Craft turns them into a prompt, a task brief, an n8n workflow or a Veo shot.">A Mac menu-bar app: hold a key and talk from any app. Dictation types your words where your cursor is; Craft turns them into a prompt, a task brief, an n8n workflow or a Veo shot.</p>
     </div>
-    <p class="mac-alt" data-os="mac"><span data-chip-other>On an Intel Mac? <a class="text-link" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Intel.dmg" data-chip-link>Download the Intel version</a>.</span> <span class="mac-alt-hint">Not sure? Apple menu › About This Mac says <em>Chip</em> on Apple Silicon, <em>Processor</em> on Intel.</span></p>
+    <div class="hero-act" data-rise>
+      <div class="hero-cta">
+        <a class="btn magnetic" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly.dmg" data-intel-href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Intel.dmg" data-win-href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Setup.exe" data-win-text="Download for Windows">Download for Mac</a>
+        <a class="btn btn-ghost" href="#try">Try it on this page</a>
+      </div>
+      <p class="mac-alt" data-os="mac"><span data-chip-other>On an Intel Mac? <a class="text-link" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Intel.dmg" data-chip-link>Download the Intel version</a>.</span> <span class="mac-alt-hint">Not sure? Apple menu › About This Mac says <em>Chip</em> on Apple Silicon, <em>Processor</em> on Intel.</span></p>
+    </div>
   </div>
-  <div class="scroll-cue" aria-hidden="true"><span></span></div>
 </section>
 
 <!-- ============ TRY IT ============ -->
