@@ -1,6 +1,6 @@
 {
   "name": "promptly",
-  "version": "2.20.5",
+  "version": "2.20.6",
   "description": "macOS floating bar that turns speech into structured Claude prompts",
   "author": {
     "name": "Aakash Dhar",
