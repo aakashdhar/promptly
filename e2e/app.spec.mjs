@@ -696,8 +696,10 @@ test('Dictation (the default) types what you said into your app, and gives your 
     // Typed via ⌘V with exactly what was said, minus um/uh, with the paragraph break.
     await expect.poll(() => fs.existsSync(path.join(fakeDir, 'pasted'))).toBe(true)
     expect(fs.readFileSync(path.join(fakeDir, 'pasted'), 'utf8')).toBe('So ship it on Friday.\n\nThanks everyone.')
-    // No Claude call, the window stays out of the way, and the clipboard is yours again.
-    expect(calls(fakeDir)).toEqual([])
+    // One Claude call: the clean-up that fixes misheard words (D-DICTATION-CLEANUP; the stand-in
+    // hands the text back unchanged). The window stays out of the way, and the clipboard is yours again.
+    expect(calls(fakeDir)).toHaveLength(1)
+    expect(await lastStdin(fakeDir)).toContain('You fix speech-to-text mistakes')
     expect((await mainWindow(app)).visible).toBe(false)
     expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState())).toMatchObject({ state: 'dictated', typed: true })
     await expect.poll(() => readClipboard(app)).toBe('what I copied earlier')
@@ -717,15 +719,17 @@ test('"Make it a prompt" from the pill turns the dictation into a prompt, and ba
     await expect(page.getByRole('tab', { name: 'As a prompt' })).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
     const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
     expect(stdin).toContain('You turn a rough, spoken request into a prompt for Claude')
-    expect(stdin).toContain('<transcript>\na script that renames my screenshots by date\n</transcript>')
+    // The clean-up (D-DICTATION-CLEANUP) starts the sentence with a capital before it's made a prompt.
+    expect(stdin).toContain('<transcript>\nA script that renames my screenshots by date\n</transcript>')
     await expect.poll(() => readClipboard(app)).toContain('Task:')
 
     // Back to the words as spoken, and to the prompt again, without asking Claude twice.
     await page.getByRole('tab', { name: 'As I said it' }).click()
-    await expect(page.locator('#prompt-output')).toHaveText('a script that renames my screenshots by date')
+    await expect(page.locator('#prompt-output')).toHaveText('A script that renames my screenshots by date')
     await page.getByRole('tab', { name: 'As a prompt' }).click()
     await expect(page.locator('#prompt-output')).toContainText('You are a test assistant.')
-    expect(calls(fakeDir)).toHaveLength(1)
+    // Two calls in all: the dictation's clean-up, then the prompt, made once.
+    expect(calls(fakeDir)).toHaveLength(2)
   })
 })
 
