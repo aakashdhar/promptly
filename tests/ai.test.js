@@ -115,3 +115,29 @@ describe('AI providers: the API client', () => {
     expect(await listModels('openai', '', { fetchImpl: localFetch })).toMatchObject({ ok: false, errorType: 'auth' })
   })
 })
+
+describe('AI providers: keys are stored encrypted', () => {
+  const { createSecrets, REFUSED } = require('../main/secrets.js')
+  // A stand-in for Electron's safeStorage that visibly changes the bytes.
+  const fakeSafeStorage = (ok = true) => ({
+    isEncryptionAvailable: () => ok,
+    encryptString: (s) => Buffer.from([...Buffer.from(s)].map((b) => b ^ 0x5a)),
+    decryptString: (buf) => Buffer.from([...buf].map((b) => b ^ 0x5a)).toString(),
+  })
+
+  it('round-trips a key and never stores it in plain text', () => {
+    const s = createSecrets({ safeStorage: fakeSafeStorage() })
+    const stored = s.encrypt('sk-secret-1234')
+    expect(stored).not.toContain('sk-secret')
+    expect(Buffer.from(stored, 'base64').toString()).not.toContain('sk-secret')
+    expect(s.decrypt(stored)).toBe('sk-secret-1234')
+  })
+
+  it('refuses to save when the computer can\'t encrypt, and reads nothing back', () => {
+    const s = createSecrets({ safeStorage: fakeSafeStorage(false) })
+    expect(s.available()).toBe(false)
+    expect(() => s.encrypt('sk-x')).toThrow(REFUSED)
+    expect(s.decrypt('abc')).toBeNull()
+    expect(createSecrets({ safeStorage: null }).available()).toBe(false)
+  })
+})
