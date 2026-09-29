@@ -2296,3 +2296,19 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Guard rails**: `acceptCleanup()` drops Claude's answer if it is empty, adds a preamble or extra lines, or changes the word count by more than 30% (min 2), so an answer to a dictated question or a rewrite never gets typed. Timeout 12 s. Claude missing, signed out or failing → the local text is typed as before. A cancel stops the call. Audio still never leaves the Mac; only the text goes to Claude on the user's own account.
 - **Also**: the local tidy ends a sentence that opens like a question with "?" (question word + verb, or verb + person/thing, with lead-ins like "so", "hey"), leaving statements ("What I mean is…") and orders ("Do the dishes") alone.
 ---
+
+---
+## — Feature Start: AI provider fallbacks — 2026-09-29
+> Folder: vibe/features/2026-09-29-ai-provider-fallbacks/ · Branch: feature/ai-providers (not merged)
+> Claude Code stays the default; the user's own OpenAI, Gemini or Grok key runs everything but Harness when Claude Code isn't there.
+> Tasks: AIP-001..AIP-009 | Estimated: 22 hours
+---
+
+---
+### D-AI-PROVIDERS — Bring-your-own-key fallbacks (amends D-CLI-ONLY)
+- **Date**: 2026-09-29 · **Type**: product / architecture
+- **Why**: teammates of the owner have OpenAI, Gemini or Grok keys but no Claude Code or Anthropic plan. The owner still prefers Claude Code and keeps it the default.
+- **Decision** (owner: "go with your suggestions"): automatic choice — Claude Code when installed and signed in, otherwise the saved key — with a manual override (Claude Code / My API key). Setup offers "Use an API key instead". Everything except Harness works on a key (Harness needs Claude Code's file-writing and schedules). Models come from the provider's own list, with a separate fast model for the Dictation clean-up. Keys are encrypted with Electron safeStorage and stay in the main process. First providers: OpenAI, Gemini, Grok, all through one OpenAI-compatible HTTP client; Ollama/custom endpoints later.
+- **What still holds from D-CLI-ONLY**: every AI call goes through main/llm.js; no SDKs, no backend proxy, no keys of ours; Claude Code calls are unchanged.
+- **Website**: unchanged until the owner merges the branch to main.
+---
