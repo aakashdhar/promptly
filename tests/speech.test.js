@@ -290,3 +290,58 @@ describe('"Speak up" detector', () => {
     expect(d.isQuiet()).toBe(false)
   })
 })
+
+describe('dictation: question marks and the Claude clean-up', () => {
+  const { fixQuestionMarks, acceptCleanup } = require('../main/dictation.js')
+  const { buildDictationCleanupPrompt } = require('../main/prompts.js')
+
+  it('ends a sentence that opens like a question with a question mark', () => {
+    expect(fixQuestionMarks('What is the status of the Zendesk ticket.')).toBe('What is the status of the Zendesk ticket?')
+    expect(fixQuestionMarks('Can you send it to Priya by Friday.')).toBe('Can you send it to Priya by Friday?')
+    expect(fixQuestionMarks('So how are we doing on this.')).toBe('So how are we doing on this?')
+    expect(fixQuestionMarks('Hey, can you check this.')).toBe('Hey, can you check this?')
+    expect(fixQuestionMarks("Where's the report.")).toBe("Where's the report?")
+    expect(fixQuestionMarks('Is it done. I think so.')).toBe('Is it done? I think so.')
+    expect(fixQuestionMarks('Do you have the deck.')).toBe('Do you have the deck?')
+    expect(tidyDictation('um, what do we do next.').text).toBe('what do we do next?')
+  })
+
+  it('leaves statements and orders that only look like questions alone', () => {
+    for (const s of ['What I mean is we ship on Monday.', 'How we did it was simple.', 'Do the dishes.', 'Have a look at it.', "Don't forget the invoice.", 'That is ₹12,450.'])
+      expect(fixQuestionMarks(s)).toBe(s)
+  })
+
+  it('keeps Claude\'s clean-up only when it is the same text with a few fixes', () => {
+    expect(acceptCleanup('send it to sunjay by friday', 'Send it to Sanjay by Friday.')).toBe('Send it to Sanjay by Friday.')
+    expect(acceptCleanup('send it to sunjay', '<transcript>\nSend it to Sanjay.\n</transcript>')).toBe('Send it to Sanjay.')
+    expect(acceptCleanup('send it to sunjay', '"Send it to Sanjay."')).toBe('Send it to Sanjay.')
+    // Sentences start with a capital, unless the first word is written with its own capitals.
+    expect(acceptCleanup('whats the plan. the dmg is out', "what's the plan? the DMG is out.")).toBe("What's the plan? The DMG is out.")
+    expect(acceptCleanup('iphone sales are up', 'iPhone sales are up.')).toBe('iPhone sales are up.')
+    // A preamble, an answer, a rewrite or nothing at all: the local text is used instead.
+    expect(acceptCleanup('what is two plus two', 'Here is the corrected text: What is two plus two?')).toBeNull()
+    expect(acceptCleanup('what is two plus two', 'Two plus two is four. Let me know if you need anything else with your maths.')).toBeNull()
+    expect(acceptCleanup('ship it', '')).toBeNull()
+    expect(acceptCleanup('ship it today', 'Ship it today.\n\nAlso, remember to update the changelog and tell the team.')).toBeNull()
+  })
+
+  it('asks Claude to fix only misheard words and punctuation, with the user\'s own spellings', () => {
+    const prompt = buildDictationCleanupPrompt('send it to sunjay by friday.', ['Sanjay', 'Infer360', 'Sanjay'])
+    expect(prompt).toMatch(/misheard/)
+    expect(prompt).toMatch(/question mark/)
+    expect(prompt).toMatch(/Don't rephrase/)
+    expect(prompt).toContain('Sanjay, Infer360')
+    expect(prompt).toContain('<transcript>\nsend it to sunjay by friday.\n</transcript>')
+    expect(buildDictationCleanupPrompt('hello')).not.toMatch(/spells these names/)
+  })
+
+  it('tells Claude which country the speaker is in, from the Mac\'s region', () => {
+    const { countryFromLocale } = require('../main/prompts.js')
+    expect(countryFromLocale('en-IN')).toBe('India')
+    expect(countryFromLocale('en_GB')).toBe('United Kingdom')
+    expect(countryFromLocale('en')).toBe('')
+    expect(countryFromLocale(undefined)).toBe('')
+    expect(buildDictationCleanupPrompt('call super nah', [], { country: 'India' })).toMatch(/The speaker is in India\./)
+    expect(buildDictationCleanupPrompt('call super nah')).not.toMatch(/The speaker is in/)
+  })
+})

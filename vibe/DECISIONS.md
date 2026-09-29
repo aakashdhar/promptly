@@ -2287,3 +2287,12 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Where it lives**: `scripts/generate-icon.js` holds the one SVG definition and renders build/icon.svg, icon.png, icon.icns (Mac tile 824/1024 with shadow), icon.ico (full-bleed tile), site/assets/icon.png and favicon-32.png. Cuts: regular; heavy at ≤32 px (two words, one wave); 16 px snapped to whole pixels. `main/tray-icon.js` draws the menu bar template image and the Windows tray discs from the same shapes. The films use the full-bleed tile (remotion-film/public/icon.png).
 - **Colours**: paper #F3F7EC, ink #1C2418, cobalt #2A3FC9 (the site's palette). Windows idle tray = paper disc with ink strokes and the cobalt line; other states keep their status colours.
 ---
+
+---
+### D-DICTATION-CLEANUP — Dictation gets a Claude clean-up, on by default
+- **Date**: 2026-09-29 · **Type**: product (amends D-DICTATION's "no Claude call")
+- **Why**: the owner found ~30% of words wrong even with Best accuracy (large-v3-turbo): Indian names, words that don't fit the sentence, and missing question marks, where Wispr Flow gets them right by cleaning up with an LLM.
+- **Decision**: after the local tidy, Dictation sends the text to Claude with the user's Your words and the country of the Mac's region, asking it to fix misheard words, names and punctuation and change nothing else. On by default (Settings › Dictation › "Fix misheard words with Claude"). Model: **Sonnet**, always, whatever Craft uses. In tests with the owner's Claude, Haiku rebuilt "super nah" as Supranaah and "up arna" as Uparna; Sonnet got Suparna, Aparna and Shrikant for about a second more (3–5 s against 2–4 s). The owner picked Sonnet.
+- **Guard rails**: `acceptCleanup()` drops Claude's answer if it is empty, adds a preamble or extra lines, or changes the word count by more than 30% (min 2), so an answer to a dictated question or a rewrite never gets typed. Timeout 12 s. Claude missing, signed out or failing → the local text is typed as before. A cancel stops the call. Audio still never leaves the Mac; only the text goes to Claude on the user's own account.
+- **Also**: the local tidy ends a sentence that opens like a question with "?" (question word + verb, or verb + person/thing, with lead-ins like "so", "hey"), leaving statements ("What I mean is…") and orders ("Do the dishes") alone.
+---

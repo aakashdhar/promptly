@@ -155,6 +155,26 @@ function buildLearnStylePrompt({ current = '', samples = '', edits = '' } = {}) 
   });
 }
 
+// "en-IN" → "India": the country of the Mac's region setting, or '' when there isn't one.
+function countryFromLocale(locale) {
+  const region = String(locale || '').split(/[-_]/)[1];
+  if (!region || !/^[A-Za-z]{2}$/.test(region)) return '';
+  try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(region.toUpperCase()) || ''; } catch { return ''; }
+}
+
+// Dictation clean-up (D-DICTATION-CLEANUP): fixes misheard words and punctuation, nothing else.
+// words: the user's own spellings (Settings › Your words), which Claude should use when meant.
+// country: where the speaker is (from the Mac's region), so a misheard name is read as a local
+// one: "super nah" is Suparna in India, not "Supernova".
+function buildDictationCleanupPrompt(transcript, words = [], { country = '' } = {}) {
+  const list = [...new Set(words.map((w) => String(w).trim()).filter(Boolean))];
+  return fillTemplate(loadPrompt('dictation-cleanup'), {
+    PLACE: country ? `- The speaker is in ${country}. A misheard word that sounds like a name, place or word common in ${country} most likely is one.\n` : '',
+    WORDS: list.length ? `- The speaker spells these names and words like this; use them where they're what was said: ${list.join(', ')}\n` : '',
+    TRANSCRIPT: transcript,
+  });
+}
+
 // The builder modes' Claude calls: each step's prompt file and the values it takes. Values come
 // from the renderer already formatted (JSON of the answers, the chip options…).
 const BUILDER_STEPS = {
@@ -207,4 +227,4 @@ function normalizeEval(parsed) {
   };
 }
 
-module.exports = { normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };
+module.exports = { buildDictationCleanupPrompt, countryFromLocale, normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };

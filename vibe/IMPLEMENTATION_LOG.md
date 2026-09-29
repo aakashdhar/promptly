@@ -95,3 +95,9 @@
 - **Why**: one source of truth for every icon file, and crisp small sizes; the old path needed a native `canvas` build and could only downscale one 1024 px image.
 - **Touches**: scripts/generate-icon.js, main/tray-icon.js (`drawMicIconPng` now strokes the mark with coverage-based anti-aliasing; Windows discs use the same shapes on a 32-unit grid), tests/main.test.js (pinned menu bar hash updated)
 ---
+---
+### 2026-09-29 · D-DICTATION-CLEANUP · Clean-up is a separate Sonnet runner with a local accept check
+- **Decision**: a third `createClaudeRunner` (`cleanupClaude`, model fixed to Sonnet, same `activeChildren` so cancel stops it) and prompt file `dictation-cleanup.txt`; the answer goes through `acceptCleanup()` before it replaces the tidied text; the country comes from `app.getSystemLocale()` via `countryFromLocale()`. The e2e fake Claude hands the transcript back unchanged, so existing dictation tests keep their expectations.
+- **Why**: the clean-up must never block or change Dictation when Claude is unavailable, and must not answer a dictated question; checking locally is cheap and testable.
+- **Touches**: main.js (`cleanUpDictation`, `runDictation`, prefs `dictationCleanup`), main/dictation.js, main/prompts.js, main/prompts/dictation-cleanup.txt, SettingsPanel.jsx, e2e/fakes/claude.mjs, tests/speech.test.js
+---

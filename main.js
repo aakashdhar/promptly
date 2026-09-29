@@ -18,10 +18,10 @@ const claudeSetup = require('./main/claude-setup');
 const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
-const { destinationFor } = require('./main/prompts');
+const { destinationFor, buildDictationCleanupPrompt, countryFromLocale } = require('./main/prompts');
 const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
-const { tidyDictation } = require('./main/dictation');
+const { tidyDictation, acceptCleanup } = require('./main/dictation');
 const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
 const harness = require('./main/harness');
 const { createScheduler } = require('./main/platform/scheduler');
@@ -165,6 +165,17 @@ const evalClaude = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
 });
+// Dictation clean-up (D-DICTATION-CLEANUP) always uses Sonnet, whatever model Craft uses: in
+// tests Haiku couldn't rebuild misheard Indian names ("super nah" → Supranaah; Sonnet: Suparna)
+// and was only about a second faster. Its processes count as the current operation, so a cancel
+// stops them too.
+const DICTATION_CLEANUP_MODEL = 'sonnet';
+const DICTATION_CLEANUP_TIMEOUT_MS = 12000;
+const cleanupClaude = createClaudeRunner({
+  getClaudePath: () => claudePath,
+  getModel: () => DICTATION_CLEANUP_MODEL,
+  children: activeChildren,
+});
 // "Best accuracy" speech model, downloaded on request into userData/models.
 // Tests serve a small stand-in model locally with PROMPTLY_SPEECH_MODEL.
 const speechModels = createSpeechModels({
@@ -265,7 +276,7 @@ function sendMicQuiet(quiet) {
 
 function dictationPrefs() {
   const stored = config.read();
-  return { typeIn: stored.dictationTypeIn !== false, removeFillers: stored.dictationRemoveFillers !== false, symbols: stored.dictationSymbols !== false };
+  return { typeIn: stored.dictationTypeIn !== false, removeFillers: stored.dictationRemoveFillers !== false, symbols: stored.dictationSymbols !== false, cleanup: stored.dictationCleanup !== false };
 }
 
 // Saves what's on the clipboard (text, rich text, images) so it can be put back afterwards.
@@ -305,10 +316,34 @@ async function typeIntoApp(text) {
   return true;
 }
 
+// Claude fixes misheard words and punctuation. Its answer is used only if acceptCleanup() finds it's
+// the same text with a few fixes; otherwise, or when Claude is missing, slow or signed out, the
+// local text is typed as before.
+async function cleanUpDictation(text) {
+  if (!claudePath) return { text, outcome: 'no Claude' };
+  const started = Date.now();
+  const country = countryFromLocale(app.getSystemLocale?.());
+  const result = await cleanupClaude.run(buildDictationCleanupPrompt(text, dictionaryWords(), { country }), { timeoutMs: DICTATION_CLEANUP_TIMEOUT_MS, slowWarningMs: 0, thinking: false });
+  const ms = Date.now() - started;
+  if (result.cancelled) return { cancelled: true };
+  if (!result.success) return { text, outcome: `skipped (${result.errorType || 'error'}, ${ms} ms)` };
+  const cleaned = acceptCleanup(text, result.prompt);
+  if (!cleaned) return { text, outcome: `rejected (${ms} ms)` };
+  return { text: cleaned, outcome: `${cleaned === text ? 'unchanged' : 'fixed'} (${ms} ms)` };
+}
+
 async function runDictation(transcript) {
   const prefs = dictationPrefs();
-  const { text, removed } = tidyDictation(transcript, { removeFillers: prefs.removeFillers, symbols: prefs.symbols });
+  const tidied = tidyDictation(transcript, { removeFillers: prefs.removeFillers, symbols: prefs.symbols });
+  const { removed } = tidied;
+  let { text } = tidied;
   if (!text) return { success: false, error: "Didn't catch anything", errorType: 'empty' };
+  if (prefs.cleanup) {
+    const cleaned = await cleanUpDictation(text);
+    if (cleaned.cancelled) return { success: false, error: 'Cancelled', errorType: 'cancelled', cancelled: true };
+    log.info(`Dictation clean-up: ${cleaned.outcome}`);
+    text = cleaned.text;
+  }
   const typed = pillSession && prefs.typeIn ? await typeIntoApp(text) : false;
   if (pillSession) lastDictation = { text, typed, refused: typed ? null : lastPasteRefusal };
   return { success: true, prompt: text, dictation: { removed, typed } };
@@ -1126,6 +1161,7 @@ app.whenReady().then(async () => {
       dictationTypeIn: stored.dictationTypeIn !== false,
       dictationRemoveFillers: stored.dictationRemoveFillers !== false,
       dictationSymbols: stored.dictationSymbols !== false,
+      dictationCleanup: stored.dictationCleanup !== false,
       historyHidden: stored.historyHidden === true,
       speech: speechPrefs(),
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
@@ -1144,6 +1180,7 @@ app.whenReady().then(async () => {
     if (typeof prefs.dictationTypeIn === 'boolean') patch.dictationTypeIn = prefs.dictationTypeIn;
     if (typeof prefs.dictationRemoveFillers === 'boolean') patch.dictationRemoveFillers = prefs.dictationRemoveFillers;
     if (typeof prefs.dictationSymbols === 'boolean') patch.dictationSymbols = prefs.dictationSymbols;
+    if (typeof prefs.dictationCleanup === 'boolean') patch.dictationCleanup = prefs.dictationCleanup;
     if (typeof prefs.historyHidden === 'boolean') patch.historyHidden = prefs.historyHidden;
     if (prefs.speechModel === 'standard' || prefs.speechModel === 'accurate') patch.speechModel = prefs.speechModel;
     if (SPEECH_LANGUAGES.some((l) => l.value === prefs.speechLanguage)) patch.speechLanguage = prefs.speechLanguage;

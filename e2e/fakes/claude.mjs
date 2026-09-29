@@ -62,6 +62,8 @@ async function main(args) {
     say('{"prompt":"A calm red fox in a snowy forest at golden hour, vertical 4:5 composition, photorealistic","flags":"--ar 4:5 --stylize 750 --chaos 20"}')
     return 0
   }
+  // Dictation clean-up: hands the transcript back as it came, or with FAKE_DIR/cleanup's text.
+  if (asks('You fix speech-to-text mistakes')) { say(has('cleanup') ? read('cleanup') : (input.match(/<transcript>\n([\s\S]*)\n<\/transcript>/) || [])[1] || ''); return 0 }
   if (asks('You design harnesses')) { say(read('harness-plan.json')); return 0 }
   if (asks('write short style notes')) { say('- Short sentences\n- Signs off with "Cheers, Sam"'); return 0 }
 
