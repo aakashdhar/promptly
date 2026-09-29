@@ -795,7 +795,7 @@ describe('tray icon', () => {
     for (const state of ['idle', 'hidden', 'recording', 'thinking', 'ready', 'builder'])
       for (const isDark of [false, true])
         for (const showDot of [true, false]) hash.update(pngPixels(drawMicIconPng(state, isDark, showDot)))
-    expect(hash.digest('hex')).toBe('c32bb911dd02641f5130e6b76563011980af73cb0e3243fbd4d19c70e7fdfa07')
+    expect(hash.digest('hex')).toBe('f33fc77247c27b45a9ada34295988cf711ac1cb97d928d38380236f6cdcba4b9')
   })
 
   it('draws Windows tray icons in colour at 16 and 32 px, never as template images', () => {

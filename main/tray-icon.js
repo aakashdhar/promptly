@@ -1,6 +1,6 @@
 'use strict';
 
-// Draws the 22pt (@2x) menu bar microphone as a PNG buffer, with no Electron dependency,
+// Draws the 22pt (@2x) menu bar icon (the Promptly mark) as a PNG buffer, with no Electron dependency,
 // and the coloured 16/32 px Windows tray icons.
 // States: idle | hidden | recording | thinking | ready | builder.
 
@@ -55,64 +55,75 @@ function pngEncode(w, h, rgba) {
   ]);
 }
 
+// Anti-aliased stroke coverage (0..1) at a point: distance to the nearest of `segs`
+// ([x1, y1, x2, y2] with round caps) against half the stroke width, 4×4 supersampled.
+function segDist2(px, py, [x1, y1, x2, y2]) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 ? Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2)) : 0;
+  const ex = px - (x1 + t * dx), ey = py - (y1 + t * dy);
+  return ex * ex + ey * ey;
+}
+function coverage(x, y, segs, width, SS = 4) {
+  const r2 = (width / 2) ** 2;
+  let hit = 0;
+  for (let sy = 0; sy < SS; sy++)
+    for (let sx = 0; sx < SS; sx++) {
+      const ux = x + (sx + 0.5) / SS, uy = y + (sy + 0.5) / SS;
+      if (segs.some((s) => segDist2(ux, uy, s) <= r2)) hit++;
+    }
+  return hit / (SS * SS);
+}
+// A polyline as segments: one sine period of `amp` along y between x0 and x1.
+function waveSegs(x0, x1, y, amp, n = 16) {
+  const segs = [];
+  for (let i = 0; i < n; i++) {
+    const t0 = i / n, t1 = (i + 1) / n;
+    segs.push([x0 + (x1 - x0) * t0, y - amp * Math.sin(2 * Math.PI * t0), x0 + (x1 - x0) * t1, y - amp * Math.sin(2 * Math.PI * t1)]);
+  }
+  return segs;
+}
+
+// The mark (D-LOGO) on the 44 px menu bar grid: two loose words, a wave, a straight line.
+// The words stop short of the top-right corner, where the status dot goes.
+const MAC_MARK = [[7, 12, 14, 12], [18, 14, 26, 14], ...waveSegs(7, 37, 22, 3), [7, 32, 37, 32]];
+const MAC_STROKE = 4;
+const MAC_SLASH = [[7, 7, 37, 37]];
+
 function drawMicIconPng(state, isDark, showDot = true) {
   const W = 44, H = 44;
   const px = new Uint8Array(W * H * 4);
-
-  function set(x, y, r, g, b, a) {
-    if (x < 0 || x >= W || y < 0 || y >= H) return;
-    const i = (y * W + x) * 4;
-    px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = a;
-  }
-  function fillRect(x1, y1, x2, y2, r, g, b, a) {
-    for (let y = y1; y <= y2; y++)
-      for (let x = x1; x <= x2; x++)
-        set(x, y, r, g, b, a);
-  }
-  function fillDisk(cx, cy, rad, r, g, b, a) {
-    const r2 = rad * rad;
-    for (let y = Math.floor(cy - rad); y <= Math.ceil(cy + rad); y++)
-      for (let x = Math.floor(cx - rad); x <= Math.ceil(cx + rad); x++)
-        if ((x - cx) ** 2 + (y - cy) ** 2 <= r2)
-          set(x, y, r, g, b, a);
-  }
 
   const hidden = state === 'hidden';
   const alpha = hidden ? 115 : 255;
   const [mr, mg, mb] = (state === 'idle' || hidden) ? [0, 0, 0]
     : isDark ? [255, 255, 255] : [0, 0, 0];
+  const dot = showDot && state !== 'idle' && !hidden;
+  const [dr, dg, db] = state === 'recording' ? [255, 59, 48]
+    : state === 'thinking' ? [10, 132, 255]
+    : [52, 199, 89];
 
-  // Mic body: rounded top, flat bottom at y=25 (x=17..27)
-  fillDisk(22, 10, 5, mr, mg, mb, alpha);
-  fillRect(17, 10, 27, 25, mr, mg, mb, alpha);
-
-  // Mic stand arc: ring at center (22,25), inner r=5, outer r=8, y>=25
-  // Inner boundary at y=25 lands exactly on x=17 and x=27 (body edge)
-  for (let y = 25; y < H; y++)
+  for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      const d2 = (x - 22) ** 2 + (y - 25) ** 2;
-      if (d2 >= 25 && d2 <= 64) set(x, y, mr, mg, mb, alpha);
+      const i = (y * W + x) * 4;
+      let a = coverage(x, y, MAC_MARK, MAC_STROKE) * alpha;
+      // Hidden (mic off): a full-strength slash with a clear gap either side of it.
+      if (hidden) {
+        a *= 1 - coverage(x, y, MAC_SLASH, 8);
+        a = Math.max(a, coverage(x, y, MAC_SLASH, 3.5) * 255);
+      }
+      px[i] = mr; px[i + 1] = mg; px[i + 2] = mb; px[i + 3] = Math.round(a);
+      if (dot) {
+        const d = Math.hypot(x + 0.5 - 35, y + 0.5 - 10);
+        const c = Math.max(0, Math.min(1, 6.5 - d));
+        if (c > 0) {
+          px[i] = Math.round(dr * c + mr * (1 - c) * (a / 255));
+          px[i + 1] = Math.round(dg * c + mg * (1 - c) * (a / 255));
+          px[i + 2] = Math.round(db * c + mb * (1 - c) * (a / 255));
+          px[i + 3] = Math.round(255 * c + a * (1 - c));
+        }
+      }
     }
-
-  // Stem and base
-  fillRect(21, 33, 23, 37, mr, mg, mb, alpha);
-  fillRect(14, 37, 30, 39, mr, mg, mb, alpha);
-
-  // Diagonal slash for hidden state (mic-off indicator)
-  if (hidden) {
-    for (let t = 0; t <= 30; t++) {
-      set(7 + t, 7 + t, 0, 0, 0, 255);
-      set(8 + t, 7 + t, 0, 0, 0, 255);
-      set(7 + t, 8 + t, 0, 0, 0, 255);
-    }
-  }
-
-  // Status dot (top-right)
-  if (showDot && state !== 'idle' && state !== 'hidden') {
-    const [dr, dg, db] = state === 'recording' ? [255, 59, 48]
-      : state === 'thinking' ? [10, 132, 255]
-      : [52, 199, 89];
-    fillDisk(30, 9, 7, dr, dg, db, 255);
   }
 
   return pngEncode(W, H, px);
@@ -125,32 +136,30 @@ function isTemplateState(state) {
 
 // ── Windows tray ──────────────────────────────────────────────────────────────
 // Windows has no template images and the taskbar may be light or dark, so each state is a
-// coloured disc with a light mic: the disc reads on a light taskbar, the mic on a dark one.
+// disc with the mark on it. Idle is the app icon in small (paper disc, ink strokes, cobalt line),
+// which reads on a dark taskbar by its disc and on a light one by its strokes; the other states
+// are the status colour with white strokes.
 // Drawn at 16 px and 32 px for 100% and 200% display scaling.
 
 const WIN_TRAY_SIZES = [16, 32];
 
-// Disc colours match the Mac status dots; idle is the app icon's navy.
+// Disc colours match the Mac status dots; idle is the app icon's paper.
 const WIN_DISC = {
-  idle:      [28, 28, 46],
+  idle:      [243, 247, 236],
   recording: [255, 59, 48],
   thinking:  [10, 132, 255],
   ready:     [52, 199, 89],
 };
-const WIN_IDLE_MIC = [130, 190, 255];
+const WIN_IDLE_INK = [28, 36, 24];
+const WIN_IDLE_LINE = [42, 63, 201];
 
-// Shapes on a 32-unit grid, so both sizes share one drawing.
-function inWinMic(x, y) {
-  // Capsule body, x 12.5..19.5, y 5.5..19.5
-  const cy = Math.min(Math.max(y, 9), 16);
-  if ((x - 16) ** 2 + (y - cy) ** 2 <= 3.5 ** 2) return true;
-  // Stand arc below the body
-  const d2 = (x - 16) ** 2 + (y - 15) ** 2;
-  if (y >= 15 && d2 >= 5.75 ** 2 && d2 <= 7.75 ** 2) return true;
-  // Stem and base
-  if (x >= 15 && x <= 17 && y >= 22 && y <= 25.5) return true;
-  return x >= 11.5 && x <= 20.5 && y >= 24.5 && y <= 26.5;
-}
+// The mark on a 32-unit grid, so both sizes share one drawing: words, wave, line. Strokes are
+// 2 units on odd rows, so they land on whole pixels at 16 px (1 px) and at 32 px (2 px).
+const WIN_WORDS = [[9, 9, 14, 9], [18, 9, 23, 9]];
+const WIN_WAVE = waveSegs(9, 23, 15, 2, 12);
+const WIN_LINE = [[9, 21, 23, 21]];
+const WIN_STROKE = 2;
+const onSegs = (x, y, segs) => segs.some((s) => segDist2(x, y, s) <= (WIN_STROKE / 2) ** 2);
 
 function inWinSlash(x, y) {
   return Math.abs(x - y) <= 1.5 && x >= 7 && x <= 25;
@@ -162,8 +171,9 @@ function drawWinTrayIconRgba(state, size, showDot = true) {
   const hidden = state === 'hidden';
   const lit = !hidden && state !== 'idle' && showDot;
   const disc = lit ? (WIN_DISC[state] || WIN_DISC.ready) : WIN_DISC.idle;
-  const mic = lit ? [255, 255, 255] : WIN_IDLE_MIC;
-  // The hidden icon is the idle one, dimmed and struck through like the Mac mic-off icon, but
+  const ink = lit ? [255, 255, 255] : WIN_IDLE_INK;
+  const line = lit ? [255, 255, 255] : WIN_IDLE_LINE;
+  // The hidden icon is the idle one, dimmed and struck through like the Mac hidden icon, but
   // dimmed less: hidden is a tray app's resting state, so it must stay easy to spot.
   const alpha = hidden ? 0.8 : 1;
 
@@ -179,7 +189,8 @@ function drawWinTrayIconRgba(state, size, showDot = true) {
           const uy = (y + (sy + 0.5) / SS) * unit;
           let c = null;
           if ((ux - 16) ** 2 + (uy - 16) ** 2 <= 15.5 ** 2) c = disc;
-          if (c && (inWinMic(ux, uy) || (hidden && inWinSlash(ux, uy)))) c = mic;
+          if (c && (onSegs(ux, uy, WIN_WORDS) || onSegs(ux, uy, WIN_WAVE) || (hidden && inWinSlash(ux, uy)))) c = ink;
+          else if (c && onSegs(ux, uy, WIN_LINE)) c = line;
           if (c) { r += c[0]; g += c[1]; b += c[2]; a += 1; }
         }
       }

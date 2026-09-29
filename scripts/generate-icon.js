@@ -1,245 +1,124 @@
-// Draws the app icon (build/icon.png, 1024 px) and derives the Windows icon (build/icon.ico) from it.
-//   node scripts/generate-icon.js         draw icon.png (needs the `canvas` package), then write icon.ico
-//   node scripts/generate-icon.js --ico   only rebuild icon.ico from the committed icon.png, no packages needed
+// Draws the app icon from one SVG and renders every file that shows it:
+//   build/icon.svg    the Mac master (macOS icon grid: an 824 px tile inside 1024, soft shadow)
+//   build/icon.png    1024 px render of it
+//   build/icon.icns   16–1024 px, via iconutil (macOS only)
+//   build/icon.ico    16–256 px, full-bleed tile (Windows draws its own margins)
+//   site/assets/icon.png  512 px full-bleed tile: the site's header mark, large favicon, touch icon
+//   site/assets/favicon-32.png  the browser-tab icon, drawn in the heavy small-size cut
+//
+//   node scripts/generate-icon.js     (needs Playwright's Chromium: npx playwright install chromium)
+//
+// The mark ("rough to right", D-LOGO): three strokes on pistachio paper. Loose words, then a
+// waveform, then one straight cobalt line: what you think, what you say, what you get. At 32 px
+// and below a heavier cut is drawn (two words, one wave), and at 16 px one snapped to the pixel grid.
 'use strict';
+/* global Image, document -- used inside page.evaluate, which runs in Chromium */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const { inflateSync } = require('zlib');
+const { execFileSync } = require('child_process');
 const { pngEncode } = require('../main/tray-icon');
 
-const BUILD_DIR = path.join(__dirname, '..', 'build');
-const PNG_PATH = path.join(BUILD_DIR, 'icon.png');
-const ICO_PATH = path.join(BUILD_DIR, 'icon.ico');
+const ROOT = path.join(__dirname, '..');
+const BUILD_DIR = path.join(ROOT, 'build');
 
-const SIZE = 1024;
-const RADIUS = 230;
-const CX = SIZE / 2;
-const CY = SIZE / 2;
+const PAPER = '#F3F7EC';
+const INK = '#1C2418';
+const COBALT = '#2A3FC9';
 
-function drawAppIconPng() {
-  // Required here so --ico works without the native canvas build.
-  const { createCanvas } = require('canvas');
+// Shapes on the 1024 grid, placed for the Mac tile (100..924); the full-bleed tile scales them up.
+// Each cut: stroke width, the loose words ([x0, y, x1]), the wave, and where the lines run.
+const BASE = { x0: 262, x1: 762, waveY: 512, lineY: 694 };
+const CUTS = {
+  regular: {
+    ...BASE, stroke: 64,
+    words: [[262, 322, 362], [436, 338, 520], [596, 316, 762]],
+    wave: { amp: 34, periods: 2 },
+    hair: { width: 4, opacity: 0.14 },
+  },
+  small: {
+    ...BASE, stroke: 92,
+    words: [[262, 318, 430], [530, 334, 762]],
+    wave: { amp: 40, periods: 1 },
+    hair: { width: 22, opacity: 0.26 },
+  },
+  // 16 px: 2 px strokes centred on pixel rows (64 units = 1 px), drawn in the tile's own space.
+  tinyMac: {
+    x0: 262, x1: 762, waveY: 512, lineY: 704, stroke: 128,
+    words: [[262, 320, 470], [554, 320, 762]],
+    wave: { amp: 52, periods: 1 },
+    hair: { width: 36, opacity: 0.3 },
+  },
+  tinyFull: {
+    x0: 201, x1: 823, waveY: 512, lineY: 768, stroke: 128, unscaled: true,
+    words: [[201, 256, 450], [574, 256, 823]],
+    wave: { amp: 48, periods: 1 },
+    hair: { width: 30, opacity: 0.3 },
+  },
+};
 
-  const canvas = createCanvas(SIZE, SIZE);
-  const ctx = canvas.getContext('2d');
-
-  // ── Background: rounded rect #0A0A14 ──────────────────────────────────────────
-  ctx.beginPath();
-  ctx.roundRect(0, 0, SIZE, SIZE, RADIUS);
-  ctx.fillStyle = '#0A0A14';
-  ctx.fill();
-  ctx.clip();
-
-  // ── Purple glow — bottom-left ─────────────────────────────────────────────────
-  {
-    const grd = ctx.createRadialGradient(220, 820, 0, 220, 820, 520);
-    grd.addColorStop(0, 'rgba(120,40,200,0.22)');
-    grd.addColorStop(1, 'rgba(120,40,200,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, SIZE, SIZE);
+function wavePath({ x0, x1, waveY, wave: { amp, periods } }) {
+  const n = 64;
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    pts.push(`${(x0 + (x1 - x0) * t).toFixed(1)} ${(waveY - amp * Math.sin(2 * Math.PI * periods * t)).toFixed(1)}`);
   }
+  return `M${pts.join(' L')}`;
+}
 
-  // ── Blue glow — top-right ─────────────────────────────────────────────────────
-  {
-    const grd = ctx.createRadialGradient(820, 200, 0, 820, 200, 480);
-    grd.addColorStop(0, 'rgba(10,132,255,0.16)');
-    grd.addColorStop(1, 'rgba(10,132,255,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, SIZE, SIZE);
-  }
+// variant 'mac': the 824 tile on the 1024 canvas with a shadow; 'full': the tile fills the canvas.
+function iconSvg({ variant = 'mac', cut = 'regular' } = {}) {
+  const full = variant === 'full';
+  const c = CUTS[cut === 'tiny' ? (full ? 'tinyFull' : 'tinyMac') : cut];
+  const inset = full ? 0 : 100;
+  const tile = 1024 - 2 * inset;
+  const radius = Math.round(tile * 0.2245);
+  const scale = full && !c.unscaled ? 1024 / 824 : 1;
+  const words = c.words.map(([x0, y, x1]) => `M${x0} ${y} L${x1} ${y}`).join(' ');
+  const shadow = !full && cut === 'regular';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+${shadow ? '<defs><filter id="s" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1C2418" flood-opacity="0.22"/></filter></defs>\n' : ''}<rect x="${inset}" y="${inset}" width="${tile}" height="${tile}" rx="${radius}" fill="${PAPER}"${shadow ? ' filter="url(#s)"' : ''}/>
+<rect x="${inset + c.hair.width / 2}" y="${inset + c.hair.width / 2}" width="${tile - c.hair.width}" height="${tile - c.hair.width}" rx="${radius - c.hair.width / 2}" fill="none" stroke="${INK}" stroke-opacity="${c.hair.opacity}" stroke-width="${c.hair.width}"/>
+<g transform="translate(512 512) scale(${scale.toFixed(4)}) translate(-512 -512)" fill="none" stroke-width="${c.stroke}" stroke-linecap="round" stroke-linejoin="round">
+<path stroke="${INK}" d="${words}"/>
+<path stroke="${INK}" d="${wavePath(c)}"/>
+<path stroke="${COBALT}" d="M${c.x0} ${c.lineY} L${c.x1} ${c.lineY}"/>
+</g>
+</svg>
+`;
+}
 
-  // ── Outer pulse rings ─────────────────────────────────────────────────────────
-  function ring(r, color) {
-    ctx.beginPath();
-    ctx.arc(CX, CY, r, 0, Math.PI * 2);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-  ring(310, 'rgba(10,132,255,0.06)');
-  ring(260, 'rgba(10,132,255,0.10)');
-
-  // ── Blue circle background at centre ─────────────────────────────────────────
-  ctx.beginPath();
-  ctx.arc(CX, CY, 200, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(10,132,255,0.08)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(10,132,255,0.18)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // ── Mic body ─────────────────────────────────────────────────────────────────
-  // Rounded rect: 88px wide, 140px tall, radius 44 (full pill top)
-  const micW = 88;
-  const micH = 140;
-  const micR = 44;
-  const micX = CX - micW / 2;
-  const micY = CY - 120;
-
-  ctx.beginPath();
-  ctx.roundRect(micX, micY, micW, micH, micR);
-  ctx.strokeStyle = 'rgba(130,190,255,0.95)';
-  ctx.lineWidth = 8;
-  ctx.stroke();
-
-  // ── Inner mic lines ───────────────────────────────────────────────────────────
-  const lineY1 = micY + micH * 0.32;
-  const lineY2 = micY + micH * 0.52;
-  const lineY3 = micY + micH * 0.72;
-  const lineInset = 20;
-
-  [
-    ['rgba(100,180,255,0.35)', lineY1],
-    ['rgba(100,180,255,0.25)', lineY2],
-    ['rgba(100,180,255,0.18)', lineY3],
-  ].forEach(([color, y]) => {
-    ctx.beginPath();
-    ctx.moveTo(micX + lineInset, y);
-    ctx.lineTo(micX + micW - lineInset, y);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.stroke();
-  });
-
-  // ── Mic arc below body ────────────────────────────────────────────────────────
-  const arcY = micY + micH + 4;
-  const arcR = 62;
-  ctx.beginPath();
-  ctx.arc(CX, arcY, arcR, Math.PI, 0, false);
-  ctx.strokeStyle = 'rgba(120,185,255,0.88)';
-  ctx.lineWidth = 7;
-  ctx.stroke();
-
-  // ── Mic stand: vertical line ──────────────────────────────────────────────────
-  const standTopY = arcY;
-  const standBotY = arcY + arcR - 2;
-  ctx.beginPath();
-  ctx.moveTo(CX, standTopY);
-  ctx.lineTo(CX, standBotY);
-  ctx.strokeStyle = 'rgba(120,185,255,0.85)';
-  ctx.lineWidth = 7;
-  ctx.stroke();
-
-  // ── Mic stand: horizontal bar ─────────────────────────────────────────────────
-  const barHalfW = 44;
-  ctx.beginPath();
-  ctx.moveTo(CX - barHalfW, standBotY);
-  ctx.lineTo(CX + barHalfW, standBotY);
-  ctx.strokeStyle = 'rgba(120,185,255,0.85)';
-  ctx.lineWidth = 7;
-  ctx.lineCap = 'round';
-  ctx.stroke();
-  ctx.lineCap = 'butt';
-
-  // ── Helper: glow circle ───────────────────────────────────────────────────────
-  function glowCircle(x, y, r, color, glowR, glowColor) {
-    if (glowR && glowColor) {
-      const grd = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-      grd.addColorStop(0, glowColor);
-      grd.addColorStop(1, 'rgba(168,85,247,0)');
-      ctx.beginPath();
-      ctx.arc(x, y, glowR, 0, Math.PI * 2);
-      ctx.fillStyle = grd;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-  }
-
-  // ── Purple spark — large (top-right of mic) ───────────────────────────────────
-  glowCircle(CX + 108, micY - 30, 12, 'rgba(168,85,247,0.95)', 40, 'rgba(168,85,247,0.3)');
-
-  // ── Purple spark — medium (left of mic) ──────────────────────────────────────
-  glowCircle(CX - 118, micY + 30, 8, 'rgba(168,85,247,0.75)', 26, 'rgba(168,85,247,0.2)');
-
-  // ── Blue spark (bottom-right) ─────────────────────────────────────────────────
-  glowCircle(CX + 95, arcY + 20, 7, 'rgba(100,160,255,0.8)', 22, 'rgba(100,160,255,0.2)');
-
-  // ── Tiny sparks ───────────────────────────────────────────────────────────────
-  glowCircle(CX - 80, micY - 55, 5, 'rgba(168,85,247,0.55)');
-  glowCircle(CX + 60, micY - 75, 4, 'rgba(200,150,255,0.5)');
-
-  return canvas.toBuffer('image/png');
+// Renders SVGs to RGBA pixels in headless Chromium (the only SVG renderer this repo already has).
+async function openRenderer() {
+  const { chromium } = require('playwright');
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  return {
+    async render(svg, size) {
+      await page.setViewportSize({ width: size, height: size });
+      await page.setContent(`<!doctype html><html><body style="margin:0;background:transparent">${svg.replace('width="1024" height="1024"', `width="${size}" height="${size}"`)}</body></html>`);
+      // Pixels straight from a canvas, so the PNG encoding is ours (8-bit RGBA) whatever the screenshot format.
+      const data = await page.evaluate(async (n) => {
+        const img = new Image();
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(document.querySelector('svg').outerHTML);
+        await img.decode();
+        const cv = document.createElement('canvas');
+        cv.width = n; cv.height = n;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0, n, n);
+        return Array.from(ctx.getImageData(0, 0, n, n).data);
+      }, size);
+      return Uint8Array.from(data);
+    },
+    close: () => browser.close(),
+  };
 }
 
 // ── icon.ico ──────────────────────────────────────────────────────────────────
 // The sizes Explorer, the taskbar, the Start menu and the NSIS installer pick from.
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256];
-
-// Decodes the 8-bit RGBA, non-interlaced PNG that drawAppIconPng writes.
-function decodePng(buf) {
-  let off = 8;
-  let w = 0, h = 0;
-  const idat = [];
-  while (off < buf.length) {
-    const len = buf.readUInt32BE(off);
-    const type = buf.toString('ascii', off + 4, off + 8);
-    const data = buf.subarray(off + 8, off + 8 + len);
-    if (type === 'IHDR') {
-      w = data.readUInt32BE(0);
-      h = data.readUInt32BE(4);
-      if (data[8] !== 8 || data[9] !== 6 || data[12] !== 0) throw new Error('icon.png must be 8-bit RGBA, non-interlaced');
-    } else if (type === 'IDAT') {
-      idat.push(data);
-    }
-    off += 12 + len;
-  }
-  const raw = inflateSync(Buffer.concat(idat));
-  const px = new Uint8Array(w * h * 4);
-  const stride = w * 4;
-  for (let y = 0; y < h; y++) {
-    const filter = raw[y * (stride + 1)];
-    const row = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
-    for (let i = 0; i < stride; i++) {
-      const a = i >= 4 ? px[y * stride + i - 4] : 0;
-      const b = y > 0 ? px[(y - 1) * stride + i] : 0;
-      const c = i >= 4 && y > 0 ? px[(y - 1) * stride + i - 4] : 0;
-      let pred = 0;
-      if (filter === 1) pred = a;
-      else if (filter === 2) pred = b;
-      else if (filter === 3) pred = (a + b) >> 1;
-      else if (filter === 4) {
-        const p = a + b - c;
-        const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
-        pred = pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
-      }
-      px[y * stride + i] = (row[i] + pred) & 0xFF;
-    }
-  }
-  return { w, h, px };
-}
-
-// Area-average downscale in premultiplied alpha, so transparent corners don't darken the edge.
-function resize({ w, h, px }, size) {
-  const out = new Uint8Array(size * size * 4);
-  const scale = w / size;
-  for (let oy = 0; oy < size; oy++) {
-    const y0 = oy * scale, y1 = y0 + scale;
-    for (let ox = 0; ox < size; ox++) {
-      const x0 = ox * scale, x1 = x0 + scale;
-      let r = 0, g = 0, b = 0, a = 0, total = 0;
-      for (let y = Math.floor(y0); y < Math.min(h, Math.ceil(y1)); y++) {
-        const wy = Math.min(y + 1, y1) - Math.max(y, y0);
-        for (let x = Math.floor(x0); x < Math.min(w, Math.ceil(x1)); x++) {
-          const wt = wy * (Math.min(x + 1, x1) - Math.max(x, x0));
-          const i = (y * w + x) * 4;
-          const pa = px[i + 3] * wt;
-          r += px[i] * pa; g += px[i + 1] * pa; b += px[i + 2] * pa;
-          a += pa; total += wt;
-        }
-      }
-      const i = (oy * size + ox) * 4;
-      if (a > 0) {
-        out[i] = Math.round(r / a); out[i + 1] = Math.round(g / a); out[i + 2] = Math.round(b / a);
-      }
-      out[i + 3] = Math.round(a / total);
-    }
-  }
-  return out;
-}
 
 // 32-bit BMP entry (BITMAPINFOHEADER + bottom-up BGRA + AND mask). Sizes below 256 use BMP, the form
 // every icon reader takes (installer tools included); only 256 px is PNG, as in Windows' own icons.
@@ -264,17 +143,15 @@ function bmpEntry(size, rgba) {
   return Buffer.concat([header, pixels, Buffer.alloc(maskStride * size)]);
 }
 
-function buildIco(source) {
-  const images = ICO_SIZES.map((size) => {
-    const rgba = resize(source, size);
-    return { size, data: size >= 256 ? pngEncode(size, size, rgba) : bmpEntry(size, rgba) };
-  });
-  const dir = Buffer.alloc(6 + 16 * images.length);
+// images: { [size]: rgba } for every ICO size.
+function buildIco(images) {
+  const entries = ICO_SIZES.map((size) => ({ size, data: size >= 256 ? pngEncode(size, size, images[size]) : bmpEntry(size, images[size]) }));
+  const dir = Buffer.alloc(6 + 16 * entries.length);
   dir.writeUInt16LE(0, 0);
   dir.writeUInt16LE(1, 2); // 1 = icon
-  dir.writeUInt16LE(images.length, 4);
+  dir.writeUInt16LE(entries.length, 4);
   let offset = dir.length;
-  images.forEach(({ size, data }, k) => {
+  entries.forEach(({ size, data }, k) => {
     const e = 6 + 16 * k;
     dir[e] = size >= 256 ? 0 : size; // 0 means 256
     dir[e + 1] = size >= 256 ? 0 : size;
@@ -284,18 +161,46 @@ function buildIco(source) {
     dir.writeUInt32LE(offset, e + 12);
     offset += data.length;
   });
-  return Buffer.concat([dir, ...images.map((img) => img.data)]);
+  return Buffer.concat([dir, ...entries.map((img) => img.data)]);
 }
 
-if (require.main === module) {
-  if (!process.argv.includes('--ico')) {
-    const buf = drawAppIconPng();
-    fs.writeFileSync(PNG_PATH, buf);
-    console.log(`Icon written to ${PNG_PATH} (${buf.length} bytes)`);
+const cutFor = (size) => (size <= 16 ? 'tiny' : size <= 32 ? 'small' : 'regular');
+
+async function main() {
+  const r = await openRenderer();
+  try {
+    const macSvg = iconSvg({ variant: 'mac' });
+    fs.writeFileSync(path.join(BUILD_DIR, 'icon.svg'), macSvg);
+    fs.writeFileSync(path.join(BUILD_DIR, 'icon.png'), pngEncode(1024, 1024, await r.render(macSvg, 1024)));
+
+    if (process.platform === 'darwin') {
+      const set = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-icon-')) + '/icon.iconset';
+      fs.mkdirSync(set);
+      for (const base of [16, 32, 128, 256, 512]) {
+        for (const scale of [1, 2]) {
+          const px = base * scale;
+          const svg = iconSvg({ variant: 'mac', cut: cutFor(px) });
+          fs.writeFileSync(path.join(set, `icon_${base}x${base}${scale === 2 ? '@2x' : ''}.png`), pngEncode(px, px, await r.render(svg, px)));
+        }
+      }
+      execFileSync('iconutil', ['-c', 'icns', set, '-o', path.join(BUILD_DIR, 'icon.icns')]);
+    } else {
+      console.log('Not on macOS: build/icon.icns left as it is (iconutil is macOS only).');
+    }
+
+    const ico = {};
+    for (const size of ICO_SIZES) ico[size] = await r.render(iconSvg({ variant: 'full', cut: cutFor(size) }), size);
+    fs.writeFileSync(path.join(BUILD_DIR, 'icon.ico'), buildIco(ico));
+
+    const site = path.join(ROOT, 'site', 'assets');
+    fs.writeFileSync(path.join(site, 'icon.png'), pngEncode(512, 512, await r.render(iconSvg({ variant: 'full' }), 512)));
+    fs.writeFileSync(path.join(site, 'favicon-32.png'), pngEncode(32, 32, await r.render(iconSvg({ variant: 'full', cut: 'small' }), 32)));
+  } finally {
+    await r.close();
   }
-  const ico = buildIco(decodePng(fs.readFileSync(PNG_PATH)));
-  fs.writeFileSync(ICO_PATH, ico);
-  console.log(`Windows icon written to ${ICO_PATH} (${ICO_SIZES.join('/')} px, ${ico.length} bytes)`);
+  console.log('Wrote build/icon.svg, icon.png, icon.icns, icon.ico and site/assets/icon.png, favicon-32.png');
 }
 
-module.exports = { ICO_SIZES, decodePng, resize, buildIco };
+if (require.main === module) main().catch((e) => { console.error(e); process.exit(1); });
+
+module.exports = { ICO_SIZES, CUTS, iconSvg, buildIco };
