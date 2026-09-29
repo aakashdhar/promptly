@@ -195,17 +195,21 @@ function parseJsonOutput(raw) {
 }
 
 // Picks who answers each call (D-AI-PROVIDERS): Claude Code by default; the user's own API key
-// when Claude Code isn't ready (mode 'auto') or when they chose it (mode 'api'). Same run() and
-// result shape either way, plus `provider`. apiOptions are passed to every API call (the Dictation
-// clean-up asks for the fast model). Claude calls go through exactly as before.
-function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = () => true, hasKey = () => false, apiOptions = {}, onClaudeAuthError = () => {} }) {
+// when Claude Code isn't ready (mode 'auto') or when they chose it (mode 'api'). Without a saved
+// key it is always Claude Code, whatever the mode says. Same run() and result shape either way,
+// plus `provider`. apiOptions are passed to every API call (the Dictation clean-up asks for the
+// fast model). beforeRun lets the app re-check Claude Code before a call would go to the key, so
+// "Claude Code first" heals on its own. Claude calls go through exactly as before.
+function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = () => true, hasKey = () => false, apiOptions = {}, onClaudeAuthError = () => {}, beforeRun = async () => {} }) {
   function active() {
+    if (!hasKey()) return 'claude';
     const mode = getMode();
     if (mode === 'claude') return 'claude';
     if (mode === 'api') return 'api';
-    return isClaudeReady() || !hasKey() ? 'claude' : 'api';
+    return isClaudeReady() ? 'claude' : 'api';
   }
   async function run(prompt, opts = {}) {
+    if (active() === 'api') await beforeRun();
     if (active() === 'api') return api.run(prompt, { timeoutMs: opts.timeoutMs, onDelta: opts.onDelta, ...apiOptions });
     const result = await claude.run(prompt, opts);
     if (result.errorType === 'auth') onClaudeAuthError();
@@ -218,4 +222,44 @@ function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = (
   return { run, cancelAll, active, version: (...a) => claude.version(...a) };
 }
 
-module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, createStreamParser, classifyError, parseJsonOutput };
+// Whether Claude Code can answer now, for the router (D-AI-PROVIDERS). Unknown until the first
+// status check, and then Claude Code counts as ready if it was found. Once it looks unavailable,
+// recheckIfStale() looks again (at most every recheckMs, straight away after a sign-in error), so
+// someone with a key goes back to Claude Code by themselves after `claude login`, a slow startup
+// check, or installing Claude Code while Promptly is open. A timeout never decides it.
+function createClaudeReadiness({ getClaudePath, setClaudePath = () => {}, resolvePath = async () => null, getStatus, recheckMs = 15000, now = () => Date.now() }) {
+  let ready = null;
+  let lastCheck = -Infinity; // never checked: the first recheck runs at once
+  let inFlight = null;
+  const isReady = () => (ready === null ? !!getClaudePath() : ready);
+  function note(status) {
+    ready = !!(status && status.installed && status.loggedIn !== false);
+    lastCheck = now();
+  }
+  function authFailed() {
+    ready = false;
+    lastCheck = -Infinity; // look again on the next call, e.g. the retry after `claude login`
+  }
+  function working() {
+    ready = true;
+    lastCheck = now();
+  }
+  async function recheckIfStale() {
+    if (isReady() || now() - lastCheck < recheckMs) return;
+    if (!inFlight) {
+      lastCheck = now();
+      inFlight = (async () => {
+        let claudePath = getClaudePath();
+        if (!claudePath) {
+          claudePath = await resolvePath();
+          if (claudePath) setClaudePath(claudePath);
+        }
+        if (claudePath) note(await getStatus(claudePath));
+      })().catch(() => {}).finally(() => { inFlight = null; });
+    }
+    await inFlight;
+  }
+  return { isReady, note, authFailed, working, recheckIfStale };
+}
+
+module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, createClaudeReadiness, createStreamParser, classifyError, parseJsonOutput };

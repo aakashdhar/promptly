@@ -39,7 +39,7 @@ export default function ExpandedErrorContent({
     // Your own API key answered (D-AI-PROVIDERS): its message already names the provider and says
     // what to do; the Claude Code fixes below don't apply. Settings › AI is one click away.
     if (err.provider && err.provider !== 'claude') {
-      const apiIcons = { auth: 'lock', timeout: 'clock', rate: 'clock', empty: 'warning', offline: 'warning' }
+      const apiIcons = { auth: 'lock', 'no-key': 'lock', timeout: 'clock', rate: 'clock', empty: 'warning', offline: 'warning' }
       const apiHints = { auth: 'Paste a new key in Settings › AI, or switch to Claude Code there.', rate: 'Wait a minute, or use another model or provider in Settings › AI.', offline: 'Promptly needs the internet to reach your AI provider.' }
       return (
         <OperationErrorPanel

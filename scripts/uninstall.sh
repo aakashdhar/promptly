@@ -41,6 +41,8 @@ if [ "${1:-}" = "--yes" ]; then
     [ -e "$d" ] && LEFT+=("$d")
   done
   tccutil reset Microphone "$BUNDLE_ID" >/dev/null 2>&1 || true
+  # The Keychain entry that encrypts saved API keys (only there if a key was ever saved).
+  security delete-generic-password -s "Promptly Safe Storage" >/dev/null 2>&1 || true
 
   if [ -n "$APP" ] && [ -e "$APP" ]; then
     rm -rf "$APP" 2>/dev/null
@@ -136,6 +138,10 @@ fi
 # Step 7 — reset TCC microphone permission
 echo -n "  Removing microphone permission... "
 tccutil reset Microphone "$BUNDLE_ID" 2>/dev/null && echo "✓" || echo "✓ (not needed)"
+
+# Step 8 — the Keychain entry that encrypts saved API keys (only there if a key was ever saved)
+echo -n "  Removing saved API key encryption... "
+security delete-generic-password -s "Promptly Safe Storage" >/dev/null 2>&1 && echo "✓" || echo "✓ (not found)"
 
 echo ""
 echo "  ─────────────────────────────────────"

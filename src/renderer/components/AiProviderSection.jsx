@@ -100,6 +100,8 @@ export default function AiProviderSection() {
       : { ok: false, text: r.error })
   }
 
+  // "My API key" needs a saved key for the chosen provider; until then it can't be picked.
+  const apiUsable = !!(s.provider && s.keys?.[s.provider]?.saved)
   const activeLabel = s.active === 'claude' ? 'Claude Code' : `${info?.label || 'Your key'}${chosen.model ? ` (${chosen.model})` : ''}`
   const modelOptions = (current) => [...new Set([current, ...models].filter(Boolean))]
 
@@ -110,15 +112,18 @@ export default function AiProviderSection() {
           Now answering: <strong style={{ fontWeight: 600 }}>{activeLabel}</strong>
         </p>
         <div role="radiogroup" aria-label="Who writes your prompts" style={{ display: 'grid', gap: 6, padding: '8px 0' }}>
-          {MODES.map(([value, label, hint]) => (
-            <label key={value} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 9, cursor: 'pointer', border: `0.5px solid ${s.mode === value ? 'rgba(var(--ink),0.28)' : 'rgba(var(--ink),0.1)'}`, background: s.mode === value ? 'rgba(var(--ink),0.06)' : 'transparent', WebkitAppRegion: 'no-drag' }}>
-              <input type="radio" name="ai-mode" value={value} checked={s.mode === value} onChange={() => update({ mode: value })} style={{ marginTop: 2 }} />
-              <span style={{ display: 'grid', gap: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>{label}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{hint}</span>
-              </span>
-            </label>
-          ))}
+          {MODES.map(([value, label, hint]) => {
+            const off = value === 'api' && !apiUsable
+            return (
+              <label key={value} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 9, cursor: off ? 'default' : 'pointer', opacity: off ? 0.55 : 1, border: `0.5px solid ${s.mode === value ? 'rgba(var(--ink),0.28)' : 'rgba(var(--ink),0.1)'}`, background: s.mode === value ? 'rgba(var(--ink),0.06)' : 'transparent', WebkitAppRegion: 'no-drag' }}>
+                <input type="radio" name="ai-mode" value={value} checked={s.mode === value} disabled={off} onChange={() => update({ mode: value })} style={{ marginTop: 2 }} />
+                <span style={{ display: 'grid', gap: 2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(var(--ink),0.95)' }}>{label}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{off ? 'Save a key below first.' : hint}</span>
+                </span>
+              </label>
+            )
+          })}
         </div>
         <span style={{ fontSize: 12, color: 'var(--text-secondary)', paddingBottom: 8 }}>Harness always uses Claude Code.</span>
       </Section>

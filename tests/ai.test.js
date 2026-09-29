@@ -98,7 +98,8 @@ describe('AI providers: the API client', () => {
     expect(await runner({ ...settings, provider: 'gemini', model: 'limited' }).run('x')).toMatchObject({ errorType: 'rate', error: "Gemini says you've hit a rate or usage limit. Try again in a minute." })
     const offline = createApiRunner({ getSettings: () => settings, fetchImpl: () => Promise.reject(new TypeError('fetch failed')) })
     expect(await offline.run('x')).toMatchObject({ errorType: 'offline', error: "Couldn't reach OpenAI. Check your connection." })
-    expect(await createApiRunner({ getSettings: () => null }).run('x')).toMatchObject({ success: false, errorType: 'auth' })
+    // No key: tagged as an API result, never null, so the window can't show Claude sign-in advice.
+    expect(await createApiRunner({ getSettings: () => null }).run('x')).toMatchObject({ success: false, errorType: 'no-key', provider: 'api' })
   })
 
   it('times out, and a cancel stops the request', async () => {
@@ -150,7 +151,7 @@ describe('AI providers: who answers each call', () => {
   }
   const make = (o = {}) => {
     const claude = fakeRunner('claude', o.claudeResult), api = fakeRunner('api')
-    const router = createAiRouter({ claude, api, getMode: () => o.mode ?? 'auto', isClaudeReady: () => o.ready ?? true, hasKey: () => o.key ?? false, apiOptions: o.apiOptions, onClaudeAuthError: o.onAuth })
+    const router = createAiRouter({ claude, api, getMode: () => o.mode ?? 'auto', isClaudeReady: o.isReady ?? (() => o.ready ?? true), hasKey: () => o.key ?? false, apiOptions: o.apiOptions, onClaudeAuthError: o.onAuth, beforeRun: o.beforeRun })
     return { router, claude, api }
   }
 
@@ -160,9 +161,23 @@ describe('AI providers: who answers each call', () => {
     expect(make({ ready: false, key: false }).router.active()).toBe('claude')
   })
 
-  it('the manual choices win', () => {
+  it('the manual choices win, but "My API key" without a saved key stays on Claude Code', () => {
     expect(make({ mode: 'claude', ready: false, key: true }).router.active()).toBe('claude')
-    expect(make({ mode: 'api', ready: true, key: false }).router.active()).toBe('api')
+    expect(make({ mode: 'api', ready: true, key: true }).router.active()).toBe('api')
+    // Choosing "My API key" and never saving one (or removing it) must not send calls nowhere.
+    expect(make({ mode: 'api', ready: true, key: false }).router.active()).toBe('claude')
+  })
+
+  it('looks at Claude Code again before a call would go to the key, and switches back if it is fine', async () => {
+    let ready = false
+    let checks = 0
+    const a = make({ key: true, isReady: () => ready, beforeRun: async () => { checks++; ready = true } })
+    expect((await a.router.run('p')).provider).toBe('claude')
+    expect(checks).toBe(1)
+    expect(a.api.calls).toEqual([])
+    // Claude Code already fine: no extra check before the call.
+    await a.router.run('p')
+    expect(checks).toBe(1)
   })
 
   it('passes Claude calls through unchanged and API calls with their options', async () => {
@@ -184,3 +199,68 @@ describe('AI providers: who answers each call', () => {
     expect([claude.cancelled, api.cancelled]).toEqual([1, 1])
   })
 })
+
+describe('AI providers: is Claude Code ready?', () => {
+  const { createClaudeReadiness } = require('../main/llm.js')
+  const setup = (o = {}) => {
+    let clock = 1000, statusCalls = 0, claudePath = 'path' in o ? o.path : '/bin/claude'
+    const r = createClaudeReadiness({
+      getClaudePath: () => claudePath,
+      setClaudePath: (p) => { claudePath = p },
+      resolvePath: async () => o.resolved ?? null,
+      getStatus: async () => { statusCalls++; return o.status ?? { installed: true, loggedIn: true } },
+      recheckMs: 15000,
+      now: () => clock,
+    })
+    return { r, tick: (ms) => { clock += ms }, statusCalls: () => statusCalls, path: () => claudePath }
+  }
+
+  it('counts as ready before the first check when Claude Code was found', () => {
+    expect(setup().r.isReady()).toBe(true)
+    expect(setup({ path: null }).r.isReady()).toBe(false)
+  })
+
+  it('after a sign-in error it looks again straight away, then at most every 15 s', async () => {
+    const t = setup({ status: { installed: true, loggedIn: false } })
+    t.r.authFailed()
+    expect(t.r.isReady()).toBe(false)
+    await t.r.recheckIfStale()
+    expect(t.statusCalls()).toBe(1)
+    await t.r.recheckIfStale()
+    expect(t.statusCalls()).toBe(1)
+    t.tick(15000)
+    await t.r.recheckIfStale()
+    expect(t.statusCalls()).toBe(2)
+  })
+
+  it('switches back once Claude Code is signed in again', async () => {
+    const status = { installed: true, loggedIn: false }
+    const t = setup({ status })
+    t.r.note(status)
+    expect(t.r.isReady()).toBe(false)
+    status.loggedIn = true
+    t.tick(15000)
+    await t.r.recheckIfStale()
+    expect(t.r.isReady()).toBe(true)
+  })
+
+  it('finds Claude Code installed while Promptly was open', async () => {
+    const t = setup({ path: null, resolved: '/opt/claude' })
+    t.r.note({ installed: false, loggedIn: false })
+    t.tick(15000)
+    await t.r.recheckIfStale()
+    expect(t.path()).toBe('/opt/claude')
+    expect(t.r.isReady()).toBe(true)
+  })
+
+  it('checks nothing while Claude Code is ready, and runs one check for calls that arrive together', async () => {
+    const t = setup()
+    t.r.working()
+    await t.r.recheckIfStale()
+    expect(t.statusCalls()).toBe(0)
+    t.r.authFailed()
+    await Promise.all([t.r.recheckIfStale(), t.r.recheckIfStale(), t.r.recheckIfStale()])
+    expect(t.statusCalls()).toBe(1)
+  })
+})
+

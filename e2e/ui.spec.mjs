@@ -238,8 +238,8 @@ for (const scale of SCALES) for (const theme of ['dark', 'light']) {
     await check(page, 'settings')
     // Every tab (Dictation offers the Zendesk fix in Your words), then You: drafting "How you
     // write" from pasted writing.
-    for (const tab of ['Dictation', 'Speech', 'Prompts', 'Setup']) {
-      await page.getByRole('tab', { name: tab }).click()
+    for (const tab of ['Dictation', 'Speech', 'Prompts', 'AI', 'Setup']) {
+      await page.getByRole('tab', { name: tab, exact: true }).click()
       if (tab === 'Dictation') await expect(page.getByRole('group', { name: 'Suggested fix' })).toBeVisible()
       await check(page, `settings-${tab.toLowerCase()}`)
     }

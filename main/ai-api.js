@@ -75,7 +75,8 @@ function createApiRunner({ getSettings, fetchImpl }) {
 
   async function run(prompt, { timeoutMs = 45000, onDelta, fast = false } = {}) {
     const settings = getSettings();
-    if (!settings || !settings.key) return { success: false, error: 'No API key saved. Add one in Settings › AI.', errorType: 'auth', provider: settings?.provider || null };
+    // Tagged as an API result (never null), so the window never shows Claude sign-in advice for it.
+    if (!settings || !settings.key) return { success: false, error: 'No API key saved. Add one in Settings › AI, or choose Claude Code there.', errorType: 'no-key', provider: settings?.provider || 'api' };
     const { provider: providerId, key } = settings;
     const provider = PROVIDERS[providerId];
     if (!provider) return { success: false, error: 'Unknown AI provider. Pick one in Settings › AI.', errorType: 'unknown', provider: providerId };
