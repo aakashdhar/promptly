@@ -107,3 +107,10 @@
 - **Why**: Claude Code users must see no change; one client covers three providers with no SDKs; the router keeps "every AI call through main/llm.js" true.
 - **Touches**: main/llm.js (`createAiRouter`), main/ai-api.js, main/ai-providers.js, main/secrets.js, main.js (runners, `claudeReady`, AI IPC, Harness gate), preload.js, splash.html, AiProviderSection.jsx, SettingsPanel.jsx, ExpandedErrorContent.jsx, useDictation.js, App.jsx, tests/ai.test.js, e2e/app.spec.mjs
 ---
+---
+### 2026-09-30 · D-AI-PROVIDERS-ROUTING · Hand over after the fact, check in the background
+- **Decision**: the router never waits on a Claude Code check before a call. Instead a finished Claude call that means "can't answer" (`claudeUnavailable()`: auth, usage limit/credit, CLI missing) is re-run on the key in Automatic, and `createClaudeReadiness` holds Claude Code off for a reason-based while. Background rechecks run only from key-routed calls (30 s with Claude Code on disk, 5 min without).
+- **Why**: awaiting a check added ~1.4 s (a login-shell lookup) before every key call and lost cancels; trusting `auth status` after a refusal bounced between Claude and the key.
+- **Touches**: main/llm.js (`claudeUnavailable`, `createAiRouter`, `createClaudeReadiness`), main.js (routerOptions, check-claude, save-ai-key `claudeUnavailable`), preload.js, splash.html, tests/ai.test.js
+---
+

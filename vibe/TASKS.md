@@ -1045,6 +1045,11 @@ Say "next" to begin.
    Unit tests 309/309 (22 new), lint clean; Settings tab and setup path checked in throwaway previews.
 ⚠️ AIP-008 · e2e test written, not run (opens app windows; waiting for your go-ahead)
 
+✅ Review of the branch for Claude Code users (3 read-only rounds, 2026-09-29/30): no change for anyone
+   without a key (every call path, setup, Settings, Keychain, uninstall). Fixes for key holders in
+   3a0a2b9, 6d5d0fc and the third round: hand over to the key when Claude Code can't answer, no waiting
+   on checks, safe provider switching, clearer errors and setup. Unit tests 320/320.
+
 ## What's next
 ⬜ You: say when the full e2e suite can run (about 5 minutes, opens app windows)
 ⬜ You: try it with a real OpenAI/Gemini/Grok key (branch build) before we merge to main

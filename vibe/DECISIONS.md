@@ -2319,3 +2319,12 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Action: fixed autonomously — 1 round (ARCHITECTURE/CLAUDE.md rule 1 amended; spec criteria 2, 3, 4, 8 made testable)
 > Report: vibe/spec-reviews/2026-09-29-add-feature-ai-providers.md
 ---
+
+---
+### D-AI-PROVIDERS-ROUTING — How "Claude Code first" works with a key (amends D-AI-PROVIDERS)
+- **Date**: 2026-09-30 · **Type**: architecture
+- **Why**: three read-only review rounds (owner asked whether the branch could affect Claude Code users) confirmed no change for people without a key, and shaped how the fallback behaves for people with one.
+- **Decision**: without a saved key the router always uses Claude Code, whatever the mode. With a key in Automatic: Claude Code while it's on disk and hasn't turned a call away; a call turned away (sign-in, usage limit/credit, Claude Code missing) is answered by the key instead, and Claude Code is tried again with a real call after 1 min / 15 min / 10 min. Status checks (`claude --version`, `auth status`) run only in the background, never before a call, and can't end that wait; a timed-out check decides nothing. "My API key" can't be chosen without a key; removing the key in use falls over to another saved key, then to Automatic. Harness refuses only when "My API key" is chosen or Claude Code is missing.
+- **Keychain**: nothing asks safeStorage anything until a key is stored; uninstall removes "promptly Safe Storage" (Electron uses package.json's lowercase name).
+---
+
