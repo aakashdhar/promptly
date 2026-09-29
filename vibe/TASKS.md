@@ -996,7 +996,16 @@ Say "next" to begin.
    "Speak at 150. Type at 40." (one message per spot; only the film says "Say it rough, get it right")
    Source: promptly-site-drafts/remotion-film (Showreel composition)
 
+✅ v2.20.2 released: the new "rough to right" mark everywhere (D-LOGO, 2026-09-29)
+   Picked from five directions on the "Promptly logo" design canvas. App icon (icns/ico from one SVG,
+   heavier cuts at 32/16 px), menu bar + Windows tray icons, setup copy, site header/favicon/share
+   image, both films re-rendered. Menu bar masks precomputed (main/tray-masks.json): drawing them at
+   startup added ~2 s per launch under the e2e debugger and timed out app launch in e2e.
+   Checked: unit tests 290/290, lint, icon + masks inside both built apps, Windows CI, live links.
+   Not re-run: the full e2e suite after the fix (owner was busy; one launch test 4.7 s vs 4.3 s before)
+
 ## What's next
+⬜ Run the full e2e suite once (about 4 min, opens test windows) to confirm the icon fix
 ⬜ Decide: keep or remove the old 24-second film section (#film)
 ⬜ WIN-023 · You: test Windows on the laptop (FEATURE_TASKS.md checklist)
 ⬜ Install 2.20.1 on your Mac and confirm it opens (this Mac still runs 2.19.3)
