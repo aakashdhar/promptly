@@ -2270,3 +2270,12 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Date**: 2026-09-28 · **Type**: product
 - **Decision**: ship the Windows installer unsigned while the owner and friends test; SmartScreen's More info → Run anyway is explained on the site. WIN-026 reopens when the owner picks a method (lean: Azure Artifact Signing if eligible in India, else Certum Open Source).
 ---
+
+---
+### D-MAC-PER-ARCH — One Mac download per chip instead of a universal app
+- **Date**: 2026-09-29 · **Type**: product / packaging
+- **Decision**: release.sh builds, thins, signs and verifies separate Apple Silicon (arm64) and Intel (x64) apps and DMGs. The release carries `Promptly.dmg` (Apple Silicon, so every old link keeps working for most people) and `Promptly-Intel.dmg`; install.sh picks by `sysctl hw.optional.arm64` (right even under Rosetta).
+- **Why**: size was the top complaint. The universal Electron framework held both chips' Chromium (421 MB of a 493 MB install). Measured on 2.20.1: download 234 → 148 MB (Apple Silicon) / 155 MB (Intel); installed 493 → 280 / 290 MB.
+- **Site**: every Mac button defaults to Apple Silicon with an "On an Intel Mac?" line and an About This Mac hint; Chrome/Edge report the chip (`userAgentData` architecture), so Intel Macs there get the Intel build automatically. Safari can't tell, hence the visible choice.
+- **Next steps for size, parked**: a lighter multilingual model for Hindi/Hinglish (the optional 547 MB model); Tauri (~75–80 MB installed, 6–9 weeks).
+---
