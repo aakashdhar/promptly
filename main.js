@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences, safeStorage } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -10,7 +10,10 @@ const { createConfigStore } = require('./main/config');
 const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
 const { resolveClaudePath, resolveWhisperPath, resolveFfmpegPath } = require('./main/binaries');
-const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, parseJsonOutput } = require('./main/llm');
+const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, parseJsonOutput } = require('./main/llm');
+const { createApiRunner } = require('./main/ai-api');
+const { PROVIDERS } = require('./main/ai-providers');
+const { createSecrets } = require('./main/secrets');
 const { createWhisperRunner, findDownloadedModel, whisperCommand } = require('./main/whisper');
 const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
 const { createQuietDetector } = require('./main/audio-level');
@@ -152,30 +155,59 @@ function claudeModel() {
   return !stored || RETIRED_DEFAULTS.includes(stored) ? DEFAULT_MODEL : stored;
 }
 
+// ── Who answers: Claude Code by default, the user's own API key otherwise (D-AI-PROVIDERS) ──
+
+const secrets = createSecrets({ safeStorage });
+// The saved key for the chosen provider, decrypted only when a call needs it; null without one.
+function apiSettings() {
+  const stored = config.read();
+  const provider = stored.apiProvider;
+  if (!provider || !PROVIDERS[provider]) return null;
+  const key = secrets.decrypt(stored.apiKeys?.[provider]);
+  if (!key) return null;
+  const { model = '', fastModel = '' } = stored.apiModels?.[provider] || {};
+  return { provider, key, model, fastModel };
+}
+const hasApiKey = () => !!apiSettings();
+const aiMode = () => (['auto', 'claude', 'api'].includes(config.read().aiMode) ? config.read().aiMode : 'auto');
+// Claude Code is ready when it's installed and signed in. Unknown until the first status check,
+// and then it counts as ready if Claude Code was found, so Claude users never wait on a check.
+let claudeReady = null;
+const isClaudeReady = () => (claudeReady === null ? !!claudePath : claudeReady);
+function noteClaudeStatus(status) {
+  claudeReady = !!(status && status.installed && status.loggedIn !== false);
+}
+const routerOptions = { getMode: aiMode, isClaudeReady, hasKey: hasApiKey, onClaudeAuthError: () => { claudeReady = false; } };
+
 // Claude and Whisper processes behind the current operation, so an abort can stop them.
 const activeChildren = new Set();
-const claude = createClaudeRunner({
+const claudeCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
   onSlow: () => winSend('generation-slow-warning'),
   children: activeChildren,
 });
+const apiMain = createApiRunner({ getSettings: apiSettings });
+const claude = createAiRouter({ claude: claudeCli, api: apiMain, ...routerOptions });
 // The eval scorecard runs alongside the prompt screen; aborting a new prompt must not kill it.
-const evalClaude = createClaudeRunner({
+const evalCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
 });
+const evalClaude = createAiRouter({ claude: evalCli, api: createApiRunner({ getSettings: apiSettings }), ...routerOptions });
 // Dictation clean-up (D-DICTATION-CLEANUP) always uses Sonnet, whatever model Craft uses: in
 // tests Haiku couldn't rebuild misheard Indian names ("super nah" → Supranaah; Sonnet: Suparna)
 // and was only about a second faster. Its processes count as the current operation, so a cancel
 // stops them too.
 const DICTATION_CLEANUP_MODEL = 'sonnet';
 const DICTATION_CLEANUP_TIMEOUT_MS = 12000;
-const cleanupClaude = createClaudeRunner({
+const cleanupCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: () => DICTATION_CLEANUP_MODEL,
   children: activeChildren,
 });
+// On a key it uses the provider's fast model; it shares the main API runner, so a cancel stops it.
+const cleanupClaude = createAiRouter({ claude: cleanupCli, api: apiMain, apiOptions: { fast: true }, ...routerOptions });
 // "Best accuracy" speech model, downloaded on request into userData/models.
 // Tests serve a small stand-in model locally with PROMPTLY_SPEECH_MODEL.
 const speechModels = createSpeechModels({
@@ -320,7 +352,7 @@ async function typeIntoApp(text) {
 // the same text with a few fixes; otherwise, or when Claude is missing, slow or signed out, the
 // local text is typed as before.
 async function cleanUpDictation(text) {
-  if (!claudePath) return { text, outcome: 'no Claude' };
+  if (cleanupClaude.active() === 'claude' && !claudePath) return { text, outcome: 'no Claude' };
   const started = Date.now();
   const country = countryFromLocale(app.getSystemLocale?.());
   const result = await cleanupClaude.run(buildDictationCleanupPrompt(text, dictionaryWords(), { country }), { timeoutMs: DICTATION_CLEANUP_TIMEOUT_MS, slowWarningMs: 0, thinking: false });
@@ -1005,6 +1037,9 @@ async function needsSetup() {
   if (!config.read().setupComplete) return true;
   if (!whisper.engine()) return true;
   const status = await claudeSetup.getClaudeStatus(claudePath);
+  noteClaudeStatus(status);
+  // Someone who uses their own API key instead of Claude Code doesn't need Claude Code set up.
+  if (aiMode() !== 'claude' && hasApiKey()) return false;
   return !status.installed || status.loggedIn === false;
 }
 
@@ -1109,7 +1144,9 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('claude-status', async () => {
     if (!claudePath) claudePath = await resolveClaudePath(config.read().claudePath);
-    return claudeSetup.getClaudeStatus(claudePath);
+    const status = await claudeSetup.getClaudeStatus(claudePath);
+    noteClaudeStatus(status);
+    return status;
   });
 
   // What the setup screen says for this system, and anything that stops setup working on it:
@@ -1353,10 +1390,15 @@ app.whenReady().then(async () => {
   let lastHarnessFiles = null; // { run, schedule, files } from the last harness-files result
   let lastSavedHarness = null; // { dir, run } from the last Save to project…
 
+  // Harness runs on Claude Code only (D-AI-PROVIDERS): its files and schedules are built for
+  // Claude Code, so an API key can't stand in. When prompts go to a key, it says so instead.
+  const HARNESS_NEEDS_CLAUDE = { success: false, errorType: 'needs-claude', error: 'Harness needs Claude Code. Set it up in Settings › Setup, or choose Claude Code in Settings › AI.' };
+
   ipcMain.handle('harness-plan', async (_event, { transcript, context = {} } = {}) => {
     const stored = config.read();
     const block = buildContextBlock(getMode('harness'), { ...context, ...profileFor(getMode('harness'), stored), dictionary: dictionaryWords() });
-    const result = await claude.run(harness.buildPlanPrompt(String(transcript || ''), block), { timeoutMs: 120000, slowWarningMs: 45000 });
+    if (claude.active() !== 'claude') return HARNESS_NEEDS_CLAUDE;
+    const result = await claudeCli.run(harness.buildPlanPrompt(String(transcript || ''), block), { timeoutMs: 120000, slowWarningMs: 45000 });
     if (!result.success) return result;
     const plan = harness.parsePlan(result.prompt);
     return plan ? { success: true, plan } : { success: false, error: "Couldn't map that into a harness. Try describing it again.", errorType: 'parse' };
@@ -1368,7 +1410,8 @@ app.whenReady().then(async () => {
     // Thinking is off here: with it on, a pipeline's files took minutes longer and came out no
     // better. The window still shows each file as it's finished.
     const onDelta = throttledDelta(250, harness.progressText);
-    const result = await claude.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
+    if (claude.active() !== 'claude') return HARNESS_NEEDS_CLAUDE;
+    const result = await claudeCli.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
     if (!result.success) return result;
     const parsed = harness.parseFiles(result.prompt);
     lastHarnessFiles = parsed;
@@ -1608,11 +1651,13 @@ app.whenReady().then(async () => {
     }
     claudePath = resolvedPath;
 
-    const version = await evalClaude.version();
+    const version = await evalCli.version();
 
-    const test = await evalClaude.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
+    // This checks Claude Code itself, whichever provider is answering prompts.
+    const test = await evalCli.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
     const working = test.success && test.prompt.toLowerCase().includes('ready');
     const authError = test.errorType === 'auth';
+    claudeReady = working;
     let error = null;
     if (!working) {
       if (test.timedOut) error = 'Claude is not responding (timed out after 15s)';

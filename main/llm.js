@@ -194,4 +194,28 @@ function parseJsonOutput(raw) {
   }
 }
 
-module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createStreamParser, classifyError, parseJsonOutput };
+// Picks who answers each call (D-AI-PROVIDERS): Claude Code by default; the user's own API key
+// when Claude Code isn't ready (mode 'auto') or when they chose it (mode 'api'). Same run() and
+// result shape either way, plus `provider`. apiOptions are passed to every API call (the Dictation
+// clean-up asks for the fast model). Claude calls go through exactly as before.
+function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = () => true, hasKey = () => false, apiOptions = {}, onClaudeAuthError = () => {} }) {
+  function active() {
+    const mode = getMode();
+    if (mode === 'claude') return 'claude';
+    if (mode === 'api') return 'api';
+    return isClaudeReady() || !hasKey() ? 'claude' : 'api';
+  }
+  async function run(prompt, opts = {}) {
+    if (active() === 'api') return api.run(prompt, { timeoutMs: opts.timeoutMs, onDelta: opts.onDelta, ...apiOptions });
+    const result = await claude.run(prompt, opts);
+    if (result.errorType === 'auth') onClaudeAuthError();
+    return { ...result, provider: 'claude' };
+  }
+  function cancelAll() {
+    claude.cancelAll();
+    api.cancelAll();
+  }
+  return { run, cancelAll, active, version: (...a) => claude.version(...a) };
+}
+
+module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, createStreamParser, classifyError, parseJsonOutput };

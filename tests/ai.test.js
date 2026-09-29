@@ -141,3 +141,46 @@ describe('AI providers: keys are stored encrypted', () => {
     expect(createSecrets({ safeStorage: null }).available()).toBe(false)
   })
 })
+
+describe('AI providers: who answers each call', () => {
+  const { createAiRouter } = require('../main/llm.js')
+  const fakeRunner = (name, result = {}) => {
+    const calls = []
+    return { calls, cancelled: 0, run: async (prompt, opts) => { calls.push({ prompt, opts }); return { success: true, prompt: `${name} answer`, ...result } }, cancelAll() { this.cancelled++ }, version: async () => '1.0' }
+  }
+  const make = (o = {}) => {
+    const claude = fakeRunner('claude', o.claudeResult), api = fakeRunner('api')
+    const router = createAiRouter({ claude, api, getMode: () => o.mode ?? 'auto', isClaudeReady: () => o.ready ?? true, hasKey: () => o.key ?? false, apiOptions: o.apiOptions, onClaudeAuthError: o.onAuth })
+    return { router, claude, api }
+  }
+
+  it('Automatic: Claude Code when ready, the key when it isn\'t, Claude Code when there is no key', () => {
+    expect(make({ ready: true, key: true }).router.active()).toBe('claude')
+    expect(make({ ready: false, key: true }).router.active()).toBe('api')
+    expect(make({ ready: false, key: false }).router.active()).toBe('claude')
+  })
+
+  it('the manual choices win', () => {
+    expect(make({ mode: 'claude', ready: false, key: true }).router.active()).toBe('claude')
+    expect(make({ mode: 'api', ready: true, key: false }).router.active()).toBe('api')
+  })
+
+  it('passes Claude calls through unchanged and API calls with their options', async () => {
+    const a = make({ ready: true })
+    const opts = { timeoutMs: 1, onDelta: () => {}, thinking: false, slowWarningMs: 2 }
+    expect(await a.router.run('p', opts)).toEqual({ success: true, prompt: 'claude answer', provider: 'claude' })
+    expect(a.claude.calls[0]).toEqual({ prompt: 'p', opts })
+    const b = make({ ready: false, key: true, apiOptions: { fast: true } })
+    expect((await b.router.run('p', opts)).prompt).toBe('api answer')
+    expect(b.api.calls[0].opts).toEqual({ timeoutMs: 1, onDelta: opts.onDelta, fast: true })
+  })
+
+  it('notes a Claude sign-in failure, and a cancel stops both', async () => {
+    let flagged = 0
+    const { router, claude, api } = make({ claudeResult: { success: false, errorType: 'auth' }, onAuth: () => flagged++ })
+    await router.run('p')
+    expect(flagged).toBe(1)
+    router.cancelAll()
+    expect([claude.cancelled, api.cancelled]).toEqual([1, 1])
+  })
+})
