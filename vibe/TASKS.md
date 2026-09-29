@@ -989,7 +989,15 @@ Say "next" to begin.
    no stray other-chip binaries; signing requirement unchanged (no new Accessibility prompt expected)
    Not verified: launching the new builds (owner to install), real Safari/Firefox engines, Windows version string inside the exe
 
+✅ Site: the 150 s showreel is the hero (2026-09-29)
+   Film on the page's own paper colour; 1080p cut 14 MB (desktop), 720p 5 MB (phones); Pause button,
+   pauses off screen, reduced motion shows the headline frame and waits for Play
+   Bar under it: "Talk to any app on your Mac." + download. The floating-outputs section follows as
+   "Speak at 150. Type at 40." (one message per spot; only the film says "Say it rough, get it right")
+   Source: promptly-site-drafts/remotion-film (Showreel composition)
+
 ## What's next
+⬜ Decide: keep or remove the old 24-second film section (#film)
 ⬜ WIN-023 · You: test Windows on the laptop (FEATURE_TASKS.md checklist)
 ⬜ Install 2.20.1 on your Mac and confirm it opens (this Mac still runs 2.19.3)
 ⏸ WIN-026 signing deferred · ⏸ lighter Hinglish model and Tauri parked
