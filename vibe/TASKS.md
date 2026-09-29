@@ -1007,7 +1007,12 @@ Say "next" to begin.
 ✅ v2.20.3 released: the green "ready" dot shows for 3 s when a result arrives, then the icon rests
    (it used to stay green while the window was open and read as still busy). Owner skipped e2e.
 
+✅ v2.20.4 released: Dictation's Claude clean-up (D-DICTATION-CLEANUP), on by default, Sonnet
+   Fixes misheard words, names (country from the Mac's region) and punctuation; local "?" rule;
+   acceptCleanup() guard; falls back to the local text on any failure. Unit tests 295/295; e2e not run.
+
 ## What's next
+⬜ Owner: try Dictation on 2.20.4 with Indian names and questions; add frequent names to Your words
 ⬜ Run the full e2e suite once (about 4 min, opens test windows) to confirm the icon fix
 ⬜ Decide: keep or remove the old 24-second film section (#film)
 ⬜ WIN-023 · You: test Windows on the laptop (FEATURE_TASKS.md checklist)
