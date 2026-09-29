@@ -1004,6 +1004,9 @@ Say "next" to begin.
    Checked: unit tests 290/290, lint, icon + masks inside both built apps, Windows CI, live links.
    Not re-run: the full e2e suite after the fix (owner was busy; one launch test 4.7 s vs 4.3 s before)
 
+✅ v2.20.3 released: the green "ready" dot shows for 3 s when a result arrives, then the icon rests
+   (it used to stay green while the window was open and read as still busy). Owner skipped e2e.
+
 ## What's next
 ⬜ Run the full e2e suite once (about 4 min, opens test windows) to confirm the icon fix
 ⬜ Decide: keep or remove the old 24-second film section (#film)
