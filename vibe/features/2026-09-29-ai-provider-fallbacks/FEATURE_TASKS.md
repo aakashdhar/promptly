@@ -21,14 +21,14 @@
 - Model picking works from each provider's own list (chat-only filter, version order, fast words as whole words — "gemini" contains "mini"); OpenAI gets max_completion_tokens for reasoning models.
 ---
 ### AIP-002 · Encrypted key storage
-- **Status**: `[ ]` · **Size**: S · **Spec ref**: #3, #6 · **Dependencies**: None
+- **Status**: `[x]` · **Size**: S · **Spec ref**: #3, #6 · **Dependencies**: None
 - **Touches**: main/secrets.js (new), tests/ai.test.js
 
 **What to do**: `createSecrets({ safeStorage })` with `available()`, `encrypt(key)` → base64, `decrypt(b64)`; refuses when unavailable.
 **Acceptance criteria**: - [ ] round-trip with a fake safeStorage - [ ] refuses when unavailable
 **Test requirement**: unit tests with an injected fake.
 **Decisions**:
-- None yet.
+- Refuse rather than fall back to plain text when safeStorage is unavailable; unreadable ciphertext (moved profile, reset Keychain) reads as 'no key'.
 ---
 ### AIP-003 · Router and wiring in main
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: #3.4, #3.5, #3.6, #3.10 · **Dependencies**: AIP-001, AIP-002
