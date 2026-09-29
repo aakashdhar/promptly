@@ -1011,7 +1011,12 @@ Say "next" to begin.
    Fixes misheard words, names (country from the Mac's region) and punctuation; local "?" rule;
    acceptCleanup() guard; falls back to the local text on any failure. Unit tests 295/295; e2e not run.
 
+✅ v2.20.5 released: Dock icon back on macOS 26 (setVisibleOnAllWorkspaces left the app a UIElement;
+   app.dock.show() after it), dictation goes to the app in front when the window is open behind it,
+   and the log records where each dictation went. Owner to confirm on their Mac.
+
 ## What's next
+⬜ Owner: install 2.20.5; check the Dock icon, the menu bar, and dictating into Claude with Promptly open behind
 ⬜ Owner: try Dictation on 2.20.4 with Indian names and questions; add frequent names to Your words
 ⬜ Run the full e2e suite once (about 4 min, opens test windows) to confirm the icon fix
 ⬜ Decide: keep or remove the old 24-second film section (#film)
