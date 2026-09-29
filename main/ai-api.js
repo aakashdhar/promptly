@@ -68,7 +68,8 @@ function messageText(body) {
 }
 
 // getSettings() → { provider, key, model, fastModel } or null when no key is saved.
-function createApiRunner({ getSettings, fetchImpl = (...a) => globalThis.fetch(...a) }) {
+function createApiRunner({ getSettings, fetchImpl }) {
+  fetchImpl = fetchImpl || ((...a) => globalThis.fetch(...a));
   const controllers = new Set();
   const cancelledByUs = new WeakSet();
 
@@ -121,7 +122,8 @@ function createApiRunner({ getSettings, fetchImpl = (...a) => globalThis.fetch(.
 }
 
 // The provider's model ids, checking the key at the same time.
-async function listModels(providerId, key, { fetchImpl = (...a) => globalThis.fetch(...a), timeoutMs = 15000 } = {}) {
+async function listModels(providerId, key, { fetchImpl, timeoutMs = 15000 } = {}) {
+  fetchImpl = fetchImpl || ((...a) => globalThis.fetch(...a));
   const provider = PROVIDERS[providerId];
   if (!provider) return { ok: false, error: 'Unknown AI provider.', errorType: 'unknown' };
   if (!key) return { ok: false, error: `Paste your ${provider.label} key first.`, errorType: 'auth' };

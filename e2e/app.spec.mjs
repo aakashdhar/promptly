@@ -180,6 +180,56 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
   expect(stdin).toContain('<transcript>\nmake a todo app with dark mode\n</transcript>')
 })
 
+// D-AI-PROVIDERS: with your own key chosen, the prompt comes from the API, not Claude Code.
+// A stand-in OpenAI API runs in this test; the app sends its API calls there (PROMPTLY_AI_BASE_URL)
+// and, in tests, keeps keys out of the real Keychain.
+test('your own API key writes the prompt when you choose it, and Claude Code never runs', async () => {
+  const requests = []
+  const server = http.createServer((req, res) => {
+    let body = ''
+    req.on('data', (d) => { body += d })
+    req.on('end', () => {
+      requests.push({ url: req.url, auth: req.headers.authorization, body: body ? JSON.parse(body) : null })
+      if (req.url.endsWith('/models')) {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ data: [{ id: 'gpt-5' }, { id: 'gpt-5-mini' }] }))
+        return
+      }
+      const text = 'Goal: a todo app with dark mode, written by the API'
+      if (JSON.parse(body).stream) {
+        res.writeHead(200, { 'content-type': 'text/event-stream' })
+        res.end(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`)
+      } else {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ choices: [{ message: { content: text } }] }))
+      }
+    })
+  })
+  await new Promise((r) => server.listen(0, '127.0.0.1', r))
+  try {
+    ctx = await launch({ env: { PROMPTLY_AI_BASE_URL: `http://127.0.0.1:${server.address().port}` } })
+    const { page, fakeDir } = ctx
+    const saved = await page.evaluate(() => window.electronAPI.saveAiKey('openai', 'sk-e2e-key'))
+    expect(saved.ok).toBe(true)
+    expect(JSON.stringify(saved)).not.toContain('sk-e2e-key')
+    expect(saved.settings.keys.openai).toEqual({ saved: true, last4: '-key' })
+    await page.evaluate(() => window.electronAPI.setAiSettings({ mode: 'api' }))
+
+    await typeAndSubmit(page, 'make a todo app with dark mode')
+    await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('written by the API').first()).toBeVisible()
+
+    expect(calls(fakeDir)).toEqual([])
+    const chat = requests.find((r) => r.url.endsWith('/chat/completions'))
+    expect(chat.auth).toBe('Bearer sk-e2e-key')
+    expect(chat.body.model).toBe('gpt-5')
+    expect(chat.body.messages.at(-1).content).toContain('<transcript>\nmake a todo app with dark mode\n</transcript>')
+  } finally {
+    server.closeAllConnections?.()
+    server.close()
+  }
+})
+
 test('⌘T opens the typing box from Settings too, but never interrupts a recording', async () => {
   ctx = await launch()
   const { app, page } = ctx

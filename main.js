@@ -157,7 +157,16 @@ function claudeModel() {
 
 // ── Who answers: Claude Code by default, the user's own API key otherwise (D-AI-PROVIDERS) ──
 
-const secrets = createSecrets({ safeStorage });
+// Tests never touch the real Keychain, and send API calls to a local stand-in server.
+const e2eSafeStorage = {
+  isEncryptionAvailable: () => true,
+  encryptString: (s) => Buffer.from(`e2e:${s}`),
+  decryptString: (b) => Buffer.from(b).toString().replace(/^e2e:/, ''),
+};
+const secrets = createSecrets({ safeStorage: IS_E2E ? e2eSafeStorage : safeStorage });
+const aiFetch = IS_E2E && process.env.PROMPTLY_AI_BASE_URL
+  ? (url, opts) => globalThis.fetch(String(url).replace(/^https:\/\/[^/]+(\/v1beta\/openai|\/v1)/, process.env.PROMPTLY_AI_BASE_URL), opts)
+  : undefined;
 // The saved key for the chosen provider, decrypted only when a call needs it; null without one.
 function apiSettings() {
   const stored = config.read();
@@ -187,14 +196,14 @@ const claudeCli = createClaudeRunner({
   onSlow: () => winSend('generation-slow-warning'),
   children: activeChildren,
 });
-const apiMain = createApiRunner({ getSettings: apiSettings });
+const apiMain = createApiRunner({ getSettings: apiSettings, fetchImpl: aiFetch });
 const claude = createAiRouter({ claude: claudeCli, api: apiMain, ...routerOptions });
 // The eval scorecard runs alongside the prompt screen; aborting a new prompt must not kill it.
 const evalCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
 });
-const evalClaude = createAiRouter({ claude: evalCli, api: createApiRunner({ getSettings: apiSettings }), ...routerOptions });
+const evalClaude = createAiRouter({ claude: evalCli, api: createApiRunner({ getSettings: apiSettings, fetchImpl: aiFetch }), ...routerOptions });
 // Dictation clean-up (D-DICTATION-CLEANUP) always uses Sonnet, whatever model Craft uses: in
 // tests Haiku couldn't rebuild misheard Indian names ("super nah" → Supranaah; Sonnet: Suparna)
 // and was only about a second faster. Its processes count as the current operation, so a cancel
@@ -1674,7 +1683,7 @@ app.whenReady().then(async () => {
     if (!fromWindow(event, win, splashWin)) return { ok: false, error: 'Not allowed from this window.' };
     if (!PROVIDERS[provider]) return { ok: false, error: 'Unknown AI provider.' };
     const trimmed = String(key || '').trim();
-    const check = await listModels(provider, trimmed);
+    const check = await listModels(provider, trimmed, { fetchImpl: aiFetch });
     // Here the person is looking at the key they just pasted, so "check it in Settings" won't help.
     if (!check.ok) return { ok: false, error: check.errorType === 'auth' ? `${PROVIDERS[provider].label} refused this key. Check you copied all of it.` : check.error };
     let encrypted;
@@ -1721,7 +1730,7 @@ app.whenReady().then(async () => {
     if (!PROVIDERS[provider]) return { ok: false, models: [], error: 'Unknown AI provider.' };
     const key = secrets.decrypt(config.read().apiKeys?.[provider]);
     if (!key) return { ok: false, models: [], error: `No ${PROVIDERS[provider].label} key saved.` };
-    const check = await listModels(provider, key);
+    const check = await listModels(provider, key, { fetchImpl: aiFetch });
     return check.ok ? { ok: true, models: pickModels(check.models, provider).models } : { ok: false, models: [], error: check.error };
   });
 
