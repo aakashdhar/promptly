@@ -4,7 +4,7 @@
 
 ---
 ### AIP-001 · Provider table and OpenAI-compatible client
-- **Status**: `[ ]` · **Size**: L · **Spec ref**: FEATURE_SPEC.md#5, #7, #8 · **Dependencies**: None
+- **Status**: `[x]` · **Size**: L · **Spec ref**: FEATURE_SPEC.md#5, #7, #8 · **Dependencies**: None
 - **Touches**: main/ai-providers.js (new), main/ai-api.js (new), tests/ai.test.js (new)
 
 **What to do**: Provider table for openai (`https://api.openai.com/v1`), gemini (`https://generativelanguage.googleapis.com/v1beta/openai`), grok (`https://api.x.ai/v1`). `listModels` (GET /models, Bearer key, normalise `models/…` ids). `pickModels(ids, provider)` → best general model and best fast model by pattern and version (newest first), falling back to the first id. `createApiRunner`: chat completions, SSE streaming with deltas, non-streaming, AbortController cancel through a shared set, timeout, error mapping (401/403 → auth, 429 → rate, other → unknown, network → offline), result shape identical to the Claude runner plus `provider`.
@@ -18,7 +18,7 @@
 **⚠️ Boundaries**: no SDKs, no runtime deps; keys never logged.
 **CODEBASE.md update?**: Yes (AIP-009).
 **Decisions**:
-- None yet.
+- Model picking works from each provider's own list (chat-only filter, version order, fast words as whole words — "gemini" contains "mini"); OpenAI gets max_completion_tokens for reasoning models.
 ---
 ### AIP-002 · Encrypted key storage
 - **Status**: `[ ]` · **Size**: S · **Spec ref**: #3, #6 · **Dependencies**: None
