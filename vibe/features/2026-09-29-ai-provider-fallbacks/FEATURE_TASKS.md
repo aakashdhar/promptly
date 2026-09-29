@@ -75,12 +75,12 @@
 - Provider travels with generation errors (provider field); API errors reuse main's provider-named message rather than a second copy in the renderer. Spec criterion 9: no in-app copy promised Claude-only text; the website's privacy copy waits for the merge.
 ---
 ### AIP-008 · e2e fake provider
-- **Status**: `[ ]` · **Size**: M · **Spec ref**: #10 · **Dependencies**: AIP-004
+- **Status**: `[~]` written, not run (needs the owner's go-ahead) · **Size**: M · **Spec ref**: #10 · **Dependencies**: AIP-004
 - **Touches**: e2e/fakes/ (new fake server), e2e spec (new test only)
 
 **What to do**: a local OpenAI-compatible fake and one e2e test (key saved, no Claude → a Craft prompt comes back). Ask the owner before running e2e.
 **Decisions**:
-- None yet.
+- Test-only hooks behind IS_E2E: PROMPTLY_AI_BASE_URL points API calls at a local stand-in; keys use a reversible stand-in instead of safeStorage so e2e never touches the Keychain.
 ---
 ### AIP-009 · Docs
 - **Status**: `[ ]` · **Size**: S · **Dependencies**: all

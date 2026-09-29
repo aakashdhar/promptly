@@ -1035,7 +1035,7 @@ Say "next" to begin.
    [x] AIP-005 · Settings › AI tab — pick the provider, paste a key, choose models, test
    [x] AIP-006 · Setup — "Use an API key instead" on the Claude Code step
    [x] AIP-007 · Clear errors — names the provider; Harness says it needs Claude Code
-   [ ] AIP-008 · End-to-end test with a fake provider (run only with your go-ahead)
+   [~] AIP-008 · End-to-end test with a fake provider — written, waiting for your go-ahead to run
    [ ] AIP-009 · Docs
    → Full specs: vibe/features/2026-09-29-ai-provider-fallbacks/FEATURE_TASKS.md (agent use)
 
