@@ -981,11 +981,15 @@ Say "next" to begin.
 ✅ Uninstall no longer freezes the Mac — Promptly quits first, a script removes it afterwards — fixed 2026-09-28 (4/4 ✅)
 
 ## What just happened
-✅ v2.20.0 released — Mac DMG + Windows installer on one GitHub Release; the site offers each visitor the right download
-   feature/windows-version merged to main (fast-forward) · Windows installer from CI run 36413253755 · both latest links checked
-   Live site checked with Windows and Mac browsers (JS on and off)
+✅ v2.20.1 released: separate Apple Silicon and Intel Mac downloads (D-MAC-PER-ARCH)
+   Download 234 → 148 MB (Apple Silicon) / 155 MB (Intel); installed 493 → 280 / 290 MB
+   Release assets: Promptly.dmg (Apple Silicon), Promptly-Intel.dmg, versioned DMGs, Windows installer
+   Verified live (vibe/parallel-style workflow + follow-ups): site for Apple Silicon/Intel Chrome, Safari-like, no-JS and Windows;
+   both DMGs byte-identical to the build, signed, single-chip, v2.20.1; install.sh for both chips and under Rosetta;
+   no stray other-chip binaries; signing requirement unchanged (no new Accessibility prompt expected)
+   Not verified: launching the new builds (owner to install), real Safari/Firefox engines, Windows version string inside the exe
 
 ## What's next
-⬜ WIN-023 · You: install from aakashdhar.me/promptly on the Windows laptop and run the checklist (FEATURE_TASKS.md WIN-023)
-   Anything that fails comes back as `bug:`; the partial tasks get ticked from your results.
-⏸ WIN-026 · Signing — deferred (D-WINDOWS-SIGNING)
+⬜ WIN-023 · You: test Windows on the laptop (FEATURE_TASKS.md checklist)
+⬜ Install 2.20.1 on your Mac and confirm it opens (this Mac still runs 2.19.3)
+⏸ WIN-026 signing deferred · ⏸ lighter Hinglish model and Tauri parked
