@@ -78,7 +78,7 @@ bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Releas
 
 ## Architecture rules
 
-1. **AI = Claude Code CLI only.** Everything that needs AI runs `claude -p` through `main/llm.js`. Never add the Anthropic API or SDK, API keys, or a backend proxy — this is a product decision, not a stopgap (see DECISIONS.md D-CLI-ONLY). Claude calls go through `main/llm.js` only. It passes the prompt on stdin, always sends `--model`, and uses `makeClaudeEnv(claudePath)`. Never spawn `claude` anywhere else (preflight CHECK 7 enforces `makeClaudeEnv`).
+1. **AI = Claude Code CLI by default.** Everything that needs AI runs through `main/llm.js`: `claude -p` by default. The only exception is D-AI-PROVIDERS (feature/ai-providers): the user's own OpenAI/Gemini/Grok key via the router in `main/llm.js`, stored encrypted with safeStorage. Never add a provider SDK, a backend proxy or keys of our own (D-CLI-ONLY, amended by D-AI-PROVIDERS). Claude calls go through `main/llm.js` only. It passes the prompt on stdin, always sends `--model`, and uses `makeClaudeEnv(claudePath)`. Never spawn `claude` anywhere else (preflight CHECK 7 enforces `makeClaudeEnv`).
 2. **External binaries** run with `execFile`/`spawn` and an argument array. Never build a shell string containing a path.
 3. **Binary paths** resolve at startup via `main/binaries.js`; macOS-specific locations belong in `main/platform/darwin.js`.
 4. **Modes** are defined once in `shared/modes.json`. Prompt text lives in `main/prompts/`. Don't hardcode mode lists or prompt text in code.

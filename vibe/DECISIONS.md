@@ -2312,3 +2312,10 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **What still holds from D-CLI-ONLY**: every AI call goes through main/llm.js; no SDKs, no backend proxy, no keys of ours; Claude Code calls are unchanged.
 - **Website**: unchanged until the owner merges the branch to main.
 ---
+
+---
+## 2026-09-29 — Spec review: add-feature (AI provider fallbacks)
+> P0: 0 · P1: 5 · P2: 3
+> Action: fixed autonomously — 1 round (ARCHITECTURE/CLAUDE.md rule 1 amended; spec criteria 2, 3, 4, 8 made testable)
+> Report: vibe/spec-reviews/2026-09-29-add-feature-ai-providers.md
+---
