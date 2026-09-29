@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" class="pre">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';">
+<title>Promptly</title>
+<style>
+/* Launch splash, shown while Promptly starts (main.js createLaunchWindow). The showreel's spoken
+   words drift in and gather into the name while the mark draws itself: the loose words, then the
+   wave, then the straight cobalt line. The window is transparent and a little larger than the
+   panel, so the panel's own shadow fits inside it. Everything is inline and offline. */
+
+:root {
+  color-scheme: light;
+  --panel: #F8FAF3;
+  --panel-edge: rgba(28, 36, 24, 0.14);
+  --panel-shadow: 0 12px 28px -10px rgba(28, 36, 24, 0.34), 0 1px 3px rgba(28, 36, 24, 0.12);
+  --tile: #F3F7EC;
+  --tile-edge: rgba(28, 36, 24, 0.14);
+  --tile-shadow: 0 1px 1.5px rgba(28, 36, 24, 0.10), 0 8px 18px -8px rgba(28, 36, 24, 0.34);
+  --ink: #1C2418;
+  --cobalt: #2A3FC9;
+  --text-2: #4B5445;
+  --text-3: #5F6858;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --panel: #161C13;
+    --panel-edge: rgba(243, 247, 236, 0.12);
+    --panel-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+    --tile: #1F2819;
+    --tile-edge: rgba(243, 247, 236, 0.13);
+    --tile-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.45), 0 8px 18px -8px rgba(0, 0, 0, 0.7);
+    --ink: #F3F7EC;
+    --cobalt: #7A8BFF;
+    --text-2: #B8BFAF;
+    --text-3: #9AA193;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --panel: #161C13;
+  --panel-edge: rgba(243, 247, 236, 0.12);
+  --panel-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --tile: #1F2819;
+  --tile-edge: rgba(243, 247, 236, 0.13);
+  --tile-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.45), 0 8px 18px -8px rgba(0, 0, 0, 0.7);
+  --ink: #F3F7EC;
+  --cobalt: #7A8BFF;
+  --text-2: #B8BFAF;
+  --text-3: #9AA193;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink);
+  user-select: none;
+  cursor: default;
+}
+
+/* .stage carries the exit, .panel the entrance, so the two never fight. */
+.stage {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  transition: opacity 250ms cubic-bezier(0.4, 0, 1, 1), transform 250ms cubic-bezier(0.4, 0, 1, 1);
+}
+.pre .stage { opacity: 0; }
+body.done .stage { opacity: 0; transform: scale(0.97); }
+
+.panel {
+  position: relative;
+  width: 480px; height: 300px;
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--panel-edge), var(--panel-shadow);
+  overflow: hidden;
+}
+
+/* ---------- The mark, the name, the line under it ---------- */
+.tile {
+  position: absolute; left: 200px; top: 34px;
+  width: 80px; height: 80px;
+  border-radius: 18px;                  /* rx 185 on the 824 tile */
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--tile-edge), var(--tile-shadow);
+}
+.tile svg { display: block; width: 100%; height: 100%; }
+.tile path { fill: none; stroke: var(--ink); stroke-width: 64; stroke-linecap: round; stroke-linejoin: round; }
+.tile .line { stroke: var(--cobalt); }
+
+.name {
+  position: absolute; left: 0; right: 0; top: 132px;
+  text-align: center;
+  font-size: 40px; line-height: 44px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.tag {
+  position: absolute; left: 0; right: 0; top: 182px;
+  text-align: center;
+  font-size: 14px; line-height: 18px;
+  color: var(--text-2);
+  letter-spacing: -0.005em;
+}
+.tag b { font-weight: 550; color: var(--cobalt); }
+
+.foot {
+  position: absolute; left: 28px; right: 28px; bottom: 22px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+}
+#status {
+  min-width: 0;
+  font-size: 12px; line-height: 16px;
+  color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#version {
+  flex: none;
+  font-size: 11px; line-height: 16px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- The spoken words (from the showreel) ----------
+   Each sits at the name's centre, pushed out by --x/--y. Fillers (--filler) fall away; the rest
+   gather into the name. --o is how present a word is, --b how far back it sits. */
+.words span {
+  position: absolute; left: 240px; top: 154px;
+  white-space: nowrap; line-height: 1;
+  font-weight: 600; letter-spacing: -0.01em;
+  color: var(--ink);
+  opacity: 0;
+  transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y)));
+  will-change: transform, opacity, filter;
+  pointer-events: none;
+}
+
+/* ---------- Motion ----------
+   Default styles are the finished frame; intro animations fill backwards, so a close at any
+   moment lands on a complete picture, and reduced motion just switches them off.
+
+   0.00  panel fades up
+   0.12  words drift in one by one, as they were said           (to ~1.04)
+   0.24  the tile settles; its loose words tap in               (0.42-0.75)
+   0.88  "so", "um", "like" fall away
+   1.06  the rest gather into the centre                        (to ~1.75)
+   1.12  the tile's wave flows                                  (to 1.54)
+   1.28  "Promptly" comes into focus where they gathered        (to 1.84)
+   1.66  the cobalt line draws, "Get it right." lands with it   (to 2.06)
+   1.88  status and version                                     (all still by ~2.18)
+   2.60+ idle: the wave breathes, 3.2 s a cycle, never below 85% of the mark's own wave */
+
+@keyframes panel-in { from { opacity: 0; transform: scale(0.985); } }
+@keyframes tile-in  { from { opacity: 0; transform: scale(0.92); } }
+@keyframes draw {
+  from { stroke-dasharray: 1 2; stroke-dashoffset: 1; opacity: 0; }
+  1%   { opacity: 1; }
+  to   { stroke-dasharray: 1 2; stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes word-in {
+  from { opacity: 0; filter: blur(8px); transform: translate(calc(-50% + var(--x) * 1.14), calc(-50% + var(--y) * 1.14)); }
+  to   { opacity: var(--o); filter: blur(var(--b)); transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))); }
+}
+@keyframes word-drop {
+  from { opacity: var(--o); filter: blur(var(--b)); transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))); }
+  to   { opacity: 0; filter: blur(6px); transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y) + 12px)); }
+}
+@keyframes word-gather {
+  from { opacity: var(--o); filter: blur(var(--b)); transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))); }
+  55%  { opacity: calc(var(--o) * 0.55); filter: blur(3px); transform: translate(calc(-50% + var(--x) * 0.4), calc(-50% + var(--y) * 0.4)) scale(0.9); }
+  to   { opacity: 0; filter: blur(9px); transform: translate(calc(-50% + var(--x) * 0.03), calc(-50% + var(--y) * 0.03)) scale(0.55); }
+}
+@keyframes resolve {
+  from { opacity: 0; filter: blur(12px); transform: scale(1.07); }
+  55%  { opacity: 1; filter: blur(2px); }
+  to   { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes settle { from { opacity: 0; transform: translateY(4px); } }
+@keyframes fade   { from { opacity: 0; } }
+@keyframes breathe {
+  0%, 100% { d: path("M262.0 512.0 L269.8 505.4 L277.6 499.0 L285.4 493.1 L293.3 488.0 L301.1 483.7 L308.9 480.6 L316.7 478.7 L324.5 478.0 L332.3 478.7 L340.1 480.6 L347.9 483.7 L355.8 488.0 L363.6 493.1 L371.4 499.0 L379.2 505.4 L387.0 512.0 L394.8 518.6 L402.6 525.0 L410.4 530.9 L418.3 536.0 L426.1 540.3 L433.9 543.4 L441.7 545.3 L449.5 546.0 L457.3 545.3 L465.1 543.4 L472.9 540.3 L480.8 536.0 L488.6 530.9 L496.4 525.0 L504.2 518.6 L512.0 512.0 L519.8 505.4 L527.6 499.0 L535.4 493.1 L543.3 488.0 L551.1 483.7 L558.9 480.6 L566.7 478.7 L574.5 478.0 L582.3 478.7 L590.1 480.6 L597.9 483.7 L605.8 488.0 L613.6 493.1 L621.4 499.0 L629.2 505.4 L637.0 512.0 L644.8 518.6 L652.6 525.0 L660.4 530.9 L668.3 536.0 L676.1 540.3 L683.9 543.4 L691.7 545.3 L699.5 546.0 L707.3 545.3 L715.1 543.4 L722.9 540.3 L730.8 536.0 L738.6 530.9 L746.4 525.0 L754.2 518.6 L762.0 512.0"); }
+  50%      { d: path("M262.0 512.0 L269.8 506.4 L277.6 500.9 L285.4 495.9 L293.3 491.5 L301.1 487.9 L308.9 485.2 L316.7 483.6 L324.5 483.0 L332.3 483.6 L340.1 485.2 L347.9 487.9 L355.8 491.5 L363.6 495.9 L371.4 500.9 L379.2 506.4 L387.0 512.0 L394.8 517.6 L402.6 523.1 L410.4 528.1 L418.3 532.5 L426.1 536.1 L433.9 538.8 L441.7 540.4 L449.5 541.0 L457.3 540.4 L465.1 538.8 L472.9 536.1 L480.8 532.5 L488.6 528.1 L496.4 523.1 L504.2 517.6 L512.0 512.0 L519.8 506.4 L527.6 500.9 L535.4 495.9 L543.3 491.5 L551.1 487.9 L558.9 485.2 L566.7 483.6 L574.5 483.0 L582.3 483.6 L590.1 485.2 L597.9 487.9 L605.8 491.5 L613.6 495.9 L621.4 500.9 L629.2 506.4 L637.0 512.0 L644.8 517.6 L652.6 523.1 L660.4 528.1 L668.3 532.5 L676.1 536.1 L683.9 538.8 L691.7 540.4 L699.5 541.0 L707.3 540.4 L715.1 538.8 L722.9 536.1 L730.8 532.5 L738.6 528.1 L746.4 523.1 L754.2 517.6 L762.0 512.0"); }
+}
+
+.run .panel { animation: panel-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.run .tile  { animation: tile-in 340ms cubic-bezier(0.2, 0.8, 0.2, 1) 240ms backwards; }
+.run .w1    { animation: draw 120ms cubic-bezier(0.3, 0.6, 0.3, 1) 420ms backwards; }
+.run .w2    { animation: draw 110ms cubic-bezier(0.3, 0.6, 0.3, 1) 520ms backwards; }
+.run .w3    { animation: draw 150ms cubic-bezier(0.3, 0.6, 0.3, 1) 600ms backwards; }
+.run .wave  {
+  animation:
+    draw 420ms cubic-bezier(0.45, 0, 0.35, 1) 1120ms backwards,
+    breathe 3200ms ease-in-out 2600ms infinite;
+}
+.run .line  { animation: draw 260ms cubic-bezier(0.25, 0.7, 0.25, 1) 1660ms backwards; }
+.run .words span {
+  animation:
+    word-in 480ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--d) both,
+    word-gather 680ms cubic-bezier(0.55, 0, 0.35, 1) var(--g, 1060ms) forwards;
+}
+.run .words .filler {
+  animation:
+    word-in 480ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--d) both,
+    word-drop 420ms cubic-bezier(0.5, 0, 0.75, 0) 880ms forwards;
+}
+.run .name  { animation: resolve 560ms cubic-bezier(0.2, 0.7, 0.2, 1) 1280ms backwards; }
+.run .tag   { animation: settle 360ms cubic-bezier(0.2, 0.8, 0.2, 1) 1720ms backwards; }
+.run .foot  { animation: fade 300ms ease-out 1880ms backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage *, .stage { animation: none !important; }
+  .words { display: none; }
+  .stage { transition: opacity 200ms linear; }
+  body.done .stage { transform: none; }
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <main class="panel" aria-label="Promptly is starting">
+    <div class="words" aria-hidden="true">
+      <span class="filler" style="--x:-166px; --y:-96px; --d:120ms; --o:.5;  --b:1px;   font-size:17px">so</span>
+      <span                style="--x:-132px; --y:-42px; --d:175ms; --o:.62; --b:.3px;  font-size:17px; --g:1080ms">support dashboard</span>
+      <span class="filler" style="--x:168px;  --y:-100px; --d:230ms; --o:.45; --b:1.4px; font-size:16px">um,</span>
+      <span                style="--x:144px;  --y:-48px; --d:285ms; --o:.58; --b:.5px;  font-size:16px; --g:1060ms">pull tickets</span>
+      <span                style="--x:-114px; --y:52px;  --d:340ms; --o:.5;  --b:1px;   font-size:15px; --g:1100ms">every five minutes</span>
+      <span                style="--x:-176px; --y:4px;   --d:395ms; --o:.42; --b:1.6px; font-size:15px; --g:1120ms">group them</span>
+      <span                style="--x:132px;  --y:46px;  --d:450ms; --o:.6;  --b:.4px;  font-size:16px; --g:1070ms">flag anything</span>
+      <span class="filler" style="--x:22px;   --y:92px;  --d:505ms; --o:.4;  --b:1.8px; font-size:14px">like</span>
+      <span                style="--x:178px;  --y:2px;   --d:560ms; --o:.48; --b:1.2px; font-size:14px; --g:1110ms">four hours</span>
+    </div>
+
+    <div class="tile" aria-hidden="true">
+      <svg viewBox="100 100 824 824" focusable="false">
+        <path class="w1" pathLength="1" d="M262 322 L362 322"/>
+        <path class="w2" pathLength="1" d="M436 338 L520 338"/>
+        <path class="w3" pathLength="1" d="M596 316 L762 316"/>
+        <path class="wave" pathLength="1" d="M262.0 512.0 L269.8 505.4 L277.6 499.0 L285.4 493.1 L293.3 488.0 L301.1 483.7 L308.9 480.6 L316.7 478.7 L324.5 478.0 L332.3 478.7 L340.1 480.6 L347.9 483.7 L355.8 488.0 L363.6 493.1 L371.4 499.0 L379.2 505.4 L387.0 512.0 L394.8 518.6 L402.6 525.0 L410.4 530.9 L418.3 536.0 L426.1 540.3 L433.9 543.4 L441.7 545.3 L449.5 546.0 L457.3 545.3 L465.1 543.4 L472.9 540.3 L480.8 536.0 L488.6 530.9 L496.4 525.0 L504.2 518.6 L512.0 512.0 L519.8 505.4 L527.6 499.0 L535.4 493.1 L543.3 488.0 L551.1 483.7 L558.9 480.6 L566.7 478.7 L574.5 478.0 L582.3 478.7 L590.1 480.6 L597.9 483.7 L605.8 488.0 L613.6 493.1 L621.4 499.0 L629.2 505.4 L637.0 512.0 L644.8 518.6 L652.6 525.0 L660.4 530.9 L668.3 536.0 L676.1 540.3 L683.9 543.4 L691.7 545.3 L699.5 546.0 L707.3 545.3 L715.1 543.4 L722.9 540.3 L730.8 536.0 L738.6 530.9 L746.4 525.0 L754.2 518.6 L762.0 512.0"/>
+        <path class="line" pathLength="1" d="M262 694 L762 694"/>
+      </svg>
+    </div>
+    <h1 class="name">Promptly</h1>
+    <p class="tag">Say it rough. <b>Get it right.</b></p>
+
+    <footer class="foot">
+      <p id="status" aria-live="polite">Starting up…</p>
+      <span id="version"></span>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var INTRO_MS = 2180;   // everything is still by here (see the timeline in the style)
+  var HOLD_MS = 150;     // a beat on the finished frame before it leaves
+  var EXIT_MS = 260;
+  var root = document.documentElement;
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var params = new URLSearchParams(location.search);
+  var startedAt = null;
+
+  var version = document.getElementById('version');
+  if (params.get('v')) version.textContent = 'v' + params.get('v').replace(/^v/, '');
+
+  // The window is created hidden and then shown; start only once it can be seen, so the intro
+  // never plays to nobody.
+  function start() {
+    if (startedAt !== null) return;
+    startedAt = performance.now();
+    root.classList.remove('pre');
+    root.classList.add('run');
+  }
+  if (document.visibilityState === 'visible') start();
+  else document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') start(); });
+
+  // main.js calls this once the app is ready: the intro gets to finish, then the splash leaves.
+  window.finishSplash = function () {
+    var left = startedAt === null || reduced ? 0 : Math.max(0, INTRO_MS + HOLD_MS - (performance.now() - startedAt));
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        document.body.classList.add('done');
+        setTimeout(resolve, EXIT_MS);
+      }, left);
+    });
+  };
+
+  // Preview only (?preview=1, never set by the app): click replays, D flips the theme, E plays the exit.
+  if (params.get('preview') !== '1') return;
+  addEventListener('click', function () {
+    document.body.classList.remove('done');
+    root.classList.remove('run');
+    void root.offsetWidth;
+    root.classList.add('run');
+    startedAt = performance.now();
+  });
+  addEventListener('keydown', function (e) {
+    var k = e.key.toLowerCase();
+    if (k === 'd') {
+      var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = dark ? 'light' : 'dark';
+    } else if (k === 'e') {
+      document.body.classList.toggle('done');
+    }
+  });
+})();
+</script>
+</body>
+</html>

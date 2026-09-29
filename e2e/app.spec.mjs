@@ -54,7 +54,7 @@ async function reload(app, page) {
   await untilMounted(app, before)
 }
 
-async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'prompt', speechModel = null, env = {} } = {}) {
+async function launch({ setupComplete = true, signedOut = false, withHelper = false, mode = 'prompt', speechModel = null, env = {}, waitForWindow = true } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-e2e-'))
   const fakeDir = path.join(dir, 'fake')
   const userData = path.join(dir, 'userData')
@@ -87,7 +87,7 @@ async function launch({ setupComplete = true, signedOut = false, withHelper = fa
       ...env,
     },
   })
-  if (!setupComplete) return { app, dir, fakeDir, tmpDir, claude: tools.claude }
+  if (!setupComplete || !waitForWindow) return { app, dir, fakeDir, tmpDir, claude: tools.claude }
   // Setup is complete, so the bar opens directly (no splash).
   await expect.poll(async () => app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().some((w) => w.webContents.getURL().includes('dist-renderer') && w.isVisible())
@@ -378,6 +378,28 @@ test('a missing Claude Code offers the installer', async () => {
   await expect(setup.locator('#claude-next')).toBeDisabled()
 })
 
+
+test('a launch splash plays while Promptly starts, then hands over to the window', async () => {
+  ctx = await launch({ waitForWindow: false, env: { PROMPTLY_LAUNCH_SPLASH: '1' } })
+  const { app } = ctx
+  const windows = () => app.evaluate(({ BrowserWindow }) => {
+    const all = BrowserWindow.getAllWindows()
+    const launchWin = all.find((w) => w.webContents.getURL().includes('launch.html'))
+    const main = all.find((w) => w.webContents.getURL().includes('dist-renderer'))
+    return { splash: !!launchWin && launchWin.isVisible(), splashOpen: !!launchWin, main: !!main && main.isVisible() }
+  })
+  await expect.poll(async () => (await windows()).splash, { timeout: 20000 }).toBe(true)
+  const shownAt = Date.now()
+  expect((await windows()).main).toBe(false)
+  const splash = app.windows().find((w) => w.url().includes('launch.html'))
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+  await expect(splash.locator('#version')).toHaveText(`v${version}`)
+  await expect(splash.locator('.name')).toHaveText('Promptly')
+  // The app is ready well before the intro ends; the window still waits for the words to gather.
+  await expect.poll(async () => (await windows()).main, { timeout: 20000 }).toBe(true)
+  expect(Date.now() - shownAt).toBeGreaterThan(1500)
+  expect((await windows()).splashOpen).toBe(false)
+})
 
 test('fix-06: reopening the setup wizard keeps a single menu bar icon', async () => {
   ctx = await launch()

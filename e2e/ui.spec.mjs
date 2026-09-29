@@ -458,4 +458,28 @@ for (const scale of SCALES) for (const theme of ['dark', 'light']) {
     fs.writeFileSync(path.join(OUT, `${label}-setup-issues.txt`), found.join('\n'))
     expect(found, `layout problems:\n${found.join('\n')}`).toEqual([])
   })
+
+  test(`launch splash — ${theme}${at}`, async () => {
+    fs.mkdirSync(OUT, { recursive: true })
+    const found = []
+    const check = recorder(label, found)
+    const { app, dir } = await launch(theme, { scale })
+    // The splash is off in test runs and leaves as soon as the app is ready, so open one to hold
+    // still: the same page and window options, on its finished frame.
+    const opened = app.waitForEvent('window', { predicate: (w) => w.url().includes('launch.html') })
+    await app.evaluate(({ BrowserWindow }, file) => {
+      const w = new BrowserWindow({ width: 540, height: 360, frame: false, transparent: true, hasShadow: false, backgroundColor: '#00000000', webPreferences: { sandbox: true } })
+      w.loadFile(file, { query: { v: '2.20.5' } })
+    }, path.join(ROOT, 'launch.html'))
+    const splash = await opened
+    await splash.emulateMedia({ colorScheme: theme })
+    await expect(splash.locator('html')).toHaveClass(/\brun\b/)
+    await splash.evaluate(() => document.getAnimations().filter((a) => a.effect.getTiming().iterations !== Infinity).forEach((a) => a.finish()))
+    await expect(splash.locator('#version')).toHaveText('v2.20.5')
+    await check(splash, 'launch-splash')
+    await app.close()
+    fs.rmSync(dir, { recursive: true, force: true })
+    fs.writeFileSync(path.join(OUT, `${label}-launch-issues.txt`), found.join('\n'))
+    expect(found, `layout problems:\n${found.join('\n')}`).toEqual([])
+  })
 }

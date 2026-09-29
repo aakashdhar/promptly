@@ -112,6 +112,8 @@ let whisperPath = null;
 let ffmpegPath = null;
 let win = null;
 let splashWin = null;
+let launchWin = null;           // the launch splash (launch.html), up while Promptly starts
+let launchDone = null;          // its exit, once started
 let isQuitting = false;
 let menuBarTray = null;
 let pulseInterval = null;
@@ -580,6 +582,8 @@ function buildTrayMenu() {
 // Brings the main window forward from wherever it is: minimised, hidden or behind others.
 function showWindow() {
   if (!win || win.isDestroyed()) return;
+  // Asked for the window (Dock, second launch) while the launch splash is still playing.
+  if (launchWin && !launchWin.isDestroyed()) { launchWin.destroy(); launchWin = null; }
   if (win.isMinimized()) win.restore();
   if (!win.isVisible()) win.show();
   win.focus();
@@ -890,6 +894,63 @@ function applyHotkey() {
 
 // ── Windows ───────────────────────────────────────────────────────────────────
 
+// The launch splash covers the seconds between opening Promptly and its window being ready: the
+// showreel's words gather into the name while the mark draws itself (launch.html). It is off in
+// end-to-end runs unless a test asks for it, so every other test starts as before.
+const LAUNCH_SPLASH = !IS_E2E || process.env.PROMPTLY_LAUNCH_SPLASH === '1';
+const LAUNCH_SIZE = { width: 540, height: 360 };  // the 480×300 panel plus room for its shadow
+const LAUNCH_EXIT_WAIT_MS = 3500;                 // longest the app waits on the splash's exit
+const LAUNCH_MAX_MS = 20000;                      // a start that never finishes still loses it
+
+function createLaunchWindow() {
+  if (!LAUNCH_SPLASH) return;
+  // On the screen you're using, like the window that follows it.
+  const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  launchWin = new BrowserWindow({
+    ...LAUNCH_SIZE,
+    x: Math.round(wa.x + (wa.width - LAUNCH_SIZE.width) / 2),
+    y: Math.round(wa.y + (wa.height - LAUNCH_SIZE.height) / 2),
+    show: false,
+    frame: false,
+    transparent: true,
+    hasShadow: false,              // the panel draws its own, inside the window
+    backgroundColor: '#00000000',
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    focusable: false,              // never takes focus from the app you were in
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      backgroundThrottling: false, // its exit timer must run on time even if it is covered
+    },
+  });
+  launchWin.loadFile(path.join(__dirname, 'launch.html'), { query: { v: app.getVersion() } });
+  launchWin.once('ready-to-show', () => { if (launchWin && !launchWin.isDestroyed()) launchWin.showInactive(); });
+  // Hidden, not closed: while it is the only window, closing it would quit the app.
+  const w = launchWin;
+  setTimeout(() => { if (!w.isDestroyed()) w.hide(); }, LAUNCH_MAX_MS);
+}
+
+// Lets the launch splash finish its intro and play its exit, then resolves. Resolves at once when
+// there is no splash, and within LAUNCH_EXIT_WAIT_MS whatever the page does.
+function dismissLaunchWindow() {
+  if (launchDone) return launchDone;
+  const w = launchWin;
+  if (!w || w.isDestroyed()) return (launchDone = Promise.resolve());
+  const exited = w.webContents.executeJavaScript('window.finishSplash ? window.finishSplash() : null', true).catch(() => {});
+  const limit = new Promise((resolve) => setTimeout(resolve, LAUNCH_EXIT_WAIT_MS));
+  launchDone = Promise.race([exited, limit]).then(() => {
+    if (!w.isDestroyed()) w.destroy();
+    if (launchWin === w) launchWin = null;
+  });
+  return launchDone;
+}
+
 function createSplashWindow() {
   splashWin = new BrowserWindow({
     width: 560,
@@ -1022,12 +1083,13 @@ function fromWindow(event, ...wins) {
 
 function finishSetup() {
   if (splashWin && !splashWin.isDestroyed()) { splashWin.destroy(); splashWin = null; }
-  // windowBounds() already placed it: where it was left, or centred the first time. Centring
-  // here would move it (and save that) on every launch.
-  if (win && !win.isDestroyed()) win.show();
   registerShortcut();
   // Runs again after the wizard is reopened from Settings; keep a single tray icon.
   if (!menuBarTray || menuBarTray.isDestroyed()) createMenuBarIcon();
+  // The launch splash plays out first (no wait when there is none). windowBounds() already
+  // placed the window: where it was left, or centred the first time. Centring here would move
+  // it (and save that) on every launch.
+  dismissLaunchWindow().then(() => { if (win && !win.isDestroyed()) win.show(); });
 }
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
@@ -1083,6 +1145,8 @@ app.whenReady().then(async () => {
   resetAudioTmpDir();
   const theme = config.read().theme;
   nativeTheme.themeSource = THEMES.includes(theme) ? theme : 'system';
+  // First thing on screen, in the app's theme; finding Claude Code and speech-to-text comes next.
+  createLaunchWindow();
   await resolveAllPaths();
 
 
@@ -1813,7 +1877,7 @@ app.whenReady().then(async () => {
   helper.start();
   // Returning users go straight to the window; setup only appears when something is missing.
   if (await needsSetup()) {
-    createSplashWindow();
+    dismissLaunchWindow().then(createSplashWindow);
   } else if (win.webContents.isLoading()) {
     // The setup check can outlast the page load, so only wait if it's still loading.
     win.webContents.once('did-finish-load', () => finishSetup());
