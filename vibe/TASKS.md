@@ -1021,7 +1021,11 @@ Say "next" to begin.
    themes (3/3). Not run: the full e2e suite (about 4 min, opens windows).
 
 ## What's next
-⬜ Owner: install 2.20.6 and watch the launch splash; say if the ~2 s wait feels long
+✅ Splash fix on main (not released yet): on 2.20.6 the app you were in covered the splash when
+   the pill was set up. Now it stays on top and plays in full before the app starts. Checked:
+   unit 302/302, lint, 12 start-up/setup/splash e2e tests, and a real launch (in front of Claude
+   and Chrome for 2.7 s, then the window). Not run: the full e2e suite.
+⬜ Owner: try the 2.20.7 DMG from dist/; say "ship it" to publish
 ⬜ Owner: install 2.20.5; check the Dock icon, the menu bar, and dictating into Claude with Promptly open behind
 ⬜ Owner: try Dictation on 2.20.4 with Indian names and questions; add frequent names to Your words
 ⬜ Run the full e2e suite once (about 4 min, opens test windows) to confirm the icon fix
