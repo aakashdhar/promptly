@@ -263,20 +263,29 @@ body.done .stage { opacity: 0; transform: scale(0.97); }
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var params = new URLSearchParams(location.search);
   var startedAt = null;
+  var started = null;
 
   var version = document.getElementById('version');
   if (params.get('v')) version.textContent = 'v' + params.get('v').replace(/^v/, '');
 
-  // The window is created hidden and then shown; start only once it can be seen, so the intro
-  // never plays to nobody.
-  function start() {
-    if (startedAt !== null) return;
-    startedAt = performance.now();
-    root.classList.remove('pre');
-    root.classList.add('run');
-  }
-  if (document.visibilityState === 'visible') start();
-  else document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') start(); });
+  // main.js calls this once the window is on screen. The intro starts after two frames have been
+  // drawn, so it never plays to a window that isn't showing (a hidden window still reports itself
+  // visible), and the promise resolves when the intro has finished.
+  window.startSplash = function () {
+    if (!started) {
+      started = new Promise(function (resolve) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            startedAt = performance.now();
+            root.classList.remove('pre');
+            root.classList.add('run');
+            setTimeout(resolve, reduced ? 0 : INTRO_MS);
+          });
+        });
+      });
+    }
+    return started;
+  };
 
   // main.js calls this once the app is ready: the intro gets to finish, then the splash leaves.
   window.finishSplash = function () {
@@ -289,8 +298,10 @@ body.done .stage { opacity: 0; transform: scale(0.97); }
     });
   };
 
-  // Preview only (?preview=1, never set by the app): click replays, D flips the theme, E plays the exit.
+  // Preview only (?preview=1, never set by the app): plays on load; click replays, D flips the
+  // theme, E plays the exit.
   if (params.get('preview') !== '1') return;
+  window.startSplash();
   addEventListener('click', function () {
     document.body.classList.remove('done');
     root.classList.remove('run');

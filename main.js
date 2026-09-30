@@ -894,19 +894,23 @@ function applyHotkey() {
 
 // ── Windows ───────────────────────────────────────────────────────────────────
 
-// The launch splash covers the seconds between opening Promptly and its window being ready: the
-// showreel's words gather into the name while the mark draws itself (launch.html). It is off in
-// end-to-end runs unless a test asks for it, so every other test starts as before.
+// The launch splash plays first, and in full: the showreel's words gather into the name while
+// the mark draws itself (launch.html). The rest of the app starts once it has finished. It is off
+// in end-to-end runs unless a test asks for it, so every other test starts as before.
 const LAUNCH_SPLASH = !IS_E2E || process.env.PROMPTLY_LAUNCH_SPLASH === '1';
 const LAUNCH_SIZE = { width: 540, height: 360 };  // the 480×300 panel plus room for its shadow
+const LAUNCH_INTRO_WAIT_MS = 6000;                // longest start-up waits on the intro
 const LAUNCH_EXIT_WAIT_MS = 3500;                 // longest the app waits on the splash's exit
 const LAUNCH_MAX_MS = 20000;                      // a start that never finishes still loses it
 
-function createLaunchWindow() {
-  if (!LAUNCH_SPLASH) return;
+// Shows the launch splash and plays its intro. Resolves when the intro has finished; at once when
+// there is no splash; and within LAUNCH_INTRO_WAIT_MS if the page never starts (it never holds
+// the app up for long).
+function showLaunchSplash() {
+  if (!LAUNCH_SPLASH) return Promise.resolve();
   // On the screen you're using, like the window that follows it.
   const { workArea: wa } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  launchWin = new BrowserWindow({
+  const w = launchWin = new BrowserWindow({
     ...LAUNCH_SIZE,
     x: Math.round(wa.x + (wa.width - LAUNCH_SIZE.width) / 2),
     y: Math.round(wa.y + (wa.height - LAUNCH_SIZE.height) / 2),
@@ -922,22 +926,35 @@ function createLaunchWindow() {
     fullscreenable: false,
     skipTaskbar: true,
     focusable: false,              // never takes focus from the app you were in
+    // Above other apps' windows. Promptly stops being the active app for a moment when the pill
+    // is set up, and the app you were in then came in front of the splash and hid it (2.20.6).
+    alwaysOnTop: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
-      backgroundThrottling: false, // its exit timer must run on time even if it is covered
+      backgroundThrottling: false, // its timers must run on time even if it is covered
     },
   });
-  launchWin.loadFile(path.join(__dirname, 'launch.html'), { query: { v: app.getVersion() } });
-  launchWin.once('ready-to-show', () => { if (launchWin && !launchWin.isDestroyed()) launchWin.showInactive(); });
+  w.loadFile(path.join(__dirname, 'launch.html'), { query: { v: app.getVersion() } });
+  w.once('ready-to-show', () => { if (!w.isDestroyed()) w.showInactive(); });
   // Hidden, not closed: while it is the only window, closing it would quit the app.
-  const w = launchWin;
   setTimeout(() => { if (!w.isDestroyed()) w.hide(); }, LAUNCH_MAX_MS);
+  return new Promise((resolve) => {
+    const giveUp = setTimeout(resolve, LAUNCH_INTRO_WAIT_MS);
+    const done = () => { clearTimeout(giveUp); resolve(); };
+    // Started from here, once the window is on screen, never from the page's own load: a window
+    // that isn't showing yet still reports itself visible, and the intro played to nobody.
+    w.once('show', () => {
+      w.webContents.executeJavaScript('window.startSplash ? window.startSplash() : null', true).catch(() => {}).then(done);
+    });
+    w.webContents.once('did-fail-load', done);
+    w.once('closed', done);
+  });
 }
 
-// Lets the launch splash finish its intro and play its exit, then resolves. Resolves at once when
-// there is no splash, and within LAUNCH_EXIT_WAIT_MS whatever the page does.
+// Plays the launch splash's exit (a beat on its finished frame, then a fade), then resolves.
+// Resolves at once when there is no splash, and within LAUNCH_EXIT_WAIT_MS whatever the page does.
 function dismissLaunchWindow() {
   if (launchDone) return launchDone;
   const w = launchWin;
@@ -949,6 +966,13 @@ function dismissLaunchWindow() {
     if (launchWin === w) launchWin = null;
   });
   return launchDone;
+}
+
+// Resolves once the launch splash has closed (at once when there is none).
+function whenLaunchGone() {
+  const w = launchWin;
+  if (!w || w.isDestroyed()) return Promise.resolve();
+  return new Promise((resolve) => w.once('closed', resolve));
 }
 
 function createSplashWindow() {
@@ -1145,8 +1169,9 @@ app.whenReady().then(async () => {
   resetAudioTmpDir();
   const theme = config.read().theme;
   nativeTheme.themeSource = THEMES.includes(theme) ? theme : 'system';
-  // First thing on screen, in the app's theme; finding Claude Code and speech-to-text comes next.
-  createLaunchWindow();
+  // First thing on screen, in the app's theme. Finding Claude Code and speech-to-text and the
+  // setup check run while it plays; the windows, the pill and the speech engine wait for its end.
+  const intro = showLaunchSplash();
   await resolveAllPaths();
 
 
@@ -1872,11 +1897,16 @@ app.whenReady().then(async () => {
   // Windows last: every IPC handler above is registered before a page can call one. (The
   // window used to be created first, and requests it made while setup was being checked
   // failed silently — the shortcut hint, the prompt style and more fell back to defaults.)
+  const setupNeeded = needsSetup();
+  setupNeeded.catch(() => {});     // awaited below, after the intro
+  // Setting up the pill makes Promptly give up being the active app for a moment, so nothing
+  // that opens a window starts until the intro has played.
+  await intro;
   createWindow();
   createPillWindow();
   helper.start();
   // Returning users go straight to the window; setup only appears when something is missing.
-  if (await needsSetup()) {
+  if (await setupNeeded) {
     dismissLaunchWindow().then(createSplashWindow);
   } else if (win.webContents.isLoading()) {
     // The setup check can outlast the page load, so only wait if it's still loading.
@@ -1884,8 +1914,10 @@ app.whenReady().then(async () => {
   } else {
     finishSetup();
   }
-  // Compile the GPU speech shaders in the background so the first recording doesn't wait.
-  whisper.warmUp(audioTmpDir)
+  // Compile the GPU speech shaders in the background so the first recording doesn't wait; once
+  // the splash has gone, so they can't make it stutter.
+  whenLaunchGone()
+    .then(() => whisper.warmUp(audioTmpDir))
     .then((gpu) => log.info(`Speech engine warm-up: ${gpu ? 'GPU ready' : 'using CPU'}`))
     .catch((err) => log.warn('Speech engine warm-up failed', err));
 });

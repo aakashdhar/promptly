@@ -473,6 +473,7 @@ for (const scale of SCALES) for (const theme of ['dark', 'light']) {
     }, path.join(ROOT, 'launch.html'))
     const splash = await opened
     await splash.emulateMedia({ colorScheme: theme })
+    await splash.evaluate(() => window.startSplash())
     await expect(splash.locator('html')).toHaveClass(/\brun\b/)
     await splash.evaluate(() => document.getAnimations().filter((a) => a.effect.getTiming().iterations !== Infinity).forEach((a) => a.finish()))
     await expect(splash.locator('#version')).toHaveText('v2.20.5')

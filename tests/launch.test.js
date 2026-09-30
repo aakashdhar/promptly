@@ -18,9 +18,35 @@ describe('launch splash (launch.html)', () => {
     expect(page).not.toMatch(/https?:\/\//i)
     expect(page).not.toMatch(/<(link|img|iframe|object|embed)\b/i)
     expect(page).not.toMatch(/electronAPI/)
-    const opts = main.slice(main.indexOf('function createLaunchWindow'), main.indexOf('function dismissLaunchWindow'))
+    const opts = main.slice(main.indexOf('function showLaunchSplash'), main.indexOf('function dismissLaunchWindow'))
     expect(opts).not.toMatch(/preload/)
     expect(opts).toMatch(/sandbox: true/)
+  })
+
+  // 2.20.6: the pill was set up mid-intro, Promptly stopped being the active app, and the app you
+  // were in came in front of the splash. You saw a dark box, then the window.
+  it('plays in full before anything else opens a window, above other apps\' windows', () => {
+    const opts = main.slice(main.indexOf('function showLaunchSplash'), main.indexOf('function dismissLaunchWindow'))
+    expect(opts).toMatch(/alwaysOnTop: true/)
+    const start = main.slice(main.indexOf('app.whenReady().then('))
+    const at = (s) => { const i = start.indexOf(s); expect(i, s).toBeGreaterThan(-1); return i }
+    expect(at('const intro = showLaunchSplash()')).toBeLessThan(at('await resolveAllPaths()'))
+    expect(at('await intro;')).toBeLessThan(at('createWindow();'))
+    expect(at('await intro;')).toBeLessThan(at('createPillWindow();'))
+    expect(at('await intro;')).toBeLessThan(at('helper.start();'))
+    // The speech engine's GPU warm-up waits until the splash has gone.
+    expect(start).toMatch(/whenLaunchGone\(\)\s*\.then\(\(\) => whisper\.warmUp/)
+  })
+
+  it('starts its intro when main.js says the window is on screen, never on its own', () => {
+    expect(main).toMatch(/w\.once\('show', \(\) => \{\s*w\.webContents\.executeJavaScript\('window\.startSplash \? window\.startSplash\(\) : null'/)
+    expect(page).toMatch(/window\.startSplash = function/)
+    // It waits for frames that were really drawn, not for the page's visibility.
+    expect(page).toMatch(/requestAnimationFrame\(function \(\) \{\s*requestAnimationFrame/)
+    expect(page).not.toMatch(/visibilityState|visibilitychange/)
+    // Before it starts, nothing shows.
+    expect(page).toMatch(/<html lang="en" class="pre">/)
+    expect(page).toMatch(/\.pre \.stage \{ opacity: 0; \}/)
   })
 
   it('lets main.js end it: finishSplash waits out the intro, then plays the exit', () => {

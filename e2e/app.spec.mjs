@@ -386,12 +386,19 @@ test('a launch splash plays while Promptly starts, then hands over to the window
     const all = BrowserWindow.getAllWindows()
     const launchWin = all.find((w) => w.webContents.getURL().includes('launch.html'))
     const main = all.find((w) => w.webContents.getURL().includes('dist-renderer'))
-    return { splash: !!launchWin && launchWin.isVisible(), splashOpen: !!launchWin, main: !!main && main.isVisible() }
+    return {
+      splash: !!launchWin && launchWin.isVisible(), splashOpen: !!launchWin, onTop: !!launchWin && launchWin.isAlwaysOnTop(),
+      main: !!main && main.isVisible(), others: all.filter((w) => w !== launchWin).length,
+    }
   })
   await expect.poll(async () => (await windows()).splash, { timeout: 20000 }).toBe(true)
   const shownAt = Date.now()
-  expect((await windows()).main).toBe(false)
   const splash = app.windows().find((w) => w.url().includes('launch.html'))
+  await expect(splash.locator('html')).toHaveClass(/\brun\b/)
+  // While the intro plays nothing else has a window (the pill's set-up once hid the splash), and
+  // the splash floats above other apps' windows.
+  const during = await windows()
+  expect(during).toMatchObject({ main: false, others: 0, onTop: true })
   const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
   await expect(splash.locator('#version')).toHaveText(`v${version}`)
   await expect(splash.locator('.name')).toHaveText('Promptly')
