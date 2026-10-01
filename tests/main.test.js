@@ -143,6 +143,7 @@ case "$FAKE_MODE" in
   echo) printf 'ARGS:%s\\nSTDIN:%s' "$*" "$input" ;;
   old-cli) for a in "$@"; do if [ "$a" = "--tools" ]; then echo "error: unknown option '--tools'" >&2; exit 1; fi; done; printf 'ok-without-lean-flags' ;;
   auth) echo "Invalid API key · Please run /login" >&2; exit 1 ;;
+  needs-settings) for a in "$@"; do if [ "$a" = "--setting-sources" ]; then echo "Invalid API key · Please run /login" >&2; exit 1; fi; done; printf 'ok-with-settings:%s' "$CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC" ;;
   empty) exit 0 ;;
   slow) sleep 5; echo late ;;
 esac
@@ -170,6 +171,22 @@ describe('createClaudeRunner', () => {
     expect(args).not.toContain('secret prompt text')
     expect(args).toContain('--model test-model')
     expect(args).toContain('--no-session-persistence')
+  })
+
+  it.skipIf(onWindows)('starts quickly: skips user settings, slash commands and non-essential traffic', async () => {
+    const r = await runner('echo').run('hi')
+    const args = r.prompt.split('\n')[0]
+    expect(args).toContain('--setting-sources')
+    expect(args).toContain('--disable-slash-commands')
+  })
+
+  it.skipIf(onWindows)('falls back to a normal start when the quick one fails, and stays there', async () => {
+    const claude = runner('needs-settings')
+    const first = await claude.run('hi')
+    expect(first).toMatchObject({ success: true, prompt: 'ok-with-settings:' })
+    // Later calls go straight to the normal start.
+    process.env.FAKE_MODE = 'echo'
+    expect((await claude.run('hi')).prompt.split('\n')[0]).not.toContain('--setting-sources')
   })
 
   it('turns extended thinking off only when asked', async () => {

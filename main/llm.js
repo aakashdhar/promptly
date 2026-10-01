@@ -15,6 +15,12 @@ const SYSTEM_PROMPT = "Follow the user's instructions exactly and output only wh
 // session files written to ~/.claude for every prompt. Older CLIs reject some of these,
 // so a run that fails with "unknown option" is retried once without them.
 const LEAN_FLAGS = ['--tools', '', '--no-session-persistence', '--strict-mcp-config', '--system-prompt', SYSTEM_PROMPT];
+// Skips start-up work a text transform never needs: the user's own Claude Code settings and
+// hooks, slash commands and skills, and update checks and telemetry. It took the Dictation
+// clean-up from 3-5 s to under 2 s. A user whose sign-in or proxy lives in those settings gets
+// one failed run; run() then retries without these and stops using them.
+const QUICK_START_FLAGS = ['--setting-sources', '', '--disable-slash-commands'];
+const QUICK_START_ENV = { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' };
 // Streams text as it's written: JSON events on stdout, with partial text deltas.
 const STREAM_FLAGS = ['--output-format', 'stream-json', '--include-partial-messages', '--verbose'];
 
@@ -65,10 +71,11 @@ function isUnknownOptionError(stderr) {
 // argument, so it never shows up in `ps` and isn't bound by command-line length limits.
 function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onSlow = () => {}, children = new Set(), spawnImpl = spawn }) {
   let leanFlagsSupported = true;
+  let quickStartSupported = true;
   // Processes this runner stopped on purpose; any other signal is a crash, not a cancel.
   const stoppedByUs = new WeakSet();
 
-  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, onDelta, thinking = true }) {
+  function runOnce(prompt, { timeoutMs, slowWarningMs, lean, quick = false, onDelta, thinking = true }) {
     const streaming = lean && typeof onDelta === 'function';
     const parser = streaming ? createStreamParser(onDelta) : null;
     return new Promise((resolve) => {
@@ -77,10 +84,10 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
         return;
       }
-      const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
+      const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? LEAN_FLAGS : []), ...(lean && quick ? QUICK_START_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
       // The CLI thinks before answering by default; for a long answer that can add minutes
       // without making it better, so callers can turn it off.
-      const env = thinking ? makeClaudeEnv(claudePath) : { ...makeClaudeEnv(claudePath), MAX_THINKING_TOKENS: '0' };
+      const env = { ...makeClaudeEnv(claudePath), ...(lean && quick ? QUICK_START_ENV : {}), ...(thinking ? {} : { MAX_THINKING_TOKENS: '0' }) };
       // On Windows an npm-installed claude.cmd goes through cmd.exe; the prompt still goes on stdin.
       const child = spawnImpl(...platform.spawnArgs(claudePath, args, { env }));
       children.add(child);
@@ -146,7 +153,15 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
   // onDelta(textSoFar) streams the answer as it's written (skipped on CLIs without the flags).
   // thinking: false skips extended thinking for this call.
   async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta, thinking = true } = {}) {
-    const result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, onDelta, thinking });
+    const quick = leanFlagsSupported && quickStartSupported;
+    let result = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: leanFlagsSupported, quick, onDelta, thinking });
+    // A quick start that failed outright (not a cancel or timeout) gets one ordinary run; if
+    // that one works, the quick start was the problem and later calls skip it.
+    if (quick && !result.success && !result.cancelled && !result.timedOut && !isUnknownOptionError(result.stderr || '')) {
+      const plain = await runOnce(prompt, { timeoutMs, slowWarningMs, lean: true, onDelta, thinking });
+      if (plain.success) quickStartSupported = false;
+      return strip(plain);
+    }
     if (!result.success && leanFlagsSupported && isUnknownOptionError(result.stderr || '')) {
       leanFlagsSupported = false;
       return strip(await runOnce(prompt, { timeoutMs, slowWarningMs, lean: false, thinking }));
