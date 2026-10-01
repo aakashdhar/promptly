@@ -1073,3 +1073,6 @@ Say "next" to begin.
 ⬜ You: try it with a real OpenAI/Gemini/Grok key (branch build) before we merge to main
 ⬜ After merge: website copy ("only text goes to your AI provider"), release
 
+
+## 2026-10-01 — Faster Dictation clean-up
+✅ Claude Code now starts without the user's settings, slash commands or update checks for Promptly's calls. Dictation clean-up went from 3–5 s to about 1.5–1.9 s (still Sonnet); Craft calls save about the same. Falls back to a normal start if the quick one fails. Not yet released.
