@@ -6,7 +6,6 @@ export default function PromptTargetPicker({ targets }) {
   const busyLabel = PROMPT_TARGETS.find((t) => t.key === targets.busy)?.label
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-      {busyLabel && <span role="status" style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Rewriting for {busyLabel}…</span>}
       {targets.error && !busyLabel && <span role="alert" style={{ fontSize: '12px', color: 'color-mix(in oklab, rgb(255,69,58) var(--accent-text-strength), rgb(var(--ink)))', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={targets.error}>{targets.error}</span>}
       <label htmlFor="prompt-target" style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>For</label>
       <select

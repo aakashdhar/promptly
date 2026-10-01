@@ -189,8 +189,17 @@ test('a finished prompt stays as written for Claude until you pick another AI, t
   await expect(picker).toHaveValue('claude')
   const before = calls(fakeDir).length
 
+  // While it's being rewritten you can see it, and nothing can be copied or edited.
+  fs.writeFileSync(path.join(fakeDir, 'delay'), '1.5')
   await picker.selectOption('gemini')
+  await expect(page.getByRole('status').filter({ hasText: 'Rewriting for Gemini' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Rewriting…' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Edit' })).toBeDisabled()
+  await expect(page.locator('#prompt-output')).toHaveAttribute('aria-busy', 'true')
+  fs.rmSync(path.join(fakeDir, 'delay'))
   await expect(page.locator('#prompt-output')).toContainText('## Task for Gemini')
+  await expect(page.getByRole('status').filter({ hasText: 'Rewriting for' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Copy for Gemini' })).toBeEnabled()
   await expect(page.getByRole('button', { name: 'Copy for Gemini' })).toBeVisible()
   expect(calls(fakeDir)).toHaveLength(before + 1)
   const stdin = await lastStdin(fakeDir)

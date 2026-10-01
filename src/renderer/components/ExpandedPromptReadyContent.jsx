@@ -3,7 +3,7 @@ import { parseSections, readableColor } from '../utils/promptUtils.js'
 import PromptSections from './PromptSections.jsx'
 import EvalPanel from './EvalPanel.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
-import { MODES, resolveModeKey, isScorable, modeInfo } from '../utils/modes.js'
+import { MODES, resolveModeKey, isScorable, modeInfo, PROMPT_TARGETS } from '../utils/modes.js'
 import useCopy from '../hooks/useCopy.js'
 import usePromptTargets from '../hooks/usePromptTargets.js'
 import PromptTargetPicker from './PromptTargetPicker.jsx'
@@ -49,6 +49,8 @@ export default function ExpandedPromptReadyContent({
   // Prompts can be rewritten for another AI; what's on screen, copied and edited is that version.
   const targets = usePromptTargets({ prompt: generatedPrompt, transcript, mode: shownMode, enabled: !plainText && !!modeInfo(shownMode)?.promptStyle })
   const shownText = targets.shown
+  // While another AI's version is being written, the prompt can't be copied or edited.
+  const rewriting = targets.busy ? (PROMPT_TARGETS.find((t) => t.key === targets.busy)?.label || 'another AI') : null
   // The score compares the prompt as Promptly wrote it with what you said.
   const canScore = !plainText && isScorable(shownMode) && targets.isDefault
   const [editHovered, setEditHovered] = useState(false)
@@ -186,7 +188,8 @@ export default function ExpandedPromptReadyContent({
         </>}
       />
 
-      <div className="selectable" id="prompt-output" style={{ flex: 1, overflowY: 'auto', padding: '22px 28px 18px' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div className="selectable" id="prompt-output" aria-busy={!!rewriting} style={{ flex: 1, overflowY: 'auto', padding: '22px 28px 18px', filter: rewriting ? 'blur(2px)' : 'none', opacity: rewriting ? 0.45 : 1, transition: 'filter 200ms ease, opacity 200ms ease', pointerEvents: rewriting ? 'none' : 'auto' }}>
         {isEditing ? (
           <div
             ref={promptRef}
@@ -213,6 +216,17 @@ export default function ExpandedPromptReadyContent({
           </div>
         )}
       </div>
+      {rewriting && (
+        <div role="status" aria-live="polite" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div className="toolbar-sweep" style={{ top: 0, bottom: 'auto' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '20px 28px', borderRadius: '14px', background: 'var(--surface)', border: '0.5px solid rgba(var(--ink),0.12)', boxShadow: '0 8px 28px rgba(0,0,0,0.14)' }}>
+            <span className="working-hop" aria-hidden="true"><i /><i /><i /></span>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'rgba(var(--ink),0.95)' }}>Rewriting for {rewriting}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Every detail of your prompt stays. Copy comes back when it’s ready.</div>
+          </div>
+        </div>
+      )}
+      </div>
 
       {isDictation && dictation?.removed?.length > 0 && (
         <div style={{ padding: '0 28px 10px', fontSize: '11px', color: 'var(--text-tertiary)', flexShrink: 0 }}>
@@ -237,6 +251,7 @@ export default function ExpandedPromptReadyContent({
         <button
           type="button"
           onClick={handleEdit}
+          disabled={!!rewriting}
           onMouseEnter={() => setEditHovered(true)}
           onMouseLeave={() => setEditHovered(false)}
           style={{
@@ -244,7 +259,7 @@ export default function ExpandedPromptReadyContent({
             border: editHovered ? '0.5px solid rgba(var(--ink),0.18)' : '0.5px solid rgba(var(--ink),0.12)',
             background: editHovered ? 'rgba(var(--ink),0.09)' : 'rgba(var(--ink),0.05)',
             color: 'rgba(var(--ink),0.92)', borderRadius: '10px',
-            fontSize: '13px', cursor: 'pointer', transition: 'all 150ms ease',
+            fontSize: '13px', cursor: rewriting ? 'default' : 'pointer', transition: 'all 150ms ease', opacity: rewriting ? 0.5 : 1,
           }}
         >
           {isEditing ? 'Save' : 'Edit'}
@@ -259,6 +274,7 @@ export default function ExpandedPromptReadyContent({
         <button
           type="button"
           onClick={handleCopy}
+          disabled={!!rewriting}
           style={{
             height: '36px', padding: '0 24px', fontFamily: 'inherit',
             border: 'none',
@@ -266,12 +282,12 @@ export default function ExpandedPromptReadyContent({
               ? 'linear-gradient(135deg, rgba(48,209,88,0.85), rgba(30,168,70,0.85))'
               : 'linear-gradient(135deg, rgba(10,132,255,0.95), rgba(10,100,220,0.95))',
             color: 'var(--on-accent)', borderRadius: '10px',
-            fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-            boxShadow: isCopied ? '0 2px 16px rgba(48,209,88,0.35)' : '0 4px 16px rgba(10,132,255,0.35)',
+            fontSize: '13px', fontWeight: 600, cursor: rewriting ? 'default' : 'pointer', opacity: rewriting ? 0.5 : 1,
+            boxShadow: rewriting ? 'none' : isCopied ? '0 2px 16px rgba(48,209,88,0.35)' : '0 4px 16px rgba(10,132,255,0.35)',
             transition: 'all 300ms ease',
           }}
         >
-          {isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : targets.isDefault ? 'Copy prompt' : `Copy for ${targets.label}`}
+          {rewriting ? 'Rewriting…' : isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : targets.isDefault ? 'Copy prompt' : `Copy for ${targets.label}`}
         </button>
       </div>
     </div>
