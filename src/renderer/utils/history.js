@@ -100,3 +100,19 @@ export function pairDictations(entries) {
   }
   return out
 }
+
+// Versions of a prompt rewritten for other AIs (the "For" picker), kept on the history entry that
+// holds the prompt as Promptly wrote it, so reopening it doesn't ask Claude again.
+export function getTargetVersions(prompt) {
+  const entry = getHistory().find(h => h.prompt === prompt)
+  const targets = entry && entry.targets
+  return targets && typeof targets === 'object' && !Array.isArray(targets) ? targets : {}
+}
+
+export function saveTargetVersion(prompt, target, text) {
+  const history = getHistory()
+  const entry = history.find(h => h.prompt === prompt)
+  if (!entry) return
+  entry.targets = { ...(entry.targets || {}), [target]: text }
+  store(history)
+}

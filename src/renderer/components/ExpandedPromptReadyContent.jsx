@@ -3,8 +3,10 @@ import { parseSections, readableColor } from '../utils/promptUtils.js'
 import PromptSections from './PromptSections.jsx'
 import EvalPanel from './EvalPanel.jsx'
 import ResultHeader, { ghostBtn } from './ResultHeader.jsx'
-import { MODES, resolveModeKey, isScorable } from '../utils/modes.js'
+import { MODES, resolveModeKey, isScorable, modeInfo } from '../utils/modes.js'
 import useCopy from '../hooks/useCopy.js'
+import usePromptTargets from '../hooks/usePromptTargets.js'
+import PromptTargetPicker from './PromptTargetPicker.jsx'
 
 // Modes whose result is text Claude wrote from what you said, so it can be iterated on or
 // regenerated. Dictations are your own words; builders have their own start-over flows.
@@ -43,8 +45,12 @@ export default function ExpandedPromptReadyContent({
   const isDictation = shownMode === 'dictate'
   const canRework = !isDictation && REWORKABLE.has(shownMode)
   const plainText = isDictation || isPolishMode
-  const canScore = !plainText && isScorable(shownMode)
   const [isEditing, setIsEditing] = useState(false)
+  // Prompts can be rewritten for another AI; what's on screen, copied and edited is that version.
+  const targets = usePromptTargets({ prompt: generatedPrompt, transcript, mode: shownMode, enabled: !plainText && !!modeInfo(shownMode)?.promptStyle })
+  const shownText = targets.shown
+  // The score compares the prompt as Promptly wrote it with what you said.
+  const canScore = !plainText && isScorable(shownMode) && targets.isDefault
   const [editHovered, setEditHovered] = useState(false)
   const { copied, copy, reset: resetCopied } = useCopy()
   const isCopied = !!copied
@@ -59,6 +65,8 @@ export default function ExpandedPromptReadyContent({
     resetCopied()
     setScoreOpen(false)
   }, [generatedPrompt, resetCopied])
+
+  useEffect(() => { setIsEditing(false); resetCopied() }, [targets.target, resetCopied])
 
   useEffect(() => {
     if (isEditing && promptRef.current) {
@@ -83,18 +91,22 @@ export default function ExpandedPromptReadyContent({
     return () => document.removeEventListener('keydown', onKey)
   }, [isEditing])
 
-  function handleCopy() { copy(generatedPrompt) }
+  function handleCopy() { copy(shownText) }
 
   function handleEdit() {
     if (!isEditing) {
-      preEditValue.current = generatedPrompt
+      preEditValue.current = shownText
       setIsEditing(true)
     } else {
       if (promptRef.current) {
         const edited = promptRef.current.textContent
-        setGeneratedPrompt(edited)
-        // Your edits teach Promptly what you prefer (Settings → You).
-        window.electronAPI?.recordEdit?.(shownMode, preEditValue.current, edited)
+        if (!targets.isDefault) {
+          targets.editVersion(edited)
+        } else {
+          setGeneratedPrompt(edited)
+          // Your edits teach Promptly what you prefer (Settings → You).
+          window.electronAPI?.recordEdit?.(shownMode, preEditValue.current, edited)
+        }
       }
       setIsEditing(false)
     }
@@ -115,6 +127,7 @@ export default function ExpandedPromptReadyContent({
             <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '16px' }}>✓</span>
             {isDictation ? 'Dictated' : isPolishMode ? 'Polished' : 'Prompt ready'}
           </span>
+          <PromptTargetPicker targets={targets} />
           {isIterated && (
             <span style={{
               fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
@@ -186,12 +199,13 @@ export default function ExpandedPromptReadyContent({
               outlineOffset: '4px', borderRadius: '6px', minHeight: '100px',
             }}
           >
-            {generatedPrompt}
+            {shownText}
           </div>
-        ) : plainText ? (
+        ) : plainText || !targets.isDefault ? (
           // Dictation and polished text read as written, not as prompt sections.
-          <div style={{ fontSize: '15px', lineHeight: '1.8', color: 'rgba(var(--ink),0.95)', whiteSpace: 'pre-wrap', maxWidth: '72ch' }}>
-            {generatedPrompt}
+          // Another AI's version reads exactly as it will be pasted.
+          <div style={{ fontSize: plainText ? '15px' : '13px', lineHeight: plainText ? '1.8' : '1.7', color: 'rgba(var(--ink),0.95)', whiteSpace: 'pre-wrap', maxWidth: plainText ? '72ch' : 'none' }}>
+            {shownText}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
@@ -257,7 +271,7 @@ export default function ExpandedPromptReadyContent({
             transition: 'all 300ms ease',
           }}
         >
-          {isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : 'Copy prompt'}
+          {isCopied ? '✓ Copied' : isDictation ? 'Copy' : isPolishMode ? 'Copy text' : targets.isDefault ? 'Copy prompt' : `Copy for ${targets.label}`}
         </button>
       </div>
     </div>

@@ -155,6 +155,21 @@ function buildLearnStylePrompt({ current = '', samples = '', edits = '' } = {}) 
   });
 }
 
+// A finished prompt rewritten for another AI (shared/modes.json promptTargets). The first target
+// is how Promptly writes prompts already, so it is never a rewrite.
+const PROMPT_TARGETS = MODES.promptTargets || [];
+const TARGET_KINDS = { code: 'task brief for a coding agent', design: 'design brief' };
+
+function buildRetargetPrompt({ prompt, transcript = '', mode, target }) {
+  return fillTemplate(loadPrompt('retarget'), {
+    KIND: TARGET_KINDS[mode.key] || 'prompt',
+    TARGET: target.label,
+    GUIDE: loadPrompt(`target-${target.key}`),
+    SAID: String(transcript || '').trim().slice(0, 8000) || '(not available)',
+    PROMPT: prompt,
+  });
+}
+
 // "en-IN" → "India": the country of the Mac's region setting, or '' when there isn't one.
 function countryFromLocale(locale) {
   const region = String(locale || '').split(/[-_]/)[1];
@@ -227,4 +242,4 @@ function normalizeEval(parsed) {
   };
 }
 
-module.exports = { buildDictationCleanupPrompt, countryFromLocale, normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, destinationFor, buildContextBlock };
+module.exports = { buildDictationCleanupPrompt, countryFromLocale, normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, PROMPT_TARGETS, buildRetargetPrompt, destinationFor, buildContextBlock };

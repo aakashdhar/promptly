@@ -1,0 +1,5 @@
+- Be direct and specific; open with the task in one or two sentences. Grok responds best to clear goals and explicit constraints, without filler.
+- Use short Markdown sections (Goal, Context, Requirements, Output format) and bullet points.
+- Give the context it needs explicitly; don't rely on it guessing the audience, tone or format.
+- State exactly what the answer should look like and what to leave out.
+- For coding work, name the files, the expected change and how to verify it.

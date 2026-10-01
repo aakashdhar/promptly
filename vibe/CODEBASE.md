@@ -135,6 +135,9 @@
 | `tests/utils.test.js` | Renderer utility tests, including structured-output validation (email, workflow, video, image) | — |
 | `tests/main.test.js` | main/ module tests: prompt building, Claude runner against a fake CLI (stdin, --model, fallback, errors, timeout, cancel), config, logger, binaries, Whisper helpers, tray icon | — |
 | `tests/launch.test.js` | Launch splash: packaged and loaded, offline with a strict CSP and no preload, `finishSplash` covers the whole intro, version and status elements, reduced motion | — |
+| `src/renderer/components/PromptTargetPicker.jsx` | "For: Claude ▾" in a finished prompt's header (Prompt, Code, Design). Picking Gemini, ChatGPT, Grok or Standard rewrites the prompt for that AI via `retarget-prompt`; versions are cached by `hooks/usePromptTargets.js` and kept on the history entry (`getTargetVersions`/`saveTargetVersion`). Targets come from `shared/modes.json` `promptTargets`; an empty list hides it. | `retargetPrompt` |
+| `main/prompts/retarget.txt`, `target-*.txt` | The rewrite instruction and one guide per AI (Gemini, OpenAI, Grok, Standard), built by `buildRetargetPrompt` | — |
+| `tests/targets.test.js` | Prompt targets: guides exist, the rewrite keeps the prompt and what you said, history keeps the versions | — |
 | `tests/ipc-contract.test.js` | Fails if preload and main IPC drift apart, or the renderer/splash calls a method preload doesn't expose | — |
 | `e2e/app.spec.mjs` | Playwright tests that drive the real app with fake claude/whisper scripts and Chromium's fake mic | 7 flows (typing, abort, dropdown, hotkey + voice, hide-on-blur, retry tone, ffmpeg path) |
 | `playwright.config.mjs` | Playwright config — testDir e2e, 1 worker | — |
