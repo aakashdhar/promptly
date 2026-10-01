@@ -365,6 +365,97 @@
   </div>
 </section>
 
+<!-- ============ ANY AI: one prompt, rewritten per AI ============ -->
+<section class="anyai" id="any-ai" aria-labelledby="anyai-title">
+  <div class="wrap anyai-grid">
+    <div>
+      <h2 id="anyai-title" class="split-head">One prompt. Any AI.</h2>
+      <p class="sub">Promptly writes for Claude first. Pick Gemini, ChatGPT or Grok and it rewrites the same prompt the way that AI reads best, with every detail kept. Standard is one version that works on all of them.</p>
+      <p class="sub">You don’t need a key for any of them: the prompt is only reformatted, by the AI Promptly already uses.</p>
+      <div class="anyai-tabs" role="tablist" aria-label="Written for" hidden>
+          <button class="sw" type="button" role="tab" id="anyai-tab-claude" aria-selected="true" aria-controls="anyai-panel" tabindex="0" data-target="claude" data-label="Claude">Claude</button>
+          <button class="sw" type="button" role="tab" id="anyai-tab-gemini" aria-selected="false" aria-controls="anyai-panel" tabindex="-1" data-target="gemini" data-label="Gemini">Gemini</button>
+          <button class="sw" type="button" role="tab" id="anyai-tab-chatgpt" aria-selected="false" aria-controls="anyai-panel" tabindex="-1" data-target="chatgpt" data-label="ChatGPT">ChatGPT</button>
+          <button class="sw" type="button" role="tab" id="anyai-tab-grok" aria-selected="false" aria-controls="anyai-panel" tabindex="-1" data-target="grok" data-label="Grok">Grok</button>
+          <button class="sw" type="button" role="tab" id="anyai-tab-standard" aria-selected="false" aria-controls="anyai-panel" tabindex="-1" data-target="standard" data-label="Standard">Standard</button>
+      </div>
+    </div>
+    <div class="art anyai-card" style="--lane:#2A3FC9">
+      <header class="art-head"><span class="art-dot"></span><h3 class="art-kind">Support dashboard</h3><span class="art-dest" id="anyai-dest">written for Claude</span></header>
+      <pre class="anyai-text" id="anyai-panel" role="tabpanel" aria-labelledby="anyai-tab-claude" tabindex="0">Goal:
+Build a small internal dashboard that pulls support tickets from Zendesk every five minutes, groups them by product area, and highlights anything waiting more than four hours.
+
+Context:
+The support lead wants a summary email at 9am.
+
+Requirements:
+- Sync every five minutes; a failed sync retries on the next run.
+- Group by product area, with a count per group.
+- Flag tickets waiting over four hours at the top of each group.
+
+Success criteria:
+- A ticket waiting 4 hours and 1 minute is flagged; one at 3 hours 59 is not.
+- No email addresses end up in the database.</pre>
+      <div class="anyai-busy" aria-hidden="true"><span class="anyai-hop"><i></i><i></i><i></i></span><span class="anyai-busy-text">Rewriting</span></div>
+    </div>
+    <template id="anyai-gemini">## Task
+Build an internal dashboard that pulls Zendesk support tickets every five minutes, groups them by product area and flags any waiting more than four hours.
+
+## Context
+The support lead gets a summary email at 9am.
+
+## Constraints
+- Sync every 5 minutes; retry a failed sync on the next run.
+- One count per product area.
+- Flagged tickets (waiting over 4 h) first in each group.
+- Store no email addresses.
+
+## Output format
+A short plan, then the code for each step with its tests. Check: 4 h 01 m is flagged, 3 h 59 m is not.</template>
+    <template id="anyai-chatgpt">Build the internal support dashboard described below. Follow every requirement exactly.
+
+### Goal
+Pull Zendesk tickets every five minutes, group them by product area, and flag anything waiting more than four hours.
+
+### Requirements
+- Sync every five minutes. If a sync fails, retry on the next run.
+- Show a count per product area, flagged tickets at the top.
+- Do not store customer email addresses.
+
+### Output format
+A short plan, then the code for each step with its tests.
+
+### Done when
+A ticket at 4h 01m is flagged and one at 3h 59m is not.</template>
+    <template id="anyai-grok">Build a support dashboard: Zendesk tickets every 5 minutes, grouped by product area, anything waiting 4+ hours flagged.
+
+Context: the support lead gets a 9am summary email.
+
+Requirements:
+- 5-minute sync; retry on the next run if one fails
+- Count per product area, flagged tickets first
+- No email addresses stored
+
+Output: a short plan, then code per step with tests.
+Done when: 4h 01m is flagged, 3h 59m is not.</template>
+    <template id="anyai-standard">Build an internal dashboard for Zendesk support tickets.
+
+## Goal
+Pull tickets every five minutes, group them by product area, and flag anything waiting more than four hours.
+
+## Requirements
+- Sync every five minutes; retry a failed sync on the next run.
+- Show a count per product area, flagged tickets first.
+- Store no email addresses.
+
+## Output format
+A short plan, then the code for each step with its tests.
+
+## Success criteria
+A ticket at 4h 01m is flagged; one at 3h 59m is not.</template>
+  </div>
+</section>
+
 <!-- ============ FILM ============ -->
 <section class="film" id="film" aria-labelledby="film-title">
   <div class="wrap film-head">

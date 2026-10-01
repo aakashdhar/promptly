@@ -293,6 +293,48 @@
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(layoutStage);
 
   /* ====================================================================
+     One prompt, any AI: the tabs show the same prompt as each AI's version, with the app's
+     "Rewriting for …" moment the first time, and instantly after that (as in the app). Without
+     JS the Claude version shows on its own.
+     ==================================================================== */
+  const anyTabs = $('.anyai-tabs');
+  if (anyTabs) {
+    const card = $('.anyai-card');
+    const text = $('#anyai-panel');
+    const dest = $('#anyai-dest');
+    const busyText = $('.anyai-busy-text');
+    const versions = { claude: text.textContent };
+    $$('template[id^="anyai-"]').forEach((t) => { versions[t.id.slice('anyai-'.length)] = t.content.textContent; });
+    const seen = new Set(['claude']);
+    const tabs = $$('[role="tab"]', anyTabs);
+    let timer = null;
+    const select = (tab) => {
+      tabs.forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+      const key = tab.dataset.target;
+      const label = key === 'standard' ? 'any AI' : tab.dataset.label;
+      text.setAttribute('aria-labelledby', tab.id);
+      clearTimeout(timer);
+      const show = () => { card.classList.remove('is-busy'); text.textContent = versions[key]; dest.textContent = `written for ${label}`; seen.add(key); };
+      if (reduce || seen.has(key)) { show(); return; }
+      busyText.textContent = `Rewriting for ${label}`;
+      card.classList.add('is-busy');
+      timer = setTimeout(show, 1000);
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', (e) => {
+        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        e.preventDefault();
+        const next = tabs[(i + step + tabs.length) % tabs.length];
+        next.focus();
+        select(next);
+      });
+    });
+    anyTabs.hidden = false;
+  }
+
+  /* ====================================================================
      Films: play muted on a loop while on screen, pause when scrolled away. With reduced motion
      they wait for the button. Works with or without the motion libraries.
      ==================================================================== */
