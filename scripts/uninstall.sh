@@ -41,6 +41,11 @@ if [ "${1:-}" = "--yes" ]; then
     [ -e "$d" ] && LEFT+=("$d")
   done
   tccutil reset Microphone "$BUNDLE_ID" >/dev/null 2>&1 || true
+  # The Keychain entry that encrypts saved API keys (only there if a key was ever saved). Electron
+  # names it after the app's package name ("promptly"); Keychain names are case-sensitive.
+  for service in "promptly Safe Storage" "Promptly Safe Storage"; do
+    security delete-generic-password -s "$service" >/dev/null 2>&1 || true
+  done
 
   if [ -n "$APP" ] && [ -e "$APP" ]; then
     rm -rf "$APP" 2>/dev/null
@@ -136,6 +141,14 @@ fi
 # Step 7 — reset TCC microphone permission
 echo -n "  Removing microphone permission... "
 tccutil reset Microphone "$BUNDLE_ID" 2>/dev/null && echo "✓" || echo "✓ (not needed)"
+
+# Step 8 — the Keychain entry that encrypts saved API keys (only there if a key was ever saved)
+echo -n "  Removing saved API key encryption... "
+KEYCHAIN_GONE=""
+for service in "promptly Safe Storage" "Promptly Safe Storage"; do
+  security delete-generic-password -s "$service" >/dev/null 2>&1 && KEYCHAIN_GONE=1
+done
+[ -n "$KEYCHAIN_GONE" ] && echo "✓" || echo "✓ (not found)"
 
 echo ""
 echo "  ─────────────────────────────────────"

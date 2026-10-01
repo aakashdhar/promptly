@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, clipboard, Menu, Tray, nativeImage, nativeTheme, shell, dialog, session, screen, Notification, systemPreferences, safeStorage } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -10,7 +10,10 @@ const { createConfigStore } = require('./main/config');
 const { createLogger } = require('./main/log');
 const platform = require('./main/platform');
 const { resolveClaudePath, resolveWhisperPath, resolveFfmpegPath } = require('./main/binaries');
-const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, parseJsonOutput } = require('./main/llm');
+const { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, createClaudeReadiness, parseJsonOutput } = require('./main/llm');
+const { createApiRunner, listModels } = require('./main/ai-api');
+const { PROVIDERS, PROVIDER_IDS, pickModels } = require('./main/ai-providers');
+const { createSecrets } = require('./main/secrets');
 const { createWhisperRunner, findDownloadedModel, whisperCommand } = require('./main/whisper');
 const { createSpeechModels, SPEECH_LANGUAGES } = require('./main/speech-models');
 const { createQuietDetector } = require('./main/audio-level');
@@ -154,30 +157,79 @@ function claudeModel() {
   return !stored || RETIRED_DEFAULTS.includes(stored) ? DEFAULT_MODEL : stored;
 }
 
+// ── Who answers: Claude Code by default, the user's own API key otherwise (D-AI-PROVIDERS) ──
+
+// Tests never touch the real Keychain, and send API calls to a local stand-in server.
+const e2eSafeStorage = {
+  isEncryptionAvailable: () => true,
+  encryptString: (s) => Buffer.from(`e2e:${s}`),
+  decryptString: (b) => Buffer.from(b).toString().replace(/^e2e:/, ''),
+};
+const secrets = createSecrets({ safeStorage: IS_E2E ? e2eSafeStorage : safeStorage });
+const aiFetch = IS_E2E && process.env.PROMPTLY_AI_BASE_URL
+  ? (url, opts) => globalThis.fetch(String(url).replace(/^https:\/\/[^/]+(\/v1beta\/openai|\/v1)/, process.env.PROMPTLY_AI_BASE_URL), opts)
+  : undefined;
+// The saved key for the chosen provider, decrypted only when a call needs it; null without one.
+function apiSettings() {
+  const stored = config.read();
+  const provider = stored.apiProvider;
+  if (!provider || !PROVIDERS[provider]) return null;
+  const key = secrets.decrypt(stored.apiKeys?.[provider]);
+  if (!key) return null;
+  const { model = '', fastModel = '' } = stored.apiModels?.[provider] || {};
+  return { provider, key, model, fastModel };
+}
+const hasApiKey = () => !!apiSettings();
+const aiMode = () => (['auto', 'claude', 'api'].includes(config.read().aiMode) ? config.read().aiMode : 'auto');
+// Claude Code is ready when it's installed and signed in (createClaudeReadiness in main/llm.js).
+// Without a saved key none of this matters: the router always picks Claude Code.
+const claudeReadiness = createClaudeReadiness({
+  getClaudePath: () => claudePath,
+  setClaudePath: (p) => { claudePath = p; },
+  resolvePath: () => resolveClaudePath(config.read().claudePath),
+  getStatus: (p) => claudeSetup.getClaudeStatus(p),
+});
+const isClaudeReady = claudeReadiness.isReady;
+const noteClaudeStatus = claudeReadiness.note;
+const routerOptions = {
+  getMode: aiMode,
+  isClaudeReady,
+  hasKey: hasApiKey,
+  onClaudeUnavailable: claudeReadiness.unavailable,
+  // While the key is answering in Automatic, look at Claude Code again in the background (never
+  // holding up the call), so it takes over again once it's ready. "My API key" means the key.
+  onApiRoute: () => { if (aiMode() === 'auto') claudeReadiness.recheckIfStale(); },
+};
+
 // Claude and Whisper processes behind the current operation, so an abort can stop them.
 const activeChildren = new Set();
-const claude = createClaudeRunner({
+const claudeCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
   onSlow: () => winSend('generation-slow-warning'),
   children: activeChildren,
 });
+const apiMain = createApiRunner({ getSettings: apiSettings, fetchImpl: aiFetch });
+const claude = createAiRouter({ claude: claudeCli, api: apiMain, ...routerOptions });
 // The eval scorecard runs alongside the prompt screen; aborting a new prompt must not kill it.
-const evalClaude = createClaudeRunner({
+const evalCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: claudeModel,
 });
+const evalClaude = createAiRouter({ claude: evalCli, api: createApiRunner({ getSettings: apiSettings, fetchImpl: aiFetch }), ...routerOptions });
 // Dictation clean-up (D-DICTATION-CLEANUP) always uses Sonnet, whatever model Craft uses: in
 // tests Haiku couldn't rebuild misheard Indian names ("super nah" → Supranaah; Sonnet: Suparna)
 // and was only about a second faster. Its processes count as the current operation, so a cancel
 // stops them too.
 const DICTATION_CLEANUP_MODEL = 'sonnet';
 const DICTATION_CLEANUP_TIMEOUT_MS = 12000;
-const cleanupClaude = createClaudeRunner({
+const cleanupCli = createClaudeRunner({
   getClaudePath: () => claudePath,
   getModel: () => DICTATION_CLEANUP_MODEL,
   children: activeChildren,
 });
+// On a key it uses the provider's fast model; it shares the main API runner, so a cancel stops it.
+const cleanupClaude = createAiRouter({ claude: cleanupCli, api: apiMain, apiOptions: { fast: true }, ...routerOptions });
 // "Best accuracy" speech model, downloaded on request into userData/models.
 // Tests serve a small stand-in model locally with PROMPTLY_SPEECH_MODEL.
 const speechModels = createSpeechModels({
@@ -322,7 +374,7 @@ async function typeIntoApp(text) {
 // the same text with a few fixes; otherwise, or when Claude is missing, slow or signed out, the
 // local text is typed as before.
 async function cleanUpDictation(text) {
-  if (!claudePath) return { text, outcome: 'no Claude' };
+  if (cleanupClaude.active() === 'claude' && !claudePath) return { text, outcome: 'no Claude' };
   const started = Date.now();
   const country = countryFromLocale(app.getSystemLocale?.());
   const result = await cleanupClaude.run(buildDictationCleanupPrompt(text, dictionaryWords(), { country }), { timeoutMs: DICTATION_CLEANUP_TIMEOUT_MS, slowWarningMs: 0, thinking: false });
@@ -1090,6 +1142,9 @@ async function needsSetup() {
   if (!config.read().setupComplete) return true;
   if (!whisper.engine()) return true;
   const status = await claudeSetup.getClaudeStatus(claudePath);
+  noteClaudeStatus(status);
+  // Someone who uses their own API key instead of Claude Code doesn't need Claude Code set up.
+  if (aiMode() !== 'claude' && hasApiKey()) return false;
   return !status.installed || status.loggedIn === false;
 }
 
@@ -1198,7 +1253,9 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('claude-status', async () => {
     if (!claudePath) claudePath = await resolveClaudePath(config.read().claudePath);
-    return claudeSetup.getClaudeStatus(claudePath);
+    const status = await claudeSetup.getClaudeStatus(claudePath);
+    noteClaudeStatus(status);
+    return status;
   });
 
   // What the setup screen says for this system, and anything that stops setup working on it:
@@ -1442,10 +1499,24 @@ app.whenReady().then(async () => {
   let lastHarnessFiles = null; // { run, schedule, files } from the last harness-files result
   let lastSavedHarness = null; // { dir, run } from the last Save to project…
 
+  // Harness runs on Claude Code only (D-AI-PROVIDERS): its files and schedules are built for
+  // Claude Code, so an API key can't stand in. When prompts go to a key, it says so instead.
+  // Only when the person chose their key, or has a key and no Claude Code. Otherwise Harness runs
+  // on Claude Code as before, even if an earlier call fell back to the key.
+  const harnessNeedsClaude = () => hasApiKey() && (aiMode() === 'api' || !claudePath);
+  const harnessNeedsClaudeResult = () => ({
+    success: false,
+    errorType: 'needs-claude',
+    error: aiMode() === 'api'
+      ? 'Harness needs Claude Code. Choose Automatic or Claude Code in Settings › AI.'
+      : 'Harness needs Claude Code. Set it up in Settings › Setup.',
+  });
+
   ipcMain.handle('harness-plan', async (_event, { transcript, context = {} } = {}) => {
     const stored = config.read();
     const block = buildContextBlock(getMode('harness'), { ...context, ...profileFor(getMode('harness'), stored), dictionary: dictionaryWords() });
-    const result = await claude.run(harness.buildPlanPrompt(String(transcript || ''), block), { timeoutMs: 120000, slowWarningMs: 45000 });
+    if (harnessNeedsClaude()) return harnessNeedsClaudeResult();
+    const result = await claudeCli.run(harness.buildPlanPrompt(String(transcript || ''), block), { timeoutMs: 120000, slowWarningMs: 45000 });
     if (!result.success) return result;
     const plan = harness.parsePlan(result.prompt);
     return plan ? { success: true, plan } : { success: false, error: "Couldn't map that into a harness. Try describing it again.", errorType: 'parse' };
@@ -1457,7 +1528,8 @@ app.whenReady().then(async () => {
     // Thinking is off here: with it on, a pipeline's files took minutes longer and came out no
     // better. The window still shows each file as it's finished.
     const onDelta = throttledDelta(250, harness.progressText);
-    const result = await claude.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
+    if (harnessNeedsClaude()) return harnessNeedsClaudeResult();
+    const result = await claudeCli.run(harness.buildFilesPrompt({ transcript: String(transcript || ''), plan, answers: answers || {} }), { timeoutMs: 300000, slowWarningMs: 90000, onDelta, thinking: false });
     if (!result.success) return result;
     const parsed = harness.parseFiles(result.prompt);
     lastHarnessFiles = parsed;
@@ -1550,7 +1622,8 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('evaluate-prompt', async (_event, { transcript, prompt } = {}) => {
-    if (!claudePath || !transcript || !prompt) return { success: false };
+    // Claude Code needs its path; a saved key doesn't (D-AI-PROVIDERS).
+    if ((evalClaude.active() === 'claude' && !claudePath) || !transcript || !prompt) return { success: false };
     const result = await evalClaude.run(buildEvalPrompt(transcript, prompt), { timeoutMs: 30000, slowWarningMs: 0 });
     if (!result.success) return { success: false };
     try {
@@ -1690,6 +1763,111 @@ app.whenReady().then(async () => {
 
   // ── Tool checks (setup wizard + Settings) ──
 
+  // ── AI provider (D-AI-PROVIDERS) ──
+  // A key goes in once (save-ai-key) and never comes back out: the windows only learn which
+  // providers have a key and its last four characters. Keys are never logged.
+
+  function aiSettingsView() {
+    const stored = config.read();
+    const keys = {};
+    for (const id of PROVIDER_IDS) {
+      const key = secrets.decrypt(stored.apiKeys?.[id]);
+      keys[id] = { saved: !!key, last4: key ? key.slice(-4) : '' };
+    }
+    return {
+      mode: aiMode(),
+      provider: PROVIDERS[stored.apiProvider] ? stored.apiProvider : null,
+      providers: PROVIDER_IDS.map((id) => ({ id, label: PROVIDERS[id].label, keysUrl: PROVIDERS[id].keysUrl, keyHint: PROVIDERS[id].keyHint })),
+      keys,
+      models: stored.apiModels || {},
+      // Asking macOS whether it can encrypt reads (or creates) a "promptly Safe Storage" Keychain
+      // item, so it only happens once a key is stored; save-ai-key checks for real when saving.
+      canStoreKeys: Object.values(stored.apiKeys || {}).some(Boolean) ? secrets.available() : true,
+      claudeReady: isClaudeReady(),
+      active: claude.active(),
+    };
+  }
+
+  ipcMain.handle('get-ai-settings', () => aiSettingsView());
+
+  // Checks the key by listing the provider's models, then saves it encrypted with the picked models.
+  // claudeUnavailable: saved from the setup screen while Claude Code isn't working (missing, signed
+  // out, not responding), so the key takes over now instead of after a failed call.
+  ipcMain.handle('save-ai-key', async (event, { provider, key, claudeUnavailable = false } = {}) => {
+    if (!fromWindow(event, win, splashWin)) return { ok: false, error: 'Not allowed from this window.' };
+    if (!PROVIDERS[provider]) return { ok: false, error: 'Unknown AI provider.' };
+    const trimmed = String(key || '').trim();
+    const check = await listModels(provider, trimmed, { fetchImpl: aiFetch });
+    // Here the person is looking at the key they just pasted, so "check it in Settings" won't help.
+    if (!check.ok) return { ok: false, error: check.errorType === 'auth' ? `${PROVIDERS[provider].label} refused this key. Check you copied all of it.` : check.error };
+    let encrypted;
+    try { encrypted = secrets.encrypt(trimmed); } catch (err) { return { ok: false, error: err.message }; }
+    const picked = pickModels(check.models, provider);
+    const stored = config.read();
+    config.update({
+      apiProvider: provider,
+      apiKeys: { ...(stored.apiKeys || {}), [provider]: encrypted },
+      apiModels: { ...(stored.apiModels || {}), [provider]: { model: picked.model, fastModel: picked.fastModel } },
+    });
+    log.info(`AI key saved for ${PROVIDERS[provider].label}; model ${picked.model}, fast ${picked.fastModel}`);
+    if (claudeUnavailable) claudeReadiness.unavailable('broken');
+    return { ok: true, models: picked.models, settings: aiSettingsView() };
+  });
+
+  ipcMain.handle('remove-ai-key', (event, provider) => {
+    if (!fromWindow(event, win, splashWin)) return { ok: false };
+    if (!PROVIDERS[provider]) return { ok: false };
+    const stored = config.read();
+    const apiKeys = { ...(stored.apiKeys || {}) };
+    delete apiKeys[provider];
+    // Removing the key in use switches to another saved key if there is one; with none left,
+    // "My API key" goes back to Automatic (Claude Code).
+    const patch = { apiKeys };
+    if (stored.apiProvider === provider) {
+      const other = PROVIDER_IDS.find((id) => apiKeys[id]);
+      if (other) patch.apiProvider = other;
+      else if (stored.aiMode === 'api') patch.aiMode = 'auto';
+    }
+    config.update(patch);
+    log.info(`AI key removed for ${PROVIDERS[provider].label}`);
+    return { ok: true, settings: aiSettingsView() };
+  });
+
+  ipcMain.handle('set-ai-settings', (event, { mode, provider, model, fastModel } = {}) => {
+    if (!fromWindow(event, win, splashWin)) return aiSettingsView();
+    const stored = config.read();
+    const patch = {};
+    // "My API key" only makes sense with a key saved; without one it would send every call nowhere.
+    if (['auto', 'claude'].includes(mode) || (mode === 'api' && hasApiKey())) patch.aiMode = mode;
+    // The provider in use is always one with a saved key (saving a key makes it the one in use).
+    if (PROVIDERS[provider] && stored.apiKeys?.[provider]) patch.apiProvider = provider;
+    const target = patch.apiProvider || stored.apiProvider;
+    if (PROVIDERS[target] && (typeof model === 'string' || typeof fastModel === 'string')) {
+      const current = stored.apiModels?.[target] || {};
+      patch.apiModels = { ...(stored.apiModels || {}), [target]: { ...current, ...(typeof model === 'string' && { model }), ...(typeof fastModel === 'string' && { fastModel }) } };
+    }
+    if (Object.keys(patch).length) config.update(patch);
+    return aiSettingsView();
+  });
+
+  // The chat models the saved key can use, best first.
+  ipcMain.handle('list-ai-models', async (_event, provider) => {
+    if (!PROVIDERS[provider]) return { ok: false, models: [], error: 'Unknown AI provider.' };
+    const key = secrets.decrypt(config.read().apiKeys?.[provider]);
+    if (!key) return { ok: false, models: [], error: `No ${PROVIDERS[provider].label} key saved.` };
+    const check = await listModels(provider, key, { fetchImpl: aiFetch });
+    return check.ok ? { ok: true, models: pickModels(check.models, provider).models } : { ok: false, models: [], error: check.error };
+  });
+
+  // A tiny request to whoever answers prompts now: Claude Code or the saved key.
+  ipcMain.handle('test-ai', async () => {
+    const started = Date.now();
+    const result = await evalClaude.run('respond with only the word READY', { timeoutMs: 20000, slowWarningMs: 0 });
+    const ok = !!result.success && /ready/i.test(result.prompt || '');
+    const who = result.provider === 'claude' ? 'Claude Code' : PROVIDERS[result.provider]?.label || 'AI';
+    return { ok, provider: who, model: result.model || null, ms: Date.now() - started, error: ok ? null : result.error || `${who} gave an unexpected answer` };
+  });
+
   ipcMain.handle('check-claude', async () => {
     const resolvedPath = claudePath || await resolveClaudePath(config.read().claudePath);
     if (!resolvedPath) {
@@ -1697,11 +1875,17 @@ app.whenReady().then(async () => {
     }
     claudePath = resolvedPath;
 
-    const version = await evalClaude.version();
+    const version = await evalCli.version();
 
-    const test = await evalClaude.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
+    // This checks Claude Code itself, whichever provider is answering prompts.
+    const test = await evalCli.run('respond with only the word READY', { timeoutMs: 15000, slowWarningMs: 0 });
     const working = test.success && test.prompt.toLowerCase().includes('ready');
     const authError = test.errorType === 'auth';
+    // A working answer means ready; a sign-in error or a broken CLI means not. A timeout (a cold
+    // start can be slow) decides nothing.
+    if (working) claudeReadiness.working();
+    else if (authError) claudeReadiness.unavailable('auth');
+    else if (!test.timedOut) claudeReadiness.unavailable('broken');
     let error = null;
     if (!working) {
       if (test.timedOut) error = 'Claude is not responding (timed out after 15s)';

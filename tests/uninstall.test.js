@@ -20,7 +20,7 @@ beforeAll(() => {
   // Stand-ins for the system tools the script calls, so the test never touches the real Mac.
   stubs = path.join(tmp, 'bin')
   fs.mkdirSync(stubs)
-  for (const tool of ['tccutil', 'osascript', 'open']) {
+  for (const tool of ['tccutil', 'osascript', 'open', 'security']) {
     fs.writeFileSync(path.join(stubs, tool), `#!/bin/bash\necho "$0 $*" >> "${path.join(tmp, 'calls.log')}"\nexit 0\n`, { mode: 0o755 })
   }
 })
@@ -91,6 +91,10 @@ describe.skipIf(process.platform === 'win32')('uninstall runs after Promptly has
     expect(fs.existsSync(app)).toBe(false)
     expect(fs.existsSync(data)).toBe(false)
     expect(calls()).toMatch(/tccutil reset Microphone io\.betacraft\.promptly/)
+    // The Keychain entry that encrypts saved API keys (D-AI-PROVIDERS) goes too. Electron names it
+    // after package.json's "name" (lowercase); the capitalised spelling is removed as well.
+    expect(calls()).toMatch(/security delete-generic-password -s promptly Safe Storage/)
+    expect(calls()).toMatch(/security delete-generic-password -s Promptly Safe Storage/)
   }, 30000)
 
   it('asks Finder to move the app to the Bin when it cannot be deleted directly', async () => {

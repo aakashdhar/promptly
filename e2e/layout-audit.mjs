@@ -29,6 +29,9 @@ function auditInPage({ edgeMin, minFont }) {
     for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
       const s = getComputedStyle(n)
       if (s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) < 0.05) return false
+      // A closed <details> shows only its <summary>; Chromium still gives the rest a box.
+      const p = n.parentElement
+      if (p && p.tagName === 'DETAILS' && !p.open && n.tagName !== 'SUMMARY') return false
     }
     const r = el.getBoundingClientRect()
     return r.width > 0.5 && r.height > 0.5

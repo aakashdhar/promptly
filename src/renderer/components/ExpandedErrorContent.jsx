@@ -36,6 +36,22 @@ export default function ExpandedErrorContent({
 
   if (currentState === 'GENERATION_ERROR') {
     const err = generationErrorProps || {}
+    // Your own API key answered (D-AI-PROVIDERS): its message already names the provider and says
+    // what to do; the Claude Code fixes below don't apply. Settings › AI is one click away.
+    if (err.provider && err.provider !== 'claude') {
+      const apiIcons = { auth: 'lock', 'no-key': 'lock', timeout: 'clock', rate: 'clock', empty: 'warning', offline: 'warning' }
+      const apiHints = { auth: 'Paste a new key in Settings › AI, or switch to Claude Code there.', rate: 'Wait a minute, or use another model or provider in Settings › AI.', offline: 'Promptly needs the internet to reach your AI provider.' }
+      return (
+        <OperationErrorPanel
+          icon={apiIcons[err.errorType] || 'error'}
+          title={err.error || 'Your AI provider returned an error'}
+          body={apiHints[err.errorType] || null}
+          onRetry={err.onRetry}
+          onOpenSettings={err.onOpenSettings}
+          settingsHint="Open Settings › AI to check your key or pick another model."
+        />
+      )
+    }
     const errorType = err.errorType || 'unknown'
     const isUnknown = errorType === 'unknown'
     const isAuth = errorType === 'auth'

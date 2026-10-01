@@ -180,6 +180,56 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
   expect(stdin).toContain('<transcript>\nmake a todo app with dark mode\n</transcript>')
 })
 
+// D-AI-PROVIDERS: with your own key chosen, the prompt comes from the API, not Claude Code.
+// A stand-in OpenAI API runs in this test; the app sends its API calls there (PROMPTLY_AI_BASE_URL)
+// and, in tests, keeps keys out of the real Keychain.
+test('your own API key writes the prompt when you choose it, and Claude Code never runs', async () => {
+  const requests = []
+  const server = http.createServer((req, res) => {
+    let body = ''
+    req.on('data', (d) => { body += d })
+    req.on('end', () => {
+      requests.push({ url: req.url, auth: req.headers.authorization, body: body ? JSON.parse(body) : null })
+      if (req.url.endsWith('/models')) {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ data: [{ id: 'gpt-5' }, { id: 'gpt-5-mini' }] }))
+        return
+      }
+      const text = 'Goal: a todo app with dark mode, written by the API'
+      if (JSON.parse(body).stream) {
+        res.writeHead(200, { 'content-type': 'text/event-stream' })
+        res.end(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`)
+      } else {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ choices: [{ message: { content: text } }] }))
+      }
+    })
+  })
+  await new Promise((r) => server.listen(0, '127.0.0.1', r))
+  try {
+    ctx = await launch({ env: { PROMPTLY_AI_BASE_URL: `http://127.0.0.1:${server.address().port}` } })
+    const { page, fakeDir } = ctx
+    const saved = await page.evaluate(() => window.electronAPI.saveAiKey('openai', 'sk-e2e-key'))
+    expect(saved.ok).toBe(true)
+    expect(JSON.stringify(saved)).not.toContain('sk-e2e-key')
+    expect(saved.settings.keys.openai).toEqual({ saved: true, last4: '-key' })
+    await page.evaluate(() => window.electronAPI.setAiSettings({ mode: 'api' }))
+
+    await typeAndSubmit(page, 'make a todo app with dark mode')
+    await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('written by the API').first()).toBeVisible()
+
+    expect(calls(fakeDir)).toEqual([])
+    const chat = requests.find((r) => r.url.endsWith('/chat/completions'))
+    expect(chat.auth).toBe('Bearer sk-e2e-key')
+    expect(chat.body.model).toBe('gpt-5')
+    expect(chat.body.messages.at(-1).content).toContain('<transcript>\nmake a todo app with dark mode\n</transcript>')
+  } finally {
+    server.closeAllConnections?.()
+    server.close()
+  }
+})
+
 test('⌘T opens the typing box from Settings too, but never interrupts a recording', async () => {
   ctx = await launch()
   const { app, page } = ctx
@@ -675,8 +725,10 @@ test('Dictation (the default) types what you said into your app, and gives your 
     // Typed via ⌘V with exactly what was said, minus um/uh, with the paragraph break.
     await expect.poll(() => fs.existsSync(path.join(fakeDir, 'pasted'))).toBe(true)
     expect(fs.readFileSync(path.join(fakeDir, 'pasted'), 'utf8')).toBe('So ship it on Friday.\n\nThanks everyone.')
-    // No Claude call, the window stays out of the way, and the clipboard is yours again.
-    expect(calls(fakeDir)).toEqual([])
+    // One Claude call: the clean-up that fixes misheard words (D-DICTATION-CLEANUP; the stand-in
+    // hands the text back unchanged). The window stays out of the way, and the clipboard is yours again.
+    expect(calls(fakeDir)).toHaveLength(1)
+    expect(await lastStdin(fakeDir)).toContain('You fix speech-to-text mistakes')
     expect((await mainWindow(app)).visible).toBe(false)
     expect(await app.evaluate(() => globalThis.__promptlyE2E.pillState())).toMatchObject({ state: 'dictated', typed: true })
     await expect.poll(() => readClipboard(app)).toBe('what I copied earlier')
@@ -696,15 +748,17 @@ test('"Make it a prompt" from the pill turns the dictation into a prompt, and ba
     await expect(page.getByRole('tab', { name: 'As a prompt' })).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
     const stdin = fs.readFileSync(path.join(fakeDir, calls(fakeDir).at(-1).replace('.args', '.stdin')), 'utf8')
     expect(stdin).toContain('You turn a rough, spoken request into a prompt for Claude')
-    expect(stdin).toContain('<transcript>\na script that renames my screenshots by date\n</transcript>')
+    // The clean-up (D-DICTATION-CLEANUP) starts the sentence with a capital before it's made a prompt.
+    expect(stdin).toContain('<transcript>\nA script that renames my screenshots by date\n</transcript>')
     await expect.poll(() => readClipboard(app)).toContain('Task:')
 
     // Back to the words as spoken, and to the prompt again, without asking Claude twice.
     await page.getByRole('tab', { name: 'As I said it' }).click()
-    await expect(page.locator('#prompt-output')).toHaveText('a script that renames my screenshots by date')
+    await expect(page.locator('#prompt-output')).toHaveText('A script that renames my screenshots by date')
     await page.getByRole('tab', { name: 'As a prompt' }).click()
     await expect(page.locator('#prompt-output')).toContainText('You are a test assistant.')
-    expect(calls(fakeDir)).toHaveLength(1)
+    // Two calls in all: the dictation's clean-up, then the prompt, made once.
+    expect(calls(fakeDir)).toHaveLength(2)
   })
 })
 

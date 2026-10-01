@@ -194,4 +194,107 @@ function parseJsonOutput(raw) {
   }
 }
 
-module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createStreamParser, classifyError, parseJsonOutput };
+// Why a finished Claude call means Claude Code can't answer right now, or null. Timeouts (a cold
+// start can be slow) and cancels never count; neither does an ordinary error.
+function claudeUnavailable(result) {
+  if (!result || result.success || result.cancelled || result.errorType === 'timeout' || result.errorType === 'cancelled') return null;
+  if (result.errorType === 'auth') return 'auth';
+  const text = String(result.error || '');
+  if (/usage limit|hit your limit|credit balance|out of credits|quota/i.test(text)) return 'limit';
+  if (/CLI not found|ENOENT|spawn .* (EACCES|ENOENT)/i.test(text)) return 'broken';
+  return null;
+}
+
+// Picks who answers each call (D-AI-PROVIDERS): Claude Code by default; the user's own API key
+// when Claude Code isn't ready (mode 'auto') or when they chose it (mode 'api'). Without a saved
+// key it is always Claude Code, whatever the mode says. Same run() and result shape either way,
+// plus `provider`. apiOptions are passed to every API call (the Dictation clean-up asks for the
+// fast model). Claude calls go through exactly as before.
+// In Automatic with a key, a Claude call turned away (sign-in, usage limit or credit, Claude Code
+// missing) is answered by the key instead, so the person never sees it fail; onApiRoute lets the
+// app look at Claude Code again in the background, never holding up the call.
+function createAiRouter({ claude, api, getMode = () => 'auto', isClaudeReady = () => true, hasKey = () => false, apiOptions = {}, onClaudeUnavailable = () => {}, onApiRoute = () => {} }) {
+  function active() {
+    if (!hasKey()) return 'claude';
+    const mode = getMode();
+    if (mode === 'claude') return 'claude';
+    if (mode === 'api') return 'api';
+    return isClaudeReady() ? 'claude' : 'api';
+  }
+  const callApi = (prompt, opts) => api.run(prompt, { timeoutMs: opts.timeoutMs, onDelta: opts.onDelta, ...apiOptions });
+  async function run(prompt, opts = {}) {
+    if (active() === 'api') {
+      onApiRoute();
+      return callApi(prompt, opts);
+    }
+    const result = await claude.run(prompt, opts);
+    const why = claudeUnavailable(result);
+    if (why) {
+      onClaudeUnavailable(why);
+      if (getMode() === 'auto' && hasKey()) return callApi(prompt, opts);
+    }
+    return { ...result, provider: 'claude' };
+  }
+  function cancelAll() {
+    claude.cancelAll();
+    api.cancelAll();
+  }
+  return { run, cancelAll, active, version: (...a) => claude.version(...a) };
+}
+
+// Whether Claude Code can answer now, for the router (D-AI-PROVIDERS). Only matters to someone
+// with a saved key: without one the router always picks Claude Code.
+// - Unknown until the first status check; then Claude Code counts as ready while it's on disk.
+// - Turned away by a real call (or Check Claude): the key answers for a while (retryMs by reason),
+//   then Claude Code is tried again with a real call. Status checks can't cut that short: `claude
+//   auth status` can say "signed in" for a token Claude rejects. Only a working call can.
+// - Not installed / not signed in by a status check: looked at again in the background, every
+//   recheckMs while Claude Code is on disk, every missingRecheckMs while it isn't (finding it means
+//   a login-shell lookup, so not often). A status check that timed out on an installed Claude Code
+//   decides nothing.
+function createClaudeReadiness({ getClaudePath, setClaudePath = () => {}, resolvePath = async () => null, getStatus, recheckMs = 30000, missingRecheckMs = 300000, retryMs = { auth: 60000, limit: 900000, broken: 600000 }, now = () => Date.now() }) {
+  let ready = null;
+  let lastCheck = -Infinity;
+  let retryAt = 0;
+  let inFlight = null;
+  function isReady() {
+    if (!getClaudePath()) return false;
+    if (ready === false && retryAt && now() >= retryAt) { ready = null; retryAt = 0; }
+    return ready === null ? true : ready;
+  }
+  function note(status) {
+    lastCheck = now();
+    if (retryAt && now() < retryAt) return;
+    // On disk but neither `--version` nor `auth status` answered in time: a slow start, not a verdict.
+    if (status && status.installed === false && status.path) return;
+    ready = !!(status && status.installed && status.loggedIn !== false);
+    retryAt = 0;
+  }
+  function unavailable(reason = 'auth') {
+    ready = false;
+    retryAt = now() + (retryMs[reason] ?? retryMs.auth);
+  }
+  function working() {
+    ready = true;
+    retryAt = 0;
+    lastCheck = now();
+  }
+  // Fire and forget from the router; returns the check's promise for tests.
+  function recheckIfStale() {
+    if (isReady() || retryAt || inFlight) return inFlight || Promise.resolve();
+    if (now() - lastCheck < (getClaudePath() ? recheckMs : missingRecheckMs)) return Promise.resolve();
+    lastCheck = now();
+    inFlight = (async () => {
+      let claudePath = getClaudePath();
+      if (!claudePath) {
+        claudePath = await resolvePath();
+        if (claudePath) setClaudePath(claudePath);
+      }
+      if (claudePath) note(await getStatus(claudePath));
+    })().catch(() => {}).finally(() => { inFlight = null; });
+    return inFlight;
+  }
+  return { isReady, note, unavailable, working, recheckIfStale };
+}
+
+module.exports = { DEFAULT_MODEL, RETIRED_DEFAULTS, createClaudeRunner, createAiRouter, createClaudeReadiness, claudeUnavailable, createStreamParser, classifyError, parseJsonOutput };
