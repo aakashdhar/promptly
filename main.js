@@ -22,10 +22,10 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor, buildDictationCleanupPrompt, countryFromLocale } = require('./main/prompts');
-const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS, PROMPT_TARGETS, buildRetargetPrompt } = require('./main/prompts');
-const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
+const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildLearnFromEditPrompt, buildContextBlock, DETAIL_LEVELS, PROMPT_TARGETS, buildRetargetPrompt } = require('./main/prompts');
+const { createEditLog, profileFor, cleanNotes, formatEdits, newRules, appendRules, removeRules } = require('./main/profile');
 const { tidyDictation, acceptCleanup } = require('./main/dictation');
-const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
+const { parseWords, serializeWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
 const harness = require('./main/harness');
 const { createScheduler } = require('./main/platform/scheduler');
 const { drawMicIconPng, isTemplateState, drawWinTrayIcons } = require('./main/tray-icon');
@@ -298,6 +298,44 @@ const editLog = createEditLog(path.join(app.getPath('userData'), 'style-edits.js
 // keeps mishearing, applied to every transcript.
 function dictionaryWords() {
   return hintWords(parseWords(config.read().dictionary));
+}
+
+// ── Learning from your edits (D-AUTO-LEARN) ──
+// An edit to a result teaches Promptly as it happens: a correction made the same way in two
+// edits goes into Your words, and an edit to an Email or Polish result can add up to two lines
+// to "How you write". Each change is announced in the window with an Undo; Settings › You has
+// the switch ("Learn from my edits").
+const learned = new Map();   // notice id → what its Undo takes back
+let learnSeq = 0;
+
+function announceLearned(kind, text, undo) {
+  const id = ++learnSeq;
+  learned.set(id, undo);
+  if (learned.size > 20) learned.delete(learned.keys().next().value);
+  winSend('learned', { id, kind, text });
+  log.info(`Learned from an edit (${kind})`);
+}
+
+async function learnFromEdit({ mode, before, after }) {
+  if (config.read().autoLearn === false) return;
+  const stored = config.read();
+  for (const s of suggestCorrections(editLog.list(), parseWords(stored.dictionary), stored.dismissedWords || [])) {
+    const words = parseWords(config.read().dictionary);
+    if (words.corrections.some((c) => c.from.toLowerCase() === s.from.toLowerCase())) continue;
+    config.update({ dictionary: serializeWords({ words: words.words, corrections: [...words.corrections, { from: s.from, to: s.to }] }) });
+    announceLearned('word', `${s.from} → ${s.to}`, { kind: 'word', from: s.from });
+  }
+  if (getMode(mode).profile !== 'voice') return;
+  const result = await claude.run(buildLearnFromEditPrompt({ current: cleanNotes(stored.voiceNotes), before, after }), { timeoutMs: 60000 });
+  if (!result.success) { log.warn('Learning from an edit: no answer', { errorType: result.errorType }); return; }
+  // Read again: the notes may have changed (or learning been switched off) while Claude worked.
+  const now = config.read();
+  if (now.autoLearn === false) return;
+  const rules = newRules(result.prompt, now.voiceNotes);
+  const next = rules.length ? appendRules(now.voiceNotes, rules) : null;
+  if (next === null) return;
+  config.update({ voiceNotes: next });
+  announceLearned('style', rules.join(' · '), { kind: 'style', rules });
 }
 
 function correctTranscript(transcript) {
@@ -1322,6 +1360,7 @@ app.whenReady().then(async () => {
       dictationRemoveFillers: stored.dictationRemoveFillers !== false,
       dictationSymbols: stored.dictationSymbols !== false,
       dictationCleanup: stored.dictationCleanup !== false,
+      autoLearn: stored.autoLearn !== false,
       historyHidden: stored.historyHidden === true,
       speech: speechPrefs(),
       launchAtLogin: app.getLoginItemSettings().openAtLogin,
@@ -1341,6 +1380,7 @@ app.whenReady().then(async () => {
     if (typeof prefs.dictationRemoveFillers === 'boolean') patch.dictationRemoveFillers = prefs.dictationRemoveFillers;
     if (typeof prefs.dictationSymbols === 'boolean') patch.dictationSymbols = prefs.dictationSymbols;
     if (typeof prefs.dictationCleanup === 'boolean') patch.dictationCleanup = prefs.dictationCleanup;
+    if (typeof prefs.autoLearn === 'boolean') patch.autoLearn = prefs.autoLearn;
     if (typeof prefs.historyHidden === 'boolean') patch.historyHidden = prefs.historyHidden;
     if (prefs.speechModel === 'standard' || prefs.speechModel === 'accurate') patch.speechModel = prefs.speechModel;
     if (SPEECH_LANGUAGES.some((l) => l.value === prefs.speechLanguage)) patch.speechLanguage = prefs.speechLanguage;
@@ -1390,7 +1430,27 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('record-edit', (_event, { mode, before, after } = {}) => {
     const recorded = editLog.add({ mode, before, after });
+    if (recorded) learnFromEdit({ mode, before, after }).catch((err) => log.warn('Learning from an edit failed', err.message));
     return { recorded, editCount: editLog.count() };
+  });
+
+  // Takes back one thing Promptly learned from an edit (the Undo on the window's notice).
+  ipcMain.handle('undo-learned', (_event, { id } = {}) => {
+    const undo = learned.get(Number(id));
+    if (!undo) return { ok: false };
+    learned.delete(Number(id));
+    const stored = config.read();
+    if (undo.kind === 'style') {
+      config.update({ voiceNotes: removeRules(stored.voiceNotes, undo.rules) });
+    } else {
+      const words = parseWords(stored.dictionary);
+      config.update({
+        dictionary: serializeWords({ words: words.words, corrections: words.corrections.filter((c) => c.from.toLowerCase() !== undo.from.toLowerCase()) }),
+        // Not learned again from the same edits.
+        dismissedWords: [...(stored.dismissedWords || []), undo.from].slice(-100),
+      });
+    }
+    return { ok: true };
   });
 
   // Corrections the user keeps making by hand ("N10" → "n8n"), offered for Your words.

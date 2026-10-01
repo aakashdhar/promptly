@@ -728,6 +728,44 @@ test('edits you make are remembered, and Settings drafts your style notes from t
   await expect(page.getByRole('button', { name: /Suggest from my/ })).toHaveCount(0)
 })
 
+test('an edit teaches Promptly as it happens: How you write grows a line, and Undo takes it back', async () => {
+  ctx = await launch({ mode: 'email' })
+  const { page, fakeDir } = ctx
+  await page.evaluate(() => window.electronAPI.setPreferences({ voiceNotes: '- Short sentences.' }))
+  fs.writeFileSync(path.join(fakeDir, 'learned'), '- Opens with "Hey", not "Hi".')
+  await page.evaluate(() => window.electronAPI.recordEdit('email', 'Hi team,\nThe release moves to Friday.', 'Hey team,\nThe release moves to Friday.'))
+  const notice = page.getByRole('status').filter({ hasText: 'Opens with "Hey", not "Hi".' })
+  await expect(notice).toContainText('Learned from your edit', { timeout: 15000 })
+  expect((await page.evaluate(() => window.electronAPI.getPreferences())).voiceNotes).toBe('- Short sentences.\n- Opens with "Hey", not "Hi".')
+  expect(await lastStdin(fakeDir)).toContain('<after>\nHey team,')
+
+  await notice.getByRole('button', { name: 'Undo' }).click()
+  await expect(notice).toContainText('Undone.')
+  expect((await page.evaluate(() => window.electronAPI.getPreferences())).voiceNotes).toBe('- Short sentences.')
+})
+
+test('a word you correct twice goes into Your words by itself; prompt edits never change How you write', async () => {
+  ctx = await launch()
+  const { page, fakeDir } = ctx
+  fs.writeFileSync(path.join(fakeDir, 'learned'), '- Should never be used for a prompt edit.')
+  const before = calls(fakeDir).length
+  await page.evaluate(() => window.electronAPI.recordEdit('prompt', 'Build an N10 workflow for the team.', 'Build an n8n workflow for the team.'))
+  await page.evaluate(() => window.electronAPI.recordEdit('prompt', 'Import it into N10 later.', 'Import it into n8n later.'))
+  const notice = page.getByRole('status').filter({ hasText: 'Added to Your words' })
+  await expect(notice).toContainText('N10 → n8n', { timeout: 15000 })
+  const prefs = await page.evaluate(() => window.electronAPI.getPreferences())
+  expect(prefs.dictionary).toContain('N10 → n8n')
+  expect(prefs.voiceNotes || '').toBe('')
+  expect(calls(fakeDir)).toHaveLength(before)
+
+  // Switched off: nothing more is learned.
+  await page.evaluate(() => window.electronAPI.setPreferences({ autoLearn: false }))
+  await page.evaluate(() => window.electronAPI.recordEdit('prompt', 'Ship to Gitlab.', 'Ship to GitLab.'))
+  await page.evaluate(() => window.electronAPI.recordEdit('prompt', 'Push to Gitlab.', 'Push to GitLab.'))
+  await page.waitForTimeout(500)
+  expect((await page.evaluate(() => window.electronAPI.getPreferences())).dictionary).not.toContain('GitLab')
+})
+
 test('Settings drafts your style notes from pasted writing', async () => {
   ctx = await launch()
   const { page, fakeDir } = ctx

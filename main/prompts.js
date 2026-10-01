@@ -155,6 +155,15 @@ function buildLearnStylePrompt({ current = '', samples = '', edits = '' } = {}) 
   });
 }
 
+// Asks Claude what one edit shows about how the user writes: up to two new notes, or NONE.
+function buildLearnFromEditPrompt({ current = '', before = '', after = '' } = {}) {
+  return fillTemplate(loadPrompt('learn-from-edit'), {
+    CURRENT: current ? `Current notes:\n<current_notes>\n${current}\n</current_notes>\n\n` : '',
+    BEFORE: String(before).slice(0, 4000),
+    AFTER: String(after).slice(0, 4000),
+  });
+}
+
 // A finished prompt rewritten for another AI (shared/modes.json promptTargets). The first target
 // is how Promptly writes prompts already, so it is never a rewrite.
 const PROMPT_TARGETS = MODES.promptTargets || [];
@@ -242,4 +251,4 @@ function normalizeEval(parsed) {
   };
 }
 
-module.exports = { buildDictationCleanupPrompt, countryFromLocale, normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, PROMPT_TARGETS, buildRetargetPrompt, destinationFor, buildContextBlock };
+module.exports = { buildDictationCleanupPrompt, countryFromLocale, normalizeEval, BUILDER_STEPS, buildBuilderPrompt, MODES, DESTINATIONS, DETAIL_LEVELS, fillTemplate, getMode, resolveModeKey, loadPrompt, buildModePrompt, buildRevisePrompt, buildEvalPrompt, buildLearnStylePrompt, buildLearnFromEditPrompt, PROMPT_TARGETS, buildRetargetPrompt, destinationFor, buildContextBlock };

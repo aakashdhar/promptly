@@ -2,8 +2,9 @@ import { useState } from 'react'
 
 // Settings → You: the two notes that make results sound like the user ("How you write" for
 // Polish and Email, "About you" for prompts), and two ways to draft the first one with Claude:
-// from pasted writing samples, or from the edits the user has made to results. A draft is only
-// ever a suggestion — nothing changes until the user picks "Use these".
+// from pasted writing samples, or from the edits the user has made to results (a suggestion
+// until the user picks "Use these"). "Learn from my edits" (on by default) also adds what each
+// edit shows as it happens, with an Undo in the window (D-AUTO-LEARN).
 
 const sectionLabel = { fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 5 }
 const fieldLabel = { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 12, fontWeight: 500, color: 'rgba(var(--ink),0.86)', marginBottom: 5 }
@@ -81,6 +82,10 @@ export default function YouSection({ prefs, onSave, onEditCount, bare = false })
         style={textarea}
       />
 
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12, color: 'rgba(var(--ink),0.86)', cursor: 'pointer', WebkitAppRegion: 'no-drag' }}>
+        <input type="checkbox" checked={prefs.autoLearn !== false} onChange={(e) => onSave({ autoLearn: e.target.checked })} />
+        Learn from my edits <span style={hint}>adds what each edit shows here and to Your words, with Undo</span>
+      </label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 8 }}>
         <button type="button" style={smallBtn} onClick={() => { setShowSamples((v) => !v); setError('') }} disabled={busy}>
           Learn from my writing
