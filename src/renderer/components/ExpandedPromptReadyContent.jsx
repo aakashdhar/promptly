@@ -189,7 +189,7 @@ export default function ExpandedPromptReadyContent({
       />
 
       <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
-      <div className="selectable" id="prompt-output" aria-busy={!!rewriting} style={{ flex: 1, overflowY: 'auto', padding: '22px 28px 18px', filter: rewriting ? 'blur(2px)' : 'none', opacity: rewriting ? 0.45 : 1, transition: 'filter 200ms ease, opacity 200ms ease', pointerEvents: rewriting ? 'none' : 'auto' }}>
+      <div className="selectable" id="prompt-output" aria-busy={!!rewriting} style={{ flex: 1, overflowY: 'auto', padding: '22px 28px 18px', filter: rewriting ? 'blur(5px)' : 'none', opacity: rewriting ? 0.28 : 1, transition: 'filter 200ms ease, opacity 200ms ease', pointerEvents: rewriting ? 'none' : 'auto' }}>
         {isEditing ? (
           <div
             ref={promptRef}
@@ -219,9 +219,10 @@ export default function ExpandedPromptReadyContent({
       {rewriting && (
         <div role="status" aria-live="polite" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <div className="toolbar-sweep" style={{ top: 0, bottom: 'auto' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '20px 28px', borderRadius: '14px', background: 'var(--surface)', border: '0.5px solid rgba(var(--ink),0.12)', boxShadow: '0 8px 28px rgba(0,0,0,0.14)' }}>
+          {/* Straight on the blurred prompt, no card. */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center' }}>
             <span className="working-hop" aria-hidden="true"><i /><i /><i /></span>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: 'rgba(var(--ink),0.95)' }}>Rewriting for {rewriting}</div>
+            <div style={{ fontSize: '17px', fontWeight: 600, letterSpacing: '-0.01em', color: 'rgba(var(--ink),0.95)' }}>Rewriting for {rewriting}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Every detail of your prompt stays. Copy comes back when it’s ready.</div>
           </div>
         </div>
