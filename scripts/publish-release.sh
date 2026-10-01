@@ -70,3 +70,17 @@ check_latest() {
 check_latest "$SITE_DMG" "Site download link"
 check_latest "$SITE_DMG_INTEL" "Intel download link"
 if [ "$HAS_EXE" = 1 ]; then check_latest "$SITE_EXE" "Windows download link"; fi
+
+# The site's Windows size: the installer only exists once CI has built it, after release.sh ran,
+# so the size is set here, committed and pushed on its own when it changed.
+if [ "$HAS_EXE" = 1 ]; then
+  EXE_MB=$(( ($(stat -f%z "$EXE") + 500000) / 1000000 ))
+  if ! grep -q "Download for Windows ($EXE_MB MB)" index.html; then
+    sed -i '' -E "s/Download for Windows( \([0-9]+ MB\))?\">Download for Mac \(/Download for Windows ($EXE_MB MB)\">Download for Mac (/" index.html \
+      || fail "Could not update the Windows size in index.html"
+    grep -q "Download for Windows ($EXE_MB MB)" index.html || fail "index.html doesn't show the Windows size ($EXE_MB MB)"
+    git add index.html && git commit -q -m "chore(site): Windows installer size for v$VERSION ($EXE_MB MB)" \
+      && git push -q origin main || fail "Couldn't commit and push the Windows size"
+  fi
+  ok "Site shows the Windows installer at $EXE_MB MB"
+fi

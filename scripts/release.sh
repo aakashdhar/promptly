@@ -225,10 +225,13 @@ sed -i '' -E \
   -e "s/Promptly [0-9]+\.[0-9]+\.[0-9]+ for macOS/Promptly $VERSION for macOS/" \
   -e "s/Download for Mac \([0-9]+ MB\)/Download for Mac ($ARM_MB MB)/" \
   -e "s/Intel version \([0-9]+ MB\)/Intel version ($INTEL_MB MB)/" \
+  -e "s/Promptly [0-9.]+ for Windows 10/Promptly $VERSION for Windows 10/" \
   index.html || fail "Could not update index.html"
 grep -q "Promptly $VERSION for macOS" index.html || fail "index.html doesn't show v$VERSION"
 grep -q "Download for Mac ($ARM_MB MB)" index.html || fail "index.html doesn't show the Apple Silicon size ($ARM_MB MB)"
 grep -q "Intel version ($INTEL_MB MB)" index.html || fail "index.html doesn't show the Intel size ($INTEL_MB MB)"
+# The Windows installer is built by CI after this push; publish-release.sh sets its size.
+grep -q "Promptly $VERSION for Windows 10" index.html || fail "index.html doesn't show v$VERSION for Windows"
 ok "Site shows v$VERSION: Apple Silicon $ARM_MB MB, Intel $INTEL_MB MB"
 # "Built with the vibe skills": commits, specs, reviews, bugs, tests and releases, recounted.
 node scripts/site-stats.js || fail "Could not update the site's numbers"
