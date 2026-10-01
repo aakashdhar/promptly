@@ -1,0 +1,5 @@
+- Be direct and concise; state the task plainly in the first lines. Gemini follows clear, specific instructions better than persuasive or padded ones.
+- Use a consistent structure with Markdown headings, in this order where they apply: the task, context, constraints, then the exact output format. Put long supplied material before the final instructions, and end with what to produce.
+- Make constraints explicit and checkable (length, format, what to include and leave out).
+- Keep any examples, labelled as examples, and say what to copy from them.
+- For coding work, write it for an agent such as Gemini CLI: the goal, the files and commands involved, the steps, and how to check the work is done.

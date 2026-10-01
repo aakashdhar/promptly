@@ -293,6 +293,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   learnStyle: (samples) =>
     ipcRenderer.invoke('learn-style', { samples }),
 
+  retargetPrompt: (prompt, transcript, mode, target) =>
+    ipcRenderer.invoke('retarget-prompt', { prompt, transcript, mode, target }),
+
   wordSuggestions: () =>
     ipcRenderer.invoke('word-suggestions'),
 

@@ -1,0 +1,5 @@
+- Start with the instructions: what to do and why, in a few plain sentences, before any context.
+- Use Markdown headings and bullet lists for the sections (for example Goal, Context, Requirements, Constraints, Steps, Output format, Success criteria). GPT models follow precisely worded instructions literally, so state every requirement explicitly and avoid contradictions.
+- Mark off supplied material with clear delimiters (a heading plus triple quotes, or XML-style tags) and refer to it by name.
+- Spell out the output format exactly, including length and structure.
+- For coding work, write it for an agent such as OpenAI Codex: the goal, the relevant files, the constraints, the steps, and the commands or tests that prove it is done; ask it to keep going until the task is fully solved.

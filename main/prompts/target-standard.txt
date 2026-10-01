@@ -1,0 +1,5 @@
+- This version must work equally well in Claude, ChatGPT, Gemini and Grok, so use nothing specific to one of them.
+- Plain Markdown: a one-line statement of the task first, then headed sections in this order where they apply: Goal, Context, Requirements, Constraints, Steps, Output format, Success criteria.
+- Short, explicit sentences and bullet lists; every requirement stated outright, nothing implied.
+- Mark off supplied material with a heading and triple quotes.
+- End with the exact output format and how to tell the result is good.

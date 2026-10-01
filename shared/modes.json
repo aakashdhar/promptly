@@ -1,7 +1,14 @@
 {
-  "_comment": "Single source of truth for modes. Read by main (prompt building, native mode menu) and the renderer (labels, dropdown). kind: standalone = main/prompts/<key>.txt; builder = handled by a renderer builder flow, transcript passed through unchanged. profile: voice = uses the user's \"How you write\" notes; about = uses their \"About you\" notes. dictation = no Claude call: the transcript itself, tidied (main/dictation.js) and typed into the app you are in. destination = told which app the result is going to. tone = the rgb of its tags, pill and accents, and the lighter rgb its coloured text starts from. promptStyle = offered for \"Make it a prompt\". aliases = retired mode keys (history entries, saved settings, spoken names) and the mode that replaced them.",
+  "_comment": "Single source of truth for modes. Read by main (prompt building, native mode menu) and the renderer (labels, dropdown). kind: standalone = main/prompts/<key>.txt; builder = handled by a renderer builder flow, transcript passed through unchanged. profile: voice = uses the user's \"How you write\" notes; about = uses their \"About you\" notes. dictation = no Claude call: the transcript itself, tidied (main/dictation.js) and typed into the app you are in. destination = told which app the result is going to. tone = the rgb of its tags, pill and accents, and the lighter rgb its coloured text starts from. promptStyle = offered for \"Make it a prompt\". aliases = retired mode keys (history entries, saved settings, spoken names) and the mode that replaced them. promptTargets = the AIs a finished prompt (promptStyle modes) can be rewritten for, first = how Promptly writes it; main/prompts/target-<key>.txt holds each one's guide. An empty list hides the picker.",
   "aliases": {"balanced": "prompt", "detailed": "prompt", "concise": "prompt", "chain": "prompt", "chain of thought": "prompt", "refine": "design"},
   "defaultMode": "dictate",
+  "promptTargets": [
+    {"key": "claude", "label": "Claude"},
+    {"key": "gemini", "label": "Gemini"},
+    {"key": "openai", "label": "ChatGPT"},
+    {"key": "grok", "label": "Grok"},
+    {"key": "standard", "label": "Standard", "desc": "Works on all of them"}
+  ],
   "modes": [
     {"key": "dictate", "label": "Dictation", "group": "general", "kind": "dictation", "desc": "What you say, typed where your cursor is. Nothing rewritten", "dot": "rgba(150,160,175,0.9)"},
     {"key": "prompt", "label": "Prompt", "group": "general", "kind": "standalone", "desc": "Your rough idea → a detailed, well-engineered prompt for any task", "dot": "rgba(100,170,255,0.9)", "tone": {"rgb": "10,132,255", "text": "100,170,255"}, "profile": "about", "destination": true, "promptStyle": true},

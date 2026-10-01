@@ -22,7 +22,7 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor, buildDictationCleanupPrompt, countryFromLocale } = require('./main/prompts');
-const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS } = require('./main/prompts');
+const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildContextBlock, DETAIL_LEVELS, PROMPT_TARGETS, buildRetargetPrompt } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits } = require('./main/profile');
 const { tidyDictation, acceptCleanup } = require('./main/dictation');
 const { parseWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
@@ -1423,6 +1423,21 @@ app.whenReady().then(async () => {
     });
     const result = await claude.run(prompt, { timeoutMs: 60000 });
     return result.success ? { success: true, notes: cleanNotes(result.prompt) } : result;
+  });
+
+  // A finished prompt rewritten for another AI, or for all of them ("standard"). Promptly's own
+  // AI does the rewrite (Claude Code, or the user's key), so no key for the target is needed:
+  // only the layout and wording change, never what the prompt asks for.
+  ipcMain.handle('retarget-prompt', async (_event, { prompt, transcript, mode, target } = {}) => {
+    const t = PROMPT_TARGETS.find((x) => x.key === target);
+    const m = getMode(mode);
+    if (!t || t === PROMPT_TARGETS[0] || !m.promptStyle) return { success: false, error: 'This result can only be shown as written.' };
+    const text = String(prompt || '').trim().slice(0, 20000);
+    if (!text) return { success: false, error: 'Nothing to rewrite yet' };
+    const result = await claude.run(buildRetargetPrompt({ prompt: text, transcript, mode: m, target: t }), { timeoutMs: 120000 });
+    if (!result.success) return result;
+    const out = result.prompt.trim().replace(/^```[a-z]*\n([\s\S]*?)\n```$/i, '$1').trim();
+    return out ? { success: true, prompt: out, target: t.key } : { success: false, error: 'Came back empty. Try again.' };
   });
 
   ipcMain.handle('open-accessibility-settings', () => {

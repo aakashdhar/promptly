@@ -180,6 +180,39 @@ test('typed request becomes a structured prompt via the Claude CLI', async () =>
   expect(stdin).toContain('<transcript>\nmake a todo app with dark mode\n</transcript>')
 })
 
+test('a finished prompt stays as written for Claude until you pick another AI, then is rewritten for it', async () => {
+  ctx = await launch()
+  const { app, page, fakeDir } = ctx
+  await typeAndSubmit(page, 'make a todo app with dark mode')
+  await expect(page.getByText('Copy prompt')).toBeVisible({ timeout: 15000 })
+  const picker = page.locator('#prompt-target')
+  await expect(picker).toHaveValue('claude')
+  const before = calls(fakeDir).length
+
+  await picker.selectOption('gemini')
+  await expect(page.locator('#prompt-output')).toContainText('## Task for Gemini')
+  await expect(page.getByRole('button', { name: 'Copy for Gemini' })).toBeVisible()
+  expect(calls(fakeDir)).toHaveLength(before + 1)
+  const stdin = await lastStdin(fakeDir)
+  expect(stdin).toContain('so it works as well as possible in Gemini')
+  expect(stdin).toContain('<said>\nmake a todo app with dark mode\n</said>')
+
+  // Back to Claude is instant, and Gemini again asks nothing new.
+  await picker.selectOption('claude')
+  await expect(page.getByRole('button', { name: 'Copy prompt' })).toBeVisible()
+  await picker.selectOption('gemini')
+  await expect(page.locator('#prompt-output')).toContainText('## Task for Gemini')
+  expect(calls(fakeDir)).toHaveLength(before + 1)
+
+  // Copy takes the version on screen.
+  await withClipboard(app, async () => {
+    await page.getByRole('button', { name: 'Copy for Gemini' }).click()
+    await expect.poll(() => readClipboard(app)).toContain('## Task for Gemini')
+  })
+  await picker.selectOption('standard')
+  await expect(page.locator('#prompt-output')).toContainText('## Task for Standard')
+})
+
 // D-AI-PROVIDERS: with your own key chosen, the prompt comes from the API, not Claude Code.
 // A stand-in OpenAI API runs in this test; the app sends its API calls there (PROMPTLY_AI_BASE_URL)
 // and, in tests, keeps keys out of the real Keychain.
