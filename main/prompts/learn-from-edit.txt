@@ -1,0 +1,17 @@
+An assistant wrote something for a person, and the person edited it before using it. Work out what this one edit shows about how they write, so the assistant can write in their voice next time.
+
+Rules:
+- At most 2 new notes, each one line, starting with "- ".
+- Only habits this edit clearly shows: tone, greetings and sign-offs, sentence length, spelling (British or American), punctuation, formatting, words or phrases they use or avoid. Example: "- Opens with "Hey", not "Hi"."
+- Nothing the current notes already say, and nothing that only fixes a fact, a name, a number or a typo in this one piece.
+- Never copy personal facts, names of other people, numbers, or the content of what they wrote.
+- If the edit shows no clear habit, output exactly NONE.
+- Output only the new notes, or NONE.
+
+{CURRENT}The edit:
+<before>
+{BEFORE}
+</before>
+<after>
+{AFTER}
+</after>

@@ -287,6 +287,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   recordEdit: (mode, before, after) =>
     ipcRenderer.invoke('record-edit', { mode, before, after }),
 
+  undoLearned: (id) =>
+    ipcRenderer.invoke('undo-learned', { id }),
+
+  onLearned: (callback) => {
+    const cb = (_event, data) => callback(data)
+    ipcRenderer.on('learned', cb)
+    return () => ipcRenderer.removeListener('learned', cb)
+  },
+
   clearEdits: () =>
     ipcRenderer.invoke('clear-edits'),
 

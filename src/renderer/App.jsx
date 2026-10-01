@@ -14,6 +14,7 @@ import useTextInput from './hooks/useTextInput.js'
 import useDictation from './hooks/useDictation.js'
 import { useThinkingProgress } from './hooks/useThinkingProgress.js'
 import ExpandedView from './components/ExpandedView.jsx'
+import LearnedNotice from './components/LearnedNotice.jsx'
 import { saveToHistory, bookmarkHistoryItem } from './utils/history.js'
 import { runStep } from './utils/claudeStep.js'
 import { getModeAccent } from './utils/thinkingLabels.js'
@@ -616,7 +617,7 @@ export default function App() {
             onMakePrompt={makePrompt}
           />
       </div>
-
+      <LearnedNotice />
     </div>
   )
 }

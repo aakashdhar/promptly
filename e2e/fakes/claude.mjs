@@ -72,6 +72,8 @@ async function main(args) {
     say(`## Task for ${target}\n${first}\n\n## Output format\nAs asked.`)
     return 0
   }
+  // Learning from one edit: NONE unless FAKE_DIR/learned holds the notes to answer with.
+  if (asks('Work out what this one edit shows')) { say(has('learned') ? read('learned') : 'NONE'); return 0 }
   if (asks('write short style notes')) { say('- Short sentences\n- Signs off with "Cheers, Sam"'); return 0 }
 
   // The request: a spoken change (Iterate), or the <transcript> of a prompt mode, or the last line.
