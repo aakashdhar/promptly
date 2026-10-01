@@ -2335,3 +2335,10 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Keychain**: nothing asks safeStorage anything until a key is stored; uninstall removes "promptly Safe Storage" (Electron uses package.json's lowercase name).
 ---
 
+
+---
+### D-PROMPT-TARGETS — A finished prompt can be rewritten for another AI
+- **Date**: 2026-10-01 · **Type**: product
+- **Decision**: Prompt, Code and Design results get a "For" picker: Claude (default, the prompt as written), Gemini, ChatGPT, Grok, Standard (one Markdown layout for all of them). Nothing changes until another AI is picked; then Promptly's own AI (Claude Code, or the user's key per D-AI-PROVIDERS) rewrites it from that AI's guide in main/prompts/target-*.txt, keeping every requirement, fact and example. No key for the target AI is needed: the prompt is reformatted, not run. Each version is made once and kept on the history entry; the score stays with Claude's version.
+- **Rollback**: merged into release/2.21 as its own merge commit (revert it with `git revert -m 1 <merge>`), or set `promptTargets` to [] in shared/modes.json to hide the picker without touching code.
+---
