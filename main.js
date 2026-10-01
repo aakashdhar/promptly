@@ -2092,6 +2092,9 @@ app.whenReady().then(async () => {
     currentAppState = appState;
     // Each recording judges the speaker's volume afresh (pausing and resuming carries on).
     if (appState !== 'RECORDING' && appState !== 'PAUSED') {
+      // The recording stopped, so the stop watchdog is done; left running, it saw the NEXT
+      // recording 10 s later and logged a false "did not stop".
+      clearTimeout(stopWatchdog);
       if (quietDetector.isQuiet()) sendMicQuiet(false);
       quietDetector.reset();
     }
