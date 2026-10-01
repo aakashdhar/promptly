@@ -1076,3 +1076,6 @@ Say "next" to begin.
 
 ## 2026-10-01 — Faster Dictation clean-up
 ✅ Claude Code now starts without the user's settings, slash commands or update checks for Promptly's calls. Dictation clean-up went from 3–5 s to about 1.5–1.9 s (still Sonnet); Craft calls save about the same. Falls back to a normal start if the quick one fails. Released in v2.22.1 (e2e 55/55).
+
+## 2026-10-01 — Waiting for the next release
+- fix(main) 8aaecef: the stop watchdog no longer logs a false "Recording did not stop 10 s after the stop shortcut" when the next recording starts within 10 s. Log-only; ships with the next release (owner's call).
