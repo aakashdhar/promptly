@@ -492,7 +492,12 @@ Must complete before final deploy clearance.
 
 ✅ Post-ONBD-017 wizard UX fixes (2026-04-29) — splashWin enlarged 520×300 → 560×620; all screens scrollable; screens 1/2/3 no longer auto-advance on success — each shows "Continue →" so user controls pace; "Check again ↺" demoted to secondary; welcome screen centered; font bumped to 13px; legacy `runChecks()` restored for returning users (setupComplete=true path); `s1ShowError()` helper extracted. D-ONBD-UX-FIX logged in DECISIONS.md.
 
+✅ On release/2.21 (not on main, not released): bring-your-own-key merged in; "For" picker that
+   rewrites a finished prompt for Gemini, ChatGPT, Grok or Standard (D-PROMPT-TARGETS).
+   Backup of 2.20.7: ~/Documents/Promptly-backups/2.20.7/ + tag backup/2.20.7-stable.
+
 ## What's next
+⬜ Owner: test the 2.21.0 build (real OpenAI/Gemini/Grok key + the For picker), then merge release/2.21 to main
 Ready for review gate (review: onboarding-wizard).
 
 ---
@@ -1032,3 +1037,38 @@ Say "next" to begin.
 ⬜ WIN-023 · You: test Windows on the laptop (FEATURE_TASKS.md checklist)
 ⬜ Install 2.20.1 on your Mac and confirm it opens (this Mac still runs 2.19.3)
 ⏸ WIN-026 signing deferred · ⏸ lighter Hinglish model and Tauri parked
+
+---
+
+🔄 AI provider fallbacks — use your own OpenAI, Gemini or Grok key when Claude Code isn't there (9/9 ✅)
+   Branch: feature/ai-providers (not merged to main). Estimated: approx. 22 hours (S: 2, M: 5, L: 2)
+   [x] AIP-001 · Provider list and API client — talks to OpenAI, Gemini and Grok, with streaming
+   [x] AIP-002 · Encrypted key storage — keys kept in the Keychain-backed store, never in plain text
+   [x] AIP-003 · Automatic choice — Claude Code when it's there, your key otherwise; Harness stays Claude
+   [x] AIP-004 · Settings plumbing — save, check and remove keys, list models, test
+   [x] AIP-005 · Settings › AI tab — pick the provider, paste a key, choose models, test
+   [x] AIP-006 · Setup — "Use an API key instead" on the Claude Code step
+   [x] AIP-007 · Clear errors — names the provider; Harness says it needs Claude Code
+   [x] AIP-008 · End-to-end test with a fake provider — full suite 49/49
+   [x] AIP-009 · Docs
+   → Full specs: vibe/features/2026-09-29-ai-provider-fallbacks/FEATURE_TASKS.md (agent use)
+
+## What just happened (feature/ai-providers — not merged)
+✅ AIP-001…007, 009 · Claude Code stays the default; your own OpenAI, Gemini or Grok key works when it isn't there
+   Settings › AI, setup "Use an API key instead", provider-named errors, Harness stays on Claude Code.
+   Unit tests 309/309 (22 new), lint clean; Settings tab and setup path checked in throwaway previews.
+⚠️ AIP-008 · e2e test written, not run (opens app windows; waiting for your go-ahead)
+
+✅ Review of the branch for Claude Code users (3 read-only rounds, 2026-09-29/30): no change for anyone
+   without a key (every call path, setup, Settings, Keychain, uninstall). Fixes for key holders in
+   3a0a2b9, 6d5d0fc and the third round: hand over to the key when Claude Code can't answer, no waiting
+   on checks, safe provider switching, clearer errors and setup. Unit tests 320/320.
+
+✅ Full e2e on feature/ai-providers: 49/49 (2026-09-30). Two Dictation tests updated for the clean-up
+   shipped in 2.20.4 (one Claude call, capitalised first word) — they fail on main until this merges;
+   the layout audit now ignores content inside a closed <details>.
+
+## What's next
+⬜ You: try it with a real OpenAI/Gemini/Grok key (branch build) before we merge to main
+⬜ After merge: website copy ("only text goes to your AI provider"), release
+

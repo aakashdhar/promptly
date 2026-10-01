@@ -79,7 +79,7 @@ bash scripts/publish-release.sh X.Y.Z [notes.md]  # after pushing: GitHub Releas
 
 ## Architecture rules
 
-1. **AI = Claude Code CLI only.** Everything that needs AI runs `claude -p` through `main/llm.js`. Never add the Anthropic API or SDK, API keys, or a backend proxy — this is a product decision, not a stopgap (see DECISIONS.md D-CLI-ONLY). Claude calls go through `main/llm.js` only. It passes the prompt on stdin, always sends `--model`, and uses `makeClaudeEnv(claudePath)`. Never spawn `claude` anywhere else (preflight CHECK 7 enforces `makeClaudeEnv`).
+1. **AI = Claude Code CLI by default.** Everything that needs AI runs through `main/llm.js`: `claude -p` by default. The only exception is D-AI-PROVIDERS (feature/ai-providers): the user's own OpenAI/Gemini/Grok key via the router in `main/llm.js`, stored encrypted with safeStorage. Never add a provider SDK, a backend proxy or keys of our own (D-CLI-ONLY, amended by D-AI-PROVIDERS). Claude calls go through `main/llm.js` only. It passes the prompt on stdin, always sends `--model`, and uses `makeClaudeEnv(claudePath)`. Never spawn `claude` anywhere else (preflight CHECK 7 enforces `makeClaudeEnv`).
 2. **External binaries** run with `execFile`/`spawn` and an argument array. Never build a shell string containing a path.
 3. **Binary paths** resolve at startup via `main/binaries.js`; macOS-specific locations belong in `main/platform/darwin.js`.
 4. **Modes** are defined once in `shared/modes.json`. Prompt text lives in `main/prompts/`. Don't hardcode mode lists or prompt text in code.
@@ -146,4 +146,23 @@ Never: change behaviour of existing features · modify existing passing tests (e
 **Session startup:** CLAUDE.md → vibe/CODEBASE.md → vibe/ARCHITECTURE.md → vibe/SPEC_INDEX.md → vibe/TASKS.md → FEATURE_TASKS.md → confirm the task before writing code.
 
 **Between tasks:** "next" triggers, in order: `npm test` · `npm run lint` · commit code `feat(windows-version): WIN-0NN — …` · log meaningful implementation decisions in vibe/IMPLEMENTATION_LOG.md · commit docs `docs(FEATURE_TASKS+TASKS): mark WIN-0NN done — windows` · re-read TASKS.md, state the next task, wait for "next".
+---
+
+---
+### Active Feature: AI provider fallbacks (bring your own key)
+> Folder: vibe/features/2026-09-29-ai-provider-fallbacks/ | Added: 2026-09-29 | Branch: feature/ai-providers
+
+**Feature summary**: Claude Code stays the default; without it, the user's own OpenAI, Gemini or Grok key runs every AI feature except Harness.
+**Files in scope**: main/ai-providers.js · main/ai-api.js · main/secrets.js · main/llm.js · main.js · preload.js · src/renderer/components/{AiProviderSection,SettingsPanel,ExpandedErrorContent}.jsx · src/renderer/hooks/{useDictation,useHarnessBuilder}.js · splash.html · e2e/fakes/ + one new e2e test · tests/{ai,ipc-contract}.test.js · docs
+**Files out of scope**: index.html, site/** (website waits for the merge to main) · native/** · release scripts · Harness prompts/scheduler · speech code · history/profile formats
+**Design system**: no new visual design; Settings primitives and index.css tokens.
+
+**Conventions**: every AI call through main/llm.js (router); Claude runner unchanged; no SDKs or runtime deps (global fetch); keys only in the main process, encrypted with safeStorage, never logged or sent to the renderer; IPC = preload method + ipcMain.handle with the contract test green.
+
+**Boundaries:**
+Always: work on feature/ai-providers only · run npm test + lint after every task · keep Claude Code behaviour identical when no key is saved
+Ask first: running the full e2e suite (opens app windows) · merging or pushing to main · touching the website
+Never: commit to main · change behaviour for Claude Code users · log or expose keys
+
+**Between tasks:** npm test · npm run lint · commit `feat(ai-providers): AIP-0NN — …` · IMPLEMENTATION_LOG for real decisions · docs commit `docs(FEATURE_TASKS+TASKS): mark AIP-0NN done — ai-providers`.
 ---

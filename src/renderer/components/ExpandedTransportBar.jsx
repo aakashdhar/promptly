@@ -34,6 +34,7 @@ export default function ExpandedTransportBar({
   onOpenSettings,
   onTypePrompt,
   generationErrorType,
+  generationErrorProvider,
   onModeSelect,
   onShowShortcuts,
   onShowHistory,
@@ -73,7 +74,10 @@ export default function ExpandedTransportBar({
   else if (isThinking) { label = '' }
   else if (currentState === 'EMAIL_READY') { label = 'Email ready' }
   else if (currentState === 'TRANSCRIPTION_ERROR') { label = 'Transcription failed' }
-  else if (currentState === 'GENERATION_ERROR') {
+  else if (currentState === 'GENERATION_ERROR' && generationErrorProvider && generationErrorProvider !== 'claude') {
+    // Your own API key answered (D-AI-PROVIDERS): nothing about Claude here.
+    label = { auth: 'Key refused', 'no-key': 'No API key', timeout: 'Timed out', rate: 'Rate limited', offline: 'Offline', empty: 'Empty response' }[generationErrorType] || 'Generation failed'
+  } else if (currentState === 'GENERATION_ERROR') {
     label = generationErrorType === 'auth' ? 'Not logged in' : generationErrorType === 'timeout' ? 'Claude timed out' : generationErrorType === 'empty' ? 'Empty response' : 'Generation failed'
   } else {
     label = mode === 'dictate' ? 'Ready to dictate' : 'Speak your prompt'

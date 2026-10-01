@@ -238,8 +238,8 @@ for (const scale of SCALES) for (const theme of ['dark', 'light']) {
     await check(page, 'settings')
     // Every tab (Dictation offers the Zendesk fix in Your words), then You: drafting "How you
     // write" from pasted writing.
-    for (const tab of ['Dictation', 'Speech', 'Prompts', 'Setup']) {
-      await page.getByRole('tab', { name: tab }).click()
+    for (const tab of ['Dictation', 'Speech', 'Prompts', 'AI', 'Setup']) {
+      await page.getByRole('tab', { name: tab, exact: true }).click()
       if (tab === 'Dictation') await expect(page.getByRole('group', { name: 'Suggested fix' })).toBeVisible()
       await check(page, `settings-${tab.toLowerCase()}`)
     }
@@ -434,10 +434,13 @@ for (const scale of SCALES) for (const theme of ['dark', 'light']) {
     await setup.locator('#mic-next').click()
     await expect(setup.getByText('Claude Code is ready.')).toBeVisible({ timeout: 10000 })
     await check(setup, 'setup-claude-ready')
-    await setup.evaluate(() => { document.getElementById('claude-ready').classList.remove('visible'); document.getElementById('claude-not-installed').classList.add('visible') })
+    // "Missing" also shows the API-key alternative (D-AI-PROVIDERS), hidden while Claude Code is ready.
+    await setup.evaluate(() => { document.getElementById('claude-ready').classList.remove('visible'); document.getElementById('claude-not-installed').classList.add('visible'); document.getElementById('apikey-box').hidden = false })
     await check(setup, 'setup-claude-missing')
     await setup.locator('details').first().evaluate((d) => { d.open = true }).catch(() => {})
     await check(setup, 'setup-claude-manual')
+    await setup.evaluate(() => { document.querySelector('details').open = false; document.getElementById('apikey-box').open = true })
+    await check(setup, 'setup-claude-apikey')
     await setup.locator('#claude-next').click()
     if (WIN) {
       // Windows has no Accessibility permission: setup goes straight from Claude Code to Ready

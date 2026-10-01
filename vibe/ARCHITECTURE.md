@@ -14,8 +14,10 @@
   Frontend: React 19 + Vite 8 — `src/renderer/` → built to `dist-renderer/` (devDeps only)
   Styling:  Tailwind v4 for static classes; inline styles for dynamic layout; theme tokens in index.css (light/dark/system)
   Speech:   MediaRecorder → 16 kHz WAV in the renderer → `transcribe-audio` → built-in whisper.cpp (`main/whisper.js`); Python Whisper fallback
-  LLM:      Claude Code CLI `claude -p` through `main/llm.js` — prompt on stdin, `--model` always passed
-            CLI only by design: no Anthropic API/SDK, no API keys (D-CLI-ONLY)
+  LLM:      Claude Code CLI `claude -p` through `main/llm.js` — prompt on stdin, `--model` always passed.
+            Claude Code is the default. Fallback (D-AI-PROVIDERS, branch feature/ai-providers): the user's own
+            OpenAI / Gemini / Grok key over one OpenAI-compatible HTTP client, routed in `main/llm.js`.
+            No SDKs, no backend proxy, no keys of ours; user keys encrypted with safeStorage, main process only.
   IPC:      Electron ipcMain + preload.js contextBridge; contract enforced by `tests/ipc-contract.test.js`
   Storage:  `config.json` in userData (paths, model, window bounds) + localStorage (mode, tone, history)
   Dist:     electron-builder → .dmg (arm64 + x64)
@@ -198,7 +200,13 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 | splash → main | `splash-check-cli` / `splash-check-whisper` | Quick checks (Whisper check honours a custom ffmpeg path) |
 | splash → main | `splash-open-url` | Open an https:// install link |
 | splash → main | `check-setup-complete` / `set-setup-complete` | `setupComplete` in config.json |
-| splash → main | `check-claude` | Version + a real `READY` test through `main/llm.js` |
+| splash → main | `check-claude` | Version + a real `READY` test of Claude Code itself (`evalCli`, not the router) |
+| window/splash → main | `get-ai-settings` | D-AI-PROVIDERS: mode, provider, which keys are saved (+ last 4 only), models, `active` |
+| window/splash → main | `save-ai-key` | Checks the key by listing models, saves it encrypted (safeStorage) with the picked models; never echoes the key |
+| window/splash → main | `remove-ai-key` | Deletes a provider's saved key |
+| window/splash → main | `set-ai-settings` | Mode (auto/claude/api), provider, model, fast model |
+| window → main | `list-ai-models` | The saved key's chat models, best first |
+| window → main | `test-ai` | One-word request to whoever answers now (router) |
 | splash → main | `check-whisper` / `check-ffmpeg` | Run the binary to verify it works |
 | splash → main | `check-whisper-model` / `download-whisper-model` | Model presence (same model transcription uses) and download |
 | main → renderer | `shortcut-pause` | Option+P while recording |
@@ -405,11 +413,11 @@ Check with the human before doing any of the following:
 The following are P0 review findings — they block phase gates:
 
 - [ ] Adding runtime npm dependencies — zero runtime deps in the packaged .app is a hard constraint (React, Vite, Tailwind are devDeps that are compiled out; new runtime deps require a DECISIONS.md entry)
-- [ ] Calling the Anthropic API/SDK or storing API keys — all AI goes through the Claude Code CLI (D-CLI-ONLY)
+- [ ] Calling any AI outside `main/llm.js`, using a provider SDK, or shipping keys of our own — Claude Code CLI by default; user keys only via the D-AI-PROVIDERS router
 - [ ] Using `nodeIntegration: true` — always use contextBridge/preload instead
 - [ ] Using `dangerouslySetInnerHTML` with any user-provided or Claude-generated text — use JSX text nodes
 - [ ] Calling `exec('claude ...')` without the cached login-shell-resolved path
-- [ ] Storing any sensitive data (API keys, tokens) — Claude CLI handles auth, nothing in app
+- [ ] Storing sensitive data in plain text, logging it, or sending a saved key to the renderer — the user's own API keys are stored only encrypted with safeStorage (D-AI-PROVIDERS)
 - [ ] Accessing `localStorage` directly outside the hook wrappers (`useMode`, `useTone`, `utils/history.js`)
 - [ ] Mutating `originalTranscript.current` after it is captured in `stopRecording` — regenerate must always use original
   > Exception: FEATURE-012 iteration flow — `originalTranscript.current = iterText` is set deliberately after a successful iteration so "You said" and Regenerate reflect the user's latest input. See DECISIONS.md D-ITER-003.

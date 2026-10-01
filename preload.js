@@ -75,6 +75,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkClaude: () =>
     ipcRenderer.invoke('check-claude'),
 
+  // AI provider (D-AI-PROVIDERS): Claude Code by default, the user's own key otherwise.
+  // The key is sent once to be checked and saved; it never comes back.
+  getAiSettings: () =>
+    ipcRenderer.invoke('get-ai-settings'),
+
+  saveAiKey: (provider, key, { claudeUnavailable = false } = {}) =>
+    ipcRenderer.invoke('save-ai-key', { provider, key, claudeUnavailable }),
+
+  removeAiKey: (provider) =>
+    ipcRenderer.invoke('remove-ai-key', provider),
+
+  setAiSettings: (settings) =>
+    ipcRenderer.invoke('set-ai-settings', settings),
+
+  listAiModels: (provider) =>
+    ipcRenderer.invoke('list-ai-models', provider),
+
+  testAi: () =>
+    ipcRenderer.invoke('test-ai'),
+
   checkWhisper: () =>
     ipcRenderer.invoke('check-whisper'),
 
@@ -272,6 +292,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   learnStyle: (samples) =>
     ipcRenderer.invoke('learn-style', { samples }),
+
+  retargetPrompt: (prompt, transcript, mode, target) =>
+    ipcRenderer.invoke('retarget-prompt', { prompt, transcript, mode, target }),
 
   wordSuggestions: () =>
     ipcRenderer.invoke('word-suggestions'),

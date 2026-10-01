@@ -409,13 +409,13 @@
   <div class="wrap privacy-grid">
     <div>
       <h2 id="privacy-title" class="split-head">Your voice never leaves the Mac.</h2>
-      <p class="sub">Speech is transcribed on your Mac by the built-in whisper.cpp, in 90+ languages. Only the text goes to Claude, through your own Claude Code sign-in. Dictation doesn’t call Claude at all.</p>
+      <p class="sub">Speech is transcribed on your Mac by the built-in whisper.cpp, in 90+ languages. Only the text goes to the AI you chose: Claude through your own Claude Code sign-in, or OpenAI, Gemini or Grok with your own key. Dictation doesn’t call an AI at all.</p>
       <h3>No extra bill</h3>
-      <p class="sub">Promptly runs Claude through the Claude Code plan you already pay for. No API keys, no second AI subscription. If Claude Code isn’t set up, Promptly installs it or signs you in from inside the app.</p>
+      <p class="sub">Promptly runs Claude through the Claude Code plan you already pay for, so there’s no second AI subscription. No Claude plan? Add your own OpenAI, Gemini or Grok key in Settings instead. If Claude Code isn’t set up, Promptly installs it or signs you in from inside the app.</p>
     </div>
     <div class="flow">
       <svg class="flow-svg" id="flowSvg" viewBox="0 0 640 360" role="img" aria-labelledby="flowTitle">
-        <title id="flowTitle">Audio stays inside your Mac and is turned into text there. Only the text travels to Claude on your own account. Promptly has no servers.</title>
+        <title id="flowTitle">Audio stays inside your Mac and is turned into text there. Only the text travels to your AI, on your own account. Promptly has no servers.</title>
         <rect class="mac" x="12" y="20" width="384" height="320" rx="18"/>
         <text class="lbl" x="36" y="52">Your Mac</text>
         <path id="pAudio" class="wire" d="M92 190 C 140 150, 170 150, 214 190"/>
@@ -424,16 +424,16 @@
         <g class="node"><circle cx="70" cy="190" r="26"/><text x="70" y="244" text-anchor="middle">microphone</text></g>
         <g class="node"><rect x="214" y="166" width="56" height="48" rx="10"/><text x="242" y="244" text-anchor="middle">whisper.cpp</text></g>
         <g class="node"><circle cx="336" cy="190" r="8" class="dot-text"/><text x="336" y="244" text-anchor="middle">text</text></g>
-        <g class="node claude"><rect x="488" y="100" width="136" height="60" rx="12"/><text x="556" y="126" text-anchor="middle">Claude</text><text x="556" y="146" text-anchor="middle" class="small">your account</text></g>
+        <g class="node claude"><rect x="488" y="100" width="136" height="60" rx="12"/><text x="556" y="126" text-anchor="middle">Your AI</text><text x="556" y="146" text-anchor="middle" class="small">your account</text></g>
         <g class="node none"><rect x="488" y="232" width="136" height="60" rx="12"/><text x="556" y="258" text-anchor="middle">Promptly servers</text><text x="556" y="278" text-anchor="middle" class="small">there aren’t any</text></g>
         <g id="audioDots"></g>
         <g id="textDots"></g>
       </svg>
       <dl class="readout">
         <div><dt>Audio sent</dt><dd class="z"><span id="audioBytes">0</span> B</dd></div>
-        <div><dt>Text</dt><dd>to your Claude account only</dd></div>
+        <div><dt>Text</dt><dd>to your own AI account only</dd></div>
         <div><dt>Promptly servers</dt><dd>none</dd></div>
-        <div><dt>AI bill from Promptly</dt><dd>none, uses your Claude Code plan</dd></div>
+        <div><dt>AI bill from Promptly</dt><dd>none, uses your Claude plan or your own key</dd></div>
       </dl>
     </div>
   </div>
@@ -477,7 +477,7 @@
         <ul class="install-steps">
           <li>Windows 10 (22H2 or later) or Windows 11, on an x64 PC.</li>
           <li>Git for Windows, which Claude Code needs. Setup tells you if it’s missing.</li>
-          <li>For Craft, Claude Code on a Pro or Max plan. Dictation works without it.</li>
+          <li>For Craft, Claude Code on a Pro or Max plan, or your own OpenAI, Gemini or Grok key. Dictation works without either.</li>
         </ul>
         <p class="install-note">Promptly lives in the system tray, next to the clock.</p>
       </article>
@@ -528,13 +528,13 @@
     </div>
 
     <dl class="made-stats">
-      <div><dt>Commits since 18 April 2026</dt><dd data-count="801">801</dd></div>
-      <div><dt>Feature specs written first</dt><dd data-count="38">38</dd></div>
-      <div><dt>Spec reviews</dt><dd data-count="21">21</dd></div>
+      <div><dt>Commits since 18 April 2026</dt><dd data-count="834">834</dd></div>
+      <div><dt>Feature specs written first</dt><dd data-count="39">39</dd></div>
+      <div><dt>Spec reviews</dt><dd data-count="22">22</dd></div>
       <div><dt>Code review gates</dt><dd data-count="28">28</dd></div>
       <div><dt>Bug fixes with a written diagnosis</dt><dd data-count="13">13</dd></div>
-      <div><dt>Automated tests</dt><dd data-count="353">353</dd></div>
-      <div><dt>Releases</dt><dd data-count="44">44</dd></div>
+      <div><dt>Automated tests</dt><dd data-count="385">385</dd></div>
+      <div><dt>Releases</dt><dd data-count="45">45</dd></div>
     </dl>
 
     <p class="made-links">
@@ -558,7 +558,7 @@
       </details>
       <details>
         <summary>Do I need a Claude subscription?</summary>
-        <p>Craft needs Claude Code on a Pro or Max plan. Promptly uses that plan, so there’s no extra bill and no API key. Dictation works without calling Claude.</p>
+        <p>Not necessarily. Craft works best with Claude Code on a Pro or Max plan, and uses that plan, so there’s no extra bill. Without one, add your own OpenAI, Gemini or Grok key in Settings › AI; that company bills you for what you use. Dictation needs neither.</p>
       </details>
       <details>
         <summary data-win-text="Why does Windows warn me the first time?">Why does macOS warn me the first time?</summary>
@@ -570,7 +570,7 @@
       </details>
       <details>
         <summary>Does my audio get uploaded anywhere?</summary>
-        <p>No. Transcription runs on your Mac with the built-in whisper.cpp. Only the text of a Craft request goes to Claude, through your own Claude Code sign-in. Promptly has no servers of its own.</p>
+        <p>No. Transcription runs on your Mac with the built-in whisper.cpp. Only the text of a Craft request goes to the AI you chose: Claude through your own Claude Code sign-in, or your own OpenAI, Gemini or Grok key. Promptly has no servers of its own.</p>
       </details>
       <details>
         <summary>Which languages can I speak?</summary>
@@ -583,8 +583,8 @@
 
 <footer class="foot" id="download">
   <div class="wrap foot-in">
-    <p class="foot-line" data-os="mac">Promptly 2.20.7 for macOS. Craft needs Claude Code on a Pro or Max plan.</p>
-    <p class="foot-line" data-os="win" hidden>Promptly for Windows 10 (22H2 or later) and 11, x64. Craft needs Claude Code on a Pro or Max plan.</p>
+    <p class="foot-line" data-os="mac">Promptly 2.21.0 for macOS. Craft uses Claude Code (Pro or Max) or your own AI key.</p>
+    <p class="foot-line" data-os="win" hidden>Promptly for Windows 10 (22H2 or later) and 11, x64. Craft uses Claude Code (Pro or Max) or your own AI key.</p>
     <div class="foot-dl">
       <a class="btn btn-big magnetic" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly.dmg" data-intel-href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Intel.dmg" data-win-href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Setup.exe" data-win-text="Download for Windows">Download for Mac (147 MB)</a>
       <p class="mac-alt" data-os="mac"><span data-chip-other>On an Intel Mac? <a class="text-link" href="https://github.com/aakashdhar/promptly/releases/latest/download/Promptly-Intel.dmg" data-chip-link>Intel version (155 MB)</a>.</span> <span class="mac-alt-hint">Not sure? Apple menu › About This Mac says <em>Chip</em> on Apple Silicon, <em>Processor</em> on Intel.</span></p>

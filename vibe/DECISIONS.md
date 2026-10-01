@@ -2305,3 +2305,40 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **How**: transparent, unfocusable, sandboxed window with no preload and a `default-src 'none'` CSP; main.js passes the version as `?v=`, starts it with `window.startSplash()` once the window is on screen and ends it with `window.finishSplash()`.
 - **2.20.7 fix — it plays first, in front**: on 2.20.6 the owner saw a dark box, then the window. Setting up the pill makes Promptly give up being the active app for a moment, and the app you were in came in front of the splash (it wasn't on top), so the intro played behind it; tests missed it because they don't run as the active app. Now the splash is always on top for its few seconds, and start-up is ordered as the owner asked: the intro plays in full, then the window, the pill and the helper start (path lookup and the setup check run during the intro), then the splash leaves and the window shows; the GPU speech warm-up waits until it has gone. A normal start now takes about 3–4 s to show the window. A Dock click or second launch cuts it short; it hides after 20 s whatever happens. Reduced motion shows the finished frame. The setup wizard (splash.html) is unchanged and follows it when setup is needed.
 ---
+## — Feature Start: AI provider fallbacks — 2026-09-29
+> Folder: vibe/features/2026-09-29-ai-provider-fallbacks/ · Branch: feature/ai-providers (not merged)
+> Claude Code stays the default; the user's own OpenAI, Gemini or Grok key runs everything but Harness when Claude Code isn't there.
+> Tasks: AIP-001..AIP-009 | Estimated: 22 hours
+---
+
+---
+### D-AI-PROVIDERS — Bring-your-own-key fallbacks (amends D-CLI-ONLY)
+- **Date**: 2026-09-29 · **Type**: product / architecture
+- **Why**: teammates of the owner have OpenAI, Gemini or Grok keys but no Claude Code or Anthropic plan. The owner still prefers Claude Code and keeps it the default.
+- **Decision** (owner: "go with your suggestions"): automatic choice — Claude Code when installed and signed in, otherwise the saved key — with a manual override (Claude Code / My API key). Setup offers "Use an API key instead". Everything except Harness works on a key (Harness needs Claude Code's file-writing and schedules). Models come from the provider's own list, with a separate fast model for the Dictation clean-up. Keys are encrypted with Electron safeStorage and stay in the main process. First providers: OpenAI, Gemini, Grok, all through one OpenAI-compatible HTTP client; Ollama/custom endpoints later.
+- **What still holds from D-CLI-ONLY**: every AI call goes through main/llm.js; no SDKs, no backend proxy, no keys of ours; Claude Code calls are unchanged.
+- **Website**: unchanged until the owner merges the branch to main.
+---
+
+---
+## 2026-09-29 — Spec review: add-feature (AI provider fallbacks)
+> P0: 0 · P1: 5 · P2: 3
+> Action: fixed autonomously — 1 round (ARCHITECTURE/CLAUDE.md rule 1 amended; spec criteria 2, 3, 4, 8 made testable)
+> Report: vibe/spec-reviews/2026-09-29-add-feature-ai-providers.md
+---
+
+---
+### D-AI-PROVIDERS-ROUTING — How "Claude Code first" works with a key (amends D-AI-PROVIDERS)
+- **Date**: 2026-09-30 · **Type**: architecture
+- **Why**: three read-only review rounds (owner asked whether the branch could affect Claude Code users) confirmed no change for people without a key, and shaped how the fallback behaves for people with one.
+- **Decision**: without a saved key the router always uses Claude Code, whatever the mode. With a key in Automatic: Claude Code while it's on disk and hasn't turned a call away; a call turned away (sign-in, usage limit/credit, Claude Code missing) is answered by the key instead, and Claude Code is tried again with a real call after 1 min / 15 min / 10 min. Status checks (`claude --version`, `auth status`) run only in the background, never before a call, and can't end that wait; a timed-out check decides nothing. "My API key" can't be chosen without a key; removing the key in use falls over to another saved key, then to Automatic. Harness refuses only when "My API key" is chosen or Claude Code is missing.
+- **Keychain**: nothing asks safeStorage anything until a key is stored; uninstall removes "promptly Safe Storage" (Electron uses package.json's lowercase name).
+---
+
+
+---
+### D-PROMPT-TARGETS — A finished prompt can be rewritten for another AI
+- **Date**: 2026-10-01 · **Type**: product
+- **Decision**: Prompt, Code and Design results get a "For" picker: Claude (default, the prompt as written), Gemini, ChatGPT, Grok, Standard (one Markdown layout for all of them). Nothing changes until another AI is picked; then Promptly's own AI (Claude Code, or the user's key per D-AI-PROVIDERS) rewrites it from that AI's guide in main/prompts/target-*.txt, keeping every requirement, fact and example. No key for the target AI is needed: the prompt is reformatted, not run. Each version is made once and kept on the history entry; the score stays with Claude's version.
+- **Rollback**: merged into release/2.21 as its own merge commit (revert it with `git revert -m 1 <merge>`), or set `promptTargets` to [] in shared/modes.json to hide the picker without touching code.
+---

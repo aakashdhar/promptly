@@ -38,6 +38,8 @@ export default function OperationErrorPanel({
   onRetry,
   retryLabel = 'Try again ↺',
   onOpenSettings,
+  // What the Settings fix line says; the default is for speech errors.
+  settingsHint = 'Open settings to verify your Whisper and ffmpeg paths.',
 }) {
   const { copied, copy } = useCopy()
 
@@ -93,7 +95,7 @@ export default function OperationErrorPanel({
       ) : onOpenSettings ? (
         <div style={{ width: '100%', background: 'rgba(255,189,46,0.04)', border: '0.5px solid rgba(255,189,46,0.12)', borderRadius: '9px', padding: '10px 14px' }}>
           <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'color-mix(in oklab, rgb(255,189,46) var(--accent-text-strength), rgb(var(--ink)))', marginBottom: '6px' }}>Fix</div>
-          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Open settings to verify your Whisper and ffmpeg paths.</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{settingsHint}</div>
         </div>
       ) : null}
 

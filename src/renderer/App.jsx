@@ -269,6 +269,7 @@ export default function App() {
       setGenerationError({
         error: genResult.error || '',
         errorType: genResult.errorType || (genResult.timedOut ? 'timeout' : 'unknown'),
+        provider: genResult.provider || null,
         canRetry: true,
       })
       transitionRef.current(STATES.GENERATION_ERROR)
@@ -311,7 +312,7 @@ export default function App() {
         window.electronAPI?.setLastPrompt?.(parsed.subject + '\n\n' + parsed.body)
         transitionRef.current(STATES.EMAIL_READY)
       } catch {
-        setGenerationError({ errorType: 'unknown', error: 'Failed to parse email response', canRetry: true })
+        setGenerationError({ errorType: 'unknown', error: 'Failed to parse email response', provider: genResult.provider || null, canRetry: true })
         transitionRef.current(STATES.GENERATION_ERROR)
       }
       return
@@ -383,7 +384,7 @@ export default function App() {
       window.electronAPI?.setLastPrompt?.(parsed.subject + '\n\n' + parsed.body)
       transitionRef.current(STATES.EMAIL_READY)
     } catch {
-      setGenerationError({ errorType: 'unknown', error: 'Failed to read the revised email', canRetry: true })
+      setGenerationError({ errorType: 'unknown', error: 'Failed to read the revised email', provider: result?.provider || null, canRetry: true })
       transitionRef.current(STATES.GENERATION_ERROR)
     }
   }
@@ -409,7 +410,7 @@ export default function App() {
       isIterated.current = true
       acceptRevisedEmail(result, adjustment)
     } else {
-      setGenerationError({ errorType: result?.errorType || 'unknown', error: result?.error || 'Tone adjustment failed', canRetry: true })
+      setGenerationError({ errorType: result?.errorType || 'unknown', error: result?.error || 'Tone adjustment failed', provider: result?.provider || null, canRetry: true })
       transitionRef.current(STATES.GENERATION_ERROR)
     }
   }

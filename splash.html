@@ -19,6 +19,7 @@
   --ok: #177A45;
   --on-ok: #FFFFFF;
   --warn: #B26A00;
+  --warn-text: #8A5200; /* --warn is for dots; small warning text needs more contrast (4.5:1) */
   --keycap-top: #FFFFFF;
   --keycap-side: #D9D9DE;
 }
@@ -30,6 +31,7 @@
     --surface: #242428;
     --action: #2A6AE0;
     --ok: #4CC47E;
+    --warn-text: #E5A33A;
     --on-ok: #0E2416;
     --warn: #E5A33A;
     --keycap-top: #34343A;
@@ -71,6 +73,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
 .rail ol { display: flex; gap: 18px; margin: 0; padding: 0; }
 
 .screen { display: none; flex: 1; flex-direction: column; }
+/* The Claude Code step can outgrow the fixed window (install help plus the API-key section): it
+   scrolls rather than pushing Check key, its message or Continue out of reach. */
+#screen-claude { min-height: 0; overflow-y: auto; padding: 4px; margin: -4px; } /* room for focus rings */
 .screen.visible { display: flex; }
 h1 { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 8px; text-wrap: balance; }
 .lede { color: var(--muted); margin: 0 0 24px; max-width: 42ch; font-size: 14px; }
@@ -110,6 +115,14 @@ details.manual summary { cursor: pointer; width: fit-content; }
   flex: 1; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface);
   color: rgb(var(--ink)); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; -webkit-app-region: no-drag;
 }
+.path-row select {
+  height: 30px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface);
+  color: rgb(var(--ink)); font: inherit; font-size: 12px; -webkit-app-region: no-drag;
+}
+.apikey-msg { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.apikey-msg.bad { color: var(--warn-text); }
+.apikey-msg.ok { color: var(--ok, #1b7f3b); }
+details.manual.saved summary { color: var(--ok); }
 
 /* The memorable thing: the shortcut, drawn as real keycaps. */
 .keys { display: flex; gap: 10px; align-items: flex-end; margin: 8px 0 22px; }
@@ -222,6 +235,23 @@ details.manual summary { cursor: pointer; width: fit-content; }
         </div>
       </details>
     </div>
+
+    <!-- No Claude Code: the user's own OpenAI, Gemini or Grok key instead (D-AI-PROVIDERS). -->
+    <!-- Hidden until the Claude Code check says it's needed, so Claude users never see it. -->
+    <details class="manual" id="apikey-box" hidden>
+      <summary>No Claude Code? Use an API key instead</summary>
+      <p class="hint">Your own OpenAI, Gemini or Grok key. It's checked, then stored encrypted on this computer. Everything except Harness works with it, and Promptly switches to Claude Code whenever you set it up.</p>
+      <div class="path-row">
+        <select id="apikey-provider" aria-label="API provider">
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Gemini</option>
+          <option value="grok">Grok</option>
+        </select>
+        <input id="apikey-key" type="password" placeholder="Paste your key" spellcheck="false" autocomplete="off" aria-label="API key">
+        <button class="btn secondary" id="apikey-save">Check key</button>
+      </div>
+      <div class="apikey-msg" id="apikey-msg" role="status"></div>
+    </details>
 
     <!-- Windows only: shown when setup-info reports a problem (never on a Mac). -->
     <div class="status warn" id="setup-git" hidden>
@@ -369,9 +399,34 @@ document.getElementById('mic-open-settings').addEventListener('click', () => api
 document.getElementById('mic-next').addEventListener('click', () => { show('claude'); runScreen1(); });
 
 // ── Claude Code ──────────────────────────────────────────────────────────────
+// A saved API key counts too: setup can go on without Claude Code (D-AI-PROVIDERS). It counts the
+// way the app does: the key of the provider in use, and not when "Claude Code" is chosen.
+let apiKeySaved = false;
+let claudeIsReady = false;
+function updateClaudeContinue() {
+  document.getElementById('claude-next').disabled = !(claudeIsReady || apiKeySaved);
+}
+// The window can't grow, so a saved key folds the section up (keeping Continue in view) and says
+// so on the line that stays visible.
+function showKeySaved(label, mode) {
+  const box = document.getElementById('apikey-box');
+  box.open = false;
+  box.classList.add('saved');
+  box.querySelector('summary').textContent = mode === 'api'
+    ? `${label} key saved. Promptly uses it for everything except Harness.`
+    : `${label} key saved. Promptly will use it until Claude Code is set up.`;
+}
+api.getAiSettings?.().then((s) => {
+  apiKeySaved = !!(s && s.mode !== 'claude' && s.provider && s.keys?.[s.provider]?.saved);
+  if (apiKeySaved) showKeySaved((s.providers || []).find((p) => p.id === s.provider)?.label || 'Your', s.mode);
+  updateClaudeContinue();
+}).catch(() => {});
 function setClaudeReady(ready) {
-  document.getElementById('claude-next').disabled = !ready;
+  claudeIsReady = ready;
+  updateClaudeContinue();
   document.getElementById('claude-recheck').hidden = ready;
+  // Claude Code checks out, so the API-key alternative stays out of the way.
+  document.getElementById('apikey-box').hidden = ready;
 }
 
 // Checks Claude Code and shows the matching state. Keeps checking while something is missing,
@@ -490,6 +545,34 @@ document.getElementById('copy-install').addEventListener('click', () => {
   api.copyToClipboard(document.getElementById('install-cmd').textContent);
   document.getElementById('copy-install').textContent = 'Copied';
 });
+// "Use an API key instead": a checked key lets setup continue without Claude Code.
+document.getElementById('apikey-save').addEventListener('click', async () => {
+  const button = document.getElementById('apikey-save');
+  const select = document.getElementById('apikey-provider');
+  const input = document.getElementById('apikey-key');
+  const msg = document.getElementById('apikey-msg');
+  if (!input.value.trim()) { msg.className = 'apikey-msg bad'; msg.textContent = 'Paste your key first.'; msg.scrollIntoView({ block: 'nearest' }); return; }
+  button.disabled = true;
+  msg.className = 'apikey-msg';
+  msg.textContent = 'Checking the key…';
+  msg.scrollIntoView({ block: 'nearest' });
+  // This section only shows while Claude Code isn't working, so the key takes over straight away.
+  const result = await api.saveAiKey(select.value, input.value, { claudeUnavailable: true }).catch(() => ({ ok: false, error: "Couldn't check the key." }));
+  button.disabled = false;
+  if (!result.ok) { msg.className = 'apikey-msg bad'; msg.textContent = result.error; msg.scrollIntoView({ block: 'nearest' }); return; }
+  input.value = '';
+  // Saving a key here means "use it": someone who had chosen "Always Claude Code" goes to Automatic.
+  if (result.settings && result.settings.mode === 'claude') await api.setAiSettings({ mode: 'auto' }).catch(() => {});
+  apiKeySaved = true;
+  stopClaudePoll();
+  msg.className = 'apikey-msg';
+  msg.textContent = '';
+  showKeySaved(select.options[select.selectedIndex].text, result.settings && result.settings.mode === 'api' ? 'api' : 'auto');
+  updateClaudeContinue();
+});
+document.getElementById('apikey-key').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('apikey-save').click(); });
+document.getElementById('apikey-box').addEventListener('toggle', (e) => { if (e.target.open) e.target.scrollIntoView({ block: 'nearest' }); });
+
 document.getElementById('claude-next').addEventListener('click', () => {
   if (speechBuiltIn) showHold(); else { show('speech'); runScreen2(); }
 });

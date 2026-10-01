@@ -223,3 +223,8 @@ Build order from Feature Map above:
 > Depends on: existing splash.html, generate-prompt + transcribe-audio IPC, React app (all complete)
 > Shared data: reads config.json (writes setupComplete flag); reads/writes lastTempAudioPath + lastTranscript (new main.js vars)
 > Spec: vibe/features/2026-04-28-onboarding-wizard/
+
+#### AI provider fallbacks — Claude Code by default, your own OpenAI/Gemini/Grok key otherwise ← UNPLANNED ADDITION
+> Added: 2026-09-29 · See DECISIONS.md D-AI-PROVIDERS · 🔄 spec in vibe/features/2026-09-29-ai-provider-fallbacks/
+> Depends on: nothing unbuilt · Shared data: config.json (aiMode, apiProvider, apiKeys, apiModels)
+
