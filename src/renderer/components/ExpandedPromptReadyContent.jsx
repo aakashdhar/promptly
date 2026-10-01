@@ -127,7 +127,6 @@ export default function ExpandedPromptReadyContent({
             <span style={{ color: readableColor('rgb(48,209,88)'), fontSize: '16px' }}>✓</span>
             {isDictation ? 'Dictated' : isPolishMode ? 'Polished' : 'Prompt ready'}
           </span>
-          <PromptTargetPicker targets={targets} />
           {isIterated && (
             <span style={{
               fontSize: '11px', color: 'color-mix(in oklab, rgb(10,132,255) var(--accent-text-strength), rgb(var(--ink)))',
@@ -256,6 +255,7 @@ export default function ExpandedPromptReadyContent({
           </button>
         )}
         <div style={{ flex: 1 }} />
+        <PromptTargetPicker targets={targets} />
         <button
           type="button"
           onClick={handleCopy}
