@@ -498,7 +498,7 @@ Must complete before final deploy clearance.
 
 ## What's next
 ⬜ Owner: try 2.21.0 with a real OpenAI/Gemini/Grok key and the For picker (rollback: git revert -m 1 27fff78)
-⬜ Resume "learns from your edits" (paused; design in memory)
+✅ Learns from your edits (D-AUTO-LEARN) on main, not released yet
 Ready for review gate (review: onboarding-wizard).
 
 ---

@@ -2342,3 +2342,10 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Decision**: Prompt, Code and Design results get a "For" picker: Claude (default, the prompt as written), Gemini, ChatGPT, Grok, Standard (one Markdown layout for all of them). Nothing changes until another AI is picked; then Promptly's own AI (Claude Code, or the user's key per D-AI-PROVIDERS) rewrites it from that AI's guide in main/prompts/target-*.txt, keeping every requirement, fact and example. No key for the target AI is needed: the prompt is reformatted, not run. Each version is made once and kept on the history entry; the score stays with Claude's version.
 - **Rollback**: merged into release/2.21 as its own merge commit (revert it with `git revert -m 1 <merge>`), or set `promptTargets` to [] in shared/modes.json to hide the picker without touching code.
 ---
+
+---
+### D-AUTO-LEARN — Promptly learns from your edits as they happen
+- **Date**: 2026-10-01 · **Type**: product (makes the showreel's "learns from your edits" true)
+- **Decision**: after each meaningful edit, a correction made the same way in two edits is added to Your words, and an edit to an Email or Polish result asks Claude for at most two new "How you write" lines (or NONE), which are appended without rewriting the notes. Every change is shown in the window with Undo; Settings › You "Learn from my edits" (on by default) turns it off. Prompt-mode edits never change How you write. The manual "Suggest from my edits" stays.
+- **Rollback**: revert its merge on main (`git revert -m 1 <merge>`), or the switch per user.
+---

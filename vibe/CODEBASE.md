@@ -138,6 +138,9 @@
 | `src/renderer/components/PromptTargetPicker.jsx` | "For: Claude ▾" in a finished prompt's header (Prompt, Code, Design). Picking Gemini, ChatGPT, Grok or Standard rewrites the prompt for that AI via `retarget-prompt`; versions are cached by `hooks/usePromptTargets.js` and kept on the history entry (`getTargetVersions`/`saveTargetVersion`). Targets come from `shared/modes.json` `promptTargets`; an empty list hides it. | `retargetPrompt` |
 | `main/prompts/retarget.txt`, `target-*.txt` | The rewrite instruction and one guide per AI (Gemini, OpenAI, Grok, Standard), built by `buildRetargetPrompt` | — |
 | `tests/targets.test.js` | Prompt targets: guides exist, the rewrite keeps the prompt and what you said, history keeps the versions | — |
+| `src/renderer/components/LearnedNotice.jsx` | "Learned from your edit" / "Added to Your words" notice with Undo (D-AUTO-LEARN); listens to `learned`, calls `undoLearned` | `onLearned`, `undoLearned` |
+| `main/prompts/learn-from-edit.txt` | What one edit shows about how the user writes: at most two new lines or NONE (`buildLearnFromEditPrompt`) | — |
+| `tests/auto-learn.test.js` | Learning from edits: rule parsing, appending, Undo, the prompt | — |
 | `tests/ipc-contract.test.js` | Fails if preload and main IPC drift apart, or the renderer/splash calls a method preload doesn't expose | — |
 | `e2e/app.spec.mjs` | Playwright tests that drive the real app with fake claude/whisper scripts and Chromium's fake mic | 7 flows (typing, abort, dropdown, hotkey + voice, hide-on-blur, retry tone, ffmpeg path) |
 | `playwright.config.mjs` | Playwright config — testDir e2e, 1 worker | — |
