@@ -1079,3 +1079,4 @@ Say "next" to begin.
 
 ## 2026-10-01 — Waiting for the next release
 - fix(main) 8aaecef: the stop watchdog no longer logs a false "Recording did not stop 10 s after the stop shortcut" when the next recording starts within 10 s. Log-only; ships with the next release (owner's call).
+- feat(site): Windows visitors see "Promptly X for Windows" and "Download for Windows (N MB)"; release.sh sets the version, publish-release.sh the size (commits + pushes it). Ships with the next release.
