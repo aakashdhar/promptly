@@ -492,12 +492,13 @@ Must complete before final deploy clearance.
 
 ✅ Post-ONBD-017 wizard UX fixes (2026-04-29) — splashWin enlarged 520×300 → 560×620; all screens scrollable; screens 1/2/3 no longer auto-advance on success — each shows "Continue →" so user controls pace; "Check again ↺" demoted to secondary; welcome screen centered; font bumped to 13px; legacy `runChecks()` restored for returning users (setupComplete=true path); `s1ShowError()` helper extracted. D-ONBD-UX-FIX logged in DECISIONS.md.
 
-✅ On release/2.21 (not on main, not released): bring-your-own-key merged in; "For" picker that
+✅ v2.21.0 released (merge 27fff78; full e2e green after moving the For picker beside Copy): bring-your-own-key merged in; "For" picker that
    rewrites a finished prompt for Gemini, ChatGPT, Grok or Standard (D-PROMPT-TARGETS).
    Backup of 2.20.7: ~/Documents/Promptly-backups/2.20.7/ + tag backup/2.20.7-stable.
 
 ## What's next
-⬜ Owner: test the 2.21.0 build (real OpenAI/Gemini/Grok key + the For picker), then merge release/2.21 to main
+⬜ Owner: try 2.21.0 with a real OpenAI/Gemini/Grok key and the For picker (rollback: git revert -m 1 27fff78)
+⬜ Resume "learns from your edits" (paused; design in memory)
 Ready for review gate (review: onboarding-wizard).
 
 ---
