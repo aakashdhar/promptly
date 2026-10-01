@@ -143,7 +143,7 @@ case "$FAKE_MODE" in
   echo) printf 'ARGS:%s\\nSTDIN:%s' "$*" "$input" ;;
   old-cli) for a in "$@"; do if [ "$a" = "--tools" ]; then echo "error: unknown option '--tools'" >&2; exit 1; fi; done; printf 'ok-without-lean-flags' ;;
   auth) echo "Invalid API key · Please run /login" >&2; exit 1 ;;
-  needs-settings) for a in "$@"; do if [ "$a" = "--setting-sources" ]; then echo "Invalid API key · Please run /login" >&2; exit 1; fi; done; printf 'ok-with-settings:%s' "$CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC" ;;
+  needs-settings) for a in "$@"; do if [ "$a" = "--disable-slash-commands" ]; then echo "Invalid API key · Please run /login" >&2; exit 1; fi; done; printf 'ok-with-settings:%s' "$CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC" ;;
   empty) exit 0 ;;
   slow) sleep 5; echo late ;;
 esac
@@ -173,11 +173,11 @@ describe('createClaudeRunner', () => {
     expect(args).toContain('--no-session-persistence')
   })
 
-  it.skipIf(onWindows)('starts quickly: skips user settings, slash commands and non-essential traffic', async () => {
+  it.skipIf(onWindows)('starts quickly: skips slash commands, but keeps the user\'s settings (their effort level)', async () => {
     const r = await runner('echo').run('hi')
     const args = r.prompt.split('\n')[0]
-    expect(args).toContain('--setting-sources')
     expect(args).toContain('--disable-slash-commands')
+    expect(args).not.toContain('--setting-sources')
   })
 
   it.skipIf(onWindows)('falls back to a normal start when the quick one fails, and stays there', async () => {
@@ -186,7 +186,7 @@ describe('createClaudeRunner', () => {
     expect(first).toMatchObject({ success: true, prompt: 'ok-with-settings:' })
     // Later calls go straight to the normal start.
     process.env.FAKE_MODE = 'echo'
-    expect((await claude.run('hi')).prompt.split('\n')[0]).not.toContain('--setting-sources')
+    expect((await claude.run('hi')).prompt.split('\n')[0]).not.toContain('--disable-slash-commands')
   })
 
   it('turns extended thinking off only when asked', async () => {

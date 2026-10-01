@@ -15,11 +15,12 @@ const SYSTEM_PROMPT = "Follow the user's instructions exactly and output only wh
 // session files written to ~/.claude for every prompt. Older CLIs reject some of these,
 // so a run that fails with "unknown option" is retried once without them.
 const LEAN_FLAGS = ['--tools', '', '--no-session-persistence', '--strict-mcp-config', '--system-prompt', SYSTEM_PROMPT];
-// Skips start-up work a text transform never needs: the user's own Claude Code settings and
-// hooks, slash commands and skills, and update checks and telemetry. It took the Dictation
-// clean-up from 3-5 s to under 2 s. A user whose sign-in or proxy lives in those settings gets
-// one failed run; run() then retries without these and stops using them.
-const QUICK_START_FLAGS = ['--setting-sources', '', '--disable-slash-commands'];
+// Skips start-up work a text transform never needs: slash commands and skills, and update
+// checks and telemetry. It took the Dictation clean-up from 3-5 s to about 2 s. The user's own
+// Claude Code settings still load: skipping them (2.22.1) also dropped their effort level, so
+// Claude thought longer and "As a prompt" ran past its time limit. If a quick start fails,
+// run() retries without these and stops using them.
+const QUICK_START_FLAGS = ['--disable-slash-commands'];
 const QUICK_START_ENV = { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' };
 // Streams text as it's written: JSON events on stdout, with partial text deltas.
 const STREAM_FLAGS = ['--output-format', 'stream-json', '--include-partial-messages', '--verbose'];

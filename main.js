@@ -461,7 +461,11 @@ async function runGeneratePrompt({ transcript, mode, options = {} }) {
   // Stream text modes as they're written; JSON-producing modes (email) wait for the full answer.
   const streams = modeConf.key !== 'email';
   const onDelta = streams ? throttledDelta(80) : undefined;
-  return claude.run(prompt, { onDelta });
+  const started = Date.now();
+  const result = await claude.run(prompt, { onDelta });
+  // Why it failed and how long it ran (never the words), so a "Couldn't write the prompt" can be traced.
+  if (!result.success && !result.cancelled) log.warn(`Craft (${modeConf.key}) failed: ${result.errorType || 'error'} after ${Date.now() - started} ms`);
+  return result;
 }
 
 // Streams Claude's answer-so-far to the window at most every `ms` (each send re-renders it).
