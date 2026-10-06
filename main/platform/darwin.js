@@ -288,7 +288,17 @@ function harnessLaunchAgents(home, dir = launchAgentsDir(home)) {
   } catch { return []; }
 }
 
+// ── Project files ──
+
+// Word and RTF files in a project folder become plain text with textutil, which ships with macOS.
+const TEXTUTIL_TYPES = new Set(['.docx', '.rtf', '.doc']);
+
+function extractTextCommand(ext, file) {
+  return TEXTUTIL_TYPES.has(String(ext || '').toLowerCase()) ? ['/usr/bin/textutil', ['-convert', 'txt', '-stdout', file]] : null;
+}
+
 module.exports = {
+  extractTextCommand,
   PRIVACY_SETTINGS,
   windowChrome,
   TRAY_CLICK_BLURS,
