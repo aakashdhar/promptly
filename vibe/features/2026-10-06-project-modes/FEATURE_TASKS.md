@@ -5,7 +5,7 @@
 ---
 ### PRJ-001 · Project store
 - **Status**: `[ ]` · **Size**: S · **Spec ref**: FEATURE_SPEC.md#6-data-model · **Dependencies**: None
-- **Touches**: main/projects/store.js, tests/projects-scan.test.js
+- **Touches**: main/projects/store.js, tests/projects-store.test.js
 
 **What to do**: CRUD for `config.projects` records and the userData/projects/<id>/ layout (summary.md, pins.json, manifest.json, text/, search.db paths). Ids are short random hex; colours rotate through a fixed palette distinct from mode colours. Refuse a second project on the same `dir`.
 
@@ -60,7 +60,7 @@
 ---
 ### PRJ-005 · Watching for new files
 - **Status**: `[ ]` · **Size**: S · **Spec ref**: FEATURE_SPEC.md#c-freshness · **Dependencies**: PRJ-002, PRJ-004
-- **Touches**: main/projects/watch.js, tests/projects-scan.test.js
+- **Touches**: main/projects/watch.js, tests/projects-watch.test.js (the rescan → extract → index loop and newFiles are wired in PRJ-009)
 
 **What to do**: fs.watch(dir, { recursive: true }) per project; any event marks dirty; 2 s debounce → scan diff → extract changed → index; also on start and on focus (≤ 1/min). Track files new or changed since `summaryUpdatedAt` as `newFiles`. Watcher errors fall back to focus rescans.
 
@@ -73,7 +73,7 @@
 ---
 ### PRJ-006 · Folder map (classify call)
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: FEATURE_SPEC.md#a-connecting-a-folder-screens-12 (A3–A4) · **Dependencies**: PRJ-002
-- **Touches**: main/prompts/project-classify.txt, main/prompts.js, main/projects/summary.js (classify helper), tests/projects-summary.test.js
+- **Touches**: main/projects/classify.js, main/prompts/project-classify.txt, tests/projects-classify.test.js
 
 **What to do**: Build the ≤40 KB manifest (paths, sizes, dates, 300-char snippets, ≤3 per folder), ask for JSON kinds per folder with optional question for `unsure`; parse with `parseJsonOutput`; one retry; fallback to `reference` with a note.
 
@@ -100,7 +100,7 @@
 ---
 ### PRJ-008 · Request context and Write as
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: FEATURE_SPEC.md#e-context-for-each-request, #d-project-modes · **Dependencies**: PRJ-004, PRJ-007
-- **Touches**: main/projects/context.js, main/prompts.js, main/prompts/project-context.txt, shared/modes.json, main.js (runGeneratePrompt), tests/projects-context.test.js
+- **Touches**: main/projects/context.js, main/prompts/project-context.txt, tests/projects-context.test.js (the runGeneratePrompt project branch in main.js is wired in PRJ-009)
 
 **What to do**: Output picker (§17 phrases → email/prompt/polish, else default); assemble `<project>` (summary, thread for email, search excerpts by kind, ~30 KB budget, dedupe, documents before the request) and grounding instructions; `runGeneratePrompt` project branch uses the existing email/prompt/polish templates with the block in `{CONTEXT}`; result adds `sources`; exclusions honoured.
 
@@ -178,7 +178,7 @@
 ---
 ### PRJ-014 · Dictation suggestion
 - **Status**: `[ ]` · **Size**: S · **Spec ref**: FEATURE_SPEC.md#g-dictation-suggestion-screen-6 · **Dependencies**: PRJ-008, PRJ-012
-- **Touches**: main/projects/suggest.js, hooks/useDictation.js, dictation result view, tests/projects-context.test.js
+- **Touches**: main/projects/suggest.js, tests/projects-suggest.test.js (not built yet: hooks/useDictation.js, dictation result view)
 
 **What to do**: Match project name / People / Words (≥4 letters, whole word) → `project-suggest`; show "As an <Project> email|prompt" beside As a prompt; runs the dictation through that project mode.
 
@@ -190,7 +190,7 @@
 ---
 ### PRJ-015 · Look deeper (Claude Code, read-only)
 - **Status**: `[ ]` · **Size**: M · **Spec ref**: FEATURE_SPEC.md#h-look-deeper-claude-code-only · **Dependencies**: PRJ-008
-- **Touches**: main/llm.js, main.js, main/projects/context.js, tests/main.test.js
+- **Touches**: main/llm.js, tests/projects-llm.test.js (main.js wiring: text-cache cwd, Read paths into sources, the retry without Look deeper, in PRJ-009)
 
 **What to do**: `run(prompt, { cwd, tools, maxTurns })`: replaces `--tools ''` with the list, keeps `--strict-mcp-config` and the user's settings, sets cwd to the text cache, `--max-turns`; collect `Read` tool paths from stream-json into sources; per-project setting; one retry without it on failure; API key → skipped.
 
