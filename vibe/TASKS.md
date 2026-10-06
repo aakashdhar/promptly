@@ -1083,7 +1083,7 @@ Say "next" to begin.
 - feat(site): Windows visitors see "Promptly X for Windows" and "Download for Windows (N MB)"; release.sh sets the version, publish-release.sh the size (commits + pushes it).
 
 ## 2026-10-06 — Planned: Project modes (not started; owner reviewing)
-🔄 Project modes — connect a project folder; its own mode writes emails, prompts and polished text from what's in it (17/17 built on feature/project-modes — not merged; waiting for the owner to try it)
+🔄 Project modes — connect a project folder; its own mode writes emails, prompts and polished text from what's in it (17/17 ✅ merged ed17647, released v2.23.0)
    Estimated: approx. 51 hours (S: 4, M: 11, L: 2) · Branch: feature/project-modes · Mockups: https://claude.ai/artifact/Q268jeDcxKXtnBxVaQ89GB
    [x] PRJ-001 · Project store — where projects and their summaries are kept
    [x] PRJ-002 · Folder scan — find readable files, skip code, archives and ignored files
@@ -1112,3 +1112,9 @@ Say "next" to begin.
 ## What's next (project modes)
 ⬜ The owner tries it on a real project folder (run from source or a test build), then decides on merge + release.
 ⬜ Follow-ups noted, not built: a hint when a new top-level folder appears (it's ignored until sorted in "Change"); restart watching when a missing folder's drive comes back (focus rescans still catch it); PDF and Windows Word support (deferred in the spec).
+
+## 2026-10-06 — v2.23.0 released: Project modes
+✅ Merged feature/project-modes into main as one merge commit (ed17647; revert with `git revert -m 1 ed17647`). Backup: ~/Documents/Promptly-backups/2.22.2/ + tag backup/2.22.2-stable.
+✅ Full e2e 56/56 on main, unit 857, preflight clean. Windows CI caught one Windows-only gap (no O_NOFOLLOW when reading PROMPTLY.md) — fixed with an identity check after open; Mac DMGs rebuilt from the fixed commit.
+✅ Published v2.23.0 (Apple Silicon, Intel, Windows); all three site links serve it.
+⬜ Website copy for Project modes not written yet (only the version/size changed).
