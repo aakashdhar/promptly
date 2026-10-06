@@ -4,6 +4,7 @@
 > Last updated: 2026-09-24 (Foundation pass — main/ modules, shared/modes.json, tests + e2e, defect fixes)
 > 📝 2026-09-28 · Verified during Windows version planning (current through v2.19.1 and the audit fixes)
 > 📝 2026-09-30 · launch.html (launch splash) added
+> 📝 2026-10-06 · Verified during Project modes planning
 
 ---
 

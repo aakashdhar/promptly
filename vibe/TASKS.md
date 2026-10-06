@@ -1081,3 +1081,25 @@ Say "next" to begin.
 - fix(main) 8aaecef: the stop watchdog no longer logs a false "Recording did not stop 10 s after the stop shortcut" when the next recording starts within 10 s. Log-only; shipped in v2.22.2.
 - fix(llm): "As a prompt" timed out on 2.22.1 (Couldn't write the prompt): the quick start skipped the user's Claude Code settings and with them effortLevel. Settings load again; Craft failures are logged.
 - feat(site): Windows visitors see "Promptly X for Windows" and "Download for Windows (N MB)"; release.sh sets the version, publish-release.sh the size (commits + pushes it).
+
+## 2026-10-06 — Planned: Project modes (not started; owner reviewing)
+🔄 Project modes — connect a project folder; its own mode writes emails, prompts and polished text from what's in it (0/17)
+   Estimated: approx. 51 hours (S: 4, M: 11, L: 2) · Branch: feature/project-modes · Mockups: https://claude.ai/artifact/Q268jeDcxKXtnBxVaQ89GB
+   [ ] PRJ-001 · Project store — where projects and their summaries are kept
+   [ ] PRJ-002 · Folder scan — find readable files, skip code, archives and ignored files
+   [ ] PRJ-003 · Text and email reading — .md/.txt/.eml/.mbox, Word/RTF on Mac, replies de-quoted
+   [ ] PRJ-004 · Local search — instant search over the folder, no new dependency
+   [ ] PRJ-005 · Watching — new files count straight away; "N new files" hint
+   [ ] PRJ-006 · Folder map — Claude sorts the folders; the person checks them
+   [ ] PRJ-007 · Project summary — build, Refresh, Rebuild; edits are kept
+   [ ] PRJ-008 · Context per request and Write as (email / prompt / polish)
+   [ ] PRJ-009 · IPC for projects
+   [ ] PRJ-010 · Connect screens (map, questions, summary preview)
+   [ ] PRJ-011 · Settings › Projects
+   [ ] PRJ-012 · Projects in the mode menu and header
+   [ ] PRJ-013 · Write as picker and "Based on" sources
+   [ ] PRJ-014 · Dictation suggestion "As an <Project> email"
+   [ ] PRJ-015 · Look deeper (Claude Code reads more files, read-only)
+   [ ] PRJ-016 · End-to-end tests and UI audit
+   [ ] PRJ-017 · Docs
+   → Full specs: vibe/features/2026-10-06-project-modes/FEATURE_TASKS.md (agent use)

@@ -197,6 +197,10 @@ Build order from Feature Map above:
 - Distribution prep — upload path + Slack message template
 
 ---
+#### Project modes — a project folder becomes its own mode ← UNPLANNED ADDITION ⬜ PLANNED 2026-10-06
+> Added: 2026-10-06 · See DECISIONS.md D-PROJECT-MODES · Spec in vibe/features/2026-10-06-project-modes/
+> Depends on: Craft modes, Email/Polish, D-AI-PROVIDERS router (all shipped) · Shared data: new `projects` config key, userData/projects/
+
 #### History Empty State — right panel empty state on launch ← UNPLANNED ADDITION
 > Added: 2026-04-28 · See DECISIONS.md D-HEMPTY-001 for context
 > Build order: post-video-builder · Depends on: ExpandedView + ExpandedDetailPanel (both built)

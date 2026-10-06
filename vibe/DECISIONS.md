@@ -2350,3 +2350,23 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Decision**: after each meaningful edit, a correction made the same way in two edits is added to Your words, and an edit to an Email or Polish result asks Claude for at most two new "How you write" lines (or NONE), which are appended without rewriting the notes. Every change is shown in the window with Undo; Settings › You "Learn from my edits" (on by default) turns it off. Prompt-mode edits never change How you write. The manual "Suggest from my edits" stays.
 - **Rollback**: revert its merge on main (`git revert -m 1 <merge>`), or the switch per user.
 ---
+
+---
+## — Feature Start: Project modes — 2026-10-06
+> Folder: vibe/features/2026-10-06-project-modes/
+> A connected project folder becomes its own mode; emails/prompts/polish written in it are grounded in the folder.
+> Tasks: PRJ-001 … PRJ-017 | Estimated: ~51 hours | Status: planned; build waits for the owner
+---
+
+### D-PROJECT-MODES — Projects are folders, shown as their own modes (planned)
+- **Date**: 2026-10-06 · **Type**: product + architecture
+- **Why**: a team member asked for context-driven prompts per project. Research (3 agents + local tests): no voice app grounds on documents; leading tools pair a short always-loaded brief with just-in-time search; embeddings are being dropped for local corpora (Claude Code, Cursor Jul 2026).
+- **Decision** (owner-agreed in conversation): no login or server; each person connects their own local folder. A project is its own mode in the mode menu (not a switch on every mode), with Write as Email/Prompt/Polish picked from the request. Dictation never uses a project; after a dictation that names a project person, "As an <Project> email" is offered. Generic folder handling: local scan → Claude proposes a folder map → two questions → editable summary with sources and pinned edits → manual Refresh with an "N new files" hint; new files are searchable immediately via node:sqlite FTS5 (built into Electron 41, verified). Optional read-only "look deeper" on Claude Code over a text cache with `--strict-mcp-config` (`--tools` alone left the user's Gmail/Slack MCP tools loaded in testing).
+- **Open, recommended defaults in the spec**: summary kept in Promptly with an opt-in PROMPTLY.md in the folder; Look deeper on by default for Claude Code users.
+
+---
+## 2026-10-06 — Spec review: add-feature (Project modes)
+> P0: 0 · P1: 5 (fixed) · P2: 4
+> Action: fixed autonomously — 1 round, clean on re-review
+> Report: vibe/spec-reviews/2026-10-06-add-feature-project-modes.md
+---
