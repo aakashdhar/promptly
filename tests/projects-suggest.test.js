@@ -93,6 +93,84 @@ describe('termsFromSummary', () => {
     const text = '## Words\n- _Hypercare_ — the two weeks after go-live\n- SSO [source: notes/[draft].md · 1 Oct]\n- tenant_id, *RLS* [source: a · 2 Oct]'
     expect(termsFromSummary(text).words).toEqual(['Hypercare', 'SSO', 'tenant_id', 'RLS'])
   })
+
+  it('reads "Label: Name" People lines as the person, and skips placeholders', () => {
+    const text = [
+      '## People',
+      '- PM: Aparna Rao',
+      '- Sponsor: Rahul Mehta (Acme) — approves scope',
+      '- **PM:** Priya Shah',
+      '- **QA**: Dev Patel',
+      '- Acme: Jo Bloggs',
+      // The person first, then a role: the person stays.
+      '- Ravi: Head of Sales',
+      '- Sam: QA',
+      '- José Álvarez: Infer360 support',
+      // A role on its own is nobody; after a dash, the person who holds it is read.
+      '- Product Lead — Meera Iyer',
+      '- **Head of Sales** — TBD',
+      '- Client sponsor',
+      '- None',
+      '- Unknown',
+      '- TBD — sponsor',
+      '- N/A',
+      '- Nobody.',
+      '## Words',
+      '- None',
+      '- TBD; Hypercare',
+    ].join('\n')
+    const terms = termsFromSummary(text)
+    expect(terms).toEqual({
+      people: ['Aparna Rao', 'Rahul Mehta', 'Priya Shah', 'Dev Patel', 'Jo Bloggs', 'Ravi', 'Sam', 'José Álvarez', 'Meera Iyer'],
+      words: ['Hypercare'],
+    })
+    const p = project({ name: 'Northwind', ...terms })
+    for (const text of ['none of this works', 'the sponsor said no', 'the PM is out', 'status unknown', 'the product works', 'head office called']) {
+      expect(suggestProject(text, [p], { pickOutput })).toBeNull()
+    }
+  })
+
+  it('finds People and Words the way summary.js does: "(both sides)", "People:" lines, • bullets, sub-headings, aliases', () => {
+    const text = [
+      '# Infer360',
+      '## People (both sides)',
+      '• **Aparna Rao** — product lead',
+      '### Client side',
+      '- Rahul Mehta (CTO)',
+      '  - Reports To Rahul Mehta',
+      ' - Priya Shah, delivery',
+      '    Continues Here Too',
+      'Words:',
+      '- Tenant ID',
+      '## Glossary',
+      '- RLS (row level security), ReportHub (the client\'s (old) name)',
+      '## Agreed',
+      '- Copyable Link',
+    ].join('\n')
+    // A sub-heading inside People keeps People; a 1-space indent is a sibling, 2+ a note.
+    expect(termsFromSummary(text)).toEqual({ people: ['Aparna Rao', 'Rahul Mehta', 'Priya Shah'], words: ['Tenant ID', 'RLS', 'ReportHub'] })
+  })
+
+  it('stays fast on huge or odd summaries', () => {
+    const odd = [
+      `## People\n- A${' '.repeat(100000)}-x\n## Words\n- A${' '.repeat(100000)}-x`,
+      `## People\n- ${'<!--'.repeat(100000)}\n## Words\n- ${'<!--'.repeat(100000)}`,
+      `## People\n- A${'.'.repeat(100000)}b\n## Words\n- A${'!'.repeat(100000)}b`,
+      `## People\n- ${'('.repeat(100000)}\n## Words\n- ${'('.repeat(100000)}`,
+      `## People${' '.repeat(50000)}x\n- Aparna Rao`,
+    ]
+    for (const text of odd) {
+      const started = performance.now()
+      expect(() => termsFromSummary(text)).not.toThrow()
+      expect(performance.now() - started).toBeLessThan(1000)
+    }
+    const bullets = (n, line) => Array.from({ length: n }, (_, i) => line(i)).join('\n')
+    const started = performance.now()
+    const terms = termsFromSummary(`## People\n${bullets(10000, (i) => `- Person${i} Name — role`)}\n## Words\n${bullets(10000, (i) => `- Term${i}`)}`)
+    expect(terms.people).toHaveLength(10000)
+    expect(terms.words).toHaveLength(10000)
+    expect(performance.now() - started).toBeLessThan(1000)
+  })
 })
 
 describe('suggestProject', () => {
@@ -176,6 +254,48 @@ describe('suggestProject', () => {
     // Two different people still count 2.
     const two = project({ id: 'two', name: 'Gamma', people: ['Aparna Rao', 'Daniel Ito'], lastUsedAt: 0 })
     expect(suggestProject('Aparna Rao and Daniel', [one, two], { pickOutput })?.id).toBe('two')
+  })
+
+  it('gives each stretch to the longest name across all entries, so two people sharing a first name both count', () => {
+    const alpha = project({ id: 'alpha', name: 'Alpha', people: ['Priya Shah', 'Priya Patel'], lastUsedAt: 1 })
+    const beta = project({ id: 'beta', name: 'Beta', people: ['Priya Shah'], lastUsedAt: 2 })
+    // Alpha 2 beats the newer Beta's 1, in either order.
+    expect(suggestProject('Priya Shah and Priya Patel will review', [alpha, beta], { pickOutput })?.id).toBe('alpha')
+    expect(suggestProject('Priya Shah and Priya Patel will review', [beta, alpha], { pickOutput })?.id).toBe('alpha')
+    // Alpha 2 ties Epsilon (Priya Patel + Hypercare) 2, and Alpha is newer.
+    const epsilon = project({ id: 'epsilon', name: 'Epsilon', people: ['Priya Patel'], words: ['Hypercare'], lastUsedAt: 0 })
+    expect(suggestProject('Priya Shah and Priya Patel on hypercare', [epsilon, alpha], { pickOutput })?.id).toBe('alpha')
+    // Gamma 2 ties the older Delta 2, so the newer Gamma wins.
+    const gamma = project({ id: 'gamma', name: 'Gamma', people: ['Priya Shah', 'Priya Patel'], lastUsedAt: 9 })
+    const delta = project({ id: 'delta', name: 'Delta', people: ['Priya Patel', 'Daniel Ito'], lastUsedAt: 1 })
+    expect(suggestProject('Priya Shah, Priya Patel and Daniel', [delta, gamma], { pickOutput })?.id).toBe('gamma')
+    // A bare "Priya" is one stretch, and after "Priya Shah" it is the same person: Alpha 1 ties
+    // the newer Omega's Daniel.
+    const omega = project({ id: 'omega', name: 'Omega', people: ['Daniel Ito'], lastUsedAt: 5 })
+    expect(suggestProject('Priya and Daniel', [alpha, omega], { pickOutput })?.id).toBe('omega')
+    expect(suggestProject('Priya Shah said Priya will review it with Daniel', [alpha, omega], { pickOutput })?.id).toBe('omega')
+  })
+
+  it('does not count the project name where it is only part of a person', () => {
+    const rao = project({ id: 'rao', name: 'Rao', people: ['Aparna Rao'], lastUsedAt: 9 })
+    const sigma = project({ id: 'sigma', name: 'Sigma', people: ['Aparna Rao', 'Daniel Ito'], lastUsedAt: 1 })
+    // Rao: Aparna Rao 1 (not name 2 + Aparna 1) loses to Sigma: Aparna Rao + Daniel 2.
+    expect(suggestProject('Aparna Rao and Daniel', [rao, sigma], { pickOutput })?.id).toBe('sigma')
+    // Named on its own, it still counts 2: Rao 2 + Aparna 1 beats Sigma's 2.
+    expect(suggestProject('Rao update: Aparna and Daniel', [sigma, rao], { pickOutput })?.id).toBe('rao')
+  })
+
+  it('returns quickly on a ~1 MB dictation, never throwing, and reads only the first 50,000 characters', () => {
+    const started = performance.now()
+    expect(suggestProject('acme '.repeat(200000), [project({ id: 'acme', name: 'Acme' })], { pickOutput })?.id).toBe('acme')
+    expect(suggestProject('priya '.repeat(200000), [project({ id: 'zed', name: 'Zed', people: ['Priya Shah'] })], { pickOutput })?.id).toBe('zed')
+    // Overlapping repeats: every "rao" sits in several candidate stretches.
+    const rao = project({ id: 'rao', name: 'Rao Rao', people: ['Rao Rao Rao'] })
+    expect(suggestProject('rao '.repeat(250000), [rao], { pickOutput })?.id).toBe('rao')
+    const many = Array.from({ length: 5 }, (_, i) => project({ id: `r${i}`, name: `Rao ${i}`, people: ['Aparna Rao', 'Aparna'], words: ['Aparna Rao', 'Rao Aparna'] }))
+    expect(suggestProject('aparna rao '.repeat(100000), many, { pickOutput })?.id).toBe('r0')
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(suggestProject(`${'x '.repeat(30000)}Acme`, [project({ name: 'Acme' })], { pickOutput })).toBeNull()
   })
 
   it('matches names however they are spelled out: accents decomposed, honorifics, groups', () => {
