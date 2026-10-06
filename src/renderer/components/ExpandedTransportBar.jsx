@@ -41,6 +41,7 @@ export default function ExpandedTransportBar({
   micQuiet = false,
   historyHidden = false,
   onToggleHistory,
+  onConnectProject,
 }) {
   const hotkey = useHotkeyWords()
   const isRecording = currentState === 'RECORDING'
@@ -80,7 +81,7 @@ export default function ExpandedTransportBar({
   } else if (currentState === 'GENERATION_ERROR') {
     label = generationErrorType === 'auth' ? 'Not logged in' : generationErrorType === 'timeout' ? 'Claude timed out' : generationErrorType === 'empty' ? 'Empty response' : 'Generation failed'
   } else {
-    label = mode === 'dictate' ? 'Ready to dictate' : 'Speak your prompt'
+    label = mode === 'dictate' ? 'Ready to dictate' : String(mode).startsWith('project:') ? `Say what you need for ${modeLabel}` : 'Speak your prompt'
     hint = `${hotkey.needsAccess ? hotkey.fallback : hotkey.action} or click mic to start`
   }
 
@@ -199,6 +200,7 @@ export default function ExpandedTransportBar({
           onSelect={onModeSelect}
           onShowShortcuts={onShowShortcuts}
           onShowHistory={onShowHistory}
+          onConnectProject={onConnectProject}
           onClose={() => setShowModeDropdown(false)}
           anchorRef={pillRef}
         />

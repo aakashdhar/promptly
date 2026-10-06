@@ -464,7 +464,9 @@ async function runDictation(transcript) {
 async function runProjectPrompt(transcript, options) {
   const req = options.project;
   const exclude = Array.isArray(req.exclude) ? req.exclude.slice(0, 500).map(String) : [];
-  const prep = await projects.prepare({ id: String(req.id), transcript, output: req.output, exclude });
+  // Iterate looks things up with what was first asked, not with "make it shorter".
+  const lookup = options.revise && options.revise.transcript ? String(options.revise.transcript) : transcript;
+  const prep = await projects.prepare({ id: String(req.id), transcript: lookup, output: req.output || (options.revise && options.revise.output), exclude });
   if (prep.error) return { success: false, error: prep.error, errorType: 'project' };
   const modeConf = getMode(prep.output);
   const stored = config.read();
@@ -475,7 +477,10 @@ async function runProjectPrompt(transcript, options) {
     otherLanguages: (accurateSpeech()?.language || 'en') !== 'en',
     project: prep.block,
   };
-  const prompt = buildModePrompt(transcript, prep.output, { ...options, detail: stored.promptDetail, context });
+  // Iterate sends the current result and the spoken change, as in any other mode.
+  const prompt = options.revise
+    ? buildRevisePrompt({ modeKey: prep.output, ...options.revise, instruction: transcript, tone: options.tone, context })
+    : buildModePrompt(transcript, prep.output, { ...options, detail: stored.promptDetail, context });
   const throttled = prep.output !== 'email' ? throttledDelta(80) : null;
   // Look deeper clears the shown text when Claude opens a file; that reset must never be throttled away.
   const onDelta = throttled ? (text) => (text === '' ? winSend('generation-delta', { text: '' }) : throttled(text)) : undefined;
@@ -507,6 +512,9 @@ async function runProjectPrompt(transcript, options) {
 }
 
 async function runGeneratePrompt({ transcript, mode, options = {} }) {
+  // A project mode ("project:<id>") from any of the window's generate calls, or an explicit
+  // project option (Write as, leaving a file out, the Dictation suggestion).
+  if (String(mode || '').startsWith('project:')) options = { ...options, project: { ...(options.project || {}), id: String(mode).slice(8) } };
   if (options.project && options.project.id) return runProjectPrompt(transcript, options);
   const modeConf = getMode(mode);
   if (modeConf.kind === 'builder') return { success: true, prompt: transcript };

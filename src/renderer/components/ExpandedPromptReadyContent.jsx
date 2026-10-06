@@ -38,6 +38,8 @@ export default function ExpandedPromptReadyContent({
   displayMode,
   polishTone = 'formal',
   onPolishToneChange,
+  // Project modes: the project bar or the "As an <Project> email" suggestion, above the actions.
+  extra = null,
 }) {
   // What's on screen: a dictation (your words), a polish, or a prompt (possibly made from a
   // dictation, which keeps the switch back to "As I said it").
@@ -246,6 +248,8 @@ export default function ExpandedPromptReadyContent({
           <EvalPanel key={evalPrompt} transcript={transcript} prompt={evalPrompt} open={scoreOpen} hideToggle />
         </div>
       )}
+
+      {extra}
 
       {/* One action bar: change it on the left, take it on the right. */}
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', borderTop: '0.5px solid rgba(var(--ink),0.08)' }}>

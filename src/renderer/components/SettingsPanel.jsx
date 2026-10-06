@@ -4,6 +4,7 @@ import YouSection from './YouSection.jsx'
 import SpeechSection from './SpeechSection.jsx'
 import YourWordsSection from './YourWordsSection.jsx'
 import AiProviderSection from './AiProviderSection.jsx'
+import ProjectsSection from './ProjectsSection.jsx'
 import { keys, combo, titleBarPadding } from '../utils/keys.js'
 
 // Settings, one short tab at a time: icon tabs down the side, and in each tab sections of rows
@@ -17,6 +18,7 @@ const ICONS = {
   prompts: <><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M19 16l.8 2.2 2.2.8-2.2.8L19 22l-.8-2.2-2.2-.8 2.2-.8z" /></>,
   you: <><circle cx="12" cy="8" r="4" /><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5" /></>,
   setup: <><rect x="3" y="4" width="18" height="16" rx="2.5" /><path d="M7 9l3 3-3 3M12 15h5" /></>,
+  projects: <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.2l1.8 2.2h9A1.5 1.5 0 0 1 21 9.7v8.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z" />,
   ai: <><rect x="7" y="7" width="10" height="10" rx="2" /><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" /></>,
 }
 const TABS = [
@@ -24,6 +26,7 @@ const TABS = [
   ['dictation', 'Dictation', 'Your words, typed where your cursor is. Nothing is rewritten.'],
   ['speech', 'Speech', 'How your voice becomes text. Everything runs on this Mac.'],
   ['prompts', 'Prompts', 'How Prompt, Code and Design write for you.'],
+  ['projects', 'Projects', 'Connected folders. Each one is its own mode that writes with what’s in it.'],
   ['you', 'You', 'Notes that help Promptly write like you. They stay on this Mac.'],
   ['ai', 'AI', 'Who writes your prompts: Claude Code, or your own OpenAI, Gemini or Grok key.'],
   ['setup', 'Setup', 'The tools Promptly uses. You rarely need this.'],
@@ -114,7 +117,7 @@ function PathField({ id, label, value, onChange, status, placeholder, onBrowse }
 }
 
 
-export default function SettingsPanel({ onClose }) {
+export default function SettingsPanel({ onClose, onProjectPanel }) {
   const [tab, setTab] = useState('general')
   const [claudeVal, setClaudeVal] = useState('')
   const [whisperVal, setWhisperVal] = useState('')
@@ -362,6 +365,7 @@ export default function SettingsPanel({ onClose }) {
       </>
     )
     if (tab === 'ai') return <AiProviderSection />
+    if (tab === 'projects') return <ProjectsSection onPanel={onProjectPanel} />
     if (tab === 'you') return (
       <Section title="Your notes">
         <div style={{ padding: '10px 0' }}>

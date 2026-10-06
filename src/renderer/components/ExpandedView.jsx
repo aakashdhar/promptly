@@ -3,6 +3,7 @@ import ExpandedTransportBar from './ExpandedTransportBar.jsx'
 import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
+import ProjectConnectPanel from './ProjectConnectPanel.jsx'
 import ShortcutsPanel from './ShortcutsPanel.jsx'
 import { isHistoryToggleKey, panelTopStrip } from '../utils/keys.js'
 
@@ -83,8 +84,11 @@ export default function ExpandedView({
   onCloseShortcuts,
   resultMode,
   micQuiet,
+  project = null,
 }) {
   const [selected, setSelected] = useState(null)
+  // Project modes: the connect flow, or a project's folders or summary, over the window.
+  const [projectPanel, setProjectPanel] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
   // History can be hidden (the toolbar button or Ctrl-Cmd-S) so the result, and the Ribbon while you
@@ -154,6 +158,7 @@ export default function ExpandedView({
         micQuiet={micQuiet}
         historyHidden={historyHidden}
         onToggleHistory={() => setHistoryShown(historyHidden)}
+        onConnectProject={() => setProjectPanel({ kind: 'connect' })}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
@@ -223,6 +228,7 @@ export default function ExpandedView({
           thinkingCurrentLabel={thinkingCurrentLabel}
           modeLabel={modeLabel}
           micQuiet={micQuiet}
+          project={project}
         />
       </div>
       </div>
@@ -247,9 +253,10 @@ export default function ExpandedView({
           background: 'var(--bg)',
           display: 'flex', flexDirection: 'column',
         }}>
-          <SettingsPanel onClose={onCloseSettings} />
+          <SettingsPanel onClose={onCloseSettings} onProjectPanel={setProjectPanel} />
         </div>
       )}
+      {projectPanel && <ProjectConnectPanel key={JSON.stringify(projectPanel)} panel={projectPanel} onClose={() => setProjectPanel(null)} />}
     </div>
   )
 }

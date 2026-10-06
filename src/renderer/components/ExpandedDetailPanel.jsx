@@ -23,6 +23,7 @@ import useCopy from '../hooks/useCopy.js'
 import { pressable } from '../utils/pressable.js'
 import ThumbIcon from './ThumbIcon.jsx'
 import { keys, combo } from '../utils/keys.js'
+import ProjectResultBar, { ProjectSuggestion } from './ProjectResultBar.jsx'
 
 const POSITIVE_TAGS = ['Perfect', 'Clear', 'Detailed']
 
@@ -76,6 +77,7 @@ export default function ExpandedDetailPanel({
   onShowDictation,
   onMakePrompt,
   onAbort,
+  project = null,
   thinkingElapsed = 0,
   thinkingCurrentLabel = '',
   modeLabel = '',
@@ -475,6 +477,9 @@ export default function ExpandedDetailPanel({
           isIterated={isIterated}
           polishTone={polishTone}
           onPolishToneChange={onPolishToneChange}
+          extra={project && (project.result
+            ? <ProjectResultBar result={project.result} onWriteAs={project.onWriteAs} onExclude={project.onExclude} />
+            : dictation && resultView === 'dictation' ? <ProjectSuggestion suggestion={project.suggestion} onUse={project.onUseSuggestion} /> : null)}
         />
       )}
 
@@ -608,6 +613,7 @@ export default function ExpandedDetailPanel({
           isExpanded={true}
           onToneAdjust={onToneAdjust}
           onBodyChange={onEmailBodyChange}
+          extra={project && project.result ? <ProjectResultBar result={project.result} onWriteAs={project.onWriteAs} onExclude={project.onExclude} /> : null}
         />
       )}
     </div>

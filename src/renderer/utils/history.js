@@ -21,7 +21,7 @@ function store(history) {
   }
 }
 
-export function saveToHistory({ transcript, prompt, mode, isIteration = false, basedOn = null, polishChanges = null }) {
+export function saveToHistory({ transcript, prompt, mode, isIteration = false, basedOn = null, polishChanges = null, project = null }) {
   const history = getHistory()
   const words = String(transcript ?? '').split(' ')
   const title = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '')
@@ -29,6 +29,8 @@ export function saveToHistory({ transcript, prompt, mode, isIteration = false, b
   if (isIteration) entry.isIteration = true
   if (basedOn) entry.basedOn = basedOn
   if (polishChanges) entry.polishChanges = polishChanges
+  // Written in a project mode (D-PROJECT-MODES): tagged with the project, not the output kind.
+  if (project && project.id) entry.project = { id: project.id, name: String(project.name || ''), color: project.color || '' }
   history.unshift(entry)
   if (history.length > MAX_ENTRIES) history.splice(MAX_ENTRIES)
   store(history)

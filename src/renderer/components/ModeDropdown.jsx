@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import MODE_REGISTRY from '../../../shared/modes.json'
 import { keys, combo } from '../utils/keys.js'
+import { modeInfo } from '../utils/modes.js'
+import { projectModeKey } from '../utils/projects.js'
+import useProjects from '../hooks/useProjects.js'
 
 const { modes: MODES } = MODE_REGISTRY
 
@@ -38,12 +41,14 @@ function Chip({ m, active, onPick, onHover }) {
   )
 }
 
-export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onClose, anchorRef }) {
+export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcuts, onShowHistory, onConnectProject, onClose, anchorRef }) {
   const ref = useRef(null)
   const [hovered, setHovered] = useState(null)
   const [promptStyle, setPromptStyle] = useState('prompt')
   const isDictation = BY_KEY[mode]?.kind === 'dictation'
-  const described = BY_KEY[hovered] || BY_KEY[mode]
+  const projects = useProjects()
+  // Projects are modes too (D-PROJECT-MODES); their description comes from modes.js.
+  const described = BY_KEY[hovered] || modeInfo(hovered) || BY_KEY[mode] || modeInfo(mode)
 
   // While the menu is open the window behind it can't be clicked or tabbed into; a click
   // anywhere outside still closes it.
@@ -124,6 +129,26 @@ export default function ModeDropdown({ mode, top, right, onSelect, onShowShortcu
           </button>
         ))}
       </div>
+
+      {(projects.length > 0 || onConnectProject) && (
+        <>
+          <div style={sectionLabel}>Projects</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {projects.map((p) => (
+              <Chip key={p.id} m={{ key: projectModeKey(p.id), label: p.name, dot: p.color }} active={mode === projectModeKey(p.id)} onPick={pick} onHover={setHovered} />
+            ))}
+            {onConnectProject && (
+              <button
+                type="button"
+                onClick={() => { onClose(); onConnectProject() }}
+                style={{ height: '28px', padding: '0 11px', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '12px', color: 'var(--text-secondary)', background: 'transparent', border: '0.5px dashed rgba(var(--ink),0.28)' }}
+              >
+                + Connect a folder
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
       <div style={sectionLabel}>Prompt style</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
