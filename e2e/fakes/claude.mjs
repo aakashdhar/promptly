@@ -72,6 +72,26 @@ async function main(args) {
     say(`## Task for ${target}\n${first}\n\n## Output format\nAs asked.`)
     return 0
   }
+  // Project modes: the folder map, facts from each file, the summary, and a refresh diff.
+  if (asks('Return ONLY this JSON') && asks('"folders"')) {
+    say(JSON.stringify({ folders: [{ rel: 'comms', kind: 'conversations' }, { rel: 'contracts', kind: 'agreements' }] }))
+    return 0
+  }
+  if (asks('<documents>')) {
+    const blocks = [...input.matchAll(/<path>([^<]+)<\/path>\n<tag>([^<]+)<\/tag>/g)]
+    say(blocks.map(([, rel, tag]) => `## ${rel}\n- Aparna Rao (client) wrote about ${rel.split('/').pop()} ${tag}`).join('\n'))
+    return 0
+  }
+  if (asks('You write the summary of one project')) {
+    const tag = (input.match(/\[source: [^\]]+\]/) || [''])[0]
+    say(['## The project', `- A video learning portal for the client. ${tag}`, '## People', `- **Aparna Rao**, client product owner. ${tag}`, '## How they like to be written to', '## Agreed', '## Open right now', '## Latest activity', '## Words', `- Infer360 ${tag}`].join('\n'))
+    return 0
+  }
+  if (asks("You keep one project's summary up to date")) {
+    say(JSON.stringify({ add: [], change: [], retire: [], latest: [] }))
+    return 0
+  }
+
   // Learning from one edit: NONE unless FAKE_DIR/learned holds the notes to answer with.
   if (asks('Work out what this one edit shows')) { say(has('learned') ? read('learned') : 'NONE'); return 0 }
   if (asks('write short style notes')) { say('- Short sentences\n- Signs off with "Cheers, Sam"'); return 0 }

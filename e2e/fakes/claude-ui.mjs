@@ -17,8 +17,23 @@ process.stdin.on('end', () => {
   setTimeout(() => {
     if (fs.existsSync(at('fail'))) { process.stderr.write('simulated failure'); process.exit(1) }
     const has = (s) => input.includes(s)
+    // Project modes: the folder map, facts per file (tagged the way the prompt asks), the summary.
+    const projectFacts = () => [...input.matchAll(/<path>([^<]+)<\/path>\n<tag>([^<]+)<\/tag>/g)]
+      .map(([, rel, tag]) => `## ${rel}\n- Aparna Rao (client) asked for a copyable link under the button in the access email. ${tag}`).join('\n')
+    const projectSummary = () => {
+      const tag = (input.match(/\[source: [^\]]+\]/) || [''])[0]
+      return ['## The project', `- Video learning platform for the client's field staff; phase 2 (analytics and access emails) is in build, go-live 31 Oct. ${tag}`,
+        '## People', `- **Aparna Rao**, client product owner; approves scope changes in writing. ${tag}`,
+        '## How they like to be written to', `- Short emails, first names, a clear yes or no up front. ${tag}`,
+        '## Agreed', `- Phase 2 covers analytics, SSO and email fixes. ${tag}`,
+        '## Open right now', `- Outlook users can't click the button in the access email; a copyable link was asked for. ${tag}`,
+        '## Latest activity', '## Words', `- Infer360, SSO ${tag}`].join('\n')
+    }
     const out =
-      has("Analyse the user's spoken image idea") ? a.imageAnalysis
+      has('Return ONLY this JSON') && has('"folders"') ? JSON.stringify({ folders: [{ rel: 'comms', kind: 'conversations' }, { rel: 'contracts', kind: 'agreements' }, { rel: 'shared', kind: 'unsure', question: 'Is this reference material or work in progress?' }] })
+      : has('<documents>') ? projectFacts()
+      : has('You write the summary of one project') ? projectSummary()
+      : has("Analyse the user's spoken image idea") ? a.imageAnalysis
       : has('Generate exactly 3 distinct prompt variations') ? a.imageVariations
       : has('Assemble a final') ? a.imageAssembly
       : has('expert email writer') ? a.email

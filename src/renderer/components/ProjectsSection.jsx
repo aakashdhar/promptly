@@ -42,12 +42,12 @@ function ProjectCard({ p, open, onToggle, onPanel }) {
   return (
     <div style={{ background: 'var(--surface)', border: '0.5px solid rgba(var(--ink),0.1)', borderRadius: 12, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
-        <button type="button" onClick={onToggle} aria-expanded={open} style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-          <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+        <button type="button" onClick={onToggle} aria-expanded={open} style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', columnGap: 9, alignItems: 'center', minWidth: 0, flex: 1, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+          <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: '50%', background: p.color }} />
           <span style={{ fontSize: 14, fontWeight: 650, color: 'rgba(var(--ink),0.95)' }}>{p.name}</span>
-          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.dir}>{p.dir}</span>
+          <span style={{ gridColumn: 2, fontSize: 11.5, color: 'var(--text-tertiary)', overflowWrap: 'anywhere' }}>{p.dir}</span>
         </button>
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: st.warn ? AMBER : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{st.text}</span>
+        <span style={{ fontSize: 12, color: st.warn ? AMBER : 'var(--text-secondary)', textAlign: 'right', maxWidth: 190 }}>{st.text}</span>
         {p.missing
           ? <button type="button" style={btn} onClick={() => act(api?.locateProject?.(p.id))}>Locate…</button>
           : <button type="button" style={p.newFiles > 0 || !p.summaryUpdatedAt ? primary : btn} disabled={p.building} onClick={() => act(api?.refreshProject?.(p.id))}>Refresh</button>}
@@ -61,7 +61,7 @@ function ProjectCard({ p, open, onToggle, onPanel }) {
           </div>
           <div style={rowStyle}>
             <span style={key}>Folders it reads</span>
-            <span style={{ color: 'rgba(var(--ink),0.88)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }} title={folders.join(', ')}>{folders.join(', ') || 'None'}</span>
+            <span style={{ color: 'rgba(var(--ink),0.88)', minWidth: 0, overflowWrap: 'anywhere' }}>{folders.join(', ') || 'None'}</span>
             <button type="button" style={{ ...btn, marginLeft: 'auto' }} disabled={p.missing} onClick={() => onPanel({ kind: 'folders', id: p.id })}>Change</button>
           </div>
           <div style={rowStyle}>

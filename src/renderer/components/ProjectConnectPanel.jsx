@@ -83,6 +83,11 @@ function FolderMap({ folders, onChange }) {
   )
 }
 
+// **bold** in a summary line (names), as text nodes only: nothing from the file becomes markup.
+function withBold(text) {
+  return String(text).split(/(\*\*[^*]+\*\*)/g).map((part, i) => (/^\*\*[^*]+\*\*$/.test(part) ? <strong key={i} style={{ fontWeight: 600 }}>{part.slice(2, -2)}</strong> : part))
+}
+
 // The summary, read view: headings, bullets, and each line's sources as small labels.
 const TAG = /\s*[[(]sources?:\s*([^\])]*)[\])]\s*$/i
 function SummaryView({ text }) {
@@ -96,8 +101,8 @@ function SummaryView({ text }) {
         const body = (m ? line.slice(0, m.index) : line).replace(/^\s*[-*•]\s*/, '')
         return (
           <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13.5, lineHeight: 1.5, color: 'rgba(var(--ink),0.9)' }}>
-            <span style={{ flex: 1, minWidth: 0 }}>{body}</span>
-            {m && <span style={{ flexShrink: 0, maxWidth: '40%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11.5, color: 'var(--text-tertiary)', border: '0.5px solid rgba(var(--ink),0.12)', borderRadius: 5, padding: '1px 6px' }} title={m[1]}>{m[1]}</span>}
+            <span style={{ flex: 1, minWidth: 0 }}>{withBold(body)}</span>
+            {m && <span style={{ flexShrink: 0, maxWidth: '40%', overflowWrap: 'anywhere', fontSize: 11.5, lineHeight: 1.4, color: 'var(--text-tertiary)', border: '0.5px solid rgba(var(--ink),0.12)', borderRadius: 5, padding: '1px 6px' }}>{m[1]}</span>}
           </div>
         )
       })}
@@ -249,8 +254,8 @@ export default function ProjectConnectPanel({ panel, onClose }) {
                     <span style={label}>Project name</span>
                     <input value={name} onChange={(e) => setName(e.target.value)} maxLength={80}
                       style={{ height: 30, width: 260, padding: '0 10px', borderRadius: 8, border: '0.5px solid rgba(var(--ink),0.16)', background: 'var(--surface)', color: 'rgba(var(--ink),0.95)', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }} />
-                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={scan?.dir}>{scan?.dir}</span>
                   </label>
+                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)', overflowWrap: 'anywhere' }}>{scan?.dir}</span>
                   <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--text-secondary)' }}>
                     Promptly looked at the folder names and the first lines of a few files to work out what each folder holds. Check it, switch off anything it shouldn’t read, and answer the two questions.
                   </p>

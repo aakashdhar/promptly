@@ -138,7 +138,7 @@ export default function ExpandedView({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', position: 'relative' }}>
       {/* While Settings or Shortcuts cover the window, what's behind them can't be reached by
           Tab or a screen reader. */}
-      <div inert={currentState === 'SETTINGS' || currentState === 'SHORTCUTS' ? true : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div inert={currentState === 'SETTINGS' || currentState === 'SHORTCUTS' || projectPanel ? true : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ExpandedTransportBar
         currentState={currentState}
         duration={duration}
@@ -248,7 +248,7 @@ export default function ExpandedView({
         </div>
       )}
       {currentState === 'SETTINGS' && (
-        <div style={{
+        <div inert={projectPanel ? true : undefined} style={{
           position: 'absolute', inset: 0, zIndex: 20,
           background: 'var(--bg)',
           display: 'flex', flexDirection: 'column',

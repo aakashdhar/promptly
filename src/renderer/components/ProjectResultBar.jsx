@@ -13,7 +13,7 @@ function shortDate(date) {
 }
 
 const chip = {
-  display: 'inline-flex', alignItems: 'center', gap: '4px', maxWidth: '100%', height: '26px', padding: '0 4px 0 10px',
+  display: 'inline-flex', alignItems: 'center', gap: '4px', maxWidth: '100%', minHeight: '26px', padding: '2px 4px 2px 10px', boxSizing: 'border-box',
   borderRadius: '7px', fontSize: '12px', color: 'var(--text-secondary)',
   background: 'rgba(var(--ink),0.05)', border: '0.5px solid rgba(var(--ink),0.1)',
 }
@@ -47,7 +47,7 @@ export default function ProjectResultBar({ result, onWriteAs, onExclude, busy = 
         <div aria-label="Files used" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {sources.map((s) => (
             <span key={s.rel} style={chip} title={s.rel}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.rel}{s.date ? ` · ${shortDate(s.date)}` : ''}</span>
+              <span style={{ overflowWrap: 'anywhere' }}>{s.rel}{s.date ? ` · ${shortDate(s.date)}` : ''}</span>
               <button
                 type="button"
                 disabled={busy}

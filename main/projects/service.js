@@ -140,7 +140,9 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
       return { added: [], changed: [], removed: [], error: err.message };
     }).finally(() => {
       s.syncing = null;
-      if (s.dirty) setTimeout(() => sync(id), 0);
+      // Changes that arrived during this run get one more run, started right away so a waiting
+      // request can await it.
+      if (s.dirty) sync(id);
     });
     return s.syncing;
   }
@@ -415,8 +417,10 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
       const project = store.get(id);
       if (!project) return { error: 'This project was removed' };
       if (folderMissing(project)) return { error: `Promptly can't find the ${project.name} folder. Locate it in Settings › Projects.` };
-      const s = state(id);
-      if (s.syncing) await s.syncing; else if (s.dirty) await sync(id);
+      // Always an incremental sync first, so a file saved a moment ago is already searchable
+      // (a run already going may have started before it; wait for the follow-up too).
+      await sync(id);
+      for (let i = 0; i < 2 && state(id).syncing; i++) await state(id).syncing;
       const out = ['email', 'prompt', 'polish'].includes(output) ? output : pickOutput(transcript, project.defaultOutput);
       const index = indexOf(id);
       const search = (text, opts) => (index.available ? index.search(text, opts) : []);

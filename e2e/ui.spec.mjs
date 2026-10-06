@@ -110,6 +110,7 @@ async function launch(theme, { setupComplete = true, helper = null, config = {},
       ...process.env,
       PROMPTLY_USER_DATA: userData,
       PROMPTLY_SAVE_DIR: fs.mkdtempSync(path.join(dir, 'project-')),
+      PROMPTLY_PROJECT_DIR: projectFixture(dir),
       PROMPTLY_WHISPER_DIR: engine,
       // On Windows the fake engine is whisper-cli.cmd, not the whisper-cli.exe the app looks for.
       ...(WIN && { PROMPTLY_WHISPER_CLI: path.basename(engineCli) }),
@@ -118,6 +119,20 @@ async function launch(theme, { setupComplete = true, helper = null, config = {},
     },
   })
   return { app, dir }
+}
+
+// A small client project folder for the Project modes screens: emails, a contract, notes, code.
+function projectFixture(dir) {
+  const root = path.join(dir, 'Infer360')
+  const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.writeFileSync(path.join(root, rel), text) }
+  put('README.md', '# Infer360\nVideo learning platform for the client’s field staff.')
+  put('comms/2026-10-04 Aparna.md', 'From: Aparna Rao <aparna@client.com>\nDate: 4 Oct 2026\nSubject: Access email\n\nOutlook users can’t click the button. Could you add a plain link they can copy under it?')
+  put('comms/2026-09-28 Aparna.md', 'From: Aparna Rao <aparna@client.com>\nDate: 28 Sep 2026\nSubject: SSO timeline\n\nCan we confirm SSO goes live before the 15 Oct board demo?')
+  put('contracts/SOW phase 2.md', '# SOW phase 2\nAnalytics, SSO and email fixes. Go-live 31 Oct 2026.')
+  put('shared/notes.md', 'Standup 2 Oct: SSO waits on the tenant ID.')
+  put('codebase/package.json', '{}')
+  put('codebase/src/index.js', 'module.exports = 1')
+  return root
 }
 
 // Waits for the bar to have loaded. It may already have hidden itself again (it hides when
@@ -358,6 +373,40 @@ for (const scale of SCALES) for (const theme of ['dark', 'light']) {
     await check(page, 'harness-pipeline', { settle: 800 })
     await sizeWindow(app, 1280, 800)
     await check(page, 'harness-pipeline-large', { settle: 600 })
+    await sizeWindow(app, 940, 600)
+
+    // Project modes: connecting a folder (the map, the summary), Settings › Projects, the mode
+    // menu with a project, and an email written in it with the files it used.
+    await page.keyboard.press(`${MOD}+/`)
+    await page.getByRole('tab', { name: 'Projects', exact: true }).click()
+    await check(page, 'settings-projects-empty')
+    await page.getByRole('button', { name: 'Connect a folder…' }).click()
+    await expect(page.getByRole('button', { name: /^Write the summary/ })).toBeVisible({ timeout: 15000 })
+    await check(page, 'project-connect', { settle: 500 })
+    await page.getByLabel('What shared holds').selectOption('reference')
+    await page.getByRole('button', { name: /^Write the summary/ }).click()
+    await expect(page.getByRole('heading', { name: 'Open right now' })).toBeVisible({ timeout: 20000 })
+    await check(page, 'project-summary', { settle: 500 })
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+    await check(page, 'project-summary-edit')
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+    // The panel's Done (it opens over Settings, which has its own).
+    await page.getByRole('button', { name: 'Done', exact: true }).last().click()
+    await expect(page.getByText(/^Up to date/)).toBeVisible({ timeout: 10000 })
+    await check(page, 'settings-projects')
+    await page.getByRole('button', { name: 'Done', exact: true }).click()
+    await page.locator('#mode-pill').click()
+    await check(page, 'mode-menu-projects')
+    await page.getByRole('button', { name: 'Infer360', exact: true }).click()
+    // Start from a clean idle window in the project's mode (the step before left a builder open).
+    await switchMode(app, page, await page.evaluate(() => localStorage.getItem('mode')))
+    await expect(page.locator('#mode-pill')).toHaveText('Infer360')
+    await check(page, 'project-idle', { settle: 500 })
+    await typeAndSubmit(page, 'reply to Aparna, yes we can add the copyable link this week')
+    await expect.poll(() => appState(app), { timeout: 15000 }).toBe('EMAIL_READY')
+    await check(page, 'project-email', { settle: 800 })
+    await sizeWindow(app, 1280, 800)
+    await check(page, 'project-email-large', { settle: 600 })
     await sizeWindow(app, 940, 600)
 
     // The floating pill.
