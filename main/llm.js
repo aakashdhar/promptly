@@ -27,15 +27,31 @@ const QUICK_START_FLAGS = ['--disable-slash-commands'];
 const QUICK_START_ENV = { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' };
 // Streams text as it's written: JSON events on stdout, with partial text deltas.
 const STREAM_FLAGS = ['--output-format', 'stream-json', '--include-partial-messages', '--verbose'];
+// A tool run (Look deeper) may only read. Anything else, a flag-looking entry included, never
+// reaches the command line, even if a caller slips.
+const READ_ONLY_TOOLS = ['Read', 'Grep', 'Glob'];
+// A tool run always has a turn cap: 12 (spec §27) unless the caller asks for 1-50.
+const DEFAULT_MAX_TURNS = 12;
+const MAX_TURNS_LIMIT = 50;
 
-// Reads stream-json lines: text deltas as they arrive, each tool call, and the final result event.
+// Reads stream-json lines: text deltas as they arrive, the tools that ran, and the final result event.
+// Text Claude writes before a tool call is it thinking aloud, not the answer. It is dropped the moment
+// the call starts and onDelta('') takes it off the screen, so the answer still streams and the last
+// text onDelta gives is always the answer so far. onTool({ name, input }) hears a call only once its
+// result comes back without an error: a read Claude Code refused (outside cwd) never counts.
 function createStreamParser(onDelta, onTool) {
   let buffer = '';
   let text = '';
   let result = null;
+  const pending = new Map();
   function feed(chunk) {
     buffer += chunk;
     drain();
+  }
+  function dropThinkingAloud() {
+    if (!text) return;
+    text = '';
+    onDelta('');
   }
   function drain() {
     let newline;
@@ -45,18 +61,28 @@ function createStreamParser(onDelta, onTool) {
       if (!line) continue;
       let event;
       try { event = JSON.parse(line); } catch { continue; }
-      const delta = event.type === 'stream_event' && event.event?.type === 'content_block_delta' && event.event.delta?.type === 'text_delta'
-        ? event.event.delta.text : null;
+      const streamed = event.type === 'stream_event' ? event.event : null;
+      const delta = streamed?.type === 'content_block_delta' && streamed.delta?.type === 'text_delta' ? streamed.delta.text : null;
       if (delta) {
         text += delta;
         onDelta(text);
       }
+      // The call's start streams in well before its full assistant event.
+      if (streamed?.type === 'content_block_start' && streamed.content_block?.type === 'tool_use') dropThinkingAloud();
       if (event.type === 'assistant' && Array.isArray(event.message?.content)) {
         for (const block of event.message.content) {
           if (block?.type !== 'tool_use') continue;
-          // What Claude wrote before opening a file was it thinking aloud, not the answer.
-          text = '';
-          try { onTool?.({ name: block.name, input: block.input ?? {} }); } catch { /* the caller's slip must not end the run */ }
+          dropThinkingAloud();
+          if (block.id) pending.set(block.id, { name: block.name, input: block.input ?? {} });
+        }
+      }
+      if (event.type === 'user' && Array.isArray(event.message?.content)) {
+        for (const block of event.message.content) {
+          if (block?.type !== 'tool_result' || !pending.has(block.tool_use_id)) continue;
+          const call = pending.get(block.tool_use_id);
+          pending.delete(block.tool_use_id);
+          if (block.is_error === true) continue;
+          try { onTool?.(call); } catch { /* the caller's slip must not end the run */ }
         }
       }
       if (event.type === 'result') result = event;
@@ -79,6 +105,26 @@ function isUnknownOptionError(stderr) {
   return /unknown option|unknown argument|unrecognized option/i.test(stderr);
 }
 
+// Spawning in a missing folder fails as "spawn … ENOENT", and in one Claude can't open as "spawn …
+// EACCES": both read as Claude Code being broken. In a file, spawn throws.
+function canEnter(dir) {
+  try {
+    if (!fs.statSync(dir).isDirectory()) return false;
+    fs.accessSync(dir, fs.constants.R_OK | fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function folderUnusable() {
+  return { success: false, error: "The folder for Claude to look in is missing or can't be opened", errorType: 'unknown' };
+}
+
+function turnCap(maxTurns) {
+  return Number.isInteger(maxTurns) && maxTurns >= 1 && maxTurns <= MAX_TURNS_LIMIT ? maxTurns : DEFAULT_MAX_TURNS;
+}
+
 // Runs Claude through the CLI. The prompt is written to stdin rather than passed as an
 // argument, so it never shows up in `ps` and isn't bound by command-line length limits.
 function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onSlow = () => {}, children = new Set(), spawnImpl = spawn }) {
@@ -87,7 +133,7 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
   // Processes this runner stopped on purpose; any other signal is a crash, not a cancel.
   const stoppedByUs = new WeakSet();
 
-  // tools (a tool run) is only ever sent with lean flags: run() makes sure of that.
+  // run() checks cwd, tools and maxTurns first, and sends a tool run only with lean flags.
   function runOnce(prompt, { timeoutMs, slowWarningMs, lean, quick = false, onDelta, thinking = true, cwd, tools = null, maxTurns, onTool }) {
     // A tool run always streams, so each file Claude opens can be seen.
     const streaming = lean && (typeof onDelta === 'function' || !!tools);
@@ -98,19 +144,21 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         resolve({ success: false, error: 'Claude CLI not found. Install via npm i -g @anthropic-ai/claude-code', errorType: 'unknown' });
         return;
       }
-      // Spawning in a missing folder fails as "spawn … ENOENT", which reads as Claude Code missing.
-      if (cwd && !fs.existsSync(cwd)) {
-        resolve({ success: false, error: 'The folder for Claude to look in is missing', errorType: 'unknown' });
-        return;
-      }
       const toolFlags = tools ? ['--tools', ...tools] : ['--tools', ''];
-      const turnFlags = tools && maxTurns ? ['--max-turns', String(maxTurns)] : [];
+      const turnFlags = tools ? ['--max-turns', String(maxTurns)] : [];
       const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? [...toolFlags, ...LEAN_FLAGS, ...turnFlags] : []), ...(lean && quick ? QUICK_START_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
       // The CLI thinks before answering by default; for a long answer that can add minutes
       // without making it better, so callers can turn it off.
       const env = { ...makeClaudeEnv(claudePath), ...(lean && quick ? QUICK_START_ENV : {}), ...(thinking ? {} : { MAX_THINKING_TOKENS: '0' }) };
-      // On Windows an npm-installed claude.cmd goes through cmd.exe; the prompt still goes on stdin.
-      const child = spawnImpl(...platform.spawnArgs(claudePath, args, cwd ? { env, cwd } : { env }));
+      let child;
+      try {
+        // On Windows an npm-installed claude.cmd goes through cmd.exe; the prompt still goes on stdin.
+        child = spawnImpl(...platform.spawnArgs(claudePath, args, cwd ? { env, cwd } : { env }));
+      } catch (err) {
+        // Some spawn failures throw instead of emitting 'error'; a run always resolves.
+        resolve(cwd && !canEnter(cwd) ? folderUnusable() : { success: false, error: err?.message || 'Claude CLI error', errorType: 'unknown' });
+        return;
+      }
       children.add(child);
       let stdout = '';
       let stderr = '';
@@ -150,11 +198,12 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         if (parser) {
           parser.flush();
           const result = parser.result();
-          // Out of turns: what Claude wrote after the last file it opened is still an answer. Out of
-          // turns with nothing written fails, so the caller can ask again without the files.
+          // Out of turns with nothing written after the last tool call fails, so the caller can ask
+          // again without the files. Claude Code 2.1 always stops on a tool call when out of turns;
+          // the text branch keeps an answer a CLI might write before stopping.
           if (tools && result?.subtype === 'error_max_turns') {
             const out = parser.text().trim();
-            finish(out ? { success: true, prompt: out } : { success: false, error: 'Claude opened too many files without answering — try again', errorType: 'unknown', maxTurns: true });
+            finish(out ? { success: true, prompt: out } : { success: false, error: 'Claude opened too many files without answering — try again', errorType: 'max-turns' });
             return;
           }
           if (result && !result.is_error && code === 0) {
@@ -174,39 +223,74 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         if (!out) { finish({ success: false, error: 'Claude returned an empty response — try again', errorType: 'empty' }); return; }
         finish({ success: true, prompt: out });
       });
-      child.on('error', (err) => finish({ success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' }));
+      // A folder removed after run() checked it fails as "spawn … ENOENT" too.
+      child.on('error', (err) => finish(cwd && !canEnter(cwd) ? folderUnusable() : { success: false, error: err.message || 'Claude CLI error', errorType: 'unknown' }));
     });
   }
 
   // onDelta(textSoFar) streams the answer as it's written (skipped on CLIs without the flags).
   // thinking: false skips extended thinking for this call.
-  // tools (e.g. ['Read', 'Grep', 'Glob']) lets Claude open files under cwd, for at most maxTurns
-  // turns; onTool({ name, input }) hears each tool call. The user's settings still load.
+  // tools (a subset of ['Read', 'Grep', 'Glob']) lets Claude open files in cwd for at most maxTurns
+  // turns (1-50, else 12); onTool({ name, input }) hears each tool call that succeeded. The user's
+  // settings still load.
   async function run(prompt, { timeoutMs = 45000, slowWarningMs = 30000, onDelta, thinking = true, cwd, tools, maxTurns, onTool } = {}) {
-    const toolRun = Array.isArray(tools) && tools.length > 0;
-    // Without the lean flags a tool run would get every tool (Bash, Edit…) and the user's MCP
-    // servers, so on a CLI that rejects them it doesn't run; the caller asks again without tools.
-    if (toolRun && !leanFlagsSupported) {
-      return { success: false, error: "This version of Claude Code can't look through the files — update it", errorType: 'unknown' };
-    }
-    const opts = { timeoutMs, slowWarningMs, onDelta, thinking, cwd, tools: toolRun ? tools : null, maxTurns, onTool };
+    const opts = { timeoutMs, slowWarningMs, onDelta, thinking, cwd };
+    if (tools && !(Array.isArray(tools) && tools.length === 0)) return runWithTools(prompt, opts, tools, maxTurns, onTool);
+    if (cwd && !canEnter(cwd)) return folderUnusable();
     const quick = leanFlagsSupported && quickStartSupported;
     let result = await runOnce(prompt, { ...opts, lean: leanFlagsSupported, quick });
-    // A quick start that failed outright (not a cancel, timeout or running out of turns) gets one
-    // ordinary run; if that one works, the quick start was the problem and later calls skip it.
-    if (quick && !result.success && !result.cancelled && !result.timedOut && !result.maxTurns && !isUnknownOptionError(result.stderr || '')) {
+    // A quick start that failed outright (not a cancel or timeout) gets one ordinary run; if that
+    // one works, the quick start was the problem and later calls skip it.
+    if (quick && !result.success && !result.cancelled && !result.timedOut && !isUnknownOptionError(result.stderr || '')) {
       const plain = await runOnce(prompt, { ...opts, lean: true });
       if (plain.success) quickStartSupported = false;
       return strip(plain);
     }
     if (!result.success && leanFlagsSupported && isUnknownOptionError(result.stderr || '')) {
-      // The option this CLI rejects may be one only a tool run sends (--max-turns, a tool name):
-      // ordinary runs keep their lean flags, and a tool run is never retried without them.
-      if (toolRun) return strip(result);
       leanFlagsSupported = false;
       return strip(await runOnce(prompt, { ...opts, lean: false }));
     }
     return strip(result);
+  }
+
+  // Only ordinary runs learn which flags this CLI takes: a tool run that fails leaves them alone, and
+  // the caller asks again without tools (an ordinary run, which learns as usual).
+  async function runWithTools(prompt, opts, tools, maxTurns, onTool) {
+    if (!Array.isArray(tools) || !tools.every((t) => READ_ONLY_TOOLS.includes(t))) {
+      return { success: false, error: 'Unsupported tool', errorType: 'unknown' };
+    }
+    // Without a folder Claude would read from wherever Promptly happens to run.
+    if (!opts.cwd || !canEnter(opts.cwd)) return folderUnusable();
+    // Without the lean flags a tool run would get every tool (Bash, Edit…) and the user's MCP
+    // servers, so on a CLI that rejects them it doesn't run.
+    if (!leanFlagsSupported) {
+      return { success: false, error: "This version of Claude Code can't look through the files — update it", errorType: 'unknown' };
+    }
+    let opened = 0;
+    const toolOpts = {
+      ...opts,
+      lean: true,
+      tools: [...new Set(tools)],
+      maxTurns: turnCap(maxTurns),
+      onTool: (call) => { opened += 1; onTool?.(call); },
+    };
+    const quick = quickStartSupported;
+    const result = await runOnce(prompt, { ...toolOpts, quick });
+    // The quick start gets one more try without it only when the run failed before any tool ran: a
+    // start-up failure is the kind it can cause, a long run isn't paid for twice, and no file is
+    // reported by both runs.
+    if (quick && !opened && quickStartMayBeToBlame(result) && canEnter(opts.cwd)) {
+      return strip(await runOnce(prompt, { ...toolOpts, quick: false }));
+    }
+    return strip(result);
+  }
+
+  // Not a cancel, timeout or running out of turns, and not an option the CLI rejects unless it is
+  // a quick-start one.
+  function quickStartMayBeToBlame(result) {
+    if (result.success || result.cancelled || result.timedOut || result.errorType === 'max-turns') return false;
+    const stderr = result.stderr || '';
+    return !isUnknownOptionError(stderr) || QUICK_START_FLAGS.some((flag) => stderr.includes(flag));
   }
 
   function strip(result) {
