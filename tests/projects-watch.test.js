@@ -569,9 +569,13 @@ describe('project folder watcher on a real folder', () => {
     try {
       w.start()
       expect(w.failed).toBe(false)
+      // macOS can drop a change made before its event stream is up (the app's focus rescan and
+      // the sync before every request cover that); this checks a change once watching is live.
+      await new Promise((r) => setTimeout(r, 750))
       fs.mkdirSync(path.join(dir, 'emails'))
       fs.writeFileSync(path.join(dir, 'emails', 'Re budget.eml'), 'From: a@b.c\n\nhello')
-      await vi.waitFor(() => expect(onChange).toHaveBeenCalled(), { timeout: 3000, interval: 50 })
+      // Generous: a busy machine (the full suite runs files in parallel) delays real fs events.
+      await vi.waitFor(() => expect(onChange).toHaveBeenCalled(), { timeout: 10000, interval: 50 })
     } finally {
       w.stop()
     }
