@@ -302,6 +302,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
   learnStyle: (samples) =>
     ipcRenderer.invoke('learn-style', { samples }),
 
+  // Project modes (D-PROJECT-MODES): the window names projects by id; main picks every folder.
+  listProjects: () => ipcRenderer.invoke('projects-list'),
+  connectProjectFolder: () => ipcRenderer.invoke('project-connect'),
+  classifyProject: (token) => ipcRenderer.invoke('project-classify', token),
+  estimateProjectCalls: (token, folders) => ipcRenderer.invoke('project-estimate', token, folders),
+  saveProject: (fields) => ipcRenderer.invoke('project-save', fields),
+  cancelProjectBuild: (id) => ipcRenderer.invoke('project-cancel-build', id),
+  getProjectSummary: (id) => ipcRenderer.invoke('project-summary-get', id),
+  setProjectSummary: (id, text) => ipcRenderer.invoke('project-summary-set', id, text),
+  refreshProject: (id) => ipcRenderer.invoke('project-refresh', id),
+  rebuildProject: (id) => ipcRenderer.invoke('project-rebuild', id),
+  updateProject: (id, patch) => ipcRenderer.invoke('project-update', id, patch),
+  removeProject: (id, opts) => ipcRenderer.invoke('project-remove', id, opts),
+  locateProject: (id) => ipcRenderer.invoke('project-locate', id),
+  getProjectFolders: (id) => ipcRenderer.invoke('project-folders-get', id),
+  suggestProject: (text) => ipcRenderer.invoke('project-suggest', text),
+  onProjectProgress: (callback) => {
+    const cb = (_event, data) => callback(data)
+    ipcRenderer.on('project-progress', cb)
+    return () => ipcRenderer.removeListener('project-progress', cb)
+  },
+  onProjectsChanged: (callback) => {
+    const cb = () => callback()
+    ipcRenderer.on('projects-changed', cb)
+    return () => ipcRenderer.removeListener('projects-changed', cb)
+  },
+
   retargetPrompt: (prompt, transcript, mode, target) =>
     ipcRenderer.invoke('retarget-prompt', { prompt, transcript, mode, target }),
 

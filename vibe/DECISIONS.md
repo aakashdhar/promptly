@@ -2350,3 +2350,38 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - **Decision**: after each meaningful edit, a correction made the same way in two edits is added to Your words, and an edit to an Email or Polish result asks Claude for at most two new "How you write" lines (or NONE), which are appended without rewriting the notes. Every change is shown in the window with Undo; Settings › You "Learn from my edits" (on by default) turns it off. Prompt-mode edits never change How you write. The manual "Suggest from my edits" stays.
 - **Rollback**: revert its merge on main (`git revert -m 1 <merge>`), or the switch per user.
 ---
+
+---
+## — Feature Start: Project modes — 2026-10-06
+> Folder: vibe/features/2026-10-06-project-modes/
+> A connected project folder becomes its own mode; emails/prompts/polish written in it are grounded in the folder.
+> Tasks: PRJ-001 … PRJ-017 | Estimated: ~51 hours | Status: planned; build waits for the owner
+---
+
+### D-PROJECT-MODES — Projects are folders, shown as their own modes (planned)
+- **Date**: 2026-10-06 · **Type**: product + architecture
+- **Why**: a team member asked for context-driven prompts per project. Research (3 agents + local tests): no voice app grounds on documents; leading tools pair a short always-loaded brief with just-in-time search; embeddings are being dropped for local corpora (Claude Code, Cursor Jul 2026).
+- **Decision** (owner-agreed in conversation): no login or server; each person connects their own local folder. A project is its own mode in the mode menu (not a switch on every mode), with Write as Email/Prompt/Polish picked from the request. Dictation never uses a project; after a dictation that names a project person, "As an <Project> email" is offered. Generic folder handling: local scan → Claude proposes a folder map → two questions → editable summary with sources and pinned edits → manual Refresh with an "N new files" hint; new files are searchable immediately via node:sqlite FTS5 (built into Electron 41, verified). Optional read-only "look deeper" on Claude Code over a text cache with `--strict-mcp-config` (`--tools` alone left the user's Gmail/Slack MCP tools loaded in testing).
+- **Open, recommended defaults in the spec**: summary kept in Promptly with an opt-in PROMPTLY.md in the folder; Look deeper on by default for Claude Code users.
+
+---
+## 2026-10-06 — Spec review: add-feature (Project modes)
+> P0: 0 · P1: 5 (fixed) · P2: 4
+> Action: fixed autonomously — 1 round, clean on re-review
+> Report: vibe/spec-reviews/2026-10-06-add-feature-project-modes.md
+---
+
+### 2026-10-06 — Project modes build: decisions from the wave-1 reviews
+- Spec §20 changed: the AI no longer "names the source" inside the output (source labels in a client email read wrong); sources are shown in **Based on** only.
+- `requirements.txt` is no longer a code-root marker (a manager's specs folder can hold one); Python projects are still caught by pyproject.toml / setup.py / .py files.
+- A project folder may not contain Promptly's own data folder or sit inside it (e.g. connecting the home folder); the walk is bounded (entries visited) so a huge folder can't hang the scan.
+- The store gets `relocate(id, dir)` for "Folder not found · Locate…" (§30).
+- Look-deeper tool runs accept only Read, Grep and Glob; a tool event reaches Based on only when the tool actually succeeded; a failed tool run never turns off quick start for ordinary runs; hitting max turns returns the text written so far, else fails so the request is redone without Look deeper (§28).
+- Summary facts are cached per file version (rel + sha1), and Rebuild starts from an empty cache.
+
+### 2026-10-06 — Project modes built (lean finish)
+- After wave 1 (ten modules, two review rounds, ~10M subagent tokens) the owner chose a lean finish: the integration and screens written directly, one e2e run, one final review. Logged as feedback for future builds.
+- Summaries run on their own Claude runner/router (projectClaude), separate from requests: Escape on a request never kills a background summary, and Stop on a summary stops it at once.
+- Look deeper: skipped when the person left files out (their text copies still exist); always `--permission-mode default`; any tool path outside the project's text copy discards the answer and asks again without tools; 120 s limit, no plain retry after a timeout.
+- Iterate, Regenerate, Polish tone and email tone chips on a project result stay in the project; a project request also sends the Polish tone.
+- Every project request runs an incremental sync first (and waits for one already running), so a file saved seconds ago is used even if the watcher missed it.

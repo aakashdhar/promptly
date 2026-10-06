@@ -1081,3 +1081,34 @@ Say "next" to begin.
 - fix(main) 8aaecef: the stop watchdog no longer logs a false "Recording did not stop 10 s after the stop shortcut" when the next recording starts within 10 s. Log-only; shipped in v2.22.2.
 - fix(llm): "As a prompt" timed out on 2.22.1 (Couldn't write the prompt): the quick start skipped the user's Claude Code settings and with them effortLevel. Settings load again; Craft failures are logged.
 - feat(site): Windows visitors see "Promptly X for Windows" and "Download for Windows (N MB)"; release.sh sets the version, publish-release.sh the size (commits + pushes it).
+
+## 2026-10-06 — Planned: Project modes (not started; owner reviewing)
+🔄 Project modes — connect a project folder; its own mode writes emails, prompts and polished text from what's in it (17/17 built on feature/project-modes — not merged; waiting for the owner to try it)
+   Estimated: approx. 51 hours (S: 4, M: 11, L: 2) · Branch: feature/project-modes · Mockups: https://claude.ai/artifact/Q268jeDcxKXtnBxVaQ89GB
+   [x] PRJ-001 · Project store — where projects and their summaries are kept
+   [x] PRJ-002 · Folder scan — find readable files, skip code, archives and ignored files
+   [x] PRJ-003 · Text and email reading — .md/.txt/.eml/.mbox, Word/RTF on Mac, replies de-quoted
+   [x] PRJ-004 · Local search — instant search over the folder, no new dependency
+   [x] PRJ-005 · Watching — new files count straight away; "N new files" hint
+   [x] PRJ-006 · Folder map — Claude sorts the folders; the person checks them
+   [x] PRJ-007 · Project summary — build, Refresh, Rebuild; edits are kept
+   [x] PRJ-008 · Context per request and Write as (email / prompt / polish)
+   [x] PRJ-009 · IPC for projects
+   [x] PRJ-010 · Connect screens (map, questions, summary preview)
+   [x] PRJ-011 · Settings › Projects
+   [x] PRJ-012 · Projects in the mode menu and header
+   [x] PRJ-013 · Write as picker and "Based on" sources
+   [x] PRJ-014 · Dictation suggestion "As an <Project> email"
+   [x] PRJ-015 · Look deeper (Claude Code reads more files, read-only)
+   [x] PRJ-016 · End-to-end tests and UI audit
+   [x] PRJ-017 · Docs
+   → Full specs: vibe/features/2026-10-06-project-modes/FEATURE_TASKS.md (agent use)
+
+## What just happened (project modes)
+✅ All 17 tasks built on feature/project-modes (lean build after wave 1): service + IPC + Look deeper wiring, the connect flow, Settings › Projects, projects in the mode menu, Write as + Based on, the Dictation suggestion.
+✅ Tests: 857 unit tests (+ search/service under Electron's Node), full e2e 56/56 incl. the new project flow, light/dark layout audit incl. the 9 new screens.
+✅ Final review (1 agent): 8 bugs fixed — summaries on their own runner (Escape no longer kills them), Look deeper skipped when files are left out and held to the text copy (+ --permission-mode default), the right email thread, PROMPTLY.md not re-read, summary marks kept across syncs, Regenerate/Iterate/tone keep the project, project errors say what to do, the panel's Close no longer cancels.
+
+## What's next (project modes)
+⬜ The owner tries it on a real project folder (run from source or a test build), then decides on merge + release.
+⬜ Follow-ups noted, not built: a hint when a new top-level folder appears (it's ignored until sorted in "Change"); restart watching when a missing folder's drive comes back (focus rescans still catch it); PDF and Windows Word support (deferred in the spec).

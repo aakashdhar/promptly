@@ -138,7 +138,7 @@ export default function useRecording({
 
       const mode = modeRef.current
       const genResult = await window.electronAPI.generatePrompt(text, mode, {
-        ...(mode === 'polish' && { tone: polishToneRef.current }),
+        ...((mode === 'polish' || String(mode).startsWith('project:')) && { tone: polishToneRef.current }),
         ...(contextRef?.current && { context: contextRef.current }),
       })
       onGenerateResult.current(genResult, text, opId)

@@ -4,6 +4,7 @@
 > Last updated: 2026-09-24 (Foundation pass — main/ modules, shared/modes.json, tests + e2e, defect fixes)
 > 📝 2026-09-28 · Verified during Windows version planning (current through v2.19.1 and the audit fixes)
 > 📝 2026-09-30 · launch.html (launch splash) added
+> 📝 2026-10-06 · Verified during Project modes planning
 
 ---
 
@@ -141,6 +142,13 @@
 | `src/renderer/components/LearnedNotice.jsx` | "Learned from your edit" / "Added to Your words" notice with Undo (D-AUTO-LEARN); listens to `learned`, calls `undoLearned` | `onLearned`, `undoLearned` |
 | `main/prompts/learn-from-edit.txt` | What one edit shows about how the user writes: at most two new lines or NONE (`buildLearnFromEditPrompt`) | — |
 | `tests/auto-learn.test.js` | Learning from edits: rule parsing, appending, Undo, the prompt | — |
+| `main/projects/` | Project modes (D-PROJECT-MODES), no Electron imports, contract in vibe/features/2026-10-06-project-modes/INTERFACES.md. `store.js` project records + userData/projects/<id>/ (summary.md, pins.json, manifest.json, text/, search.db), colours, default output, relocate, refuses Promptly's own folders · `scan.js` folder walk: ignore files, skip reasons, code roots, 5,000-file / 200k-entry caps, manifest diff · `email.js` + `extract.js` text from md/txt/eml/mbox/html (+ docx/rtf/doc via textutil on Mac), threads, de-quoting · `search.js` node:sqlite FTS5 index (BM25, newer first on near-ties, CJK pairs, broken file set aside) · `watch.js` fs.watch recursive, debounce + max wait · `classify.js` the folder map (one Claude call, ≤ 40 KB manifest) · `summary.js` map-reduce summary, refresh diff, pins, source tags, PROMPTLY.md · `context.js` Write as picker + the `<project>` block (summary, thread, search hits, ~30 KB) · `suggest.js` project match for a dictation · `service.js` ties them together per project for main.js (sync, build/refresh, prepare a request, Look deeper paths) | `createProjectService`, see INTERFACES.md |
+| `main/prompts/project-*.txt` | classify, facts, merge, refresh, context (grounding), look-deeper | — |
+| `src/renderer/utils/projects.js` + `hooks/useProjects.js` | The connected projects in the window (one list, reloaded on `projects-changed`); mode keys `project:<id>`; `utils/modes.js` describes project modes from it | `isProjectMode`, `projectOf`, `projectModeKey`, `loadProjects`, `useProjects()` |
+| `src/renderer/components/ProjectConnectPanel.jsx` | Full-window panel: connect (folder map, two questions, Write the summary with progress, summary preview/edit, keep in folder), Change folders, Open and edit summary | props `{ panel: { kind: 'connect'|'folders'|'summary', id? }, onClose }` |
+| `src/renderer/components/ProjectsSection.jsx` | Settings › Projects: per project status (new files, missing → Locate…), Refresh, summary, folders, Usually writes, Look deeper, Rebuild, Remove | props `{ onPanel }` |
+| `src/renderer/components/ProjectResultBar.jsx` | Under a project result: project, Write as, Based on (files with × leave out and redo); `ProjectSuggestion` "As an <Project> email" after a dictation | — |
+| `tests/projects-*.test.js` | Unit tests per module; search and service tests also run under Electron's Node via `npm run test:sqlite` (scripts/test-sqlite.js) | — |
 | `tests/ipc-contract.test.js` | Fails if preload and main IPC drift apart, or the renderer/splash calls a method preload doesn't expose | — |
 | `e2e/app.spec.mjs` | Playwright tests that drive the real app with fake claude/whisper scripts and Chromium's fake mic | 7 flows (typing, abort, dropdown, hotkey + voice, hide-on-blur, retry tone, ffmpeg path) |
 | `playwright.config.mjs` | Playwright config — testDir e2e, 1 worker | — |
@@ -227,6 +235,7 @@ See the IPC surface table in `vibe/ARCHITECTURE.md` (kept complete; `tests/ipc-c
 ---
 
 ## Gotchas (learned the hard way)
+- **Project modes (D-PROJECT-MODES):** `node:sqlite` is a release-candidate Node API (Electron 41 / Node 24.18 has FTS5); plain Node 20 lacks it, so search tests skip under `npm test` and run under `npm run test:sqlite`. `fs.watch` is unreliable on network drives, so window focus also rescans (≤ 1/min per project) and every project request syncs first. Look deeper must keep `--strict-mcp-config` (without it Claude Code loads the user's own connected tools) and must never use `--restricted`/`--setting-sources` (they drop the user's effortLevel; the 2.22.1 regression).
 
 - **A MediaRecorder can stop by itself.** When the microphone goes away mid-recording (AirPods, input switching,
   another app taking it) the recorder stops on its own. useRecording sets `onstop` when recording starts and finishes

@@ -31,7 +31,7 @@ export default function useTextInput({
     const mode = modeRef.current
     // Typing in Dictation mode means you want a prompt: there's nothing to transcribe.
     if (mode === 'dictate' && typedDictationRef?.current) { opIdRef.current++; typedDictationRef.current(typedText); return }
-    const genResult = await runStep(opIdRef, () => window.electronAPI.generatePrompt(typedText, mode, mode === 'polish' ? { tone: polishToneRef.current } : undefined))
+    const genResult = await runStep(opIdRef, () => window.electronAPI.generatePrompt(typedText, mode, mode === 'polish' || String(mode).startsWith('project:') ? { tone: polishToneRef.current } : undefined))
     if (genResult) handleGenerateResultRef.current(genResult, typedText)
   }, [])
 

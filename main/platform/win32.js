@@ -368,7 +368,16 @@ function harnessLaunchAgents() {
   return [];
 }
 
+// ── Project files ──
+
+// Windows has no built-in converter for Word or RTF, so projects read those files only on a Mac
+// for now (scan.js leaves them out here).
+function extractTextCommand() {
+  return null;
+}
+
 module.exports = {
+  extractTextCommand,
   PRIVACY_SETTINGS,
   windowChrome,
   TRAY_CLICK_BLURS,

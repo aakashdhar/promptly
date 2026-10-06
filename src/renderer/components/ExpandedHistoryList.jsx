@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getHistory, deleteHistoryItem, clearHistory, searchHistory, pairDictations } from '../utils/history.js'
 import { getModeTagStyle, readableColor } from '../utils/promptUtils.js'
 import { modeLabel } from '../utils/modes.js'
+import { hexToRgb } from '../utils/projects.js'
 import { pressable } from '../utils/pressable.js'
 import ThumbIcon from './ThumbIcon.jsx'
 
@@ -186,7 +187,9 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
             const isActive = selected?.id === entry.id
             const isEntryPolish = entry.mode === 'polish'
             const ts = new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            const tagStyle = getModeTagStyle(entry.mode)
+            // A project entry is tagged with its project's name and colour (D-PROJECT-MODES §19).
+            const projectRgb = entry.project ? hexToRgb(entry.project.color) : null
+            const tagStyle = projectRgb ? { background: `rgba(${projectRgb},0.12)`, color: `rgb(${projectRgb})` } : getModeTagStyle(entry.mode)
             const ratingTagStyle = entry.ratingTag
               ? POSITIVE_TAGS.includes(entry.ratingTag)
                 ? { bg: 'rgba(48,209,88,0.10)', border: 'rgba(48,209,88,0.25)', color: 'color-mix(in oklab, rgb(100,220,130) var(--accent-text-strength), rgb(var(--ink)))' }
@@ -227,7 +230,7 @@ export default function ExpandedHistoryList({ currentState, selected, onSelect }
                       </span>
                     )}
                     <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '5px', background: tagStyle.background, color: readableColor(tagStyle.color), whiteSpace: 'nowrap' }}>
-                      {modeLabel(entry.mode) || entry.mode}
+                      {entry.project?.name || modeLabel(entry.mode) || entry.mode}
                     </span>
                   </span>
                 </div>

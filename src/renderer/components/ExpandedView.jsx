@@ -3,6 +3,7 @@ import ExpandedTransportBar from './ExpandedTransportBar.jsx'
 import ExpandedHistoryList from './ExpandedHistoryList.jsx'
 import ExpandedDetailPanel from './ExpandedDetailPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
+import ProjectConnectPanel from './ProjectConnectPanel.jsx'
 import ShortcutsPanel from './ShortcutsPanel.jsx'
 import { isHistoryToggleKey, panelTopStrip } from '../utils/keys.js'
 
@@ -83,8 +84,11 @@ export default function ExpandedView({
   onCloseShortcuts,
   resultMode,
   micQuiet,
+  project = null,
 }) {
   const [selected, setSelected] = useState(null)
+  // Project modes: the connect flow, or a project's folders or summary, over the window.
+  const [projectPanel, setProjectPanel] = useState(null)
   const [isViewingHistory, setIsViewingHistory] = useState(false)
 
   // History can be hidden (the toolbar button or Ctrl-Cmd-S) so the result, and the Ribbon while you
@@ -134,7 +138,7 @@ export default function ExpandedView({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', position: 'relative' }}>
       {/* While Settings or Shortcuts cover the window, what's behind them can't be reached by
           Tab or a screen reader. */}
-      <div inert={currentState === 'SETTINGS' || currentState === 'SHORTCUTS' ? true : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div inert={currentState === 'SETTINGS' || currentState === 'SHORTCUTS' || projectPanel ? true : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ExpandedTransportBar
         currentState={currentState}
         duration={duration}
@@ -154,6 +158,7 @@ export default function ExpandedView({
         micQuiet={micQuiet}
         historyHidden={historyHidden}
         onToggleHistory={() => setHistoryShown(historyHidden)}
+        onConnectProject={() => setProjectPanel({ kind: 'connect' })}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
@@ -223,6 +228,7 @@ export default function ExpandedView({
           thinkingCurrentLabel={thinkingCurrentLabel}
           modeLabel={modeLabel}
           micQuiet={micQuiet}
+          project={project}
         />
       </div>
       </div>
@@ -242,14 +248,15 @@ export default function ExpandedView({
         </div>
       )}
       {currentState === 'SETTINGS' && (
-        <div style={{
+        <div inert={projectPanel ? true : undefined} style={{
           position: 'absolute', inset: 0, zIndex: 20,
           background: 'var(--bg)',
           display: 'flex', flexDirection: 'column',
         }}>
-          <SettingsPanel onClose={onCloseSettings} />
+          <SettingsPanel onClose={onCloseSettings} onProjectPanel={setProjectPanel} />
         </div>
       )}
+      {projectPanel && <ProjectConnectPanel key={JSON.stringify(projectPanel)} panel={projectPanel} onClose={() => setProjectPanel(null)} />}
     </div>
   )
 }

@@ -18,6 +18,7 @@ export default function EmailReadyState({
   isExpanded,
   onToneAdjust,
   onBodyChange,
+  extra = null,
 }) {
   const { copied, copy } = useCopy(2000)
   const copiedSubject = copied === 'subject'
@@ -372,6 +373,8 @@ export default function EmailReadyState({
           </div>
         </div>
       </div>
+
+      {extra}
 
       {/* Action row */}
       <div style={{

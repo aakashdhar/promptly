@@ -22,6 +22,7 @@
     "preflight": "bash scripts/preflight.sh",
     "assert": "node scripts/assert-splash.js",
     "test": "vitest run",
+    "test:sqlite": "node scripts/test-sqlite.js",
     "test:e2e": "npm run build:renderer && playwright test",
     "fetch-whisper": "bash scripts/fetch-whisper.sh",
     "fetch-whisper:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fetch-whisper.ps1",

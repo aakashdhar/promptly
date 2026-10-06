@@ -1,4 +1,5 @@
 import MODE_REGISTRY from '../../../shared/modes.json'
+import { isProjectMode, projectOf, hexToRgb } from './projects.js'
 
 // The mode registry, plus the retired keys (balanced, detailed, chain, refine…) that still come
 // in from history entries, localStorage and spoken mode names, resolved to their replacements.
@@ -13,7 +14,16 @@ export function resolveModeKey(key) {
   return MODE_ALIASES[key] || key
 }
 
+// A connected project is a mode too (D-PROJECT-MODES), described from the project itself.
+function projectModeInfo(key) {
+  const p = projectOf(key)
+  if (!p) return null
+  const rgb = hexToRgb(p.color)
+  return { key, label: p.name, kind: 'project', group: 'project', dot: p.color, tone: { rgb, text: rgb }, desc: `Writes with what's in your ${p.name} folder. Say "reply to…" for an email, or "write a prompt for…" for a prompt.` }
+}
+
 export function modeInfo(key) {
+  if (isProjectMode(key)) return projectModeInfo(key)
   return MODES_BY_KEY[resolveModeKey(key)] || null
 }
 

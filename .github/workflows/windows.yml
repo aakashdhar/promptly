@@ -36,6 +36,9 @@ jobs:
         run: npm run lint
       - name: Unit tests
         run: npm test
+      # The project search index (node:sqlite FTS5) under Electron's own Node, the one the app ships.
+      - name: Search index tests (Electron's Node)
+        run: npm run test:sqlite
 
       # ── Windows helper (Rust) ──────────────────────────────────────────────
       - name: Rust toolchain (stable, x86_64-pc-windows-msvc)

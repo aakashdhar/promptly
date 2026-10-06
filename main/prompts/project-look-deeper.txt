@@ -1,0 +1,2 @@
+
+The project's files are in your current folder as plain-text copies (each name ends in .txt, mirroring the project's own folders). The project material above already holds the summary and the best matches for this request. Only if the request needs a fact that isn't there, search the files with Grep or Glob and open the few you need with Read; most requests need none. Then write the result exactly as instructed above. Never mention the files, the folder or your searching in what you write.

@@ -19,6 +19,7 @@ import { saveToHistory, bookmarkHistoryItem } from './utils/history.js'
 import { runStep } from './utils/claudeStep.js'
 import { getModeAccent } from './utils/thinkingLabels.js'
 import { parseEmailOutput } from './utils/promptUtils.js'
+import { projectModeKey } from './utils/projects.js'
 
 const STATES = {
   IDLE: 'IDLE',
@@ -95,6 +96,26 @@ export default function App() {
     STATES, transitionRef, opIdRef, contextRef, setGeneratedPrompt, setThinkingLabel, setThinkTranscript, setResultMode,
   })
 
+  // Project modes (D-PROJECT-MODES): the result on screen when a project wrote it (its project,
+  // output, the files it used, the files left out), so Write as and "leave this file out" can redo it.
+  const [projectResult, setProjectResult] = useState(null)
+  const projectResultRef = useRef(null)
+  projectResultRef.current = projectResult
+  // What a redo of the result on screen (Iterate, a tone change) sends so it stays in the project.
+  const projectOptionRef = useRef(null)
+  projectOptionRef.current = projectResult ? { id: projectResult.project.id, output: projectResult.output, exclude: projectResult.exclude || [] } : null
+  const projectExcludeRef = useRef([])
+  // After a dictation that names someone from a project: { id, name, output }.
+  const [projectSuggestion, setProjectSuggestion] = useState(null)
+  useEffect(() => {
+    setProjectSuggestion(null)
+    const text = dictation?.text
+    if (!text) return undefined
+    let live = true
+    window.electronAPI?.suggestProject?.(text).then((s) => { if (live && s && s.id) setProjectSuggestion(s) }).catch(() => {})
+    return () => { live = false }
+  }, [dictation])
+
   const { openHistory, openSettings, closeSettings } = useWindowLayout({ prevStateRef, stateRef, transitionRef, STATES })
 
   // POLISH-001: animate between states
@@ -134,14 +155,14 @@ export default function App() {
     }
     if (newState !== STATES.THINKING) { setThinkingLabel(''); setThinkingAccentColor(''); setThinkingPhase(1); setTranscriptionSlow(false); setGenerationSlow(false) }
     if (newState === STATES.THINKING || newState === STATES.RECORDING || newState === STATES.TYPING) setStreamText('')
-    if (newState === STATES.RECORDING || newState === STATES.TYPING) { setRecordingContext(null); clearDictation(); setResultMode(null) }
+    if (newState === STATES.RECORDING || newState === STATES.TYPING) { setRecordingContext(null); clearDictation(); setResultMode(null); setProjectResult(null); projectExcludeRef.current = [] }
     window.electronAPI?.updateMenuBarState?.(newState)
     animateToState(newState)
   }
 
   transitionRef.current = transition
 
-  const { polishResult, setPolishResult, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef })
+  const { polishResult, setPolishResult, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef, projectRef: projectOptionRef })
 
   const handleGenerateResultRef = useRef(null)
 
@@ -259,8 +280,13 @@ export default function App() {
     if (opId !== undefined && opId !== opIdRef.current) return
     // Read the live mode: a spoken "code mode, …" may have switched it moments ago. Regenerating
     // a result made in another mode passes that mode instead.
-    const mode = modeOverride || modeRef.current
-    if (genResult.success) setResultMode(mode)
+    // A project result is shown as what it was written as: an email, a prompt or polished text.
+    const mode = genResult.project ? genResult.output : (modeOverride || modeRef.current)
+    if (genResult.success) {
+      setResultMode(mode)
+      setProjectResult(genResult.project ? { project: genResult.project, output: genResult.output, sources: genResult.sources || [], transcript, exclude: projectExcludeRef.current } : null)
+    }
+    const project = genResult.project || undefined
     if (mode === 'dictate') {
       if (genResult.success) acceptDictation(genResult, transcript)
       else transitionRef.current(STATES.ERROR, { message: genResult.error || "Didn't catch anything" })
@@ -309,7 +335,7 @@ export default function App() {
         const parsed = parseEmailOutput(genResult.prompt)
         setEmailOutput(parsed)
         setEmailSaved(false)
-        emailHistoryIdRef.current = saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email' })
+        emailHistoryIdRef.current = saveToHistory({ transcript: originalTranscript.current, prompt: parsed.subject + '\n\n' + parsed.body, mode: 'email', project })
         window.electronAPI?.setLastPrompt?.(parsed.subject + '\n\n' + parsed.body)
         transitionRef.current(STATES.EMAIL_READY)
       } catch {
@@ -324,16 +350,50 @@ export default function App() {
       setPolishResult(parsed)
       setGeneratedPrompt(parsed.polished)
       window.electronAPI?.setLastPrompt?.(parsed.polished)
-      saveToHistory({ transcript, prompt: parsed.polished, mode, polishChanges: parsed.changes })
+      saveToHistory({ transcript, prompt: parsed.polished, mode, polishChanges: parsed.changes, project })
     } else {
       setPolishResult(null)
       setGeneratedPrompt(genResult.prompt)
       window.electronAPI?.setLastPrompt?.(genResult.prompt)
-      saveToHistory({ transcript, prompt: genResult.prompt, mode })
+      saveToHistory({ transcript, prompt: genResult.prompt, mode, project })
     }
     transitionRef.current(STATES.PROMPT_READY)
   }
   handleGenerateResultRef.current = handleGenerateResult
+
+  // Redo a project result: as another output (Write as) or without some files.
+  async function rerunProject({ output, exclude } = {}) {
+    const pr = projectResultRef.current
+    if (!pr) return
+    const ex = exclude || pr.exclude || []
+    projectExcludeRef.current = ex
+    const key = projectModeKey(pr.project.id)
+    setThinkTranscript(pr.transcript)
+    transition(STATES.THINKING)
+    const result = await runStep(opIdRef, () => window.electronAPI.generatePrompt(pr.transcript, key, {
+      project: { id: pr.project.id, output: output || pr.output, exclude: ex },
+      ...((output || pr.output) === 'polish' && { tone: polishToneRef.current }),
+      ...(contextRef.current && { context: contextRef.current }),
+    }))
+    if (!result) return
+    handleGenerateResult(result, pr.transcript, undefined, key)
+  }
+
+  // "As an Infer360 email" after a dictation: the dictated words, written in that project.
+  async function runSuggestedProject() {
+    const s = projectSuggestion
+    const text = dictation?.text
+    if (!s || !text) return
+    originalTranscript.current = text
+    projectExcludeRef.current = []
+    clearDictation()
+    const key = projectModeKey(s.id)
+    setThinkTranscript(text)
+    transition(STATES.THINKING)
+    const result = await runStep(opIdRef, () => window.electronAPI.generatePrompt(text, key, { project: { id: s.id, output: s.output } }))
+    if (!result) return
+    handleGenerateResult(result, text, undefined, key)
+  }
 
   const { handleIterate, stopIterating, dismissIterating } = useIteration({
     STATES,
@@ -353,9 +413,9 @@ export default function App() {
       const shown = resultModeRef.current || modeRef.current
       if (stateRef.current === STATES.EMAIL_READY && emailOutputRef.current) {
         const e = emailOutputRef.current
-        return { mode: 'email', prompt: e.body, email: { subject: e.subject, body: e.body }, transcript: originalTranscript.current, returnState: STATES.EMAIL_READY }
+        return { mode: 'email', prompt: e.body, email: { subject: e.subject, body: e.body }, transcript: originalTranscript.current, returnState: STATES.EMAIL_READY, project: projectOptionRef.current }
       }
-      return { mode: shown, prompt: generatedPromptRef.current, transcript: originalTranscript.current, tone: shown === 'polish' ? polishToneRef.current : undefined, returnState: STATES.PROMPT_READY }
+      return { mode: shown, prompt: generatedPromptRef.current, transcript: originalTranscript.current, tone: shown === 'polish' ? polishToneRef.current : undefined, returnState: STATES.PROMPT_READY, project: projectOptionRef.current }
     },
     onRevised: (genResult, iterText, base) => {
       if (base.mode === 'email') { acceptRevisedEmail(genResult, iterText); return }
@@ -405,6 +465,7 @@ export default function App() {
     const result = await runStep(opIdRef, () => window.electronAPI.generatePrompt(adjustment, 'email', {
       revise: { email: { subject: emailOutput.subject, body: emailOutput.body }, transcript: originalTranscript.current },
       ...(contextRef.current && { context: contextRef.current }),
+      ...(projectOptionRef.current && { project: { ...projectOptionRef.current, output: 'email' } }),
     }))
     if (!result) return
     if (result.success) {
@@ -551,7 +612,7 @@ export default function App() {
             onStopIterate={stopIterating}
             // Reworking a prompt made from a dictation makes it a prompt of its own; the dictation
             // is still in history.
-            onRegenerate={() => { clearDictation(); handleRegenerate() }}
+            onRegenerate={() => { clearDictation(); if (projectResultRef.current) rerunProject(); else handleRegenerate() }}
             onReset={() => transition(STATES.IDLE)}
             onIterate={() => { clearDictation(); handleIterate() }}
             isIterated={isIterated.current}
@@ -574,6 +635,7 @@ export default function App() {
               // the result in its own mode, ready to iterate or regenerate.
               if (entry.mode === 'dictate') { openDictation(entry.prompt); return }
               clearDictation()
+              setProjectResult(null)
               setResultMode(entry.mode)
               setGeneratedPrompt(entry.prompt)
               if (entry.mode === 'polish') {
@@ -615,6 +677,13 @@ export default function App() {
             promptStyle={promptStyle}
             onShowDictation={showDictation}
             onMakePrompt={makePrompt}
+            project={{
+              result: projectResult,
+              onWriteAs: (output) => rerunProject({ output }),
+              onExclude: (rel) => rerunProject({ exclude: [...(projectResultRef.current?.exclude || []), rel] }),
+              suggestion: projectSuggestion,
+              onUseSuggestion: runSuggestedProject,
+            }}
           />
       </div>
       <LearnedNotice />

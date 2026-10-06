@@ -1273,3 +1273,57 @@ test('Harness mode: a spoken job becomes a plan with gaps to fill, then files sa
     fs.rmSync(saveDir, { recursive: true, force: true })
   }
 })
+
+test('Project mode: connect a folder, write its summary, an email grounded in it with the files it used, and a new file used without a refresh', async () => {
+  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'promptly-project-'))
+  const projectDir = path.join(projectRoot, 'Infer360')
+  const put = (rel, text) => { fs.mkdirSync(path.dirname(path.join(projectDir, rel)), { recursive: true }); fs.writeFileSync(path.join(projectDir, rel), text) }
+  put('README.md', '# Infer360\nVideo learning portal for the client.')
+  put('comms/2026-10-04 Aparna.md', 'From: Aparna Rao <aparna@client.com>\nDate: 4 Oct 2026\nSubject: Access email\n\nOutlook users cannot click the button. Can you add a copyable link?')
+  put('contracts/SOW.md', '# SOW phase 2\nAnalytics, SSO and email fixes. Go-live 31 Oct 2026.')
+  put('codebase/package.json', '{}')
+  put('codebase/index.js', 'module.exports = 1')
+  const { app, page, fakeDir } = await launch({ mode: 'dictate', env: { PROMPTLY_PROJECT_DIR: projectDir } })
+  try {
+    // Connect from the mode menu: the folder map, code left out, then the summary.
+    await page.locator('#mode-pill').click()
+    await page.getByRole('button', { name: '+ Connect a folder' }).click()
+    const write = page.getByRole('button', { name: /^Write the summary/ })
+    await expect(write).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Left out: code')).toBeVisible()
+    await write.click()
+    await expect(page.getByText('Aparna Rao, client product owner.')).toBeVisible({ timeout: 30000 })
+    // Code was never sent to Claude.
+    for (const f of calls(fakeDir)) expect(fs.readFileSync(path.join(fakeDir, f.replace('.args', '.stdin')), 'utf8')).not.toContain('module.exports')
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    // Its own mode: "reply to …" becomes an email written with the project's material.
+    await page.locator('#mode-pill').click()
+    await page.getByRole('button', { name: 'Infer360', exact: true }).click()
+    await expect(page.locator('#mode-pill')).toHaveText(/Infer360/)
+    await typeAndSubmit(page, 'reply to Aparna about the copyable link')
+    await expect(page.getByLabel('Files used')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByLabel('Write as')).toHaveValue('email')
+    await expect(page.getByLabel('Files used')).toContainText('comms/2026-10-04 Aparna.md')
+    const asked = await lastStdin(fakeDir)
+    expect(asked).toContain('<project name="Infer360">')
+    expect(asked).toContain('**Aparna Rao**, client product owner.')
+
+    // A file saved now is used by the next request, before any refresh.
+    put('comms/2026-10-06 Shrikant.md', 'From: Shrikant <s@client.com>\nDate: 6 Oct 2026\nSubject: Tenant\n\nThe tenant ID is 7f3a-tenant.')
+    await typeAndSubmit(page, 'reply to Shrikant about the tenant ID')
+    await expect(page.getByLabel('Files used')).toContainText('2026-10-06 Shrikant.md', { timeout: 30000 })
+    expect(await lastStdin(fakeDir)).toContain('7f3a-tenant')
+
+    // Settings › Projects says so, and Refresh brings the summary up to date.
+    await page.keyboard.press(`${MOD}+/`)
+    await page.getByRole('tab', { name: 'Projects' }).click()
+    const pane = page.locator('#settings-pane')
+    await expect(pane.getByText('1 new file since your last refresh')).toBeVisible({ timeout: 10000 })
+    await pane.getByRole('button', { name: 'Refresh' }).click()
+    await expect(pane.getByText(/^Up to date/)).toBeVisible({ timeout: 20000 })
+  } finally {
+    await app.close()
+    fs.rmSync(projectRoot, { recursive: true, force: true })
+  }
+})
