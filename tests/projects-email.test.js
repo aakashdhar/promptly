@@ -204,6 +204,34 @@ describe('.eml parsing (spec §23)', () => {
     expect(mail.text).not.toMatch(/alert|color: red/)
   })
 
+  it('keeps the line breaks inside <pre> (plain-text mail wrapped in HTML)', () => {
+    expect(htmlToText('<pre>a\nb</pre>')).toBe('a\nb')
+    expect(htmlToText('<p>Log:</p><pre class="x">\nline one\r\n  line two\nline three</pre><p>End  of\nmail</p>')).toBe('Log:\n\nline one\nline two\nline three\n\nEnd of mail')
+    // An unclosed <pre> runs to the end, as in a browser.
+    expect(htmlToText('<p>Top</p><pre>a\nb')).toBe('Top\n\na\nb')
+  })
+
+  it('decodes the Latin-1 letter entities of European mail, any case', () => {
+    expect(htmlToText('Caf&eacute; &Eacute;t&eacute; &agrave; &egrave; &uuml;ber &Ouml;l &auml; &ccedil;a &ntilde; Stra&szlig;e &EACUTE;'))
+      .toBe('Café Été à è über Öl ä ça ñ Straße é')
+    // The table runs from U+00A0 to U+00FF in order: its ends and middle land on the right letters.
+    expect(htmlToText('&iexcl;&iquest;&Agrave;&times;&Oslash;&divide;&yuml; &bdquo;Ja&ldquo; &oelig;')).toBe('¡¿À×Ø÷ÿ „Ja“ œ')
+    expect(htmlToText('a&nbsp;b&shy;c &unknown; &AMP;')).toBe('a bc &unknown; &')
+    // Names with digits.
+    expect(htmlToText('&frac12; day, 10&sup2; m, &frac14; &frac34; &sup1; &sup3; &frac99;')).toBe('½ day, 10² m, ¼ ¾ ¹ ³ &frac99;')
+  })
+
+  it('reads numeric spaces and invisible marks as the named ones (a preview line padded with them)', () => {
+    expect(htmlToText('Sale ends today&#847;&zwnj;&nbsp;&#847;&#8204;&#160;&#8203;&#xFEFF;&#x200B;<p>Hi</p>')).toBe('Sale ends today\nHi')
+    expect(htmlToText('a&#8199;b&#x2009;c&#8239;d')).toBe('a b c d')
+    // Only entities: a literal joiner inside an emoji stays.
+    expect(htmlToText('<p>\u{1F468}\u200d\u{1F469}</p>')).toBe('\u{1F468}\u200d\u{1F469}')
+  })
+
+  it('reads a literal no-break space as a space', () => {
+    expect(htmlToText('<p>Hi\u00a0team,\u00a0\u00a0phase\u00a02</p>')).toBe('Hi team, phase 2')
+  })
+
   it('decodes a base64 body', () => {
     const body = 'Namaste — ₹5,000 is agreed for phase 2.\nThe copyable link ships this week.'
     const mail = parseEml(crlf([
@@ -293,6 +321,37 @@ describe('.eml parsing (spec §23)', () => {
     expect(mail.text).toBe('Contract attached — please sign.')
   })
 
+  it('keeps every part of a multipart/mixed in order: an HTML body is not lost to a plain footer or a forward', () => {
+    const mixed = (...parts) => parseEml(crlf([
+      'From: Aparna <aparna@infer360.com>',
+      'Content-Type: multipart/mixed; boundary="m"',
+      '',
+      ...parts.flatMap((p) => ['--m', ...p]),
+      '--m--',
+    ]))
+    const html = ['Content-Type: text/html; charset=utf-8', '', '<p>I approve item 3. Go ahead.</p>']
+    const forward = (disposition) => [
+      'Content-Type: message/rfc822',
+      ...(disposition ? [`Content-Disposition: ${disposition}`] : []),
+      '',
+      'From: Aakash <aakash@betacraft.io>',
+      'Subject: Items for approval',
+      '',
+      'Item 3: SSO with Azure AD.',
+    ]
+    const forwarded = '---------- Forwarded message ----------\nFrom: Aakash <aakash@betacraft.io>\nSubject: Items for approval\n\nItem 3: SSO with Azure AD.'
+    for (const disposition of ['attachment; filename="items.eml"', 'inline', '']) {
+      const mail = mixed(html, forward(disposition))
+      expect(mail.text).toBe(`I approve item 3. Go ahead.\n\n${forwarded}`)
+      expect(dequote(mail)).toContain('I approve item 3.')
+    }
+    // A mailing list's plain footer after an HTML-only body.
+    expect(mixed(html, ['Content-Type: text/plain', '', '_____', 'team mailing list']).text)
+      .toBe('I approve item 3. Go ahead.\n\n_____\nteam mailing list')
+    // The HTML copy of a plain part beside it is still left out.
+    expect(mixed(['Content-Type: text/plain', '', 'I approve item 3.', 'Go ahead.'], html).text).toBe('I approve item 3.\nGo ahead.')
+  })
+
   it('keeps a message forwarded inline as a message/rfc822 part, marked as a forward', () => {
     const mail = parseEml(crlf([
       'From: Aakash <aakash@betacraft.io>',
@@ -329,6 +388,108 @@ describe('.eml parsing (spec §23)', () => {
     expect(decodeBytes(smart, 'x-unknown')).toBe(new TextDecoder('windows-1252').decode(smart))
   })
 
+  it('reads a multipart with no boundary, or one the body never uses, instead of losing it', () => {
+    expect(parseEml('Content-Type: multipart/mixed\n\nhello').text).toBe('hello')
+    expect(parseEml('Content-Type: multipart/mixed; boundary=x\n\nhi there').text).toBe('hi there')
+    expect(parseEml('Content-Type: multipart/alternative; boundary=x\n\n<div>Phase 2 <b>starts</b> Monday.</div><p>Thanks</p>').text).toBe('Phase 2 starts Monday.\n\nThanks')
+    // The parts are still found when the header names the wrong boundary, or none.
+    const parts = [
+      'This is a multi-part message in MIME format.',
+      '--real',
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      'Contract attached.',
+      '--real',
+      'Content-Type: application/pdf',
+      'Content-Disposition: attachment; filename="sow.pdf"',
+      '',
+      'JVBERi0xLjQK',
+      '--real--',
+    ]
+    expect(parseEml(crlf(['Content-Type: multipart/mixed', '', ...parts])).text).toBe('Contract attached.')
+    expect(parseEml(crlf(['Content-Type: multipart/mixed; boundary="wrong"', '', ...parts])).text).toBe('Contract attached.')
+    // A "-----" rule in ordinary text is not taken for a boundary.
+    expect(parseEml('Content-Type: multipart/mixed\n\nhello\n-----\n\nbye').text).toBe('hello\n-----\n\nbye')
+  })
+
+  it('finds the boundary of a malformed multipart whose parts have no headers (text/plain by default)', () => {
+    expect(parseEml('Content-Type: multipart/mixed\n\n--b\n\nhello there\n--b--').text).toBe('hello there')
+    expect(parseEml(crlf(['Content-Type: multipart/mixed; boundary="wrong"', '', '--b', '', 'one', '--b', '', 'two', '--b--'])).text).toBe('one\n\ntwo')
+    // A "--token" line that never comes back, or a repeated rule of dashes, is ordinary text.
+    expect(parseEml('Content-Type: multipart/mixed\n\n--note\n\nhello').text).toBe('--note\n\nhello')
+    expect(parseEml('Content-Type: multipart/mixed\n\nhello\n-----\n\nmid\n-----\n\nbye').text).toBe('hello\n-----\n\nmid\n-----\n\nbye')
+  })
+
+  it('keeps a message forwarded as an attachment (Outlook, Apple Mail), marked as a forward', () => {
+    const inner = crlf([
+      'From: "Aparna Rao" <aparna@infer360.com>',
+      'Subject: SOW v2 terms',
+      'Date: Sat, 4 Oct 2026 10:12:00 +0530',
+      '',
+      'Phase 2 is 6 weeks and includes SSO.',
+    ])
+    const outer = (encoded, encoding) => parseEml(crlf([
+      'From: Aakash <aakash@betacraft.io>',
+      'Subject: Fw: SOW v2 terms',
+      'Content-Type: multipart/mixed; boundary="m"',
+      '',
+      '--m',
+      'Content-Type: text/plain',
+      '',
+      'See attached.',
+      '--m',
+      'Content-Type: message/rfc822; name="SOW v2 terms.eml"',
+      'Content-Disposition: attachment; filename="SOW v2 terms.eml"',
+      ...(encoding ? [`Content-Transfer-Encoding: ${encoding}`] : []),
+      '',
+      encoded,
+      '--m',
+      'Content-Type: application/pdf; name="sow.pdf"',
+      'Content-Disposition: attachment; filename="sow.pdf"',
+      'Content-Transfer-Encoding: base64',
+      '',
+      'JVBERi0xLjQK',
+      '--m--',
+    ]))
+    const expected = 'See attached.\n\n---------- Forwarded message ----------\nFrom: Aparna Rao <aparna@infer360.com>\nDate: Sat, 4 Oct 2026 10:12:00 +0530\nSubject: SOW v2 terms\n\nPhase 2 is 6 weeks and includes SSO.'
+    const mail = outer(inner)
+    expect(mail.text).toBe(expected)
+    expect(isForward(mail)).toBe(true)
+    // Base64 keeps the forwarded message's CRLFs; its headers are still read.
+    expect(outer(wrap76(Buffer.from(inner).toString('base64')), 'base64').text).toBe(expected)
+    // Other attachments still stay out.
+    expect(mail.text).not.toMatch(/JVBER/)
+  })
+
+  it('reads format=flowed plain text as paragraphs (RFC 3676), quote depth and signature kept', () => {
+    const flowed = parseEml([
+      'Content-Type: text/plain; charset=utf-8; format=flowed',
+      '',
+      'Phase 2 starts Monday and the copyable link ',
+      'ships the same week. ',
+      ' From now on we use SSO.',
+      '',
+      '> Can we add the tenant ',
+      '> ID too?',
+      '>> older ',
+      '> line',
+      '-- ',
+      'Aparna',
+    ].join('\n'))
+    expect(flowed.text).toBe('Phase 2 starts Monday and the copyable link ships the same week. From now on we use SSO.\n\n> Can we add the tenant ID too?\n>> older\n> line\n-- \nAparna')
+    expect(parseEml('Content-Type: text/plain; format="Flowed"; delsp=yes\n\nThe tenant is con \nfigured.').text).toBe('The tenant is configured.')
+    // Without format=flowed, trailing spaces are not line joins.
+    expect(parseEml('Content-Type: text/plain\n\nLine one \nLine two').text).toBe('Line one \nLine two')
+  })
+
+  it('format=flowed never joins a paragraph onto the "-- " signature line, so the signature still goes', () => {
+    const signed = parseEml('Content-Type: text/plain; format=flowed\n\nThanks \n-- \nAparna\nCEO')
+    expect(signed.text).toBe('Thanks\n-- \nAparna\nCEO')
+    expect(stripQuoted(signed.text)).toBe('Thanks')
+    expect(parseEml('Content-Type: text/plain; format=flowed; delsp=yes\n\nSee you Mon \nday. \n-- \nAparna').text).toBe('See you Monday.\n-- \nAparna')
+    expect(parseEml('Content-Type: text/plain; format=flowed\n\nOK.\n\n> Thanks \n> -- \n> Aparna').text).toBe('OK.\n\n> Thanks\n> -- \n> Aparna')
+  })
+
   it('gives no date for text that names no year, instead of letting Date.parse invent one', () => {
     for (const junk of ['12', 'Version 3.1', 'Oct 4', 'tomorrow 10am']) expect(isoDate(junk)).toBe('')
     expect(isoDate('Sat Oct  4 10:12:00 2026')).toBe('2026-10-04')
@@ -360,6 +521,16 @@ describe('quoted replies (spec §24)', () => {
   it('drops a signature after "-- "', () => {
     expect(stripQuoted('See you Monday.\n\n-- \nAparna Rao\nInfer360 · +91 98')).toBe('See you Monday.')
     expect(stripQuoted('See you.\n--\nAparna')).toBe('See you.')
+  })
+
+  it('keeps a bottom-posted reply and what follows the quote; a digit-less "On …, X wrote:" is text', () => {
+    // Deliberate: when '>' quotes follow the attribution only they go, so interleaved and
+    // bottom-posted replies survive, and so does a footer below the quote.
+    expect(stripQuoted('On 4 Oct 2026, at 10:12, Aparna wrote:\n> Can we add it?\n\nYes, this week.\n\nSent from my iPhone'))
+      .toBe('Yes, this week.\n\nSent from my iPhone')
+    // Mail clients always date the attribution; a line without a digit is someone's own words.
+    expect(stripQuoted('Recap.\nOn Monday, Aparna wrote:\nWe need SSO by the 15th.')).toBe('Recap.\nOn Monday, Aparna wrote:\nWe need SSO by the 15th.')
+    expect(stripQuoted('Recap.\nOn Monday, Aparna wrote:\n> We need SSO.\nAgreed.')).toBe('Recap.\nOn Monday, Aparna wrote:\nAgreed.')
   })
 
   it('a bare "--" (a trimmed "-- ") cuts only before a short block, so a divider keeps the text below it', () => {
@@ -430,6 +601,24 @@ describe('threads (spec §24, §20.2)', () => {
     expect(out.endsWith('> FYI, see below.')).toBe(true)
   })
 
+  it('keepQuotes renders older messages in full (mail kept outside conversations)', () => {
+    const [thread] = threadMessages(parsed())
+    const out = renderThread(thread, { keepQuotes: true })
+    expect(out).toContain('From: Aakash <aakash@betacraft.io> · 2026-10-03\nYes, the link ships Friday. Please send the tenant ID.\n\nOn Thu, 2 Oct 2026 at 09:00, Aparna Rao <aparna@infer360.com>\nwrote:\n> Hi Aakash,')
+    expect(out).toContain('Also we need SSO.\n\n-- \nAparna Rao\nInfer360')
+    expect(renderThread(thread, { keepQuotes: false })).toBe(renderThread(thread))
+  })
+
+  it('a cut through a multi-byte character leaves no replacement character', () => {
+    const thread = { messages: [{ from: 'A', text: '₹₹₹₹' }] }
+    for (let maxBytes = 9; maxBytes <= 20; maxBytes++) {
+      const out = renderThread(thread, { maxBytes })
+      expect(out).not.toContain('\ufffd')
+      expect(Buffer.byteLength(out)).toBeLessThanOrEqual(maxBytes)
+    }
+    expect(renderThread(thread, { maxBytes: 13 })).toBe('From: A\n…')
+  })
+
   it('takes null or no options, and Infinity for no limit', () => {
     const [thread] = threadMessages([parseEml(THREAD.m1), parseEml(THREAD.m2), parseEml(THREAD.m3)])
     const full = renderThread(thread)
@@ -467,6 +656,10 @@ describe('emails saved as .md/.txt (spec §25)', () => {
     const early = emailFromText('From: Aparna\nSent: 4 Oct 2026\nTo: a@b.com,\n  c@d.com\nSubject: Kickoff\n\nBody')
     expect(early).toMatchObject({ subject: 'Kickoff', text: 'Body' })
     expect(emailFromText('From: **Aparna Rao**\nSubject: __Kickoff__\n\nBody')).toMatchObject({ from: 'Aparna Rao', subject: 'Kickoff' })
+  })
+
+  it('reads an export that starts with a byte-order mark', () => {
+    expect(emailFromText('\ufeffFrom: Aparna <aparna@infer360.com>\r\nSubject: Kickoff\r\n\r\nBody')).toMatchObject({ from: 'Aparna <aparna@infer360.com>', subject: 'Kickoff', text: 'Body' })
   })
 
   it('is not fooled by ordinary notes', () => {
@@ -533,6 +726,22 @@ describe('extractDoc and writeExtracted', () => {
     expect((await extractDoc(write('notes/standup-20260930.txt', 'x'), 'notes/standup-20260930.txt', { kind: 'overview' })).date).toBe('2026-09-30')
   })
 
+  it('a Windows note (CRLF or CR line endings) still takes its title from the first heading', async () => {
+    const crlfNote = await extractDoc(write('notes/crlf.md', '# Kickoff notes\r\n\r\nWe agreed on SSO.\r\n'), 'notes/crlf.md', { kind: 'overview' })
+    expect(crlfNote).toMatchObject({ title: 'Kickoff notes', text: '# Kickoff notes\n\nWe agreed on SSO.' })
+    const crNote = await extractDoc(write('notes/cr.txt', 'Intro\r## SSO plan ##\rTenant first.'), 'notes/cr.txt', { kind: 'overview' })
+    expect(crNote.title).toBe('SSO plan')
+    const wide = write('notes/utf16.md', Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('# Budget ₹\r\n\r\nPhase 2.', 'utf16le')]))
+    expect((await extractDoc(wide, 'notes/utf16.md', { kind: 'overview' })).title).toBe('Budget ₹')
+  })
+
+  it('takes the first real date in the file name, passing over an id that only looks like one', async () => {
+    const abs = write('notes/12345678-2026-10-04.md', 'Standup')
+    expect((await extractDoc(abs, 'notes/12345678-2026-10-04.md', { kind: 'overview' })).date).toBe('2026-10-04')
+    const both = write('notes/20261003 call 2026-10-04.md', 'Call')
+    expect((await extractDoc(both, 'notes/20261003 call 2026-10-04.md', { kind: 'overview' })).date).toBe('2026-10-03')
+  })
+
   it('without a date in the email or the name, uses the file date; title falls back to the file name', async () => {
     const abs = write('plain notes.txt', 'Just some text')
     const when = new Date(2026, 8, 15, 12, 0, 0)
@@ -595,6 +804,20 @@ describe('extractDoc and writeExtracted', () => {
     expect(doc.text.startsWith('Subject: SSO setup\n\nFrom: Aparna Rao <aparna@infer360.com> · 2026-10-02')).toBe(true)
     expect(doc.text).toContain('From: Aakash <aakash@betacraft.io> · 2026-10-03\nYes, the link ships Friday. Please send the tenant ID.\n\nFrom: Aparna')
     expect(doc.text).not.toContain('wrote:')
+  })
+
+  it('an .mbox outside conversations keeps the quotes of its older messages, as an .eml does', async () => {
+    const approval = 'From: Aparna <aparna@infer360.com>\nSubject: Re: SOW v2\nDate: Sun, 5 Oct 2026 09:00:00 +0530\nMessage-ID: <a1@infer360.com>\n\nApproved.\n\nOn Sat, 4 Oct 2026 at 10:12, Aakash <a@b.io> wrote:\n> Phase 2: ₹5,000, 6 weeks, SSO included.'
+    const thanks = 'From: Aakash <a@b.io>\nSubject: Re: SOW v2\nDate: Mon, 6 Oct 2026 09:00:00 +0530\nIn-Reply-To: <a1@infer360.com>\n\nThanks, starting Monday.'
+    const mbox = ['From a Sun Oct  5 09:00:00 2026', approval, '', 'From b Mon Oct  6 09:00:00 2026', thanks].join('\n')
+    const abs = write('agreements/sow.mbox', mbox)
+    const kept = await extractDoc(abs, 'agreements/sow.mbox', { kind: 'agreements' })
+    expect(kept.text).toContain('Approved.\n\nOn Sat, 4 Oct 2026 at 10:12, Aakash <a@b.io> wrote:\n> Phase 2: ₹5,000, 6 weeks, SSO included.')
+    expect(kept.text.endsWith('Thanks, starting Monday.')).toBe(true)
+    expect((await extractDoc(abs, 'agreements/sow.mbox')).text).toContain('6 weeks, SSO included.')
+    const dequoted = await extractDoc(abs, 'agreements/sow.mbox', { kind: 'conversations' })
+    expect(dequoted.text).not.toContain('6 weeks')
+    expect(dequoted.text).toContain('Approved.')
   })
 
   it('strips .html to text on any platform, with its <title>', async () => {
@@ -688,6 +911,9 @@ describe('malformed input stays linear (files run on the main process, up to 2 M
   it('long runs of spaces, "Re: " prefixes, attributions and dashes', () => {
     expect(elapsed(() => parseEml(`Content-Transfer-Encoding: quoted-printable\n\n${' '.repeat(200000)}x`))).toBeLessThan(LIMIT_MS)
     expect(elapsed(() => parseEml(`Content-Type: multipart/mixed; boundary=b\n\n--b\n\n${' '.repeat(200000)}x\n--b--`))).toBeLessThan(LIMIT_MS)
+    // Boundary guessing over thousands of "--token" lines, and entity names that never close.
+    expect(elapsed(() => parseEml(`Content-Type: multipart/mixed\n\n${Array.from({ length: 50000 }, (_, i) => `--t${i}\n`).join('\n')}`))).toBeLessThan(LIMIT_MS)
+    expect(elapsed(() => htmlToText(`&${'a1'.repeat(200000)} ${'&a1'.repeat(100000)}`))).toBeLessThan(LIMIT_MS)
     expect(elapsed(() => threadMessages([parseEml(`Subject: ${'Re: '.repeat(50000)}x\n\nb`)]))).toBeLessThan(LIMIT_MS)
     expect(threadMessages([{ subject: `${'Re: '.repeat(50000)}SSO`, text: 'x' }])[0].subject).toBe('SSO')
     expect(elapsed(() => stripQuoted('On 1 Oct 2026, A wrote:\n> q\n'.repeat(50000)))).toBeLessThan(LIMIT_MS)
@@ -701,6 +927,16 @@ describe('malformed input stays linear (files run on the main process, up to 2 M
     expect(elapsed(() => { out = renderThread(thread) })).toBeLessThan(LIMIT_MS)
     expect(Buffer.byteLength(out)).toBeLessThanOrEqual(12000)
     expect(out.endsWith('x 3999')).toBe(true)
+  })
+})
+
+describe('source hygiene', () => {
+  it('email.js and extract.js hold no invisible literal characters (they are written as \\u escapes)', () => {
+    const invisible = /[\u00a0\u00ad\u061c\u180e\u2000-\u200f\u2028-\u202f\u205f-\u2069\u3000\ufe00-\ufe0f\ufeff\ufffd]/
+    for (const file of ['../main/projects/email.js', '../main/projects/extract.js']) {
+      const lines = fs.readFileSync(new URL(file, import.meta.url), 'utf8').split('\n')
+      expect(lines.filter((l) => invisible.test(l))).toEqual([])
+    }
   })
 })
 

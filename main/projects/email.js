@@ -129,18 +129,63 @@ function splitMultipart(body, boundary) {
   return parts;
 }
 
-const ENTITIES = Object.assign(Object.create(null), {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', hellip: '…',
-  lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', bull: '•', middot: '·', copy: '©', reg: '®',
-  trade: '™', euro: '€', pound: '£', yen: '¥', times: '×', laquo: '«', raquo: '»', deg: '°',
-  ensp: ' ', emsp: ' ', thinsp: ' ', shy: '', zwnj: '', zwj: '',
-});
+// The boundary a malformed multipart really uses when its header names none, or one the body
+// never has: the first "--token" line that a Content- header follows, or that a blank line
+// follows (a part without headers is text/plain) once the same "--token" or "--token--" comes
+// back. A rule of dashes never counts, so a "-----" in ordinary text is not taken for one.
+function guessBoundary(body) {
+  const lines = body.split('\n');
+  const headerless = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    const line = trimLineEnd(lines[i]);
+    if (line.length < 3 || line.length > 72 || !line.startsWith('--') || /\s/.test(line)) continue;
+    const token = line.slice(2);
+    const next = lines[i + 1] || '';
+    if (/^content-[a-z-]+:/i.test(next)) return token;
+    if (headerless.has(token)) return token;
+    if (token.endsWith('--') && headerless.has(token.slice(0, -2))) return token.slice(0, -2);
+    if (/[^-]/.test(token) && !next.trim()) headerless.add(token);
+  }
+  return '';
+}
+
+// HTML's Latin-1 entities in code-point order from U+00A0, so &eacute;, &szlig; and the rest of
+// European mail decode without a table of literal characters.
+const LATIN1_ENTITIES = [
+  'nbsp iexcl cent pound curren yen brvbar sect uml copy ordf laquo not shy reg macr',
+  'deg plusmn sup2 sup3 acute micro para middot cedil sup1 ordm raquo frac14 frac12 frac34 iquest',
+  'Agrave Aacute Acirc Atilde Auml Aring AElig Ccedil Egrave Eacute Ecirc Euml Igrave Iacute Icirc Iuml',
+  'ETH Ntilde Ograve Oacute Ocirc Otilde Ouml times Oslash Ugrave Uacute Ucirc Uuml Yacute THORN szlig',
+  'agrave aacute acirc atilde auml aring aelig ccedil egrave eacute ecirc euml igrave iacute icirc iuml',
+  'eth ntilde ograve oacute ocirc otilde ouml divide oslash ugrave uacute ucirc uuml yacute thorn yuml',
+].join(' ').split(' ');
+
+const ENTITIES = Object.assign(
+  Object.create(null),
+  Object.fromEntries(LATIN1_ENTITIES.map((name, i) => [name, String.fromCharCode(0xa0 + i)])),
+  {
+    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", ndash: '–', mdash: '—', hellip: '…',
+    lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', sbquo: '‚', bdquo: '„', lsaquo: '‹', rsaquo: '›',
+    bull: '•', trade: '™', euro: '€', permil: '‰', minus: '−', dagger: '†', Dagger: '‡',
+    OElig: 'Œ', oelig: 'œ', Scaron: 'Š', scaron: 'š', Yuml: 'Ÿ',
+    // Wide and non-breaking spaces read as a plain space; invisible marks as nothing.
+    nbsp: ' ', ensp: ' ', emsp: ' ', thinsp: ' ', shy: '', zwnj: '', zwj: '', lrm: '', rlm: '',
+  },
+);
+
+// Numeric spaces and invisible marks read as their named forms above do. Marketing mail pads its
+// preview line with long runs of them (&#847;&zwnj;&nbsp;…).
+function numericChar(code) {
+  if (code === 0xad || code === 0x34f || (code >= 0x200b && code <= 0x200f) || code === 0x2060 || code === 0xfeff) return '';
+  if ((code >= 0x2000 && code <= 0x200a) || code === 0x202f || code === 0x205f || code === 0x3000) return ' ';
+  return String.fromCodePoint(code);
+}
 
 function decodeEntities(s) {
-  return s.replace(/&(#\d+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, (all, e) => {
+  return s.replace(/&(#\d+|#[xX][0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, (all, e) => {
     if (e[0] !== '#') return ENTITIES[e] ?? ENTITIES[e.toLowerCase()] ?? all;
     const code = /^#[xX]/.test(e) ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-    return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? String.fromCodePoint(code) : all;
+    return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? numericChar(code) : all;
   });
 }
 
@@ -174,52 +219,133 @@ function dropHidden(html) {
   return out.join('');
 }
 
-// Source newlines in HTML are only spaces; lines come from block tags. Tag patterns stop at the
-// next '<' so an unclosed one can't make them scan ahead.
+// Newlines inside <pre> are line breaks (plain-text mail wrapped in HTML), so they become <br>
+// before the whitespace collapse. An unclosed <pre> runs to the end, as in a browser, and each
+// closer is looked for once, as in dropHidden.
+function keepPreLines(html) {
+  const open = /<pre\b[^<>]*>/gi;
+  const out = [];
+  let pos = 0;
+  for (let m = open.exec(html); m; m = open.exec(html)) {
+    const start = m.index + m[0].length;
+    const closer = /<\/pre\s*>/gi;
+    closer.lastIndex = start;
+    const c = closer.exec(html);
+    const end = c ? c.index : html.length;
+    // A browser ignores the newline right after <pre>.
+    out.push(html.slice(pos, start), html.slice(start, end).replace(/^\r?\n/, '').replace(/\r\n?|\n/g, '<br>'));
+    pos = end;
+    open.lastIndex = end;
+  }
+  out.push(html.slice(pos));
+  return out.join('');
+}
+
+// Source newlines in HTML are only spaces (outside <pre>); lines come from block tags. Tag
+// patterns stop at the next '<' so an unclosed one can't make them scan ahead.
 function htmlToText(html) {
-  return decodeEntities(dropHidden(String(html || ''))
+  return decodeEntities(keepPreLines(dropHidden(String(html || '')))
     .replace(/\s+/g, ' ')
     .replace(/<li\b[^<>]*>/gi, '\n- ')
     .replace(BLOCK_TAG, '\n')
     .replace(/<\/?(?:td|th)\b[^<>]*>/gi, ' ')
     .replace(/<[/!?]?[a-zA-Z][^<>]*>/g, ''))
-    .replace(/ /g, ' ')
+    .replace(/\u00a0/g, ' ')
     .split('\n').map((l) => l.replace(/[ \t]+/g, ' ').trim()).join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
+// RFC 3676 format=flowed: a line ending in a space goes on with the next line of the same quote
+// depth, so hard-wrapped paragraphs read (and are searched) as one line.
+function unflow(text, delsp) {
+  const out = [];
+  let joining = null; // { depth, text } of a paragraph whose last line ended in a space
+  // A paragraph cut off by a change of quote depth, or by the end, drops its dangling space.
+  const cutOff = (p) => ({ depth: p.depth, text: trimLineEnd(p.text) });
+  for (const raw of text.split('\n')) {
+    let depth = 0;
+    while (raw[depth] === '>') depth++;
+    let line = raw.slice(depth);
+    if (line[0] === ' ') line = line.slice(1); // space-stuffing
+    if (line === '-- ') {
+      // The signature line is neither flowed nor joined onto (RFC 3676 §4.3).
+      if (joining) out.push(cutOff(joining));
+      joining = null;
+      out.push({ depth, text: line });
+      continue;
+    }
+    const soft = line.endsWith(' ');
+    if (soft && delsp) line = line.slice(0, -1);
+    if (joining && joining.depth === depth) {
+      joining.text += line;
+    } else {
+      if (joining) out.push(cutOff(joining));
+      joining = { depth, text: line };
+    }
+    if (!soft) { out.push(joining); joining = null; }
+  }
+  if (joining) out.push(cutOff(joining));
+  return out.map((p) => (p.depth ? `${'>'.repeat(p.depth)}${p.text ? ` ${p.text}` : ''}` : p.text)).join('\n');
+}
+
+const LOOKS_HTML = /<(?:html|head|body|div|p|br|table|span|font)\b[^<>]*>/i;
+
+const sameText = (text) => text.replace(/\s+/g, ' ').trim();
+
+// A multipart body whose parts can't be found is still read, as HTML when it looks like HTML.
+function looseText(body, encoding, charset) {
+  const text = decodeBytes(transferDecode(body, encoding), charset);
+  return LOOKS_HTML.test(text) ? { text: htmlToText(text), html: true } : { text, html: false };
+}
+
 // { text, html } for one MIME part; html says the text came from an HTML body.
 function partText({ headers, body }, depth) {
   const first = (name) => (headers.get(name) || [])[0] || '';
-  if (/^\s*attachment/i.test(first('content-disposition'))) return null;
   const { type, params } = contentType(first('content-type'));
   const encoding = first('content-transfer-encoding').trim().toLowerCase();
+  // Before the attachment check: Outlook's and Apple Mail's "Forward as Attachment" send the
+  // forwarded message as an attachment, and it is the substance of the forward.
+  if (type === 'message/rfc822' || type === 'message/global') return forwardedPart(body, encoding, depth);
+  if (/^\s*attachment/i.test(first('content-disposition'))) return null;
   if (type.startsWith('multipart/')) {
-    if (!params.boundary || depth >= MAX_DEPTH) return null;
-    const parts = splitMultipart(body, params.boundary)
+    if (depth >= MAX_DEPTH) return null;
+    let pieces = params.boundary ? splitMultipart(body, params.boundary) : [];
+    if (!pieces.length) {
+      const guessed = guessBoundary(body);
+      if (guessed && guessed !== params.boundary) pieces = splitMultipart(body, guessed);
+    }
+    if (!pieces.length) return looseText(body, encoding, params.charset);
+    const parts = pieces
       .map((p) => partText(splitHeaders(p), depth + 1))
       .filter((p) => p && p.text.trim());
-    const plain = parts.filter((p) => !p.html);
-    if (type === 'multipart/alternative') return plain[0] || parts[0] || null;
-    const use = plain.length ? plain : parts;
-    return use.length ? { text: use.map((p) => p.text.trim()).join('\n\n'), html: !plain.length } : null;
-  }
-  if (type === 'message/rfc822' || type === 'message/global') {
-    // A message forwarded inline as a part: its words are the substance of the forward.
-    if (depth >= MAX_DEPTH) return null;
-    const inner = splitHeaders(transferDecode(body, encoding).toString('latin1'));
-    const get = (name) => decodeHeader((inner.headers.get(name) || [])[0] || '');
-    const head = [['From', addresses(get('from'))], ['Date', get('date')], ['Subject', get('subject')]]
-      .filter(([, value]) => value).map(([name, value]) => `${name}: ${value}`);
-    const content = partText(inner, depth + 1);
-    if (!head.length && !(content && content.text.trim())) return null;
-    // Never another version of the note around it, so it is kept like a plain part.
-    return { text: [FORWARD_LINE, ...head, '', content ? content.text.trim() : ''].join('\n').trim(), html: false };
+    if (type === 'multipart/alternative') return parts.find((p) => !p.html) || parts[0] || null;
+    // Every other multipart is a sequence: an HTML body next to a plain list footer or a
+    // forwarded message is still the body. An HTML part goes only when a plain one already
+    // carries its text (a sender that put both versions side by side).
+    const plainTexts = new Set(parts.filter((p) => !p.html).map((p) => sameText(p.text)));
+    const use = parts.filter((p) => !p.html || !plainTexts.has(sameText(p.text)));
+    return use.length ? { text: use.map((p) => p.text.trim()).join('\n\n'), html: use.some((p) => p.html) } : null;
   }
   if (type !== 'text/plain' && type !== 'text/html') return null;
   const decoded = decodeBytes(transferDecode(body, encoding), params.charset);
-  return type === 'text/html' ? { text: htmlToText(decoded), html: true } : { text: decoded, html: false };
+  if (type === 'text/html') return { text: htmlToText(decoded), html: true };
+  if (String(params.format || '').toLowerCase() !== 'flowed') return { text: decoded, html: false };
+  return { text: unflow(decoded.replace(/\r\n?/g, '\n'), String(params.delsp || '').toLowerCase() === 'yes'), html: false };
+}
+
+// A message carried as a part (forwarded inline or as an attachment), marked as a forward.
+function forwardedPart(body, encoding, depth) {
+  if (depth >= MAX_DEPTH) return null;
+  // Decoded base64 can still hold CRLFs, which would hide every header.
+  const inner = splitHeaders(transferDecode(body, encoding).toString('latin1').replace(/\r\n?/g, '\n'));
+  const get = (name) => decodeHeader((inner.headers.get(name) || [])[0] || '');
+  const head = [['From', addresses(get('from'))], ['Date', get('date')], ['Subject', get('subject')]]
+    .filter(([, value]) => value).map(([name, value]) => `${name}: ${value}`);
+  const content = partText(inner, depth + 1);
+  if (!head.length && !(content && content.text.trim())) return null;
+  // Its own text, never the HTML version of the note around it, so it reads as plain.
+  return { text: [FORWARD_LINE, ...head, '', content ? content.text.trim() : ''].join('\n').trim(), html: false };
 }
 
 function ymd(y, m, d) {
@@ -345,7 +471,7 @@ function cleanValue(value) {
 // An email exported as .md/.txt: From/Date/Subject lines at the top (plain, **bold** or YAML
 // front matter), after an optional # heading.
 function emailFromText(text) {
-  const lines = String(text || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = String(text || '').replace(/^\ufeff/, '').replace(/\r\n?/g, '\n').split('\n');
   let i = 0;
   const skipBlank = () => { while (i < lines.length && !lines[i].trim()) i++; };
   skipBlank();
@@ -425,7 +551,9 @@ function isAttribution(text) {
     || (/^Le\s/.test(s) && /\sa écrit$/.test(s));
 }
 
-// How many lines an "On … wrote:" attribution spans here (mail clients wrap it), or 0.
+// How many lines an "On … wrote:" attribution spans here (mail clients wrap it), or 0. Mail
+// clients always put a date in it; requiring a digit keeps a person's own "On Monday, Aparna
+// wrote:" (a line someone typed, not a client) as text rather than a cut.
 function attributionLines(lines, i) {
   if (lines[i].length > 400 || !/^\s*(?:On|Am|Le)\s/.test(lines[i])) return 0;
   let joined = '';
@@ -471,8 +599,9 @@ function stripQuoted(text) {
     if (historyStarts(lines, i) || isSignature(lines, i)) break;
     const span = attributionLines(lines, i);
     if (span) {
-      // A '>' quote after the attribution may be followed by a bottom-posted reply, so only the
-      // quote goes; anything else after it is the earlier message, so everything goes.
+      // A '>' quote after the attribution may be followed by a bottom-posted or interleaved
+      // reply, so only the quote goes (a footer after it, such as "Sent from my iPhone", stays
+      // too); anything else after it is the earlier message, so everything goes.
       let next = i + span;
       while (next < lines.length && !lines[next].trim()) next++;
       if (next >= lines.length || !isQuote(lines[next])) break;
@@ -582,19 +711,21 @@ function threadMessages(msgs) {
 function truncateBytes(text, maxBytes) {
   const room = Math.max(0, maxBytes - Buffer.byteLength('…'));
   if (!room) return '';
-  return Buffer.from(text, 'utf8').subarray(0, room).toString('utf8').replace(/�+$/, '') + '…';
+  return Buffer.from(text, 'utf8').subarray(0, room).toString('utf8').replace(/\ufffd+$/, '') + '…';
 }
 
-// The newest message in full and last; older ones without their quotes (forwards whole). The
-// oldest go first when it doesn't fit.
+// The newest message in full and last; older ones without their quotes (forwards whole), or in
+// full with keepQuotes (mail kept outside conversations, spec §3 B 9). The oldest go first when
+// it doesn't fit.
 function renderThread(thread, opts) {
   const maxBytes = opts?.maxBytes ?? 12000;
+  const keepQuotes = Boolean(opts?.keepQuotes);
   const messages = (thread && thread.messages) || [];
   const last = messages.length - 1;
   const head = (m) => `From: ${m.from || m.fromAddress || 'unknown sender'}${m.date ? ` · ${m.date}` : ''}`;
   const blocks = [];
   messages.forEach((m, i) => {
-    const body = i === last ? tidy(m.text) : dequote(m);
+    const body = i === last || keepQuotes ? tidy(m.text) : dequote(m);
     if (i === last || body) blocks.push(`${head(m)}\n${body}`.trim());
   });
   const sizes = blocks.map((b) => Buffer.byteLength(b, 'utf8'));

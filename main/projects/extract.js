@@ -52,10 +52,14 @@ function htmlTitle(html) {
   return end ? email.htmlToText(html.slice(open.index + open[0].length, end.index).slice(0, 1000)).replace(/\s+/g, ' ') : '';
 }
 
-// A YYYY-MM-DD (or YYYYMMDD) in the file name, such as 2026-10-04-standup.md.
+// The first real YYYY-MM-DD (or YYYYMMDD) in the file name, such as 2026-10-04-standup.md. An
+// id that only looks like one ('12345678-2026-10-04.md') is passed over.
 function dateFromName(rel) {
-  const m = /(?<!\d)(\d{4})([-_.]?)(\d{2})\2(\d{2})(?!\d)/.exec(path.posix.basename(String(rel)));
-  return m ? email.isoDate(`${m[1]}-${m[3]}-${m[4]}`) : '';
+  for (const m of path.posix.basename(String(rel)).matchAll(/(?<!\d)(\d{4})([-_.]?)(\d{2})\2(\d{2})(?!\d)/g)) {
+    const date = email.isoDate(`${m[1]}-${m[3]}-${m[4]}`);
+    if (date) return date;
+  }
+  return '';
 }
 
 function localDate(ms) {
@@ -84,7 +88,8 @@ function convert(execFileImpl, [cmd, args]) {
 // { text, email?, title? } for one file, or null for a type Promptly can't read here.
 async function readByType(abs, ext, { kind, platform, execFileImpl }) {
   if (TEXT_TYPES.has(ext)) {
-    const text = decodeText(await fs.promises.readFile(abs));
+    // Windows-written notes end lines in CRLF, and a '\r' left on the heading line hides it.
+    const text = decodeText(await fs.promises.readFile(abs)).replace(/\r\n?/g, '\n');
     const mail = email.emailFromText(text);
     return mail ? { text: emailText(mail, kind), email: mail } : { text, title: firstHeading(text) };
   }
@@ -97,8 +102,10 @@ async function readByType(abs, ext, { kind, platform, execFileImpl }) {
     const raw = (await fs.promises.readFile(abs)).toString('latin1');
     const threads = email.threadMessages(email.splitMbox(raw).map((m) => email.parseEml(Buffer.from(m, 'latin1'))));
     if (!threads.length) return null;
+    // Older messages lose their quotes only in conversations, as an .eml does (spec §3 B 9).
+    const keepQuotes = kind !== 'conversations';
     const text = threads.map((t) => {
-      const body = email.renderThread(t, { maxBytes: Infinity });
+      const body = email.renderThread(t, { maxBytes: Infinity, keepQuotes });
       return t.subject ? `Subject: ${t.subject}\n\n${body}` : body;
     }).join('\n\n');
     const newest = threads[0].messages[threads[0].messages.length - 1];
