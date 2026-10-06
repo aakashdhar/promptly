@@ -163,6 +163,42 @@ describe('project service (PRJ-009)', () => {
     expect(service.list()).toEqual([])
   })
 
+  it('PROMPTLY.md is never read back as a project file, and new-file counts clear after a refresh', async () => {
+    const id = await connected()
+    service.update(id, { keepInFolder: true })
+    expect(fs.existsSync(path.join(projectDir, 'PROMPTLY.md'))).toBe(true)
+    await service._sync(id)
+    expect(service.list()[0].newFiles).toBe(0)
+    const manifest = JSON.parse(fs.readFileSync(path.join(userData, 'projects', id, 'manifest.json'), 'utf8'))
+    expect(Object.keys(manifest).some((rel) => rel.toLowerCase() === 'promptly.md')).toBe(false)
+  })
+
+  it('a sync running while a summary is marked keeps the marks', async () => {
+    const id = await connected()
+    write('comms/2026-10-06 Shrikant.md', 'From: Shrikant <s@client.com>\nDate: 6 Oct 2026\nSubject: Tenant\n\nTenant soon.')
+    const syncing = service._sync(id)
+    const refreshing = service.refresh(id)
+    await Promise.all([syncing, refreshing])
+    await service._sync(id)
+    expect(service.list()[0].newFiles).toBe(0)
+  })
+
+  it('the email thread is the conversation naming the person, not just the newest match', async () => {
+    const id = await connected()
+    write('comms/2026-10-05 Invoice.md', 'From: Accounts <acc@client.com>\nDate: 5 Oct 2026\nSubject: Invoice this week\n\nPlease pay the invoice this week.')
+    const prep = await service.prepare({ id, transcript: 'reply to Aparna, yes we can add the copyable link this week' })
+    if (hasSqlite) expect(prep.sources[0].rel).toBe('comms/2026-10-04 Aparna.md')
+  })
+
+  it('knows which Look-deeper paths stay inside the text copy', async () => {
+    const id = await connected()
+    const textDir = path.join(userData, 'projects', id, 'text')
+    expect(service.insideCache(id, 'comms/2026-10-04 Aparna.md.txt')).toBe(true)
+    expect(service.insideCache(id, path.join(textDir, 'contracts'))).toBe(true)
+    expect(service.insideCache(id, projectDir)).toBe(false)
+    expect(service.insideCache(id, '../../config.json')).toBe(false)
+  })
+
   it('a missing folder is reported instead of running', async () => {
     const id = await connected()
     fs.rmSync(projectDir, { recursive: true, force: true })

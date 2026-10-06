@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
 import { titleBarPadding } from '../utils/keys.js'
 import { loadProjects } from '../utils/projects.js'
@@ -30,6 +30,18 @@ function day(ms) {
   if (!ms) return ''
   const d = new Date(ms)
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(d.getFullYear() !== new Date().getFullYear() && { year: 'numeric' }) })
+}
+
+// What the scan left out, so nothing is skipped silently (spec §A2, §8).
+const LEFT_OUT = { code: 'code', 'code-root': 'code folders', media: 'images, audio and video', 'too-big': 'over 2 MB', binary: 'not text', unsupported: 'other file types (PDF, Excel…)', ignored: 'in your ignore files', builtin: 'build and tool folders', hidden: 'hidden', empty: 'empty', symlink: 'links', unreadable: 'unreadable' }
+function LeftOut({ skipped = {}, tooMany = 0 }) {
+  const parts = Object.entries(skipped).filter(([reason, n]) => n > 0 && LEFT_OUT[reason]).map(([reason, n]) => `${n} ${LEFT_OUT[reason]}`)
+  if (!parts.length && !tooMany) return null
+  return (
+    <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: 'var(--text-tertiary)' }}>
+      Not read: {parts.join(', ')}{tooMany ? `${parts.length ? '; ' : ''}${tooMany} older files past the 5,000-file limit` : ''}.
+    </p>
+  )
 }
 
 function Segmented({ value, options, onChange, ariaLabel }) {
@@ -127,6 +139,21 @@ export default function ProjectConnectPanel({ panel, onClose }) {
   const [draft, setDraft] = useState('')
   const [keepInFolder, setKeepInFolder] = useState(false)
   const started = useRef(false)
+  const closeRef = useRef(null)
+  // Focus moves into the panel, so the keyboard isn't left on the (now unreachable) window behind it.
+  useEffect(() => { closeRef.current?.focus() }, [])
+
+  // Claude sorts the folders. When that fails the map shows every folder as Reference, and the
+  // summary waits until a retry works (spec §A3).
+  const sortFolders = useCallback(async (token) => {
+    setStep('sorting')
+    const map = await window.electronAPI.classifyProject(token)
+    if (!map || map.cancelled) { onClose(); return }
+    if (map.error && !map.folders) { setError(typeof map.error === 'string' ? map.error : map.error.message || ''); setStep('error'); return }
+    setFolders(map.folders || [])
+    setMapError(map.error ? map.error.message || 'Promptly couldn’t sort these; check them' : '')
+    setStep('map')
+  }, [onClose])
 
   // Start: pick and scan a folder (connect), or load the current map (folders).
   useEffect(() => {
@@ -140,13 +167,7 @@ export default function ProjectConnectPanel({ panel, onClose }) {
         if (picked.error) { setError(picked.error); setStep('error'); return }
         setScan(picked)
         setName(picked.name || '')
-        setStep('sorting')
-        const map = await api.classifyProject(picked.token)
-        if (!map || map.cancelled) { onClose(); return }
-        if (map.error && !map.folders) { setError(map.error); setStep('error'); return }
-        setFolders(map.folders || [])
-        setMapError(map.error ? map.error.message || '' : '')
-        setStep('map')
+        await sortFolders(picked.token)
       })()
     } else if (panel.kind === 'folders') {
       api?.getProjectFolders?.(panel.id).then((r) => {
@@ -155,7 +176,8 @@ export default function ProjectConnectPanel({ panel, onClose }) {
         setStep('map')
       })
     }
-  }, [panel, onClose])
+  }, [panel, onClose, sortFolders])
+
 
   // How many Claude calls the first summary takes, for the button.
   const folderMap = useMemo(() => Object.fromEntries(folders.map((f) => [f.rel, { kind: f.kind === 'unsure' ? 'reference' : f.kind, on: !!f.on && f.kind !== 'exclude' && !f.codeRoot }])), [folders])
@@ -190,6 +212,7 @@ export default function ProjectConnectPanel({ panel, onClose }) {
   useEffect(() => { if (panel.kind === 'summary' && panel.id) loadSummary(panel.id) }, [panel])
 
   const unsure = folders.some((f) => f.kind === 'unsure' && f.on)
+  const nothingReadable = step === 'map' && panel.kind === 'connect' && !folders.some((f) => (f.count || 0) > 0)
   const readsSomething = folders.some((f) => f.on && f.kind !== 'exclude' && !f.codeRoot)
 
   async function saveMap() {
@@ -222,12 +245,13 @@ export default function ProjectConnectPanel({ panel, onClose }) {
   const stepLine = panel.kind === 'connect' ? (step === 'summary' ? 'Step 2 of 2 · What Promptly knows' : 'Step 1 of 2 · What’s in the folder') : ''
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div role="dialog" aria-modal="true" aria-label={title} onKeyDown={(e) => { if (e.key === 'Escape' && !editing) { e.stopPropagation(); onClose() } }}
+      style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: titleBarPadding('0 18px 0 96px', 18), borderBottom: '0.5px solid rgba(var(--ink),0.1)', WebkitAppRegion: 'drag' }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(var(--ink),0.95)' }}>{title}</span>
         {stepLine && <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{stepLine}</span>}
-        <button type="button" onClick={() => { if (building && projectId) window.electronAPI?.cancelProjectBuild?.(projectId); onClose() }} style={{ ...btn, marginLeft: 'auto' }}>
-          {step === 'summary' && !building ? 'Done' : 'Cancel'}
+        <button ref={closeRef} type="button" onClick={onClose} style={{ ...btn, marginLeft: 'auto' }}>
+          {step === 'summary' ? (building ? 'Close' : 'Done') : 'Cancel'}
         </button>
       </div>
 
@@ -266,7 +290,13 @@ export default function ProjectConnectPanel({ panel, onClose }) {
                   {scan.warnings.map((w) => `${w.rel}: ${w.reason}`).join(' · ')}. Those ignore rules weren’t applied.
                 </p>
               )}
-              {mapError && <p role="alert" style={{ margin: 0, fontSize: 12.5, color: AMBER }}>{mapError}</p>}
+              {mapError && (
+                <div role="alert" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <p style={{ margin: 0, fontSize: 12.5, color: AMBER }}>{mapError}</p>
+                  {panel.kind === 'connect' && <button type="button" style={{ ...btn, marginLeft: 'auto' }} onClick={() => sortFolders(scan.token)}>Sort again</button>}
+                </div>
+              )}
+              {panel.kind === 'connect' && scan && <LeftOut skipped={scan.skipped} tooMany={scan.tooMany} />}
 
               {panel.kind === 'connect' && (
                 <div style={{ ...card, padding: '14px 16px', display: 'grid', gap: 12 }}>
@@ -291,6 +321,7 @@ export default function ProjectConnectPanel({ panel, onClose }) {
                 </div>
               )}
 
+              {nothingReadable && <p role="alert" style={{ margin: 0, fontSize: 13, color: AMBER }}>Nothing Promptly can read here: it reads .md, .txt, .eml, .mbox and .html files{navigator.platform.startsWith('Mac') ? ', and Word and RTF documents' : ''}.</p>}
               <FolderMap folders={folders} onChange={(i, patch) => setFolders((list) => list.map((f, j) => (j === i ? { ...f, ...patch } : f)))} />
 
               {error && <p role="alert" style={{ margin: 0, fontSize: 12.5, color: AMBER }}>{error}</p>}
@@ -298,7 +329,7 @@ export default function ProjectConnectPanel({ panel, onClose }) {
                 <p style={{ margin: 0, fontSize: 12, lineHeight: 1.45, color: 'var(--text-tertiary)', maxWidth: 520 }}>
                   Files stay on this Mac. Claude reads the switched-on folders on your own account, only when it writes the summary or something you ask for.
                 </p>
-                <button type="button" onClick={saveMap} disabled={!readsSomething || unsure} style={{ ...primary, marginLeft: 'auto', opacity: !readsSomething || unsure ? 0.5 : 1 }}>
+                <button type="button" onClick={saveMap} disabled={!readsSomething || unsure || (panel.kind === 'connect' && !!mapError)} style={{ ...primary, marginLeft: 'auto', opacity: !readsSomething || unsure || (panel.kind === 'connect' && mapError) ? 0.5 : 1 }}>
                   {panel.kind === 'folders' ? 'Save' : `Write the summary${calls ? ` (about ${calls} Claude call${calls === 1 ? '' : 's'})` : ''}`}
                 </button>
               </div>
@@ -316,7 +347,10 @@ export default function ProjectConnectPanel({ panel, onClose }) {
                   <div style={{ height: 4, borderRadius: 2, background: 'rgba(var(--ink),0.08)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${Math.min(100, Math.round(((progress.done || 0) / Math.max(1, progress.total || 1)) * 100))}%`, background: 'rgb(10,132,255)', transition: 'width 300ms' }} />
                   </div>
-                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>You can close this; Promptly keeps going and the project is ready when it finishes.</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>You can close this; Promptly keeps going and the project is ready when it finishes.</span>
+                    <button type="button" style={{ ...btn, marginLeft: 'auto' }} onClick={() => window.electronAPI?.cancelProjectBuild?.(projectId)}>Stop</button>
+                  </div>
                 </div>
               )}
               {failed && (

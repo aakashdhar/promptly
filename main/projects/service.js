@@ -39,7 +39,7 @@ function writeAtomic(file, data) {
   fs.renameSync(tmp, file);
 }
 
-function createProjectService({ config, userData, run, log = { info() {}, warn() {}, error() {} }, emit = () => {}, now = Date.now, watchImpl, platform = process.platform }) {
+function createProjectService({ config, userData, run, stopRuns = () => {}, log = { info() {}, warn() {}, error() {} }, emit = () => {}, now = Date.now, watchImpl, platform = process.platform }) {
   const store = createProjectStore({ config, dataDir: path.join(userData, 'projects'), appDataDir: userData });
   const live = new Map();     // id → { index, watcher, syncing, dirty, lastFocus, building, factsCache, terms }
   const tokens = new Map();   // connect token → { dir, scan, at }
@@ -61,7 +61,8 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
     return s.index;
   };
   const folderMissing = (p) => { try { return !fs.statSync(p.dir).isDirectory(); } catch { return true; } };
-  const newFilesOf = (id) => Object.values(manifestOf(id)).filter((e) => e.extractedAt && !e.inSummary).length;
+  // Files not yet in the summary; ones the summary's 400-file cap left out don't count as new.
+  const newFilesOf = (id) => Object.values(manifestOf(id)).filter((e) => e.extractedAt && !e.inSummary && !e.leftOut).length;
 
   function view(p) {
     const s = live.get(p.id);
@@ -88,11 +89,12 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
     s.dirty = false;
     s.syncing = (async () => {
       const project = store.get(id);
-      if (!project || folderMissing(project)) return { added: [], changed: [], removed: [] };
+      if (!project || s.removed || folderMissing(project)) return { added: [], changed: [], removed: [] };
       const p = paths(id);
       const index = indexOf(id);
       const scan = await scanFolder(project.dir, { platform });
-      const files = scan.files.filter((f) => kindFor(project, f));
+      // Promptly's own PROMPTLY.md is the summary, not a project file.
+      const files = scan.files.filter((f) => f.rel.toLowerCase() !== 'promptly.md' && kindFor(project, f));
       const prev = manifestOf(id);
       const diff = await diffManifest(prev, files, { dir: project.dir, keep: scan.unchecked });
       const byRel = new Map(files.map((f) => [f.rel, f]));
@@ -132,6 +134,14 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
         try { fs.rmSync(path.join(p.text, `${rel}.txt`), { force: true }); } catch { /* already gone */ }
       }
       s.reindex = false;
+      if (s.removed || !store.get(id)) return { added: [], changed: [], removed: [] };
+      // A build or refresh may have marked files as summarised while this ran; keep those marks
+      // for files whose content is unchanged.
+      const latest = manifestOf(id);
+      for (const [rel, entry] of Object.entries(diff.next)) {
+        const was = latest[rel];
+        if (was && was.sha1 && was.sha1 === entry.sha1) { entry.inSummary = !!was.inSummary; entry.leftOut = !!was.leftOut; }
+      }
       writeAtomic(p.manifest, JSON.stringify(diff.next));
       if (diff.added.length || diff.changed.length || diff.removed.length) emit('projects-changed');
       return diff;
@@ -166,9 +176,20 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
     return docs;
   }
 
-  function markInSummary(id, rels) {
+  // After a summary: the files it read (only where the file hasn't changed since), and the ones
+  // its 400-file cap left out. Waits for a sync in progress so their writes can't cross.
+  async function markInSummary(id, docs, leftOutFiles = []) {
+    const s = state(id);
+    if (s.syncing) await s.syncing;
+    if (s.removed || !store.get(id)) return 0;
     const manifest = manifestOf(id);
-    for (const rel of rels) if (manifest[rel]) manifest[rel].inSummary = true;
+    const left = new Set(leftOutFiles);
+    for (const doc of docs) {
+      const entry = manifest[doc.rel];
+      if (!entry || (doc.sha1 && entry.sha1 !== doc.sha1)) continue;
+      if (left.has(doc.rel)) entry.leftOut = true;
+      else { entry.inSummary = true; entry.leftOut = false; }
+    }
     writeAtomic(paths(id).manifest, JSON.stringify(manifest));
     return Object.values(manifest).filter((e) => e.inSummary).length;
   }
@@ -208,7 +229,7 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
       });
       if (result.cancelled) { progress(id, { cancelled: true, finished: true }); return { ok: false, cancelled: true }; }
       saveSummary(id, result.text);
-      const fileCount = markInSummary(id, docs.map((d) => d.rel).filter((rel) => !(result.leftOutFiles || []).includes(rel)));
+      const fileCount = await markInSummary(id, docs, result.leftOutFiles);
       store.update(id, { summaryUpdatedAt: now(), summaryFileCount: fileCount });
       progress(id, { finished: true, overCap: result.overCap, leftOut: result.leftOut });
       return { ok: true, overCap: result.overCap };
@@ -237,7 +258,7 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
       const summary = readSummary(id);
       let pins = readPins(id);
       if (project.keepInFolder) pins = summaryLib.readPromptlyMd({ project, stored: summary, pins, today: isoDay(now()) });
-      const docs = loadDocs(id, (rel, e) => !e.inSummary);
+      const docs = loadDocs(id, (rel, e) => !e.inSummary && !e.leftOut);
       const cutoff = isoDay(now() - RECENT_DAYS * 86400000);
       const recent = loadDocs(id, (rel, e) => e.kind === 'conversations' && (e.date || '') >= cutoff);
       const result = await summaryLib.refreshSummary({
@@ -246,7 +267,7 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
       });
       if (result.cancelled) { progress(id, { cancelled: true, finished: true }); return { ok: false, cancelled: true }; }
       saveSummary(id, result.text, pins);
-      const fileCount = markInSummary(id, docs.map((d) => d.rel));
+      const fileCount = await markInSummary(id, docs, result.leftOutFiles);
       store.update(id, { summaryUpdatedAt: now(), summaryFileCount: fileCount });
       progress(id, { finished: true, overCap: result.overCap });
       return { ok: true };
@@ -266,9 +287,10 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
     return { text: readSummary(id), pins: readPins(id), updatedAt: project.summaryUpdatedAt, fileCount: project.summaryFileCount, building: !!(live.get(id) || {}).building };
   }
 
+  // Stop now, not after the call in flight: the runs are this service's own, so this can't touch a request.
   function cancelBuild(id) {
     const s = live.get(id);
-    if (s && s.building) s.building.abort();
+    if (s && s.building) { s.building.abort(); stopRuns(); }
   }
 
   function watch(id) {
@@ -282,7 +304,8 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
   function forget(id) {
     const s = live.get(id);
     if (!s) return;
-    if (s.building) s.building.abort();
+    s.removed = true;
+    if (s.building) { s.building.abort(); stopRuns(); }
     if (s.watcher) s.watcher.stop();
     if (s.index) s.index.close();
     live.delete(id);
@@ -381,19 +404,23 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
     remove(id, { deletePromptlyMd = false } = {}) {
       const project = store.get(id);
       if (!project) return { ok: true };
+      const pending = (live.get(id) || {}).syncing;
       forget(id);
       if (deletePromptlyMd && project.wrotePromptlyMd) {
         try { fs.rmSync(path.join(project.dir, 'PROMPTLY.md'), { force: true }); } catch { /* the folder may be gone */ }
       }
+      const root = paths(id).root;
       store.remove(id);
+      // A sync that was mid-way may still write; delete Promptly's copy again once it's done.
+      if (pending) pending.finally(() => fs.rmSync(root, { recursive: true, force: true }));
       emit('projects-changed');
       return { ok: true };
     },
 
     locate(id, dir) {
       try {
-        forget(id);
         store.relocate(id, dir);
+        forget(id);
         watch(id);
         sync(id);
         emit('projects-changed');
@@ -425,10 +452,13 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
       const index = indexOf(id);
       const search = (text, opts) => (index.available ? index.search(text, opts) : []);
       const manifest = manifestOf(id);
-      // The conversation being answered: the newest conversation file among the best matches.
+      // The conversation being answered: the best-matching conversation file, preferring one
+      // from or about someone the request names.
       const thread = (text) => {
         const hits = search(text, { kinds: ['conversations'], limit: 8 });
-        const best = hits.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+        const names = [...new Set((String(text).match(/\b[A-Z][\p{L}'-]{2,}/gu) || []).map((n) => n.toLowerCase()))];
+        const mentions = (h) => names.some((n) => `${h.title || ''} ${h.excerpt || ''}`.toLowerCase().includes(n));
+        const best = hits.find(mentions) || hits[0];
         if (!best || !manifest[best.rel]) return null;
         const doc = loadDoc(id, best.rel, manifest[best.rel]);
         if (!doc) return null;
@@ -450,6 +480,13 @@ function createProjectService({ config, userData, run, log = { info() {}, warn()
     },
 
     dateOf(id, rel) { return (manifestOf(id)[rel] || {}).date || ''; },
+
+    // Whether a path Look deeper used is inside the project's text copy (relative = inside its cwd).
+    insideCache(id, file) {
+      const root = path.resolve(paths(id).text);
+      const abs = path.resolve(root, String(file || ''));
+      return abs === root || abs.startsWith(root + path.sep);
+    },
 
     start() {
       for (const p of store.list()) {

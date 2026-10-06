@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { readableColor } from '../utils/promptUtils.js'
 import { modeTone } from '../utils/modes.js'
+import { projectOf } from '../utils/projects.js'
+import useProjects from '../hooks/useProjects.js'
 import ModeDropdown from './ModeDropdown.jsx'
 import useHotkeyWords from '../hooks/useHotkeyWords.js'
 import { keys, combo, historyToggleKeys, titleBarPadding } from '../utils/keys.js'
@@ -44,6 +46,7 @@ export default function ExpandedTransportBar({
   onConnectProject,
 }) {
   const hotkey = useHotkeyWords()
+  useProjects() // re-render when a project's new-file count changes
   const isRecording = currentState === 'RECORDING'
   const isPaused = currentState === 'PAUSED'
   const isThinking = currentState === 'THINKING'
@@ -83,6 +86,9 @@ export default function ExpandedTransportBar({
   } else {
     label = mode === 'dictate' ? 'Ready to dictate' : String(mode).startsWith('project:') ? `Say what you need for ${modeLabel}` : 'Speak your prompt'
     hint = `${hotkey.needsAccess ? hotkey.fallback : hotkey.action} or click mic to start`
+    // A project mode says when its summary is behind (spec §15); the files still count already.
+    const project = projectOf(mode)
+    if (project && project.newFiles > 0) hint = `${project.newFiles} new file${project.newFiles === 1 ? '' : 's'} since your last refresh`
   }
 
   const modePill = (

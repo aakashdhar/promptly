@@ -251,6 +251,7 @@ describe('createClaudeRunner: tool runs, without bash', () => {
     for (const { args } of calls) {
       expect(hasSeq(args, ['--tools', ''])).toBe(true)
       expect(args).not.toContain('--max-turns')
+      expect(args).not.toContain('--permission-mode')
       expect(args).not.toContain('stream-json')
     }
   })
@@ -397,6 +398,8 @@ describe('createClaudeRunner: tool runs with a stand-in claude', () => {
     expect(args).toContain('--strict-mcp-config')
     expect(args).toContain('--no-session-persistence')
     expect(hasSeq(args, ['--max-turns', '12'])).toBe(true)
+    // A user's own permission settings can't widen a tool run.
+    expect(hasSeq(args, ['--permission-mode', 'default'])).toBe(true)
     expect(hasSeq(args, STREAM_FLAGS)).toBe(true)
     expect(hasSeq(args, ['--model', 'test-model'])).toBe(true)
     expect(args).not.toContain('--setting-sources')

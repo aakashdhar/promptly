@@ -52,6 +52,19 @@ export default function ExpandedErrorContent({
         />
       )
     }
+    // A project mode couldn't run (D-PROJECT-MODES): its folder is missing or the project was
+    // removed. The message says what to do; Settings › Projects has Locate….
+    if (err.errorType === 'project') {
+      return (
+        <OperationErrorPanel
+          icon="warning"
+          title={err.error || 'This project can’t be used right now'}
+          onRetry={err.onRetry}
+          onOpenSettings={err.onOpenSettings}
+          settingsHint="Open Settings › Projects to locate the folder or choose another project."
+        />
+      )
+    }
     const errorType = err.errorType || 'unknown'
     const isUnknown = errorType === 'unknown'
     const isAuth = errorType === 'auth'

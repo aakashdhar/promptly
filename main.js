@@ -233,11 +233,17 @@ const cleanupCli = createClaudeRunner({
 const cleanupClaude = createAiRouter({ claude: cleanupCli, api: apiMain, apiOptions: { fast: true }, ...routerOptions });
 
 // Project modes (D-PROJECT-MODES): connected folders, their summaries and search. Summaries are
-// written by whoever answers prompts (Claude Code, or the user's own key).
+// written by whoever answers prompts (Claude Code, or the user's own key), on their own runners:
+// Escape on a request must not kill a summary being written in the background, and Stop on a
+// summary must stop it straight away.
+const projectCli = createClaudeRunner({ getClaudePath: () => claudePath, getModel: claudeModel });
+const projectApi = createApiRunner({ getSettings: apiSettings, fetchImpl: aiFetch });
+const projectClaude = createAiRouter({ claude: projectCli, api: projectApi, ...routerOptions });
 const projects = createProjectService({
   config,
   userData: app.getPath('userData'),
-  run: (prompt, opts) => claude.run(prompt, opts),
+  run: (prompt, opts) => projectClaude.run(prompt, opts),
+  stopRuns: () => projectClaude.cancelAll(),
   log,
   // Named here so the IPC contract test sees every event the service can send.
   emit: (channel, payload) => {
@@ -488,18 +494,31 @@ async function runProjectPrompt(transcript, options) {
   const started = Date.now();
   let sources = prep.sources;
   let result = null;
-  if (prep.lookDeeper && claude.active() === 'claude' && claudePath) {
+  // Look deeper reads the project's text copy, so it's skipped when files were left out: those
+  // copies are still there.
+  if (prep.lookDeeper && !exclude.length && claude.active() === 'claude' && claudePath) {
     const opened = [];
+    let strayed = false;
     result = await claudeCli.run(prompt + loadPrompt('project-look-deeper'), {
-      onDelta, tools: ['Read', 'Grep', 'Glob'], cwd: prep.textDir, maxTurns: 12,
+      onDelta, tools: ['Read', 'Grep', 'Glob'], cwd: prep.textDir, maxTurns: 12, timeoutMs: 120000,
       onTool: ({ name, input }) => {
+        const target = input && (input.file_path || input.path);
+        if (target && !projects.insideCache(prep.project.id, target)) strayed = true;
         const rel = name === 'Read' ? projects.relFromCache(prep.project.id, input && input.file_path) : null;
-        if (rel && !exclude.includes(rel)) opened.push(rel);
+        if (rel) opened.push(rel);
       },
     });
+    // The user's own Claude Code settings could widen what it may read; anything read outside the
+    // project's text copy throws the answer away and asks again without tools.
+    if (strayed) {
+      log.warn('Look deeper read outside the project copy; asking again without it');
+      result = { success: false, errorType: 'unknown' };
+    }
     if (result.success) {
       const seen = new Set(sources.map((s) => s.rel));
       for (const rel of opened) if (!seen.has(rel)) { seen.add(rel); sources = [...sources, { rel, date: projects.dateOf(prep.project.id, rel) }]; }
+    } else if (result.timedOut) {
+      return { ...result, ...meta, sources };
     } else if (!result.cancelled) {
       log.warn(`Look deeper failed (${result.errorType || 'error'}); asking without it`);
       if (onDelta) winSend('generation-delta', { text: '' });
@@ -1294,6 +1313,7 @@ app.on('before-quit', () => {
   // user's Claude quota, and Whisper keeps the CPU busy.
   claude.cancelAll();
   evalClaude.cancelAll();
+  projectClaude.cancelAll();
   speechModels.cancel();
 });
 

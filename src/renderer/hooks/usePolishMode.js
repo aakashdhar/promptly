@@ -14,7 +14,7 @@ export function parsePolishOutput(raw) {
   }
 }
 
-export default function usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef }) {
+export default function usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef, projectRef }) {
   const [polishResult, setPolishResult] = useState(null)
   const { tone: polishTone, setTone: setPolishToneValue } = usePolishTone()
   const polishToneRef = useRef(polishTone)
@@ -29,7 +29,7 @@ export default function usePolishMode({ originalTranscript, transitionRef, setTh
       transitionRef.current(STATES.ERROR, { message: 'Electron API not available' })
       return
     }
-    const genResult = await runStep(opIdRef, () => window.electronAPI.generatePrompt(originalTranscript.current, 'polish', { tone: newTone, ...(contextRef?.current && { context: contextRef.current }) }))
+    const genResult = await runStep(opIdRef, () => window.electronAPI.generatePrompt(originalTranscript.current, 'polish', { tone: newTone, ...(contextRef?.current && { context: contextRef.current }), ...(projectRef?.current && { project: { ...projectRef.current, output: 'polish' } }) }))
     if (!genResult) return
     if (!genResult.success) {
       transitionRef.current(STATES.ERROR, { message: genResult.error || 'Claude error' })

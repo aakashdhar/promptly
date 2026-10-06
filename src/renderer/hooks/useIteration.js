@@ -106,6 +106,8 @@ export default function useIteration({
         revise: { previous: base.prompt, email: base.email || null, transcript: base.transcript },
         ...(base.tone && { tone: base.tone }),
         ...(contextRef?.current && { context: contextRef.current }),
+        // A project result stays in its project (D-PROJECT-MODES).
+        ...(base.project && { project: base.project }),
       })
       if (!current() || genResult?.cancelled) return
       if (!genResult?.success) {

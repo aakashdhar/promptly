@@ -145,7 +145,9 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
         return;
       }
       const toolFlags = tools ? ['--tools', ...tools] : ['--tools', ''];
-      const turnFlags = tools ? ['--max-turns', String(maxTurns)] : [];
+      // A tool run always asks for the default permission mode, so a user's own setting (e.g.
+      // bypassPermissions or extra folders) can't widen what Claude may read.
+      const turnFlags = tools ? ['--max-turns', String(maxTurns), '--permission-mode', 'default'] : [];
       const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? [...toolFlags, ...LEAN_FLAGS, ...turnFlags] : []), ...(lean && quick ? QUICK_START_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
       // The CLI thinks before answering by default; for a long answer that can add minutes
       // without making it better, so callers can turn it off.

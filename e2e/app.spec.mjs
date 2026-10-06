@@ -1318,9 +1318,10 @@ test('Project mode: connect a folder, write its summary, an email grounded in it
     // Settings › Projects says so, and Refresh brings the summary up to date.
     await page.keyboard.press(`${MOD}+/`)
     await page.getByRole('tab', { name: 'Projects' }).click()
-    await expect(page.getByText('1 new file since your last refresh')).toBeVisible({ timeout: 10000 })
-    await page.getByRole('button', { name: 'Refresh' }).click()
-    await expect(page.getByText(/^Up to date/)).toBeVisible({ timeout: 20000 })
+    const pane = page.locator('#settings-pane')
+    await expect(pane.getByText('1 new file since your last refresh')).toBeVisible({ timeout: 10000 })
+    await pane.getByRole('button', { name: 'Refresh' }).click()
+    await expect(pane.getByText(/^Up to date/)).toBeVisible({ timeout: 20000 })
   } finally {
     await app.close()
     fs.rmSync(projectRoot, { recursive: true, force: true })

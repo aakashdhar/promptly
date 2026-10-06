@@ -101,6 +101,9 @@ export default function App() {
   const [projectResult, setProjectResult] = useState(null)
   const projectResultRef = useRef(null)
   projectResultRef.current = projectResult
+  // What a redo of the result on screen (Iterate, a tone change) sends so it stays in the project.
+  const projectOptionRef = useRef(null)
+  projectOptionRef.current = projectResult ? { id: projectResult.project.id, output: projectResult.output, exclude: projectResult.exclude || [] } : null
   const projectExcludeRef = useRef([])
   // After a dictation that names someone from a project: { id, name, output }.
   const [projectSuggestion, setProjectSuggestion] = useState(null)
@@ -159,7 +162,7 @@ export default function App() {
 
   transitionRef.current = transition
 
-  const { polishResult, setPolishResult, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef })
+  const { polishResult, setPolishResult, polishTone, setPolishToneValue, polishToneRef, handlePolishToneChange } = usePolishMode({ originalTranscript, transitionRef, setThinkTranscript, setGeneratedPrompt, STATES, opIdRef, contextRef, projectRef: projectOptionRef })
 
   const handleGenerateResultRef = useRef(null)
 
@@ -410,9 +413,9 @@ export default function App() {
       const shown = resultModeRef.current || modeRef.current
       if (stateRef.current === STATES.EMAIL_READY && emailOutputRef.current) {
         const e = emailOutputRef.current
-        return { mode: 'email', prompt: e.body, email: { subject: e.subject, body: e.body }, transcript: originalTranscript.current, returnState: STATES.EMAIL_READY }
+        return { mode: 'email', prompt: e.body, email: { subject: e.subject, body: e.body }, transcript: originalTranscript.current, returnState: STATES.EMAIL_READY, project: projectOptionRef.current }
       }
-      return { mode: shown, prompt: generatedPromptRef.current, transcript: originalTranscript.current, tone: shown === 'polish' ? polishToneRef.current : undefined, returnState: STATES.PROMPT_READY }
+      return { mode: shown, prompt: generatedPromptRef.current, transcript: originalTranscript.current, tone: shown === 'polish' ? polishToneRef.current : undefined, returnState: STATES.PROMPT_READY, project: projectOptionRef.current }
     },
     onRevised: (genResult, iterText, base) => {
       if (base.mode === 'email') { acceptRevisedEmail(genResult, iterText); return }
@@ -462,6 +465,7 @@ export default function App() {
     const result = await runStep(opIdRef, () => window.electronAPI.generatePrompt(adjustment, 'email', {
       revise: { email: { subject: emailOutput.subject, body: emailOutput.body }, transcript: originalTranscript.current },
       ...(contextRef.current && { context: contextRef.current }),
+      ...(projectOptionRef.current && { project: { ...projectOptionRef.current, output: 'email' } }),
     }))
     if (!result) return
     if (result.success) {
@@ -608,7 +612,7 @@ export default function App() {
             onStopIterate={stopIterating}
             // Reworking a prompt made from a dictation makes it a prompt of its own; the dictation
             // is still in history.
-            onRegenerate={() => { clearDictation(); handleRegenerate() }}
+            onRegenerate={() => { clearDictation(); if (projectResultRef.current) rerunProject(); else handleRegenerate() }}
             onReset={() => transition(STATES.IDLE)}
             onIterate={() => { clearDictation(); handleIterate() }}
             isIterated={isIterated.current}
