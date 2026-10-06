@@ -87,6 +87,8 @@ function destinationFor(bundleId) {
 // prompts without context are unchanged.
 function buildContextBlock(mode, context = {}) {
   const parts = [];
+  // Project modes: the project's material comes first, before the user's own notes.
+  if (context.project) parts.push(context.project);
   const destination = mode.destination ? destinationFor(context.bundleId) : null;
   if (destination) parts.push(`Where this prompt will be used: ${destination.guidance}`);
   if (context.voiceNotes) {

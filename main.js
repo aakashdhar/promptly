@@ -22,7 +22,8 @@ const { registerRecordingShortcut } = require('./main/shortcuts');
 const { createHelper } = require('./main/helper');
 const { HOTKEY_PRESETS, DEFAULT_HOTKEY, getPreset, hotkeyWords, createHoldToTalk } = require('./main/hotkey');
 const { destinationFor, buildDictationCleanupPrompt, countryFromLocale } = require('./main/prompts');
-const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildLearnFromEditPrompt, buildContextBlock, DETAIL_LEVELS, PROMPT_TARGETS, buildRetargetPrompt } = require('./main/prompts');
+const { createProjectService } = require('./main/projects/service');
+const { MODES, getMode, resolveModeKey, buildModePrompt, buildRevisePrompt, buildBuilderPrompt, buildEvalPrompt, normalizeEval, buildLearnStylePrompt, buildLearnFromEditPrompt, buildContextBlock, DETAIL_LEVELS, PROMPT_TARGETS, buildRetargetPrompt, loadPrompt } = require('./main/prompts');
 const { createEditLog, profileFor, cleanNotes, formatEdits, newRules, appendRules, removeRules } = require('./main/profile');
 const { tidyDictation, acceptCleanup } = require('./main/dictation');
 const { parseWords, serializeWords, hintWords, applyCorrections, suggestCorrections } = require('./main/words');
@@ -230,6 +231,20 @@ const cleanupCli = createClaudeRunner({
 });
 // On a key it uses the provider's fast model; it shares the main API runner, so a cancel stops it.
 const cleanupClaude = createAiRouter({ claude: cleanupCli, api: apiMain, apiOptions: { fast: true }, ...routerOptions });
+
+// Project modes (D-PROJECT-MODES): connected folders, their summaries and search. Summaries are
+// written by whoever answers prompts (Claude Code, or the user's own key).
+const projects = createProjectService({
+  config,
+  userData: app.getPath('userData'),
+  run: (prompt, opts) => claude.run(prompt, opts),
+  log,
+  // Named here so the IPC contract test sees every event the service can send.
+  emit: (channel, payload) => {
+    if (channel === 'project-progress') winSend('project-progress', payload);
+    else if (channel === 'projects-changed') winSend('projects-changed');
+  },
+});
 // "Best accuracy" speech model, downloaded on request into userData/models.
 // Tests serve a small stand-in model locally with PROMPTLY_SPEECH_MODEL.
 const speechModels = createSpeechModels({
@@ -443,7 +458,56 @@ async function runDictation(transcript) {
   return { success: true, prompt: text, dictation: { removed, typed } };
 }
 
+// A request in a project mode: the project's context goes in front of the request, then the
+// Email, Prompt or Polish prompt runs as usual. On Claude Code, Look deeper lets Claude open more
+// of the project's files (read-only, in Promptly's text copy) when the material isn't enough.
+async function runProjectPrompt(transcript, options) {
+  const req = options.project;
+  const exclude = Array.isArray(req.exclude) ? req.exclude.slice(0, 500).map(String) : [];
+  const prep = await projects.prepare({ id: String(req.id), transcript, output: req.output, exclude });
+  if (prep.error) return { success: false, error: prep.error, errorType: 'project' };
+  const modeConf = getMode(prep.output);
+  const stored = config.read();
+  const context = {
+    ...(options.context || {}),
+    ...profileFor(modeConf, stored),
+    dictionary: dictionaryWords(),
+    otherLanguages: (accurateSpeech()?.language || 'en') !== 'en',
+    project: prep.block,
+  };
+  const prompt = buildModePrompt(transcript, prep.output, { ...options, detail: stored.promptDetail, context });
+  const throttled = prep.output !== 'email' ? throttledDelta(80) : null;
+  // Look deeper clears the shown text when Claude opens a file; that reset must never be throttled away.
+  const onDelta = throttled ? (text) => (text === '' ? winSend('generation-delta', { text: '' }) : throttled(text)) : undefined;
+  const meta = { project: prep.project, output: prep.output };
+  const started = Date.now();
+  let sources = prep.sources;
+  let result = null;
+  if (prep.lookDeeper && claude.active() === 'claude' && claudePath) {
+    const opened = [];
+    result = await claudeCli.run(prompt + loadPrompt('project-look-deeper'), {
+      onDelta, tools: ['Read', 'Grep', 'Glob'], cwd: prep.textDir, maxTurns: 12,
+      onTool: ({ name, input }) => {
+        const rel = name === 'Read' ? projects.relFromCache(prep.project.id, input && input.file_path) : null;
+        if (rel && !exclude.includes(rel)) opened.push(rel);
+      },
+    });
+    if (result.success) {
+      const seen = new Set(sources.map((s) => s.rel));
+      for (const rel of opened) if (!seen.has(rel)) { seen.add(rel); sources = [...sources, { rel, date: projects.dateOf(prep.project.id, rel) }]; }
+    } else if (!result.cancelled) {
+      log.warn(`Look deeper failed (${result.errorType || 'error'}); asking without it`);
+      if (onDelta) winSend('generation-delta', { text: '' });
+      result = null;
+    }
+  }
+  if (!result) result = await claude.run(prompt, { onDelta });
+  if (!result.success && !result.cancelled) log.warn(`Project ${prep.output} failed: ${result.errorType || 'error'} after ${Date.now() - started} ms`);
+  return { ...result, ...meta, sources };
+}
+
 async function runGeneratePrompt({ transcript, mode, options = {} }) {
+  if (options.project && options.project.id) return runProjectPrompt(transcript, options);
   const modeConf = getMode(mode);
   if (modeConf.kind === 'builder') return { success: true, prompt: transcript };
   if (modeConf.kind === 'dictation') return runDictation(transcript);
@@ -1563,6 +1627,46 @@ app.whenReady().then(async () => {
     return runGeneratePrompt(lastGenerateRequest);
   });
 
+  // ── Project modes ──
+  // Folders are always picked here, in main; the window only ever names a project by id.
+  const pickFolder = async (title) => {
+    if (IS_E2E && process.env.PROMPTLY_PROJECT_DIR) return process.env.PROMPTLY_PROJECT_DIR;
+    const picked = await dialog.showOpenDialog(win, { title, properties: ['openDirectory'] });
+    return picked.canceled || !picked.filePaths[0] ? null : picked.filePaths[0];
+  };
+  const projectCall = (fn) => async (event, ...args) => {
+    if (!fromWindow(event, win)) return { error: 'Not allowed' };
+    try { return await fn(...args); } catch (err) { return { error: err.message }; }
+  };
+  const PROJECT_PATCH = ['name', 'defaultOutput', 'lookDeeper', 'keepInFolder', 'folders'];
+  ipcMain.handle('projects-list', projectCall(() => projects.list()));
+  ipcMain.handle('project-connect', projectCall(async () => {
+    const dir = await pickFolder('Connect a project folder');
+    return dir ? projects.connect(dir) : { cancelled: true };
+  }));
+  ipcMain.handle('project-classify', projectCall((token) => projects.classify(String(token || ''))));
+  ipcMain.handle('project-estimate', projectCall((token, folders) => projects.estimateCalls(String(token || ''), folders && typeof folders === 'object' ? folders : {})));
+  ipcMain.handle('project-save', projectCall((fields = {}) => projects.save({
+    token: String(fields.token || ''), name: fields.name, role: fields.role, writes: fields.writes, folders: fields.folders, keepInFolder: !!fields.keepInFolder,
+  })));
+  ipcMain.handle('project-cancel-build', projectCall((id) => projects.cancelBuild(String(id))));
+  ipcMain.handle('project-summary-get', projectCall((id) => projects.getSummary(String(id))));
+  ipcMain.handle('project-summary-set', projectCall((id, text) => projects.setSummary(String(id), String(text ?? '').slice(0, 200000))));
+  ipcMain.handle('project-refresh', projectCall((id) => projects.refresh(String(id))));
+  ipcMain.handle('project-rebuild', projectCall((id) => projects.rebuild(String(id))));
+  ipcMain.handle('project-update', projectCall((id, patch) => {
+    const clean = {};
+    for (const key of PROJECT_PATCH) if (patch && key in patch) clean[key] = patch[key];
+    return projects.update(String(id), clean);
+  }));
+  ipcMain.handle('project-remove', projectCall((id, opts) => projects.remove(String(id), { deletePromptlyMd: !!(opts && opts.deletePromptlyMd) })));
+  ipcMain.handle('project-locate', projectCall(async (id) => {
+    const dir = await pickFolder('Locate the project folder');
+    return dir ? projects.locate(String(id), dir) : { cancelled: true };
+  }));
+  ipcMain.handle('project-folders-get', projectCall((id) => projects.folders(String(id))));
+  ipcMain.handle('project-suggest', projectCall((text) => projects.suggest(String(text ?? '').slice(0, 50000))));
+
   // Image, Video and Workflow: one step of a builder, from its prompt file in main/prompts.
   ipcMain.handle('builder-step', (_event, { step, values } = {}) => {
     const prompt = buildBuilderPrompt(String(step || ''), values || {});
@@ -2171,6 +2275,7 @@ app.whenReady().then(async () => {
   createWindow();
   createPillWindow();
   helper.start();
+  projects.start();
   // Returning users go straight to the window; setup only appears when something is missing.
   if (await setupNeeded) {
     dismissLaunchWindow().then(createSplashWindow);
@@ -2190,6 +2295,7 @@ app.whenReady().then(async () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  projects.stop();
 });
 
 app.on('window-all-closed', () => {
@@ -2199,3 +2305,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => showWindow());
+
+// Folders on network drives send no change events; a rescan when Promptly comes forward covers them.
+app.on('browser-window-focus', () => projects.onFocus());
