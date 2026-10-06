@@ -170,7 +170,7 @@ Never: commit to main · change behaviour for Claude Code users · log or expose
 
 ---
 ### Active Feature: Project modes (prompts and emails from a project folder)
-> Folder: vibe/features/2026-10-06-project-modes/ | Added: 2026-10-06 | Branch: feature/project-modes | Status: planned, awaiting the owner's review of spec + mockups
+> Folder: vibe/features/2026-10-06-project-modes/ | Added: 2026-10-06 | Merged to main as ed17647 (revert: `git revert -m 1 ed17647`) | Released in 2.23.0
 
 **Feature summary**: A connected local folder becomes its own mode; Email/Prompt/Polish written in it are grounded in a Claude-written, editable project summary plus local FTS5 search, with an optional read-only "look deeper" on Claude Code. Dictation never uses a project.
 **Files in scope**: main/projects/* (new) · main/prompts/project-*.txt · main/prompts.js · main/llm.js (run options cwd/tools/maxTurns) · main/platform/{darwin,win32}.js (extractTextCommand) · shared/modes.json (project kind) · main.js · preload.js · src/renderer/components/{ModeDropdown,ExpandedTransportBar,SettingsPanel,ExpandedPromptReadyContent,EmailReadyState,ExpandedHistoryList}.jsx + new Project*.jsx/WriteAsPicker.jsx · hooks/{useMode,useDictation,useRecording,useTextInput,useProjects}.js · utils/{modes,history}.js · tests/projects-*.test.js · tests/{ipc-contract,main}.test.js · e2e/** · docs
@@ -183,8 +183,8 @@ Never: commit to main · change behaviour for Claude Code users · log or expose
 
 **Boundaries:**
 Always: follow ARCHITECTURE.md · npm test + lint after every task · keep existing modes byte-identical · update CODEBASE.md for new files/IPC · update TASKS.md after every task in plain English
-Ask first: starting the build (owner is reviewing) · running the full e2e suite · merging or pushing to main · changing existing IPC response shapes beyond the additive `sources`
-Never: change Dictation behaviour · modify existing passing tests (extend them) · touch files not in FEATURE_PLAN.md · commit to main
+Ask first: running the full e2e suite · changing existing IPC response shapes beyond the additive `sources`
+Never: change Dictation behaviour · modify existing passing tests (extend them)
 
 **Between tasks:** npm test · npm run lint · commit `feat(project-modes): PRJ-0NN — …` · IMPLEMENTATION_LOG for real decisions · docs commit `docs(FEATURE_TASKS+TASKS): mark PRJ-0NN done — project-modes`.
 ---
