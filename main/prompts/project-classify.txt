@@ -17,7 +17,7 @@ The manifest lists each top-level folder with its readable file count, newest da
 
 Rules:
 - Give exactly one entry for each of these folders, with "rel" copied exactly: {FOLDERS}
-- Judge by the folder name first, then the samples. A name that says old, archive, legacy, backup, draft or copy is exclude even when the files look useful.
+- Judge by the folder name first, then the samples. A name that says old, archive, legacy, backup or draft, or marks a duplicate such as "Copy of plans" or "plans (copy)", is exclude even when the files look useful. Copy on its own, as in "Website copy" or "Ad copy", is written text, not a duplicate.
 - Use unsure only when the name and samples point to different kinds and a wrong guess would matter. Otherwise pick the closest kind.
 - A question is at most 12 words, names the folder, and offers the likely kinds, e.g. "Is shared mostly client emails or internal reference?"
 - Add "question" to unsure entries only.
