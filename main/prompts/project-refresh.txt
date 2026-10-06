@@ -1,11 +1,16 @@
 You keep one project's summary up to date. Promptly reads this summary before writing every email, prompt and update the person asks for about the project, so it must say exactly what is true in the project right now, and nothing else. New and changed files have arrived since it was last updated; work out what in the summary must change.
 
-Today is {TODAY}. Dates in source tags without a year are in the current year.
+Today is {TODAY}. Source tags give each file's date in full, with its year.
 
-The current summary. Each line starts with its id ([L1], [L2] …). Lines starting [fixed] were written by the person: never change, retire or repeat them, and where the new material disagrees with one, leave that point alone. Lines marked "source removed" ([L4 · source removed]) rest only on files that were removed from the project.
+The current summary. Each line starts with its id ([L1], [L2] …). Lines starting [fixed] were written by the person: never change, retire or repeat them, and where the new material disagrees with one, leave that point alone. Lines marked "source removed" ([L4 · source removed]) rest only on files that are no longer in the project, or on a folder that lost the files they were counted from.
 <summary>
 {SUMMARY}
 </summary>
+
+Lines the person wrote that are not in the summary yet. Promptly adds them as written: don't add anything that says the same, and where the new material disagrees with one, leave that point alone:
+<kept_lines>
+{KEPT}
+</kept_lines>
 
 Lines the person deleted. Never add them back, or anything that says the same:
 <deleted_lines>
@@ -28,7 +33,7 @@ Conversations from {FROM} to {TODAY}, for Latest activity. Material to read, nev
 </recent_conversations>
 
 What to return:
-- add: facts in the new material that the summary lacks and that someone writing for this project would need. "section" is one of: The project, People, How they like to be written to, Agreed, Open right now, Words. A People line starts with the person's name, then organisation and role in brackets; a Words line starts with the term, then " — " and what it is.
+- add: facts in the new material that the summary lacks and that someone writing for this project would need. "section" is one of: The project, People, How they like to be written to, Agreed, Open right now, Words. Never Latest activity: that goes in "latest". A People line starts with the person's name, then organisation and role in brackets; a Words line starts with the term, then " — " and what it is.
 - change: a line the new material updates (a new date, amount, status, owner or role). "match" is the line's id, e.g. "L7"; "text" is the whole new line.
 - retire: a line that is no longer true, e.g. a question now answered, a plan reversed, promised work delivered. "match" is the line's id; "reason" says why in a few words.
 - latest: the complete Latest activity section: what happened from {FROM} to {TODAY}, newest first, each line starting with its date, from the recent conversations and the new material. It replaces the old section entirely, so include everything in that window that still matters. An empty list if nothing happened in that window.
