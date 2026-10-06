@@ -1616,6 +1616,10 @@ function readOwnFile(file, fsImpl) {
     fd = fsImpl.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0) | (fs.constants.O_NONBLOCK || 0));
     const stat = fsImpl.fstatSync(fd);
     if (!stat.isFile() || stat.size > PROMPTLY_MD_MAX) return '';
+    // Windows has no O_NOFOLLOW: also check that what was opened is the file at that path, not
+    // a link's target (a link there, or a different file, is refused).
+    const here = fsImpl.lstatSync(file);
+    if (here.isSymbolicLink() || here.ino !== stat.ino || here.dev !== stat.dev) return '';
     const buf = Buffer.alloc(stat.size);
     let got = 0;
     while (got < buf.length) {
