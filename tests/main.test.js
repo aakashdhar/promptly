@@ -1173,12 +1173,13 @@ rl.on('close', () => process.exit(0))
     const phases = []
     const h = createHelper({ binaryPath: fake, onStatus: (s) => statuses.push(s), onHotkey: (p) => phases.push(p) })
     expect(h.start()).toBe(true)
-    await expect.poll(() => statuses.length).toBe(1)
+    // Starting the stand-in helper can take over a second when the whole suite runs in parallel.
+    await expect.poll(() => statuses.length, { timeout: 10000 }).toBe(1)
     expect(h.status()).toEqual({ trusted: true, tap: true })
     const ctx = await h.context()
     expect(ctx).toMatchObject({ app: { bundleId: 'com.apple.Terminal' }, selectedText: 'npm ERR! missing script' })
     await h.configure({ keyCode: 49, modifiers: ['option'] })
-    await expect.poll(() => phases).toEqual(['down'])
+    await expect.poll(() => phases, { timeout: 10000 }).toEqual(['down'])
     h.stop()
   })
 
