@@ -7,7 +7,10 @@ const fs = require('fs');
 // up and the caller's focus/Refresh pokes still go through the same debounce, so rescans
 // never overlap whichever way they were triggered.
 
-const IGNORED_DIRS = new Set(['.git', 'node_modules']);
+// The same names as BUILTIN_DIRS in scan.js (which doesn't export it): the scan never reads
+// inside these, so builds, dev servers and git writing there can't change what a rescan finds.
+// Matched exactly, like the scan: a person's "Build" folder still counts.
+const IGNORED_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', 'vendor', 'venv', '.venv', '__pycache__', '.next', '.cache', 'target', 'coverage']);
 
 // filename is relative to the watched folder. Some platforms don't say which file changed
 // (null), which still counts as a change.
@@ -16,13 +19,25 @@ function isIgnored(filename) {
   return String(filename).split(/[\\/]/).some((part) => IGNORED_DIRS.has(part));
 }
 
-function createFolderWatcher({ dir, onChange, debounceMs = 2000, watchImpl = fs.watch, timers = { setTimeout, clearTimeout } }) {
+// onChange must always settle: while it runs, later changes only mark one more rescan as due.
+function createFolderWatcher({
+  dir,
+  onChange,
+  onError,
+  debounceMs = 2000,
+  maxWaitMs = 30000,
+  watchImpl = fs.watch,
+  timers = { setTimeout, clearTimeout },
+  now = () => performance.now(),
+}) {
   let watcher = null;
   let timer = null;
+  let burstStart = null;
   let running = false;
   let pending = false;
   let stopped = false;
   let failed = false;
+  let error = null;
 
   function schedule() {
     if (stopped) return;
@@ -32,11 +47,16 @@ function createFolderWatcher({ dir, onChange, debounceMs = 2000, watchImpl = fs.
       return;
     }
     if (timer !== null) timers.clearTimeout(timer);
-    timer = timers.setTimeout(fire, debounceMs);
+    // Each change restarts the quiet period, but never past maxWaitMs from the burst's first
+    // change, so a file written every second (a log, a sync client) can't hold rescans off.
+    const t = now();
+    if (burstStart === null) burstStart = t;
+    timer = timers.setTimeout(fire, Math.max(0, Math.min(debounceMs, burstStart + maxWaitMs - t)));
   }
 
   function fire() {
     timer = null;
+    burstStart = null;
     if (stopped) return;
     running = true;
     let result;
@@ -69,25 +89,37 @@ function createFolderWatcher({ dir, onChange, debounceMs = 2000, watchImpl = fs.
     }
   }
 
+  function fail(err) {
+    failed = true;
+    error = Object.freeze({ code: (err && err.code) || null, message: (err && err.message) || String(err) });
+    if (!onError) return;
+    try {
+      onError(error);
+    } catch {
+      // Reporting the failure must not break the watcher's own state.
+    }
+  }
+
   function start() {
     if (stopped || watcher) return;
     let w;
     try {
       w = watchImpl(dir, { recursive: true });
-    } catch {
-      failed = true;
+    } catch (err) {
+      fail(err);
       return;
     }
     watcher = w;
     failed = false;
+    error = null;
     w.on('change', (_eventType, filename) => {
       if (w === watcher && !isIgnored(filename)) schedule();
     });
     // Stays attached after close so a late 'error' from a dead watcher is never unhandled.
-    w.on('error', () => {
+    w.on('error', (err) => {
       if (w !== watcher) return;
       closeWatcher();
-      failed = true;
+      fail(err);
     });
   }
 
@@ -106,7 +138,11 @@ function createFolderWatcher({ dir, onChange, debounceMs = 2000, watchImpl = fs.
     get failed() {
       return failed;
     },
+    // { code, message } of the failure behind `failed`; null while watching.
+    get error() {
+      return error;
+    },
   };
 }
 
-module.exports = { createFolderWatcher, isIgnored };
+module.exports = { createFolderWatcher, isIgnored, IGNORED_DIRS };
