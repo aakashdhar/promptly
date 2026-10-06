@@ -18,6 +18,24 @@ const WRITES = ['client-emails', 'team-prompts', 'status-updates', 'other'];
 const OUTPUTS = ['email', 'prompt', 'polish'];
 const KINDS = ['overview', 'conversations', 'agreements', 'build', 'reference', 'exclude', 'unsure'];
 const ID_RE = /^[0-9a-f]{8}$/;
+// The name shows in the mode menu, history tags and prompts ("…for <Project>").
+const NAME_MAX = 80;
+const OWN_FILES_ERROR = "Choose a project folder, not one that holds Promptly's own files";
+
+// Line breaks, tabs and other control characters become one space. The cap counts characters,
+// not UTF-16 units, so an emoji is never cut in half.
+function cleanName(value) {
+  if (typeof value !== 'string') return undefined;
+  const name = Array.from(value.replace(/[\p{Cc}\s]+/gu, ' ').trim()).slice(0, NAME_MAX).join('').trim();
+  return name || undefined;
+}
+
+// The default name for a folder. A drive root has no folder name (basename('E:\\') is ''),
+// so a USB drive connected whole becomes "Drive E".
+function nameForFolder(dir, pathImpl = path) {
+  const drive = /^([a-z]):[\\/]*$/i.exec(dir);
+  return cleanName(pathImpl.basename(dir)) || (drive ? `Drive ${drive[1].toUpperCase()}` : cleanName(dir));
+}
 
 // Spec §17: the first of these the person picked wins; "Something else" alone, or nothing, → Prompt.
 function defaultOutputFor(writes) {
@@ -51,7 +69,7 @@ const isTime = v => v === null || (Number.isFinite(v) && v >= 0);
 // One validator per field a patch may set; a value it rejects (undefined) is ignored.
 // id and dir are not here, so no patch can move a project to another id or folder.
 const FIELDS = {
-  name: v => (typeof v === 'string' && v.trim() ? v.trim() : undefined),
+  name: cleanName,
   color: v => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : undefined),
   role: v => (ROLES.includes(v) ? v : undefined),
   writes: v => cleanWrites(v) ?? undefined,
@@ -76,16 +94,49 @@ function cleanPatch(patch, keys) {
   return out;
 }
 
-function createProjectStore({ config, dataDir, fsImpl = fs, randomId = () => crypto.randomBytes(4).toString('hex') }) {
-  const root = path.resolve(dataDir);
-  // The native realpath also settles letter case (macOS, Windows), so "~/Work/Acme" and
-  // "~/work/acme" are recognised as one folder.
-  const realpath = p => (fsImpl.realpathSync.native || fsImpl.realpathSync)(p);
-  const sameDir = p => { try { return realpath(p); } catch { return path.resolve(p); } };
+// True when inner is outer or sits inside it. A sibling such as "projects-old" is not inside "projects".
+function contains(outer, inner) {
+  const rel = path.relative(outer, inner);
+  return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
+}
 
+// appDataDir is Promptly's whole app-data folder (userData), which holds dataDir, config.json and
+// the speech models; no project folder may hold it or sit inside it, or the scan and the watcher
+// would read Promptly's own writes back as project files.
+function createProjectStore({ config, dataDir, appDataDir, fsImpl = fs, randomId = () => crypto.randomBytes(4).toString('hex') }) {
+  const root = path.resolve(dataDir);
+  const ownDirs = [dataDir, appDataDir].filter(d => typeof d === 'string' && d);
+  // The native realpath also settles letter case (macOS, Windows), so "~/Work/Acme" and
+  // "~/work/acme" are recognised as one folder. It fails on some Windows volumes (RAM disks,
+  // some virtual drives) where the JS one works.
+  const realpath = p => {
+    if (typeof fsImpl.realpathSync.native === 'function') {
+      try { return fsImpl.realpathSync.native(p); } catch { /* try the JS one */ }
+    }
+    return fsImpl.realpathSync(p);
+  };
+  const sameDir = p => { try { return realpath(p); } catch { return path.resolve(p); } };
+  // dataDir doesn't exist before the first project is built; its nearest existing parent is
+  // resolved instead, so a linked parent (/var → /private/var) still compares equal.
+  function realpathLoose(p) {
+    let head = path.resolve(p);
+    const tail = [];
+    for (;;) {
+      try { return path.join(realpath(head), ...tail); } catch { /* go up one */ }
+      const parent = path.dirname(head);
+      if (parent === head) return path.resolve(p);
+      tail.unshift(path.basename(head));
+      head = parent;
+    }
+  }
+
+  // A record is a project only with a well-formed id and a folder. Anything else (a hand edit)
+  // could never be built, refreshed or removed, so it isn't listed and drops out on the next save.
   function list() {
     const projects = config.read().projects;
-    return Array.isArray(projects) ? projects.filter(p => p && typeof p === 'object' && typeof p.id === 'string') : [];
+    return Array.isArray(projects)
+      ? projects.filter(p => p && typeof p === 'object' && typeof p.id === 'string' && ID_RE.test(p.id) && typeof p.dir === 'string' && p.dir)
+      : [];
   }
 
   function save(projects) {
@@ -96,10 +147,10 @@ function createProjectStore({ config, dataDir, fsImpl = fs, randomId = () => cry
     return list().find(p => p.id === id) || null;
   }
 
-  function findByDir(dir) {
+  function findByDir(dir, exceptId) {
     if (typeof dir !== 'string' || !dir) return null;
     const target = sameDir(dir);
-    return list().find(p => typeof p.dir === 'string' && sameDir(p.dir) === target) || null;
+    return list().find(p => p.id !== exceptId && sameDir(p.dir) === target) || null;
   }
 
   function newId(taken) {
@@ -116,20 +167,31 @@ function createProjectStore({ config, dataDir, fsImpl = fs, randomId = () => cry
     return PROJECT_COLORS[counts.indexOf(Math.min(...counts))];
   }
 
-  function create(fields = {}) {
-    if (typeof fields.dir !== 'string' || !fields.dir) throw new Error('Choose a folder');
+  // The checks a folder passes before a project may point at it; returns its real path.
+  function checkFolder(value, exceptId) {
+    if (typeof value !== 'string' || !value) throw new Error('Choose a folder');
     let dir;
-    try { dir = realpath(fields.dir); } catch { throw new Error('Folder not found'); }
-    if (!fsImpl.statSync(dir).isDirectory()) throw new Error('Folder not found');
-    const projects = list();
-    const existing = findByDir(dir);
-    if (existing) throw new Error(`Already connected as ${existing.name}`);
+    try { dir = realpath(value); } catch { throw new Error('Folder not found'); }
+    let isDir = false;
+    try { isDir = fsImpl.statSync(dir).isDirectory(); } catch { /* reported below */ }
+    if (!isDir) throw new Error('Folder not found');
+    for (const own of ownDirs.map(realpathLoose)) {
+      if (contains(own, dir) || contains(dir, own)) throw new Error(OWN_FILES_ERROR);
+    }
+    const existing = findByDir(dir, exceptId);
+    if (existing) throw new Error(`Already connected as ${cleanName(existing.name) || nameForFolder(existing.dir)}`);
+    return dir;
+  }
 
-    const picked = cleanPatch(fields, ['name', 'role', 'writes', 'folders', 'lookDeeper', 'keepInFolder']);
+  function create(fields) {
+    const f = fields && typeof fields === 'object' ? fields : {};
+    const dir = checkFolder(f.dir);
+    const projects = list();
+    const picked = cleanPatch(f, ['name', 'role', 'writes', 'folders', 'lookDeeper', 'keepInFolder']);
     const writes = picked.writes || [];
     const project = {
       id: newId(new Set(projects.map(p => p.id))),
-      name: picked.name || path.basename(dir),
+      name: picked.name || nameForFolder(dir),
       dir,
       color: nextColor(projects),
       role: picked.role || 'other',
@@ -145,6 +207,18 @@ function createProjectStore({ config, dataDir, fsImpl = fs, randomId = () => cry
     };
     save([...projects, project]);
     return project;
+  }
+
+  // "Folder not found · Locate…" (spec §30): the same project, summary and index, on the folder's
+  // new path. update() can't change dir, so this is the only way a project moves.
+  function relocate(id, dir) {
+    const projects = list();
+    const index = projects.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Project not found');
+    const next = { ...projects[index], dir: checkFolder(dir, id) };
+    projects[index] = next;
+    save(projects);
+    return next;
   }
 
   function update(id, patch) {
@@ -189,7 +263,7 @@ function createProjectStore({ config, dataDir, fsImpl = fs, randomId = () => cry
     };
   }
 
-  return { list, get, findByDir, create, update, remove, paths };
+  return { list, get, findByDir, create, relocate, update, remove, paths };
 }
 
-module.exports = { createProjectStore, PROJECT_COLORS, defaultOutputFor, ROLES, WRITES, KINDS };
+module.exports = { createProjectStore, PROJECT_COLORS, defaultOutputFor, nameForFolder, ROLES, WRITES, KINDS };

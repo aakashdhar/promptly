@@ -6,6 +6,7 @@ import path from 'path'
 
 const require = createRequire(import.meta.url)
 const { createProjectStore, PROJECT_COLORS, defaultOutputFor } = require('../main/projects/store.js')
+const { nameForFolder } = require('../main/projects/store.js')
 const { createConfigStore } = require('../main/config.js')
 const MODES = require('../shared/modes.json')
 
@@ -334,5 +335,179 @@ describe('project store: reading config.json', () => {
     config.update({ projects: [null, 'x', { name: 'no id' }, { id: 'abcdef01', name: 'Ok', dir: folderA }] })
     expect(store.list()).toEqual([{ id: 'abcdef01', name: 'Ok', dir: folderA }])
     expect(() => store.create({ dir: folderA })).toThrow('Already connected as Ok')
+  })
+})
+
+describe('project store: names', () => {
+  it('turns line breaks, tabs and control characters into single spaces', () => {
+    const p = store.create({ dir: folderA, name: 'Infer\n360\u0000 \t PM\r\n' })
+    expect(p.name).toBe('Infer 360 PM')
+    expect(store.update(p.id, { name: 'Acme\u007f\u2028Sales' }).name).toBe('Acme Sales')
+    // Nothing left after cleaning: the name stays as it was.
+    expect(store.update(p.id, { name: '\n\u0000\t' }).name).toBe('Acme Sales')
+  })
+
+  it('caps a name at 80 characters, never cutting an emoji in half', () => {
+    const p = store.create({ dir: folderA })
+    expect(store.update(p.id, { name: 'x'.repeat(100000) }).name).toBe('x'.repeat(80))
+    expect(store.get(p.id).name).toHaveLength(80)
+    expect(store.update(p.id, { name: `${'a'.repeat(79)}😀b` }).name).toBe(`${'a'.repeat(79)}😀`)
+    expect(store.create({ dir: folderB, name: ' '.repeat(5) + 'y'.repeat(90) }).name).toBe('y'.repeat(80))
+  })
+
+  it('gives a drive root a name of its own', () => {
+    expect(nameForFolder('E:\\', path.win32)).toBe('Drive E')
+    expect(nameForFolder('e:', path.win32)).toBe('Drive E')
+    expect(nameForFolder('\\\\nas\\share\\', path.win32)).toBe('share')
+    expect(nameForFolder('C:\\Users\\a\\Infer360', path.win32)).toBe('Infer360')
+    expect(nameForFolder('/', path.posix)).toBe('/')
+    expect(nameForFolder('/Volumes/USB', path.posix)).toBe('USB')
+    expect(nameForFolder(folderA)).toBe('Infer360')
+  })
+
+  // Windows allows neither control characters nor 200-character names under the temp folder.
+  it.skipIf(process.platform === 'win32')('cleans a folder name the same way when it becomes the project name', () => {
+    expect(store.create({ dir: makeFolder('Acme\nQ3\tplan') }).name).toBe('Acme Q3 plan')
+    expect(store.create({ dir: makeFolder('L'.repeat(200)) }).name).toBe('L'.repeat(80))
+  })
+
+  it('names a record with a blank name by its folder in the duplicate message', () => {
+    config.update({ projects: [{ id: 'abcdef01', name: '', dir: folderA }] })
+    expect(() => store.create({ dir: folderA })).toThrow('Already connected as Infer360')
+  })
+})
+
+describe('project store: records it can\'t use', () => {
+  it('skips a record whose id or folder is malformed, and drops it on the next save', () => {
+    config.update({ projects: [
+      { id: 'my-proj', name: 'Hand', dir: folderA }, { id: 'ABCDEF01', name: 'Upper', dir: folderA },
+      { id: 'abcdef02', name: 'No folder' }, { id: 'abcdef03', name: 'Blank', dir: '' }, { id: 'abcdef05', name: 'Odd', dir: 7 },
+      { id: 'abcdef04', name: 'Ok', dir: folderB },
+    ] })
+    expect(store.list().map(p => p.name)).toEqual(['Ok'])
+    expect(store.get('abcdef02')).toBeNull()
+    expect(store.findByDir(folderA)).toBeNull()
+    // Its folder can be connected again, and the save leaves only real projects in config.json.
+    const p = store.create({ dir: folderA })
+    expect(config.read().projects.map(q => q.id)).toEqual(['abcdef04', p.id])
+  })
+})
+
+describe('project store: create with bad input', () => {
+  it('asks for a folder rather than throwing a TypeError', () => {
+    for (const bad of [null, 'x', 42, [], undefined]) expect(() => store.create(bad)).toThrow('Choose a folder')
+    for (const bad of [null, 42, '', {}]) expect(() => store.create({ dir: bad })).toThrow('Choose a folder')
+    expect(store.list()).toEqual([])
+  })
+})
+
+describe('project store: realpath', () => {
+  const withNative = native => ({ ...fs, realpathSync: Object.assign(p => fs.realpathSync(p), { native }) })
+
+  it('falls back to the JS realpath when the native one fails (some Windows volumes)', () => {
+    const eisdir = () => { throw Object.assign(new Error('EISDIR: illegal operation on a directory'), { code: 'EISDIR' }) }
+    const s = createProjectStore({ config, dataDir, fsImpl: withNative(eisdir) })
+    const p = s.create({ dir: folderA })
+    expect(p.dir).toBe(fs.realpathSync(folderA))
+    expect(() => s.create({ dir: folderA + path.sep })).toThrow('Already connected as Infer360')
+    expect(() => s.create({ dir: path.join(tmp, 'gone') })).toThrow('Folder not found')
+    expect(() => s.create({ dir: tmp })).toThrow("Choose a project folder, not one that holds Promptly's own files")
+  })
+
+  it('works with an fs that has no native realpath', () => {
+    const s = createProjectStore({ config, dataDir, fsImpl: { ...fs, realpathSync: p => fs.realpathSync(p) } })
+    expect(s.create({ dir: folderB }).dir).toBe(fs.realpathSync(folderB))
+  })
+})
+
+describe('project store: relocate (spec §30 Locate…)', () => {
+  it('points the same project and its data at the folder\'s new place', () => {
+    const p = store.create({ dir: folderA, name: 'Infer360 PM', writes: ['client-emails'] })
+    const u = store.update(p.id, { summaryUpdatedAt: 5, summaryFileCount: 3, folders: { comms: { kind: 'conversations', on: true } } })
+    fs.mkdirSync(store.paths(p.id).root, { recursive: true })
+    fs.writeFileSync(store.paths(p.id).summary, '## The project')
+    const moved = path.join(tmp, 'Archive', 'Infer360')
+    fs.mkdirSync(path.dirname(moved))
+    fs.renameSync(folderA, moved)
+    const before = snapshot(moved)
+
+    const r = store.relocate(p.id, moved)
+    expect(r).toEqual({ ...u, dir: fs.realpathSync.native(moved) })
+    expect(store.get(p.id)).toEqual(r)
+    expect(store.list()).toHaveLength(1)
+    expect(fs.readFileSync(store.paths(p.id).summary, 'utf8')).toBe('## The project')
+    expect(snapshot(moved)).toEqual(before)
+  })
+
+  it('stores the real path, and accepts the folder it already has', () => {
+    const p = store.create({ dir: folderA })
+    const link = path.join(tmp, 'alias')
+    fs.symlinkSync(folderB, link, 'junction')
+    expect(store.relocate(p.id, link + path.sep).dir).toBe(folderB)
+    expect(store.relocate(p.id, folderB).dir).toBe(folderB)
+    expect(store.findByDir(folderA)).toBeNull()
+  })
+
+  it('runs the same checks as connecting, and changes nothing when one fails', () => {
+    const a = store.create({ dir: folderA, name: 'Infer360 PM' })
+    const b = store.create({ dir: folderB, name: 'Acme' })
+    expect(() => store.relocate(b.id, folderA)).toThrow('Already connected as Infer360 PM')
+    expect(() => store.relocate(b.id, path.join(tmp, 'gone'))).toThrow('Folder not found')
+    expect(() => store.relocate(b.id, path.join(folderA, 'notes.md'))).toThrow('Folder not found')
+    expect(() => store.relocate(b.id, null)).toThrow('Choose a folder')
+    expect(() => store.relocate(b.id, '')).toThrow('Choose a folder')
+    expect(() => store.relocate(b.id, tmp)).toThrow("Choose a project folder, not one that holds Promptly's own files")
+    expect(() => store.relocate('ffffffff', makeFolder('New'))).toThrow('Project not found')
+    expect(store.list()).toEqual([a, b])
+  })
+})
+
+describe('project store: Promptly\'s own folders', () => {
+  const OWN = "Choose a project folder, not one that holds Promptly's own files"
+  let appDataDir, guarded
+
+  beforeEach(() => {
+    appDataDir = path.join(tmp, 'userData')
+    guarded = createProjectStore({ config, dataDir, appDataDir })
+  })
+
+  it('refuses a folder that holds the data folder, even before that exists (e.g. the home folder)', () => {
+    expect(fs.existsSync(dataDir)).toBe(false)
+    expect(() => store.create({ dir: tmp })).toThrow(OWN)
+    expect(() => guarded.create({ dir: tmp })).toThrow(OWN)
+    expect(() => store.create({ dir: appDataDir })).toThrow(OWN)
+    expect(fs.existsSync(dataDir)).toBe(false)
+    expect(store.list()).toEqual([])
+  })
+
+  it('refuses the data folder, the app-data folder and anything inside them', () => {
+    fs.mkdirSync(path.join(dataDir, 'abcdef01', 'text'), { recursive: true })
+    const models = makeFolder(path.join('userData', 'models'))
+    // A name starting with two dots is still inside.
+    const dotted = makeFolder(path.join('userData', 'projects', '..cache'))
+    for (const dir of [dataDir, path.join(dataDir, 'abcdef01', 'text'), appDataDir, models, dotted]) {
+      expect(() => guarded.create({ dir })).toThrow(OWN)
+    }
+    // Without appDataDir the data folder itself is still guarded.
+    expect(() => store.create({ dir: dataDir })).toThrow(OWN)
+    expect(() => store.create({ dir: path.join(dataDir, 'abcdef01') })).toThrow(OWN)
+    expect(() => store.create({ dir: dotted })).toThrow(OWN)
+    expect(guarded.list()).toEqual([])
+  })
+
+  it('sees through a link to the data folder', () => {
+    fs.mkdirSync(dataDir, { recursive: true })
+    const link = path.join(tmp, 'data-link')
+    fs.symlinkSync(dataDir, link, 'junction')
+    expect(() => store.create({ dir: link })).toThrow(OWN)
+  })
+
+  it('allows a folder beside them whose name merely starts the same', () => {
+    fs.mkdirSync(dataDir, { recursive: true })
+    const sibling = makeFolder(path.join('userData', 'projects-old'))
+    expect(() => guarded.create({ dir: sibling })).toThrow(OWN)
+    expect(store.create({ dir: sibling }).dir).toBe(sibling)
+    const beside = makeFolder('userData-backup')
+    expect(guarded.create({ dir: beside }).dir).toBe(beside)
   })
 })
