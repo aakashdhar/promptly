@@ -49,7 +49,7 @@ Why: today every Craft prompt starts from zero context, so a PM re-explains the 
     1. the summary;
     2. for Email, the newest `conversations` thread involving anyone named in the request (by name or address), latest message in full, older ones de-quoted, ≤ 12 KB;
     3. the best matches for the request from the search index (FTS5 BM25 over the kinds that output reads — Email/Polish: overview, conversations, agreements, reference; Prompt: overview, build, reference, agreements), newest first on near-ties, each excerpt labelled with path and date, deduplicated, up to ~30 KB in total.
-    The prompt then tells the AI to use only facts in the project material, to name the source of any date, number or commitment it uses, and to say "not in the project files" rather than guess.
+    The prompt then tells the AI to use only facts in the project material for names, dates, numbers and commitments, never to invent them, and to say briefly when something asked for isn't in the material rather than guess. It must not copy `[source: …]` labels into the output (an email to a client must read like a normal email); the sources are shown to the person in **Based on** (§21) instead.
 21. Under the result, **Based on** lists the summary plus each file used (path · date), each with × "Leave this file out and redo". Re-running with exclusions keeps them for that request only.
 22. This works the same with Claude Code and with the user's own API key (it is all one prompt on stdin / one chat request).
 

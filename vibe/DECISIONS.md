@@ -2370,3 +2370,11 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 > Action: fixed autonomously — 1 round, clean on re-review
 > Report: vibe/spec-reviews/2026-10-06-add-feature-project-modes.md
 ---
+
+### 2026-10-06 — Project modes build: decisions from the wave-1 reviews
+- Spec §20 changed: the AI no longer "names the source" inside the output (source labels in a client email read wrong); sources are shown in **Based on** only.
+- `requirements.txt` is no longer a code-root marker (a manager's specs folder can hold one); Python projects are still caught by pyproject.toml / setup.py / .py files.
+- A project folder may not contain Promptly's own data folder or sit inside it (e.g. connecting the home folder); the walk is bounded (entries visited) so a huge folder can't hang the scan.
+- The store gets `relocate(id, dir)` for "Folder not found · Locate…" (§30).
+- Look-deeper tool runs accept only Read, Grep and Glob; a tool event reaches Based on only when the tool actually succeeded; a failed tool run never turns off quick start for ordinary runs; hitting max turns returns the text written so far, else fails so the request is redone without Look deeper (§28).
+- Summary facts are cached per file version (rel + sha1), and Rebuild starts from an empty cache.
