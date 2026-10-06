@@ -149,11 +149,11 @@ function createClaudeRunner({ getClaudePath, getModel = () => DEFAULT_MODEL, onS
       // bypassPermissions or extra folders) can't widen what Claude may read.
       const turnFlags = tools ? ['--max-turns', String(maxTurns), '--permission-mode', 'default'] : [];
       const args = ['-p', '--model', getModel() || DEFAULT_MODEL, ...(lean ? [...toolFlags, ...LEAN_FLAGS, ...turnFlags] : []), ...(lean && quick ? QUICK_START_FLAGS : []), ...(streaming ? STREAM_FLAGS : [])];
-      // The CLI thinks before answering by default; for a long answer that can add minutes
-      // without making it better, so callers can turn it off.
-      const env = { ...makeClaudeEnv(claudePath), ...(lean && quick ? QUICK_START_ENV : {}), ...(thinking ? {} : { MAX_THINKING_TOKENS: '0' }) };
       let child;
       try {
+        // The CLI thinks before answering by default; for a long answer that can add minutes
+        // without making it better, so callers can turn it off.
+        const env = { ...makeClaudeEnv(claudePath), ...(lean && quick ? QUICK_START_ENV : {}), ...(thinking ? {} : { MAX_THINKING_TOKENS: '0' }) };
         // On Windows an npm-installed claude.cmd goes through cmd.exe; the prompt still goes on stdin.
         child = spawnImpl(...platform.spawnArgs(claudePath, args, cwd ? { env, cwd } : { env }));
       } catch (err) {
