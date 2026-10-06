@@ -1083,7 +1083,7 @@ Say "next" to begin.
 - feat(site): Windows visitors see "Promptly X for Windows" and "Download for Windows (N MB)"; release.sh sets the version, publish-release.sh the size (commits + pushes it).
 
 ## 2026-10-06 — Planned: Project modes (not started; owner reviewing)
-🔄 Project modes — connect a project folder; its own mode writes emails, prompts and polished text from what's in it (10/17 built; review fixes running)
+🔄 Project modes — connect a project folder; its own mode writes emails, prompts and polished text from what's in it (17/17 built on feature/project-modes — not merged; waiting for the owner to try it)
    Estimated: approx. 51 hours (S: 4, M: 11, L: 2) · Branch: feature/project-modes · Mockups: https://claude.ai/artifact/Q268jeDcxKXtnBxVaQ89GB
    [x] PRJ-001 · Project store — where projects and their summaries are kept
    [x] PRJ-002 · Folder scan — find readable files, skip code, archives and ignored files
@@ -1093,22 +1093,22 @@ Say "next" to begin.
    [x] PRJ-006 · Folder map — Claude sorts the folders; the person checks them
    [x] PRJ-007 · Project summary — build, Refresh, Rebuild; edits are kept
    [x] PRJ-008 · Context per request and Write as (email / prompt / polish)
-   [ ] PRJ-009 · IPC for projects
-   [ ] PRJ-010 · Connect screens (map, questions, summary preview)
-   [ ] PRJ-011 · Settings › Projects
-   [ ] PRJ-012 · Projects in the mode menu and header
-   [ ] PRJ-013 · Write as picker and "Based on" sources
+   [x] PRJ-009 · IPC for projects
+   [x] PRJ-010 · Connect screens (map, questions, summary preview)
+   [x] PRJ-011 · Settings › Projects
+   [x] PRJ-012 · Projects in the mode menu and header
+   [x] PRJ-013 · Write as picker and "Based on" sources
    [x] PRJ-014 · Dictation suggestion "As an <Project> email"
    [x] PRJ-015 · Look deeper (Claude Code reads more files, read-only)
-   [ ] PRJ-016 · End-to-end tests and UI audit
-   [ ] PRJ-017 · Docs
+   [x] PRJ-016 · End-to-end tests and UI audit
+   [x] PRJ-017 · Docs
    → Full specs: vibe/features/2026-10-06-project-modes/FEATURE_TASKS.md (agent use)
 
 ## What just happened (project modes)
-✅ Wave 1: ten backend modules built in parallel and adversarially reviewed (PRJ-001…008, 014, 015) — 648 unit tests + 24 search tests under Electron's Node green; committed one task per commit.
-🔧 Second review round running: every remaining finding (5 tasks had real bugs: NFD file names vs ignore rules, UTF-16 files, CRLF titles, summary dates/retiring/caching, bracketed file names, suggestion scoring) is being fixed and re-verified.
+✅ All 17 tasks built on feature/project-modes (lean build after wave 1): service + IPC + Look deeper wiring, the connect flow, Settings › Projects, projects in the mode menu, Write as + Based on, the Dictation suggestion.
+✅ Tests: 857 unit tests (+ search/service under Electron's Node), full e2e 56/56 incl. the new project flow, light/dark layout audit incl. the 9 new screens.
+✅ Final review (1 agent): 8 bugs fixed — summaries on their own runner (Escape no longer kills them), Look deeper skipped when files are left out and held to the text copy (+ --permission-mode default), the right email thread, PROMPTLY.md not re-read, summary marks kept across syncs, Regenerate/Iterate/tone keep the project, project errors say what to do, the panel's Close no longer cancels.
 
 ## What's next (project modes)
-⬜ PRJ-009 · Wire it into the app: IPC, folder watching, the project branch of prompt generation.
-⬜ PRJ-010…013 · Screens: connect flow, Settings › Projects, mode menu + header, Write as + Based on.
-⬜ PRJ-016 · End-to-end tests (will ask before the full run) · PRJ-017 · Docs.
+⬜ The owner tries it on a real project folder (run from source or a test build), then decides on merge + release.
+⬜ Follow-ups noted, not built: a hint when a new top-level folder appears (it's ignored until sorted in "Change"); restart watching when a missing folder's drive comes back (focus rescans still catch it); PDF and Windows Word support (deferred in the spec).

@@ -2378,3 +2378,10 @@ Why: Email drafting is a complete task, not a prompt-construction aid. The outpu
 - The store gets `relocate(id, dir)` for "Folder not found · Locate…" (§30).
 - Look-deeper tool runs accept only Read, Grep and Glob; a tool event reaches Based on only when the tool actually succeeded; a failed tool run never turns off quick start for ordinary runs; hitting max turns returns the text written so far, else fails so the request is redone without Look deeper (§28).
 - Summary facts are cached per file version (rel + sha1), and Rebuild starts from an empty cache.
+
+### 2026-10-06 — Project modes built (lean finish)
+- After wave 1 (ten modules, two review rounds, ~10M subagent tokens) the owner chose a lean finish: the integration and screens written directly, one e2e run, one final review. Logged as feedback for future builds.
+- Summaries run on their own Claude runner/router (projectClaude), separate from requests: Escape on a request never kills a background summary, and Stop on a summary stops it at once.
+- Look deeper: skipped when the person left files out (their text copies still exist); always `--permission-mode default`; any tool path outside the project's text copy discards the answer and asks again without tools; 120 s limit, no plain retry after a timeout.
+- Iterate, Regenerate, Polish tone and email tone chips on a project result stay in the project; a project request also sends the Polish tone.
+- Every project request runs an incremental sync first (and waits for one already running), so a file saved seconds ago is used even if the watcher missed it.
