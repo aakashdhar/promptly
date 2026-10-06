@@ -153,7 +153,21 @@ THINKING (expanded, generation fail) → GENERATION_ERROR (FEATURE-ONBOARDING-WI
 
 | Direction | Channel | Purpose |
 |-----------|---------|---------|
-| renderer → main | `generate-prompt` | Transcript + mode + options (`tone`, `context`, `revise`) → Claude. `revise` = Iterate/email tone chips: the result on screen + the spoken change (main/prompts/revise*.txt). Builder modes pass the transcript through. Stored as the last request for retry |
+| renderer → main | `generate-prompt` | Transcript + mode + options (`tone`, `context`, `revise`) → Claude. `revise` = Iterate/email tone chips: the result on screen + the spoken change (main/prompts/revise*.txt). Builder modes pass the transcript through. A mode `project:<id>` (or `options.project = { id, output, exclude }`) runs the project branch: project context first, the Email/Prompt/Polish prompt, Look deeper on Claude Code; the result adds `project`, `output`, `sources`. Stored as the last request for retry |
+| renderer → main | `projects-list` | Connected projects (D-PROJECT-MODES): record + `newFiles`, `missing`, `building` |
+| renderer → main | `project-connect` | Main opens the folder dialog, scans locally → `{ token, dir, name, folders, skipped, warnings }`; the renderer never sends a path |
+| renderer → main | `project-classify` | Token → the folder map from one Claude call (names + short snippets; code roots never sent) |
+| renderer → main | `project-estimate` | Token + folder map → about how many Claude calls the first summary takes |
+| renderer → main | `project-save` | Token + name, role, writes, folder map → creates the project, starts watching and writing the summary |
+| renderer → main | `project-cancel-build` / `project-refresh` / `project-rebuild` | Stop, update (new files only) or rewrite (fresh facts) a project's summary |
+| renderer → main | `project-summary-get` / `project-summary-set` | The summary; an edit pins the person's lines (kept through refresh and rebuild) |
+| renderer → main | `project-update` | name, defaultOutput, lookDeeper, keepInFolder, folders (whitelisted) |
+| renderer → main | `project-remove` | Forgets Promptly's copy (summary, text cache, index); PROMPTLY.md only if Promptly wrote it and the person ticks it |
+| renderer → main | `project-locate` | Main opens the folder dialog to re-point a project whose folder moved |
+| renderer → main | `project-folders-get` | A fresh scan with the current map (new folders marked unsure) for "Change" |
+| renderer → main | `project-suggest` | Dictation text → `{ id, name, output }` when it names a project's person or term (no AI call) |
+| main → renderer | `project-progress` | Summary progress `{ id, done, total, stage }`, then `{ finished, error? }` |
+| main → renderer | `projects-changed` | A project changed (files, summary, added, removed): reload the list |
 | renderer → main | `builder-step` | One Image/Video/Workflow step: step name + values → its prompt file in main/prompts → Claude |
 | renderer → main | `harness-plan` | Harness step 1: the spoken job → a plan (loop or pipeline, checks, stops, never-list, gaps) as JSON, checked by main/harness.js |
 | renderer → main | `harness-files` | Harness step 2: plan + gap answers → the files, streamed file by file; runs with extended thinking off |
@@ -414,6 +428,7 @@ The following are P0 review findings — they block phase gates:
 
 - [ ] Adding runtime npm dependencies — zero runtime deps in the packaged .app is a hard constraint (React, Vite, Tailwind are devDeps that are compiled out; new runtime deps require a DECISIONS.md entry)
 - [ ] Calling any AI outside `main/llm.js`, using a provider SDK, or shipping keys of our own — Claude Code CLI by default; user keys only via the D-AI-PROVIDERS router
+- [ ] Giving Claude Code tools other than read-only `Read`/`Grep`/`Glob`, a tool run without `--strict-mcp-config` (it would load the user's connected tools, e.g. Gmail send), `--restricted`/`--setting-sources` (they drop the user's effort level), or a working folder other than a project's text cache (D-PROJECT-MODES Look deeper)
 - [ ] Using `nodeIntegration: true` — always use contextBridge/preload instead
 - [ ] Using `dangerouslySetInnerHTML` with any user-provided or Claude-generated text — use JSX text nodes
 - [ ] Calling `exec('claude ...')` without the cached login-shell-resolved path

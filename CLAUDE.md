@@ -29,6 +29,7 @@ promptly/
 │   ├── hotkey.js        ←   hotkey presets + hold-vs-tap state machine
 │   ├── dictation.js     ←   Dictation tidy (um/uh, ₹/%, spoken line breaks), never rewrites
 │   ├── profile.js       ←   It writes like you: your notes + the log of your edits
+│   ├── projects/        ←   Project modes: connected folders, summary, local search, request context (D-PROJECT-MODES)
 │   ├── shortcuts.js     ←   globalShortcut fallback registration
 │   ├── binaries.js      ←   claude/whisper/ffmpeg lookup, makeClaudeEnv
 │   ├── platform/        ←   darwin.js holds every macOS path/command
