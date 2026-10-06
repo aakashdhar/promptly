@@ -456,6 +456,55 @@ A ticket at 4h 01m is flagged; one at 3h 59m is not.</template>
   </div>
 </section>
 
+<!-- ============ PROJECTS ============ -->
+<section class="proj" id="projects" aria-labelledby="proj-title">
+  <div class="wrap proj-grid">
+    <div>
+      <h2 id="proj-title" class="split-head">It knows the project.</h2>
+      <p class="sub">Connect a project folder: the emails, meeting notes, contracts and specs you keep anyway. It becomes its own mode. Say “reply to Maya about the link” and the email comes back with the right names, dates and promises, and a list of the files it used.</p>
+      <p class="sub">Promptly works out what each folder holds, leaves code and archives out, and writes a short summary of the project that you can read and correct. New files count straight away. Everything stays on your Mac; your own AI reads only what a request needs.</p>
+      <div class="proj-tabs" role="tablist" aria-label="Show the email" hidden>
+        <button class="sw" type="button" role="tab" id="proj-tab-plain" aria-selected="false" aria-controls="proj-panel-plain" tabindex="-1" data-show="plain">Without a project</button>
+        <button class="sw" type="button" role="tab" id="proj-tab-project" aria-selected="true" aria-controls="proj-panel-project" tabindex="0" data-show="project">In Northwind mode</button>
+      </div>
+    </div>
+    <div class="art proj-card" style="--lane:#B7791F">
+      <header class="art-head"><span class="art-dot"></span><h3 class="art-kind">Northwind portal</h3><span class="art-dest">email</span></header>
+      <p class="proj-said"><span>You said</span>“Reply to Maya: yes, we can add the copyable link this week, and remind them we still need the tenant ID.”</p>
+      <div class="proj-panel" id="proj-panel-project" role="tabpanel" aria-labelledby="proj-tab-project" tabindex="0">
+        <pre class="proj-text">Subject: Re: Video access email, and the SSO details
+
+Hi Maya,
+
+Yes, we’ll add a plain link under the button in the access email this sprint, so Outlook users can copy it.
+
+One reminder on SSO: we still need the tenant ID from Sam. Dev needs about four days once we have it, so to keep the 15 Oct board demo on track we’d need it by 7 Oct.
+
+Thanks,
+Priya</pre>
+        <div class="proj-based">
+          <span class="proj-based-label">Based on the Northwind summary and</span>
+          <span class="proj-file">comms/2026-10-04 Maya.eml · 4 Oct</span>
+          <span class="proj-file">notes/2026-10-02 standup.md · 2 Oct</span>
+          <span class="proj-file">contracts/SOW phase 2.docx</span>
+        </div>
+      </div>
+      <div class="proj-panel" id="proj-panel-plain" role="tabpanel" aria-labelledby="proj-tab-plain" tabindex="0" hidden>
+        <pre class="proj-text">Subject: Copyable link and tenant ID
+
+Hi Maya,
+
+Yes, we can add the copyable link this week.
+
+Also, a quick reminder that we still need the tenant ID from your side.
+
+Thanks,</pre>
+        <p class="proj-note">Fine, but generic: no deadline, no reason it matters, no name for who sends the ID.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ FILM ============ -->
 <section class="film" id="film" aria-labelledby="film-title">
   <div class="wrap film-head">
@@ -666,6 +715,10 @@ A ticket at 4h 01m is flagged; one at 3h 59m is not.</template>
       <details>
         <summary>Can I use the prompts in ChatGPT or Gemini?</summary>
         <p>Yes. Prompts are written for Claude first. Pick Gemini, ChatGPT or Grok in the “For” menu next to Copy and Promptly rewrites it the way that AI works best, keeping every detail. Standard is one version that works on all of them. You don’t need a key for that AI; it’s only reformatted.</p>
+      </details>
+      <details>
+        <summary>Can it write with what’s in my project files?</summary>
+        <p>Yes. In Settings › Projects, connect a project folder of emails, notes, contracts or specs, laid out however you like. Promptly works out what each folder holds, leaves code and archives out, and writes a summary you can read and edit. The project then gets its own mode: emails, prompts and polished text written there use its names, dates and commitments, and list the files they came from. The files stay on your Mac; your AI reads only what a request needs, on your own account. Dictation never uses a project.</p>
       </details>
       <details>
         <summary>Which languages can I speak?</summary>

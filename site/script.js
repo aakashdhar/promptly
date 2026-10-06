@@ -335,6 +335,35 @@
   }
 
   /* ====================================================================
+     Projects: the same spoken request as an email without a project and in a project's mode.
+     Without JS both are readable: the project version shows, the tabs stay hidden.
+     ==================================================================== */
+  const projTabs = $('.proj-tabs');
+  if (projTabs) {
+    const tabs = $$('[role="tab"]', projTabs);
+    const show = (tab) => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        $('#' + t.getAttribute('aria-controls')).hidden = !on;
+      });
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => show(t));
+      t.addEventListener('keydown', (e) => {
+        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        e.preventDefault();
+        const next = tabs[(i + step + tabs.length) % tabs.length];
+        next.focus();
+        show(next);
+      });
+    });
+    projTabs.hidden = false;
+  }
+
+  /* ====================================================================
      Films: play muted on a loop while on screen, pause when scrolled away. With reduced motion
      they wait for the button. Works with or without the motion libraries.
      ==================================================================== */
