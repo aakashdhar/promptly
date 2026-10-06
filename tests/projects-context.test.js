@@ -50,6 +50,23 @@ describe('Write as: picking the output from what was said (spec §17)', () => {
     expect(pickOutput('क\u093Eemail', 'polish')).toBe('polish')
   })
 
+  it('skips a phrase that runs into a hyphenated word or a name joined by underscores', () => {
+    expect(pickOutput('write to-do list for the sprint', 'polish')).toBe('polish')
+    expect(pickOutput('an email-based summary for the board', 'polish')).toBe('polish')
+    expect(pickOutput('rename it email_draft and send the status', 'polish')).toBe('polish')
+    expect(pickOutput('clean up the my_prompt helper notes', 'polish')).toBe('polish')
+    expect(pickOutput('archive prompt_v2 with the notes', 'polish')).toBe('polish')
+    // A phrase that ends a hyphenated word still means it.
+    expect(pickOutput('re-email Aparna the deck', 'polish')).toBe('email')
+    expect(pickOutput('write a system-prompt for the parser', 'polish')).toBe('prompt')
+    expect(pickOutput('auto-reply to the vendor', 'prompt')).toBe('email')
+  })
+
+  it('counts a phrase only as it is said, not its plural', () => {
+    expect(pickOutput('write two prompts for the devs', 'polish')).toBe('polish')
+    expect(pickOutput("summarise this week's emails for the client", 'polish')).toBe('polish')
+  })
+
   it('always names one of the outputs, even when case folding matches a phrase', () => {
     // Under Unicode case folding "ſ" (long s) is "s", so these match "ask claude" / "task for".
     expect(pickOutput('aſk claude to fix the parser', 'email')).toBe('prompt')
@@ -116,6 +133,15 @@ describe('the <project> block (spec §20-21)', () => {
     expect(GROUNDING).toMatch(/Don't copy the \[source: …\] labels/)
     expect(GROUNDING).toMatch(/request is the priority/)
     expect(GROUNDING).not.toMatch(/\{[A-Z_]+\}/)
+  })
+
+  it('tells the AI the thread is the conversation being answered, and keeps sources out of what it writes (spec §20)', () => {
+    expect(GROUNDING).toMatch(/for an email, the thread, which is the conversation being answered, newest message last/)
+    expect(GROUNDING).toMatch(/don't cite the files or paths a fact came from/)
+    expect(GROUNDING).toMatch(/Promptly shows them which files were used/)
+    expect(GROUNDING).not.toMatch(/name the source/i)
+    // The grounding sits inside the block as written, so it must not hold the block's own tags.
+    expect(GROUNDING).not.toMatch(/<\s*\/?\s*(?:project|document|thread|summary)\b/i)
   })
 
   it('asks the search for the kinds each output reads, 20 at most', () => {
@@ -248,6 +274,84 @@ describe('the <project> block (spec §20-21)', () => {
       '- Kept, a neighbour [source: notes/Call with Aparna.md · 3 Oct]',
     ].join('\n'))
     for (const fact of ['Launch 15 Nov', 'Budget is fixed', 'Old scope', 'Two files']) expect(block).not.toContain(fact)
+  })
+
+  it('leaves out an excluded file whose name holds brackets, from the summary, the thread and the documents', () => {
+    const rel = 'comms/[EXTERNAL] RE SOW.eml'
+    const summary = [
+      '## Agreed',
+      `- Fee is 40k [source: ${rel} · 2 Oct]`,
+      `- Paid monthly [source: sow/sow.md · 20 Sep 2026] [source: ${rel} · 2 Oct 2026]`,
+      `- Net 30 terms (source: ${rel} · 2 Oct)`,
+      `- Kickoff on Monday [source: notes/kickoff.md · 1 Oct; ${rel}]`,
+      '- Pilot for 40 users [source: sow/sow.md · 20 Sep]',
+    ].join('\n')
+    const thread = vi.fn(() => ({ rel, date: '2026-10-02', text: 'From: Aparna\nThe fee is 40k, paid monthly.' }))
+    const search = searchOf([hit(rel, 'Fee is 40k, paid monthly, net 30.'), hit('sow/sow.md', 'Pilot for 40 users.', '2026-09-20', 'agreements')])
+    const { block, sources } = assembleContext({ name: 'Infer360', summary, transcript: SAID, output: 'email', search, thread, exclude: [rel] })
+
+    expect(thread).toHaveBeenCalled()
+    for (const gone of ['[EXTERNAL]', 'RE SOW', '40k', 'Paid monthly', 'paid monthly', 'Net 30', 'net 30', 'Kickoff']) expect(block).not.toContain(gone)
+    expect(block).not.toContain('<thread')
+    expect(between(block, 'summary')).toBe('## Agreed\n- Pilot for 40 users [source: sow/sow.md · 20 Sep]')
+    expect(documents(block).map((d) => d.rel)).toEqual(['sow/sow.md'])
+    expect(sources).toEqual([{ rel: 'sow/sow.md', date: '2026-09-20' }])
+
+    // Not excluded, the same file is read in full.
+    const kept = assembleContext({ summary, transcript: SAID, output: 'email', search, thread })
+    expect(between(kept.block, 'summary')).toBe(summary)
+    expect(kept.sources.map((s) => s.rel)).toEqual([rel, 'sow/sow.md'])
+  })
+
+  it('counts every file a thread was built from: each one a source, none repeated, any one left out drops the thread', () => {
+    const OLDER = 'comms/2026-10-01-aparna.eml'
+    const MIDDLE = 'comms/[EXTERNAL] Re link.eml'
+    const chain = { ...THREAD, sources: [{ rel: OLDER, date: '2026-10-01' }, MIDDLE, { rel: THREAD.rel, date: '2026-10-04' }, { rel: '' }, null, 42, { date: 'x' }] }
+    const search = searchOf([hit(OLDER, 'The first message again.'), hit(MIDDLE, 'The middle one.'), hit('sow/sow.md', 'Tenant ID needed.')])
+    const { block, sources } = assembleContext({ summary: SUMMARY, transcript: SAID, output: 'email', search, thread: () => chain })
+    expect(block).toContain(`<thread path="${THREAD.rel}" date="2026-10-04">\n${THREAD.text}\n</thread>`)
+    expect(documents(block).map((d) => d.rel)).toEqual(['sow/sow.md'])
+    expect(sources).toEqual([
+      { rel: THREAD.rel, date: '2026-10-04' },
+      { rel: OLDER, date: '2026-10-01' },
+      { rel: MIDDLE, date: '' },
+      { rel: 'sow/sow.md', date: '2026-10-01' },
+    ])
+
+    for (const left of [OLDER, MIDDLE]) {
+      const redo = assembleContext({ summary: SUMMARY, transcript: SAID, output: 'email', search, thread: () => chain, exclude: [left] })
+      expect(redo.block).not.toContain('<thread')
+      expect(redo.block).not.toContain(left)
+      expect(redo.block).not.toContain(THREAD.text)
+      expect(redo.sources.map((s) => s.rel)).not.toContain(left)
+      expect(redo.sources.map((s) => s.rel)).not.toContain(THREAD.rel)
+    }
+  })
+
+  it('leaves out a lookup that returns a promise, without an unhandled rejection in main', async () => {
+    const unhandled = []
+    const onUnhandled = (reason) => unhandled.push(reason)
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      for (const [search, thread] of [
+        [async () => [hit('sow/sow.md', 'Tenant ID needed.')], async () => THREAD],
+        [() => Promise.reject(new Error('database is locked')), async () => { throw new Error('ENOENT') }],
+      ]) {
+        const { block, sources } = assembleContext({ name: 'Infer360', summary: SUMMARY, transcript: SAID, output: 'email', search, thread })
+        expect(block).toBe(`<project name="Infer360">\n<summary>\n${SUMMARY}\n</summary>\n\n${GROUNDING}\n</project>`)
+        expect(sources).toEqual([])
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
+    expect(unhandled).toEqual([])
+  })
+
+  it('takes missing options as empty', () => {
+    for (const options of [undefined, null]) {
+      expect(assembleContext(options)).toEqual({ block: `<project name="">\n${GROUNDING}\n</project>`, sources: [] })
+    }
   })
 
   it('treats wrong-typed exclusions and budgets as missing instead of failing or lifting the cap', () => {

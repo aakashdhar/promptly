@@ -25,11 +25,14 @@ const EXCERPT_GAP = '\n…\n';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const alternatives = (list) => list.map((p) => p.split(' ').map(escapeRe).join('\\s+')).join('|');
-// Whole words only ("impromptu" isn't "prompt"; a combining mark is part of the word). One
-// pattern for both lists, so the phrase said first decides, and the group that matched names it.
-const WORD = '[\\p{L}\\p{N}\\p{M}]';
+// Whole words only ("impromptu" isn't "prompt"; a combining mark is part of the word; an
+// underscore joins a name). A phrase running into a hyphenated word only describes it ("write
+// to-do list", "email-based"), but one that ends it still means it ("re-email", "system-prompt").
+// One pattern for both lists, so the phrase said first decides, and the group that matched names it.
+const BEFORE = '[\\p{L}\\p{N}\\p{M}_]';
+const AFTER = '[\\p{L}\\p{N}\\p{M}_-]';
 const PHRASE_RE = new RegExp(
-  `(?<!${WORD})(?:${Object.entries(PHRASES).map(([output, list]) => `(?<${output}>${alternatives(list)})`).join('|')})(?!${WORD})`,
+  `(?<!${BEFORE})(?:${Object.entries(PHRASES).map(([output, list]) => `(?<${output}>${alternatives(list)})`).join('|')})(?!${AFTER})`,
   'iu',
 );
 
@@ -53,12 +56,30 @@ const element = (tag, { rel, date }, text) => `<${tag} path="${attr(rel)}" date=
 const sourceOf = ({ rel, date }) => ({ rel, date: String(date ?? '') });
 
 // Context is best effort: a lookup that fails leaves its part out instead of failing the request.
+// Both lookups are synchronous. A promise from one is left out too, and its failure is caught so
+// it can't surface in main as an unhandled rejection.
 function attempt(fn, fallback) {
   try {
-    return fn() ?? fallback;
+    const value = fn();
+    if (typeof value?.then === 'function') {
+      value.then(undefined, () => {});
+      return fallback;
+    }
+    return value ?? fallback;
   } catch {
     return fallback;
   }
+}
+
+// A thread can be built from several files (a reply chain saved one message per file), listed as
+// sources or bare paths. Its own path comes first; a malformed entry is skipped.
+function threadFiles(found) {
+  const files = new Map([[found.rel, sourceOf(found)]]);
+  for (const entry of Array.isArray(found.sources) ? found.sources : []) {
+    const s = typeof entry === 'string' ? { rel: entry } : entry;
+    if (typeof s?.rel === 'string' && s.rel && !files.has(s.rel)) files.set(s.rel, sourceOf(s));
+  }
+  return [...files.values()];
 }
 
 // A summary line sourced from a file the person left out goes too, so its facts aren't used. Read
@@ -111,7 +132,11 @@ function keepTail(text, max) {
   return buf.subarray(start).toString('utf8');
 }
 
-function assembleContext({ name = '', summary = '', transcript = '', output, search, thread, exclude = [], budgetBytes = 30000 } = {}) {
+// search(transcript, { kinds, limit }) → hits, best first. thread(transcript) → { rel, date, text,
+// sources?: every file it was built from, as { rel, date } or a path } | null, asked only for an
+// email. Both synchronous.
+function assembleContext(options) {
+  const { name = '', summary = '', transcript = '', output, search, thread, exclude = [], budgetBytes = 30000 } = options ?? {};
   const out = OUTPUTS.includes(output) ? output : 'prompt';
   const said = String(transcript ?? '');
   // These arrive over IPC: a wrong type must not fail the request or lift the budget.
@@ -125,14 +150,19 @@ function assembleContext({ name = '', summary = '', transcript = '', output, sea
   summaryText = capSummary(neutralise(summaryText).trim(), SUMMARY_MAX_BYTES);
   if (summaryText) parts.push(`<summary>\n${summaryText}\n</summary>`);
 
-  let threadRel = null;
+  // A thread built partly from a file the person left out is left out whole, since its newest
+  // message can quote that file.
+  const inThread = new Set();
   const found = out === 'email' && typeof thread === 'function' ? attempt(() => thread(said), null) : null;
-  if (typeof found?.rel === 'string' && found.rel && !excluded.has(found.rel)) {
+  const files = typeof found?.rel === 'string' && found.rel ? threadFiles(found) : [];
+  if (files.length && !files.some((f) => excluded.has(f.rel))) {
     const text = keepTail(neutralise(found.text).trim(), THREAD_MAX_BYTES);
     if (text) {
       parts.push(element('thread', found, text));
-      sources.push(sourceOf(found));
-      threadRel = found.rel;
+      for (const f of files) {
+        sources.push(f);
+        inThread.add(f.rel);
+      }
     }
   }
 
@@ -144,7 +174,7 @@ function assembleContext({ name = '', summary = '', transcript = '', output, sea
   for (const hit of Array.isArray(hits) ? hits : []) {
     const rel = typeof hit?.rel === 'string' ? hit.rel : '';
     const excerpt = neutralise(hit?.excerpt).trim();
-    if (!rel || !excerpt || excluded.has(rel) || rel === threadRel) continue;
+    if (!rel || !excerpt || excluded.has(rel) || inThread.has(rel)) continue;
     const doc = docs.get(rel);
     const cost = doc ? bytes(EXCERPT_GAP + excerpt) : bytes(element('document', hit, excerpt));
     if ((doc && doc.excerpts.includes(excerpt)) || spent + cost > budget) continue;
